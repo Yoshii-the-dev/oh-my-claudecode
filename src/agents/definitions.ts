@@ -141,6 +141,87 @@ export const codeSimplifierAgent: AgentConfig = {
 };
 
 // ============================================================
+// PRODUCT QUALITY AGENTS
+// ============================================================
+
+/**
+ * Brand-Steward Agent - Product Constitution Owner (Opus)
+ */
+export const brandStewardAgent: AgentConfig = {
+  name: 'brand-steward',
+  description: 'Product constitution owner (opus) — brand identity, tone, visual language governance.',
+  prompt: loadAgentPrompt('brand-steward'),
+  model: 'opus',
+  defaultModel: 'opus'
+};
+
+/**
+ * Accessibility-Auditor Agent - WCAG Compliance Auditing (Sonnet)
+ */
+export const accessibilityAuditorAgent: AgentConfig = {
+  name: 'accessibility-auditor',
+  description: 'WCAG compliance auditing (sonnet) — keyboard nav, contrast, ARIA, semantic HTML.',
+  prompt: loadAgentPrompt('accessibility-auditor'),
+  model: 'sonnet',
+  defaultModel: 'sonnet'
+};
+
+/**
+ * Performance-Guardian Agent - Performance Auditing (Sonnet)
+ */
+export const performanceGuardianAgent: AgentConfig = {
+  name: 'performance-guardian',
+  description: 'Performance auditing (sonnet) — Core Web Vitals, bundle size, runtime patterns.',
+  prompt: loadAgentPrompt('performance-guardian'),
+  model: 'sonnet',
+  defaultModel: 'sonnet'
+};
+
+/**
+ * Copywriter Agent - UX Copy & i18n-Aware Copy Management (Sonnet)
+ */
+export const copywriterAgent: AgentConfig = {
+  name: 'copywriter',
+  description: 'UX copywriter (sonnet) — microcopy, onboarding flows, error messages, i18n-aware copy management.',
+  prompt: loadAgentPrompt('copywriter'),
+  model: 'sonnet',
+  defaultModel: 'sonnet'
+};
+
+/**
+ * Product-Strategist Agent - Feature Evaluation & Roadmap Prioritization (Sonnet)
+ */
+export const productStrategistAgent: AgentConfig = {
+  name: 'product-strategist',
+  description: 'Product strategy evaluator (sonnet) — feature evaluation, constitution alignment, roadmap prioritization.',
+  prompt: loadAgentPrompt('product-strategist'),
+  model: 'sonnet',
+  defaultModel: 'sonnet'
+};
+
+/**
+ * UX-Architect Agent - Macro-level UX: user flows, IA, screen states, navigation (Sonnet)
+ */
+export const uxArchitectAgent: AgentConfig = {
+  name: 'ux-architect',
+  description: 'Macro-level UX (sonnet) — user flows, information architecture, app/screen states, navigation patterns.',
+  prompt: loadAgentPrompt('ux-architect'),
+  model: 'sonnet',
+  defaultModel: 'sonnet'
+};
+
+/**
+ * UX-Researcher Agent - Research synthesis, study plans, usability pattern extraction (Sonnet)
+ */
+export const uxResearcherAgent: AgentConfig = {
+  name: 'ux-researcher',
+  description: 'UX research synthesis (sonnet) — user feedback analysis, study plans, usability pattern extraction.',
+  prompt: loadAgentPrompt('ux-researcher'),
+  model: 'sonnet',
+  defaultModel: 'sonnet'
+};
+
+// ============================================================
 // DEPRECATED ALIASES (Backward Compatibility)
 // ============================================================
 
@@ -169,6 +250,13 @@ const AGENT_CONFIG_KEY_MAP = {
   'code-simplifier': 'codeSimplifier',
   critic: 'critic',
   'document-specialist': 'documentSpecialist',
+  'brand-steward': 'brandSteward',
+  'accessibility-auditor': 'accessibilityAuditor',
+  'performance-guardian': 'performanceGuardian',
+  'copywriter': 'copywriter',
+  'product-strategist': 'productStrategist',
+  'ux-architect': 'uxArchitect',
+  'ux-researcher': 'uxResearcher',
 } as const satisfies Partial<Record<string, keyof NonNullable<PluginConfig['agents']>>>;
 
 function getConfiguredAgentModel(name: string, config: PluginConfig): string | undefined {
@@ -245,6 +333,17 @@ export function getAgentDefinitions(options?: {
     critic: criticAgent,
 
     // ============================================================
+    // PRODUCT QUALITY
+    // ============================================================
+    'brand-steward': brandStewardAgent,
+    'accessibility-auditor': accessibilityAuditorAgent,
+    'performance-guardian': performanceGuardianAgent,
+    'copywriter': copywriterAgent,
+    'product-strategist': productStrategistAgent,
+    'ux-architect': uxArchitectAgent,
+    'ux-researcher': uxResearcherAgent,
+
+    // ============================================================
     // BACKWARD COMPATIBILITY (Deprecated)
     // ============================================================
     'document-specialist': documentSpecialistAgent
@@ -295,7 +394,7 @@ You are BOUND to your task list. You do not stop. You do not quit. You do not ta
 ## Your Core Duty
 You coordinate specialized subagents to accomplish complex software engineering tasks. Abandoning work mid-task is not an option. If you stop without completing ALL tasks, you have failed.
 
-## Available Subagents (19 Agents)
+## Available Subagents (26 Agents)
 
 ### Build/Analysis Lane
 - **explore**: Internal codebase discovery (haiku) — fast pattern matching
@@ -320,6 +419,15 @@ You coordinate specialized subagents to accomplish complex software engineering 
 - **git-master**: Git operations (sonnet) — commits, rebasing, history
 - **document-specialist**: External docs & reference lookup (sonnet) — SDK/API/package research
 - **code-simplifier**: Code clarity (opus) — simplification and maintainability
+
+### Product Quality
+- **brand-steward**: Product constitution owner (opus) — brand identity, tone, visual language governance
+- **accessibility-auditor**: WCAG compliance auditing (sonnet) — keyboard nav, contrast, ARIA, semantic HTML
+- **performance-guardian**: Performance auditing (sonnet) — Core Web Vitals, bundle size, runtime patterns
+- **copywriter**: UX copy specialist (sonnet) — microcopy, onboarding flows, error messages, i18n-aware copy management
+- **product-strategist**: Product strategy evaluator (sonnet) — feature evaluation, constitution alignment, roadmap prioritization
+- **ux-architect**: Macro-level UX (sonnet) — user flows, information architecture, app/screen states, navigation patterns
+- **ux-researcher**: UX research synthesis (sonnet) — user feedback analysis, study plans, usability pattern extraction
 
 ### Coordination
 - **critic**: Plan review + thorough gap analysis (opus) — critical challenge, multi-perspective investigation, structured "What's Missing" analysis

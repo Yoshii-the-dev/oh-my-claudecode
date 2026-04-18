@@ -1,0 +1,225 @@
+name: Upstream Sync
+
+on:
+  schedule:
+    # Runs daily at 02:00 UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      base_branch:
+        description: 'Base branch to merge upstream into (default: dev)'
+        required: false
+        default: 'dev'
+        type: string
+      upstream_ref:
+        description: 'Upstream ref to merge (default: main)'
+        required: false
+        default: 'main'
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: false
+
+env:
+  UPSTREAM_REPO: 'Yeachan-Heo/oh-my-claudecode'
+  BASE_BRANCH: ${{ github.event.inputs.base_branch || 'dev' }}
+  UPSTREAM_REF: ${{ github.event.inputs.upstream_ref || 'main' }}
+
+jobs:
+  sync:
+    name: Sync from upstream
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Add upstream remote
+        run: |
+          git remote add upstream "https://github.com/${UPSTREAM_REPO}.git"
+          git fetch upstream "${UPSTREAM_REF}" --tags
+
+      - name: Detect new upstream commits
+        id: detect
+        run: |
+          set -euo pipefail
+          BEHIND=$(git rev-list --count "HEAD..upstream/${UPSTREAM_REF}")
+          echo "behind_count=${BEHIND}" >> "$GITHUB_OUTPUT"
+          if [ "${BEHIND}" -eq 0 ]; then
+            echo "Fork is up to date with upstream/${UPSTREAM_REF}. Nothing to do."
+            echo "should_sync=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Fork is ${BEHIND} commits behind upstream/${UPSTREAM_REF}."
+            echo "should_sync=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Compute sync branch name
+        if: steps.detect.outputs.should_sync == 'true'
+        id: branch
+        run: |
+          set -euo pipefail
+          UPSTREAM_SHA=$(git rev-parse --short upstream/${UPSTREAM_REF})
+          DATE=$(date -u +%Y-%m-%d)
+          BRANCH="upstream-sync/${DATE}-${UPSTREAM_SHA}"
+          echo "branch=${BRANCH}" >> "$GITHUB_OUTPUT"
+          echo "upstream_sha=${UPSTREAM_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Skip if sync branch already exists on remote
+        if: steps.detect.outputs.should_sync == 'true'
+        id: branchcheck
+        run: |
+          set -euo pipefail
+          BRANCH="${{ steps.branch.outputs.branch }}"
+          if git ls-remote --exit-code --heads origin "${BRANCH}" >/dev/null 2>&1; then
+            echo "Branch ${BRANCH} already exists on origin. Skipping."
+            echo "branch_exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "branch_exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create sync branch from base
+        if: steps.detect.outputs.should_sync == 'true' && steps.branchcheck.outputs.branch_exists == 'false'
+        run: |
+          set -euo pipefail
+          git checkout -B "${{ steps.branch.outputs.branch }}" "origin/${BASE_BRANCH}"
+
+      - name: Attempt merge
+        if: steps.detect.outputs.should_sync == 'true' && steps.branchcheck.outputs.branch_exists == 'false'
+        id: merge
+        run: |
+          set +e
+          git merge --no-ff --no-edit "upstream/${UPSTREAM_REF}" -m "chore: sync upstream/${UPSTREAM_REF}@${{ steps.branch.outputs.upstream_sha }}"
+          MERGE_STATUS=$?
+          if [ ${MERGE_STATUS} -eq 0 ]; then
+            echo "Clean merge."
+            echo "had_conflicts=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Conflicts detected. Capturing list."
+            CONFLICT_FILES=$(git diff --name-only --diff-filter=U)
+            {
+              echo 'conflict_files<<EOF'
+              echo "${CONFLICT_FILES}"
+              echo 'EOF'
+            } >> "$GITHUB_OUTPUT"
+            echo "had_conflicts=true" >> "$GITHUB_OUTPUT"
+            # Stage conflict markers as-is so reviewer sees them in PR
+            git add -A
+            git commit --no-verify -m "chore(sync): upstream/${UPSTREAM_REF}@${{ steps.branch.outputs.upstream_sha }} (CONFLICTS — manual resolve required)"
+          fi
+          set -e
+
+      - name: Strip build artifacts (dist/, bridge/) before push
+        if: steps.detect.outputs.should_sync == 'true' && steps.branchcheck.outputs.branch_exists == 'false'
+        run: |
+          set -euo pipefail
+          # CONTRIBUTING rule: never commit dist/ or bridge/. If upstream included them, strip.
+          if git ls-files --error-unmatch dist >/dev/null 2>&1 || git ls-files --error-unmatch bridge >/dev/null 2>&1; then
+            git rm -r --cached --ignore-unmatch dist bridge || true
+            git commit --no-verify -m "chore(sync): strip dist/ and bridge/ build artifacts" || echo "Nothing to strip."
+          fi
+
+      - name: Push sync branch
+        if: steps.detect.outputs.should_sync == 'true' && steps.branchcheck.outputs.branch_exists == 'false'
+        run: |
+          git push --set-upstream origin "${{ steps.branch.outputs.branch }}"
+
+      - name: Open pull request
+        if: steps.detect.outputs.should_sync == 'true' && steps.branchcheck.outputs.branch_exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          BRANCH="${{ steps.branch.outputs.branch }}"
+          UPSTREAM_SHA="${{ steps.branch.outputs.upstream_sha }}"
+          BEHIND="${{ steps.detect.outputs.behind_count }}"
+          HAD_CONFLICTS="${{ steps.merge.outputs.had_conflicts }}"
+
+          if [ "${HAD_CONFLICTS}" = "true" ]; then
+            TITLE="chore(sync): upstream/${UPSTREAM_REF}@${UPSTREAM_SHA} — CONFLICTS need manual resolve"
+            LABELS="upstream-sync,needs-manual-resolve"
+            CONFLICTS="${{ steps.merge.outputs.conflict_files }}"
+            BODY=$(cat <<EOF
+          Automated upstream sync from \`${UPSTREAM_REPO}/${UPSTREAM_REF}\` (${BEHIND} commits behind).
+
+          **Status:** :warning: Conflicts detected. The branch contains conflict markers that require manual resolution.
+
+          **Conflict files:**
+          \`\`\`
+          ${CONFLICTS}
+          \`\`\`
+
+          **Common conflict zones to expect (Phase 1/2/3 customizations):**
+          - \`agents/{brand-steward,accessibility-auditor,performance-guardian,copywriter,product-strategist,ux-architect,ux-researcher,designer}.md\` — keep our additions
+          - \`src/agents/definitions.ts\` — keep both upstream's new agents AND our 7; sum counts
+          - \`src/shared/types.ts\` — KNOWN_AGENT_NAMES, CANONICAL_TEAM_ROLES — keep both
+          - \`src/config/loader.ts\` — buildDefaultConfig, generateConfigSchema — keep both
+          - \`src/team/stage-router.ts\` and its test — keep both
+          - \`src/__tests__/agent-registry.test.ts\`, \`cleanup-validation.test.ts\` — sum the counts
+          - \`CLAUDE.md\` agent_catalog line — keep our additions
+          - \`.claude-plugin/marketplace.json\` and \`plugin.json\` — keep our identity (Yoshii-the-dev / egorkitov30@gmail.com)
+          - \`scripts/constitution-guard.mjs\` and its hooks.json registration — preserve
+
+          **Resolution checklist:**
+          - [ ] Resolve every conflicted file
+          - [ ] Run \`npx tsc --noEmit\` — must be clean
+          - [ ] Run \`npm test\` — agent count tests must reflect summed total
+          - [ ] Confirm \`agents/\` still has our 7 custom agents
+          - [ ] Confirm constitution-guard hook still registered in \`hooks/hooks.json\`
+          - [ ] No \`dist/\` or \`bridge/\` files staged
+
+          See \`.omc/handoffs/phase{2,3}-verify.md\` for the customization context.
+          EOF
+            )
+          else
+            TITLE="chore(sync): upstream/${UPSTREAM_REF}@${UPSTREAM_SHA}"
+            LABELS="upstream-sync"
+            BODY=$(cat <<EOF
+          Automated upstream sync from \`${UPSTREAM_REPO}/${UPSTREAM_REF}\` (${BEHIND} commits behind).
+
+          **Status:** :white_check_mark: Clean merge — no conflicts.
+
+          **Suggested verification before merging:**
+          - [ ] Review the upstream changelog/commit messages for breaking changes
+          - [ ] Run \`npm test\` locally — confirm our agent count tests still pass
+          - [ ] Confirm our 7 custom agents (\`brand-steward\`, \`accessibility-auditor\`, \`performance-guardian\`, \`copywriter\`, \`product-strategist\`, \`ux-architect\`, \`ux-researcher\`) still exist
+          - [ ] Confirm constitution-guard hook still registered in \`hooks/hooks.json\`
+          EOF
+            )
+          fi
+
+          # Create labels if they don't exist (best-effort)
+          gh label create upstream-sync --color BFDADC --description "Automated upstream sync PR" 2>/dev/null || true
+          gh label create needs-manual-resolve --color D93F0B --description "Merge conflicts require human attention" 2>/dev/null || true
+
+          gh pr create \
+            --base "${BASE_BRANCH}" \
+            --head "${BRANCH}" \
+            --title "${TITLE}" \
+            --body "${BODY}" \
+            --label "${LABELS}"
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Upstream sync summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Upstream: \`${UPSTREAM_REPO}/${UPSTREAM_REF}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Base branch: \`${BASE_BRANCH}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Behind by: ${{ steps.detect.outputs.behind_count || '0' }} commits" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.detect.outputs.should_sync }}" = "true" ]; then
+            echo "- Sync branch: \`${{ steps.branch.outputs.branch }}\`" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Conflicts: ${{ steps.merge.outputs.had_conflicts || 'n/a' }}" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- No new upstream commits — no PR opened." >> "$GITHUB_STEP_SUMMARY"
+          fi

@@ -25,7 +25,7 @@ describe('Cleanup Validation', () => {
     expect('DEPRECATED_KEYWORD_PATTERNS' in keywordModule).toBe(false);
   });
 
-  it('PluginConfig.agents matches 19-agent registry + omc', async () => {
+  it('PluginConfig.agents matches 26-agent registry + omc', async () => {
     const { DEFAULT_CONFIG } = await import('../config/loader.js');
     const agentKeys = Object.keys(DEFAULT_CONFIG.agents || {});
     expect(agentKeys).toContain('omc');
@@ -46,10 +46,10 @@ describe('Cleanup Validation', () => {
     expect(agentKeys).not.toContain('buildFixer');
   });
 
-  it('agent registry has 19 agents', async () => {
+  it('agent registry has 26 agents', async () => {
     const { getAgentDefinitions } = await import('../agents/definitions.js');
     const defs = getAgentDefinitions();
-    expect(Object.keys(defs)).toHaveLength(19);
+    expect(Object.keys(defs)).toHaveLength(26);
     expect(defs).toHaveProperty('tracer');
   });
 });

@@ -56,6 +56,17 @@ export {
   codeSimplifierAgent
 } from './definitions.js';
 
+// Product Quality agents
+export {
+  brandStewardAgent,
+  accessibilityAuditorAgent,
+  performanceGuardianAgent,
+  copywriterAgent,
+  productStrategistAgent,
+  uxArchitectAgent,
+  uxResearcherAgent
+} from './definitions.js';
+
 // Core exports (getAgentDefinitions and omcSystemPrompt)
 export {
   getAgentDefinitions,

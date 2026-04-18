@@ -64,6 +64,13 @@ export function buildDefaultConfig(): PluginConfig {
       codeSimplifier: { model: defaultTierModels.HIGH },
       critic: { model: defaultTierModels.HIGH },
       documentSpecialist: { model: defaultTierModels.MEDIUM },
+      brandSteward: { model: defaultTierModels.HIGH },
+      accessibilityAuditor: { model: defaultTierModels.MEDIUM },
+      performanceGuardian: { model: defaultTierModels.MEDIUM },
+      copywriter: { model: defaultTierModels.MEDIUM },
+      productStrategist: { model: defaultTierModels.MEDIUM },
+      uxArchitect: { model: defaultTierModels.MEDIUM },
+      uxResearcher: { model: defaultTierModels.MEDIUM },
     },
     features: {
       parallelExecution: true,
@@ -830,6 +837,41 @@ export function generateConfigSchema(): object {
           documentSpecialist: {
             type: "object",
             properties: { model: { type: "string" } },
+          },
+          brandSteward: {
+            type: "object",
+            properties: { model: { type: "string" } },
+            additionalProperties: false,
+          },
+          accessibilityAuditor: {
+            type: "object",
+            properties: { model: { type: "string" } },
+            additionalProperties: false,
+          },
+          performanceGuardian: {
+            type: "object",
+            properties: { model: { type: "string" } },
+            additionalProperties: false,
+          },
+          copywriter: {
+            type: "object",
+            properties: { model: { type: "string" } },
+            additionalProperties: false,
+          },
+          productStrategist: {
+            type: "object",
+            properties: { model: { type: "string" } },
+            additionalProperties: false,
+          },
+          uxArchitect: {
+            type: "object",
+            properties: { model: { type: "string" } },
+            additionalProperties: false,
+          },
+          uxResearcher: {
+            type: "object",
+            properties: { model: { type: "string" } },
+            additionalProperties: false,
           },
         },
       },

@@ -24,6 +24,13 @@ const EXPECTED_DEFAULTS: Record<CanonicalTeamRole, { model: string; agent: strin
   'code-simplifier': { model: CLAUDE_FAMILY_DEFAULTS.OPUS, agent: 'codeSimplifier' },
   explore: { model: CLAUDE_FAMILY_DEFAULTS.HAIKU, agent: 'explore' },
   'document-specialist': { model: CLAUDE_FAMILY_DEFAULTS.SONNET, agent: 'documentSpecialist' },
+  'accessibility-auditor': { model: CLAUDE_FAMILY_DEFAULTS.SONNET, agent: 'accessibilityAuditor' },
+  'brand-steward': { model: CLAUDE_FAMILY_DEFAULTS.OPUS, agent: 'brandSteward' },
+  'performance-guardian': { model: CLAUDE_FAMILY_DEFAULTS.SONNET, agent: 'performanceGuardian' },
+  copywriter: { model: CLAUDE_FAMILY_DEFAULTS.SONNET, agent: 'copywriter' },
+  'product-strategist': { model: CLAUDE_FAMILY_DEFAULTS.SONNET, agent: 'productStrategist' },
+  'ux-architect': { model: CLAUDE_FAMILY_DEFAULTS.SONNET, agent: 'uxArchitect' },
+  'ux-researcher': { model: CLAUDE_FAMILY_DEFAULTS.SONNET, agent: 'uxResearcher' },
 };
 
 describe('stage-router resolveRoleAssignment', () => {

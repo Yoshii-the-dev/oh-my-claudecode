@@ -39,6 +39,13 @@ export interface PluginConfig {
     codeSimplifier?: { model?: string };
     critic?: { model?: string };
     documentSpecialist?: { model?: string };
+    accessibilityAuditor?: { model?: string };
+    brandSteward?: { model?: string };
+    copywriter?: { model?: string };
+    performanceGuardian?: { model?: string };
+    productStrategist?: { model?: string };
+    uxArchitect?: { model?: string };
+    uxResearcher?: { model?: string };
   };
 
   // Feature toggles
@@ -409,6 +416,13 @@ export const CANONICAL_TEAM_ROLES = [
   'code-simplifier',
   'explore',
   'document-specialist',
+  'accessibility-auditor',
+  'brand-steward',
+  'copywriter',
+  'performance-guardian',
+  'product-strategist',
+  'ux-architect',
+  'ux-researcher',
 ] as const;
 
 export type CanonicalTeamRole = typeof CANONICAL_TEAM_ROLES[number];
@@ -441,6 +455,13 @@ export const KNOWN_AGENT_NAMES = [
   'codeSimplifier',
   'critic',
   'documentSpecialist',
+  'accessibilityAuditor',
+  'brandSteward',
+  'copywriter',
+  'performanceGuardian',
+  'productStrategist',
+  'uxArchitect',
+  'uxResearcher',
 ] as const;
 
 export type KnownAgentName = typeof KNOWN_AGENT_NAMES[number];

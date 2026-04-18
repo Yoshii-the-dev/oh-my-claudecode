@@ -44,6 +44,13 @@ const ROLE_TO_AGENT: Record<CanonicalTeamRole, KnownAgentName> = {
   'code-simplifier': 'codeSimplifier',
   explore: 'explore',
   'document-specialist': 'documentSpecialist',
+  'accessibility-auditor': 'accessibilityAuditor',
+  'brand-steward': 'brandSteward',
+  'performance-guardian': 'performanceGuardian',
+  copywriter: 'copywriter',
+  'product-strategist': 'productStrategist',
+  'ux-architect': 'uxArchitect',
+  'ux-researcher': 'uxResearcher',
 };
 
 /** Default model tier per canonical role (mirrors buildDefaultConfig().agents tiers). */
@@ -63,6 +70,13 @@ const ROLE_DEFAULT_TIER: Record<CanonicalTeamRole, TeamRoleTier> = {
   'code-simplifier': 'HIGH',
   explore: 'LOW',
   'document-specialist': 'MEDIUM',
+  'accessibility-auditor': 'MEDIUM',
+  'brand-steward': 'HIGH',
+  'performance-guardian': 'MEDIUM',
+  copywriter: 'MEDIUM',
+  'product-strategist': 'MEDIUM',
+  'ux-architect': 'MEDIUM',
+  'ux-researcher': 'MEDIUM',
 };
 
 const TIER_SET: ReadonlySet<string> = new Set<TeamRoleTier>(['HIGH', 'MEDIUM', 'LOW']);
