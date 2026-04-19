@@ -42,8 +42,8 @@ Code Intel: LSP (`lsp_hover`, `lsp_goto_definition`, `lsp_find_references`, `lsp
 <skills>
 Invoke via `/oh-my-claudecode:<name>`. Trigger patterns auto-detect keywords.
 
-Workflow: `autopilot`, `ralph`, `ultrawork`, `team`, `ccg`, `ultraqa`, `omc-plan`, `ralplan`, `sciomc`, `external-context`, `deepinit`, `deep-interview`, `ai-slop-cleaner`, `self-improve`, `product-pipeline`
-Keyword triggers: "autopilot"→autopilot, "ralph"→ralph, "ulw"→ultrawork, "ccg"→ccg, "ralplan"→ralplan, "deep interview"→deep-interview, "deslop"/"anti-slop"/cleanup+slop-smell→ai-slop-cleaner, "deep-analyze"→analysis mode, "tdd"→TDD mode, "deepsearch"→codebase search, "ultrathink"→deep reasoning, "cancelomc"→cancel, "product-pipeline"/"build feature"/"ship feature"→product-pipeline. Team orchestration is explicit via `/team`.
+Workflow: `autopilot`, `ralph`, `ultrawork`, `team`, `ccg`, `ultraqa`, `omc-plan`, `ralplan`, `sciomc`, `external-context`, `deepinit`, `deep-interview`, `ai-slop-cleaner`, `self-improve`, `product-pipeline`, `stack-provision`
+Keyword triggers: "autopilot"→autopilot, "ralph"→ralph, "ulw"→ultrawork, "ccg"→ccg, "ralplan"→ralplan, "deep interview"→deep-interview, "deslop"/"anti-slop"/cleanup+slop-smell→ai-slop-cleaner, "deep-analyze"→analysis mode, "tdd"→TDD mode, "deepsearch"→codebase search, "ultrathink"→deep reasoning, "cancelomc"→cancel, "product-pipeline"/"build feature"/"ship feature"→product-pipeline, "stack-provision"/"provision skills"/"install stack skills"→stack-provision. Team orchestration is explicit via `/team`.
 Utilities: `ask-codex`, `ask-gemini`, `cancel`, `note`, `learner`, `omc-setup`, `mcp-setup`, `hud`, `omc-doctor`, `omc-help`, `trace`, `release`, `project-session-manager`, `skill`, `writer-memory`, `ralph-init`, `configure-notifications`, `learn-about-omc` (`trace` is the evidence-driven tracing lane)
 Per-role `/team` routing: configure provider/model per canonical role (codex critic, gemini reviewer, etc.) in `.claude/omc.jsonc` under `team.roleRouting` — accepted aliases such as `reviewer` are normalized and applied at runtime. See `skills/team/SKILL.md#per-role-provider--model-routing`.
 </skills>
@@ -52,6 +52,11 @@ Per-role `/team` routing: configure provider/model per canonical role (codex cri
 Stages: `team-plan` → `team-prd` → `team-exec` → `team-verify` → `team-fix` (loop).
 Fix loop bounded by max attempts. `team ralph` links both modes.
 </team_pipeline>
+
+<stack_derivation_pipeline>
+From discovery to installed skill set: `ideate` → `ralplan` (stack ADR → `.omc/decisions/`) → `stack-provision` (per-tech skill discovery + human-gated install → `~/.claude/skills/omc-learned/` + `.omc/provisioned/`) → `product-pipeline` (feature implementation on the provisioned stack).
+`stack-provision` reads the ADR, discovers candidates across skills.sh → plugin marketplace → whitelisted GitHub → generated drafts (in that priority order), enforces a mandatory human review gate, and writes a provenance manifest for audit and rollback.
+</stack_derivation_pipeline>
 
 <verification>
 Verify before claiming completion. Size appropriately: small→haiku, standard→sonnet, large/security→opus.
