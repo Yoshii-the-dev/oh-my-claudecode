@@ -221,6 +221,22 @@ export const uxResearcherAgent: AgentConfig = {
   defaultModel: 'sonnet'
 };
 
+export const competitorScoutAgent: AgentConfig = {
+  name: 'competitor-scout',
+  description: 'Competitive intelligence scout with structural recency bias — produces evidence-cited dossiers with Disruption/7-Powers/Wardley classification (sonnet).',
+  prompt: loadAgentPrompt('competitor-scout'),
+  model: 'sonnet',
+  defaultModel: 'sonnet'
+};
+
+export const ideateAgent: AgentConfig = {
+  name: 'ideate',
+  description: 'Divergent idea generator grounded in JTBD/ODI, TRIZ, Blue Ocean, SCAMPER — produces scored, falsifiable hypotheses (opus).',
+  prompt: loadAgentPrompt('ideate'),
+  model: 'opus',
+  defaultModel: 'opus'
+};
+
 // ============================================================
 // DEPRECATED ALIASES (Backward Compatibility)
 // ============================================================
@@ -342,6 +358,8 @@ export function getAgentDefinitions(options?: {
     'product-strategist': productStrategistAgent,
     'ux-architect': uxArchitectAgent,
     'ux-researcher': uxResearcherAgent,
+    'competitor-scout': competitorScoutAgent,
+    ideate: ideateAgent,
 
     // ============================================================
     // BACKWARD COMPATIBILITY (Deprecated)
