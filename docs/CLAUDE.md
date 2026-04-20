@@ -1,5 +1,5 @@
 <!-- OMC:START -->
-<!-- OMC:VERSION:4.17.2 -->
+<!-- OMC:VERSION:4.18.0 -->
 
 # oh-my-claudecode - Intelligent Multi-Agent Orchestration
 
