@@ -48,7 +48,8 @@ level: 4
     Read in parallel (no output to user):
     - `.omc/constitution.md` if exists — mission, anti-goals, scope boundaries, principles. These constrain what's plannable.
     - `.omc/research/**/*.md` if exists (latest synthesis artifacts) — known JTBD, pain patterns, validated user context.
-    - `.omc/ideate/**/*.md` if exists — shortlisted ideas, problem-space decisions, vision material.
+    - `.omc/ideas/**/*.md` if exists — output of `/ideate`: Problem Contract, shortlisted hypotheses, experiment cards. Use for candidate objectives and Anti-goal Watchlist.
+    - `.omc/specs/**/*.md` if exists — output of `/deep-interview`: crystallized problem specs. Use for problem-statement framing.
     - `.omc/plans/**/*.md` if exists — recent plans may contain patterns, guardrails, or lessons carried forward.
     - `.omc/brand/**/*.md` if exists — brand system constraints on UX/tone (affects scope of what's plannable).
 

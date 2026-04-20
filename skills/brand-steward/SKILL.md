@@ -1,13 +1,13 @@
 ---
 name: brand-steward
-description: Slash-wrapper for the brand-steward agent — invokes research-driven SYNTHESIS of brand identity (mission, target user, anti-goals, tone, scope). Reads .omc/ideate/ + .omc/competitors/ + .omc/research/ and presents validated hypotheses for founder to judge. Hard-stop gate refuses to proceed without required research inputs. Opt-in depth mode via --deep adds value ladders, productive tensions, archetypal seed, semiotic codes, antagonism map as additional hypothesis categories. Founder is judge + source of vision/taste, not source of answers
+description: Slash-wrapper for the brand-steward agent — invokes research-driven SYNTHESIS of brand identity (mission, target user, anti-goals, tone, scope). Reads .omc/ideas/ + .omc/competitors/ + .omc/research/ and presents validated hypotheses for founder to judge. Hard-stop gate refuses to proceed without required research inputs. Opt-in depth mode via --deep adds value ladders, productive tensions, archetypal seed, semiotic codes, antagonism map as additional hypothesis categories. Founder is judge + source of vision/taste, not source of answers
 argument-hint: "[--session1 | --session2 | --refine] [--deep | --philosophy | --depth | --shallow]"
 level: 4
 ---
 
 # Brand Steward Skill
 
-Minimal slash-wrapper for the `brand-steward` agent. The wrapper enforces the research-completeness gate (hard-stop), detects depth-mode flags, and hands off to the agent via direct Task invocation with a synthesis-first directive. All brand-identity content is SYNTHESIZED from research / competitors / ideate data — the founder validates hypotheses, does not generate them from scratch.
+Minimal slash-wrapper for the `brand-steward` agent. The wrapper enforces the research-completeness gate (hard-stop), detects depth-mode flags, and hands off to the agent via direct Task invocation with a synthesis-first directive. All brand-identity content is SYNTHESIZED from research / competitors / ideation or spec data — the founder validates hypotheses, does not generate them from scratch.
 
 ## Usage
 
@@ -29,14 +29,14 @@ Single command that invokes `brand-steward` agent to do research-driven synthesi
 </Purpose>
 
 <Use_When>
-- Founding phase, research already collected — `.omc/ideate/`, `.omc/competitors/` (≥3 dossiers), `.omc/research/` (≥1 synthesis artifact) are in place and you want the first constitution.
+- Founding phase, research already collected — at least one vision source (`.omc/ideas/` from `/ideate` OR `.omc/specs/` from `/deep-interview`), `.omc/competitors/` (≥3 dossiers), `.omc/research/` (≥1 synthesis artifact) are in place and you want the first constitution.
 - Refinement phase (session 2) — after 10–14 days of accumulated product data, re-synthesize and present deltas against existing constitution.
 - Material market shift — new competitor dossier, research wave, regulatory change — that may invalidate existing anti-goals / positioning.
 - Product strategy pivot — when ideate has new vision material and prior constitution is now stale.
 </Use_When>
 
 <Do_Not_Use_When>
-- Research inputs are missing or thin. The skill will hard-stop and recommend running `/ideate`, `/competitor-scout`, `/ux-researcher` first. Do NOT attempt to "just brainstorm" constitution via this skill — it is explicitly designed to refuse that mode.
+- Research inputs are missing or thin. The skill will hard-stop and recommend running `/deep-interview` or `/ideate` (one vision source required), `/competitor-scout`, `/ux-researcher` first. Do NOT attempt to "just brainstorm" constitution via this skill — it is explicitly designed to refuse that mode.
 - You need archetype / visual system / grammar — use `/brand-architect` (reads this skill's output; does full 12-archetype analysis).
 - You need specific copy polish — use copywriter agent directly.
 - Single-feature evaluation — use `/product-strategist`.
@@ -47,14 +47,15 @@ Single command that invokes `brand-steward` agent to do research-driven synthesi
 ## Phase 0 — Research-Completeness Gate + Session + Depth Detection
 
 Read silently (no output to user):
-1. `.omc/ideate/` — exists? count of non-empty `.md` files?
-2. `.omc/competitors/` — exists? count of dossier files?
-3. `.omc/research/` — exists? count of synthesis artifacts (persona, pain-point report, JTBD analysis)?
-4. `.omc/constitution.md` — exists? note `status` field + existing `depth_mode` frontmatter if present.
-5. `.omc/brand/` — exists? (informs alignment if brand-architect already ran)
+1. `.omc/ideas/` — exists? count of non-empty `.md` files? (output of `/ideate` pipeline)
+2. `.omc/specs/` — exists? count of non-empty `.md` files? (output of `/deep-interview`)
+3. `.omc/competitors/` — exists? count of dossier files?
+4. `.omc/research/` — exists? count of synthesis artifacts (persona, pain-point report, JTBD analysis)?
+5. `.omc/constitution.md` — exists? note `status` field + existing `depth_mode` frontmatter if present.
+6. `.omc/brand/` — exists? (informs alignment if brand-architect already ran)
 
 **Research-gate (hard-stop enforcement):**
-- If `.omc/ideate/` missing OR empty → FAIL GATE
+- If BOTH `.omc/ideas/` AND `.omc/specs/` are missing OR empty → FAIL GATE (need at least ONE vision source: `/ideate` output or `/deep-interview` output)
 - If `.omc/competitors/` missing OR has fewer than 3 dossiers → FAIL GATE
 - If `.omc/research/` missing OR empty → FAIL GATE
 
@@ -87,7 +88,9 @@ Session mode: [1 | 2 | refine]
 Depth mode: [true | false | continue]
 Gate status: [passed | failed-with-<details>]
 Research sources present:
-  - ideate_files: <N>
+  - ideas_files: <N>       # from /ideate output at .omc/ideas/
+  - specs_files: <N>       # from /deep-interview output at .omc/specs/
+  - vision_source_used: <"ideas" | "specs" | "both" | "none">
   - competitor_dossiers: <N>
   - research_artifacts: <N>
 Prior constitution: [absent | draft | partial | complete]
@@ -126,7 +129,7 @@ Depth flags (optional, orthogonal to session flags — compose freely):
 
 Depth Mode adds 5 additional hypothesis categories to the synthesis: Value Ladders (feature → belief chains), Productive Tensions (held contradictions), Aspirational Archetype Seed (feeds brand-architect), Semiotic Stance (residual/dominant/emergent triplet), Antagonism Map (per-competitor deliberate-not). All still SYNTHESIZED from data, not interviewed. Method is identical; breadth of output is larger.
 
-No positional args. The agent reads context from `.omc/ideate/`, `.omc/competitors/`, `.omc/research/`, `.omc/constitution.md`, `.omc/brand/` in its Phase 1.
+No positional args. The agent reads context from `.omc/ideas/`, `.omc/competitors/`, `.omc/research/`, `.omc/constitution.md`, `.omc/brand/` in its Phase 1.
 </Input_Contract>
 
 <Output>
@@ -152,10 +155,12 @@ No positional args. The agent reads context from `.omc/ideate/`, `.omc/competito
 <Integration_Notes>
 - Delegates to `oh-my-claudecode:brand-steward` agent via direct Task invocation.
 - **Dependency ordering (enforced by hard-stop gate):**
-  1. `/ideate` — founder vision dump (produces `.omc/ideate/`)
-  2. `/competitor-scout --auto` — scout top 5–10 competitors (produces `.omc/competitors/` dossiers)
+  1a. `/deep-interview "<vague problem>"` — if the problem is not yet crystallized, use Socratic dialog to formulate (produces `.omc/specs/`). Pick this path when you're not sure what the actual problem is.
+  1b. `/ideate "<problem statement>"` — if the problem is stated clearly and you want divergent exploration + scored hypotheses + red-team (produces `.omc/ideas/` with Problem Contract, shortlist, Anti-goal Watchlist). Pick this path when you want strategic exploration.
+  (at least ONE of 1a/1b required — both acceptable)
+  2. `/competitor-scout --auto` — scout top 5–10 competitors (produces `.omc/competitors/` dossiers, ≥3 required)
   3. `/ux-researcher` — synthesize user research from interviews / proxies (produces `.omc/research/`)
-  4. `/brand-steward [--deep]` — synthesize constitution from all three (this skill)
+  4. `/brand-steward [--deep]` — synthesize constitution from the above (this skill)
   5. `/brand-architect` — full brand system (archetype + grammar); reads constitution
   6. (2 weeks of product usage / additional research)
   7. `/brand-steward --session2 [--deep]` — refinement with deltas

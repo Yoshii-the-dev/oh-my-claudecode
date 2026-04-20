@@ -38,7 +38,8 @@ disallowedTools: Write, Edit
     Read in parallel (no output to user):
     - `.omc/constitution.md` if exists — mission, target user, anti-goals, scope boundaries. These ALREADY define much of what's typically asked in requirement analysis; do not ask for them again.
     - `.omc/research/**/*.md` — user pain points, JTBD, personas, known edge cases. If research already documents an edge case, cite it instead of "identifying" it.
-    - `.omc/ideate/**/*.md` — prior vision work, shortlisted ideas, problem-space decisions. Use these to inform scope boundaries.
+    - `.omc/ideas/**/*.md` — output of `/ideate`: Problem Contract, shortlist, experiment cards, Anti-goal Watchlist. Use to understand which ideas have been scored/validated and which assumptions need testing.
+    - `.omc/specs/**/*.md` — output of `/deep-interview`: crystallized problem specs. Use for problem-statement framing.
     - `.omc/competitors/**/*.md` if exists — known category assumptions, edge-case patterns competitors have surfaced.
     - `.omc/plans/**/*.md` if exists — prior plans may have surfaced gaps already.
 
