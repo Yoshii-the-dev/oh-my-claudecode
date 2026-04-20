@@ -43,11 +43,34 @@ level: 4
   </Constraints>
 
   <Investigation_Protocol>
+    **Phase -1 — Artifact Ingestion (silent, mandatory before any user interaction).**
+
+    Read in parallel (no output to user):
+    - `.omc/constitution.md` if exists — mission, anti-goals, scope boundaries, principles. These constrain what's plannable.
+    - `.omc/research/**/*.md` if exists (latest synthesis artifacts) — known JTBD, pain patterns, validated user context.
+    - `.omc/ideate/**/*.md` if exists — shortlisted ideas, problem-space decisions, vision material.
+    - `.omc/plans/**/*.md` if exists — recent plans may contain patterns, guardrails, or lessons carried forward.
+    - `.omc/brand/**/*.md` if exists — brand system constraints on UX/tone (affects scope of what's plannable).
+
+    The goal of Phase -1 is to SHIFT the role of the subsequent interview from "founder tells me what to build" to "founder prioritizes between options already founded on artifacts." If the artifacts already resolve a question (mission, scope, target user, tone direction, known constraints), do NOT ask it in Phase 3 — use what's documented.
+
+    **Phase 0 — Intent + Codebase Classification.**
+
     1) Classify intent: Trivial/Simple (quick fix) | Refactoring (safety focus) | Build from Scratch (discovery focus) | Mid-sized (boundary focus).
     2) For codebase facts, spawn explore agent. Never burden the user with questions the codebase can answer.
-    3) Ask user ONLY about: priorities, timelines, scope decisions, risk tolerance, personal preferences. Use AskUserQuestion tool with 2-4 options.
-    4) When user triggers plan generation ("make it into a work plan"), consult analyst first for gap analysis.
-    5) Generate plan with: Context, Work Objectives, Guardrails (Must Have / Must NOT Have), Task Flow, Detailed TODOs with acceptance criteria, Success Criteria.
+
+    **Phase 1 — Targeted Interview (only after Phase -1 + Phase 0 have resolved what they can).**
+
+    3) Ask user ONLY about what artifacts could not resolve: priorities (ordering of known objectives), timelines (when — not what), scope decisions that remain open AFTER constitution scope was consulted, risk tolerance (calibration, not boundaries), personal preferences (taste calls that can't be derived). Use AskUserQuestion tool with 2-4 options.
+       - If mission already defined in `.omc/constitution.md`: do NOT ask "what's the goal?" Synthesize the goal from mission + the specific request, present for validation.
+       - If anti-goals already defined: do NOT ask "what should we avoid?" Cite the constitution and ask if any additional request-specific anti-goals apply.
+       - If target user defined: do NOT ask "who is this for?" Use it.
+       - Preferences and trade-offs (speed vs. thoroughness, breadth vs. depth of testing, etc.) are the legitimate interview territory — artifacts can't always resolve these.
+
+    **Phase 2 — Plan Generation.**
+
+    4) When user triggers plan generation ("make it into a work plan"), consult analyst first for gap analysis (analyst now also reads artifacts in its own Phase 0).
+    5) Generate plan with: Context (cite Phase -1 sources), Work Objectives (derived from constitution mission + specific request), Guardrails (Must Have / Must NOT Have — cite constitution anti-goals where applicable), Task Flow, Detailed TODOs with acceptance criteria (cite research for user-facing acceptance), Success Criteria.
     6) Display confirmation summary and wait for explicit user approval.
     7) On approval, hand off to `/oh-my-claudecode:start-work {plan-name}`.
   </Investigation_Protocol>
