@@ -1,17 +1,17 @@
-# oh-my-claudecode v4.18.1: Bug Fixes
+# oh-my-claudecode v4.19.0: add --pre-mvp mode
 
 ## Release Notes
 
-Release with **1 bug fix** across **0 merged PRs**.
+Release with **1 new feature** across **0 merged PRs**.
 
 ### Highlights
 
-- **fix(agents,skills): correct vision-source paths in brand-steward gate**
+- **feat(agents,skills): add --pre-mvp mode to brand-steward**
 
-### Bug Fixes
+### New Features
 
-- **fix(agents,skills): correct vision-source paths in brand-steward gate**
+- **feat(agents,skills): add --pre-mvp mode to brand-steward**
 
 ### Stats
 
-- **0 PRs merged** | **0 new features** | **1 bug fix** | **0 security/hardening improvements** | **0 other changes**
+- **0 PRs merged** | **1 new feature** | **0 bug fixes** | **0 security/hardening improvements** | **0 other changes**
