@@ -1,7 +1,7 @@
 ---
 name: brand-steward
-description: Slash-wrapper for the brand-steward agent — invokes research-driven SYNTHESIS of brand identity (mission, target user, anti-goals, tone, scope). Reads .omc/ideas/ + .omc/competitors/ + .omc/research/ and presents validated hypotheses for founder to judge. Hard-stop gate refuses to proceed without required research inputs. Opt-in depth mode via --deep adds value ladders, productive tensions, archetypal seed, semiotic codes, antagonism map as additional hypothesis categories. Founder is judge + source of vision/taste, not source of answers
-argument-hint: "[--session1 | --session2 | --refine] [--deep | --philosophy | --depth | --shallow]"
+description: Slash-wrapper for the brand-steward agent — invokes research-driven SYNTHESIS of brand identity (mission, target user, anti-goals, tone, scope). Reads .omc/ideas/ + .omc/competitors/ + .omc/research/ and presents validated hypotheses for founder to judge. Hard-stop gate refuses to proceed without vision source; in post-MVP mode also requires competitors+research; pre-MVP mode (--pre-mvp) accepts missing competitors/research with LOW-confidence markers. Opt-in depth mode via --deep adds value ladders, productive tensions, archetypal seed, semiotic codes, antagonism map as additional hypothesis categories. Founder is judge + source of vision/taste, not source of answers
+argument-hint: "[--session1 | --session2 | --refine] [--pre-mvp | --post-mvp] [--deep | --philosophy | --depth | --shallow]"
 level: 4
 ---
 
@@ -12,27 +12,36 @@ Minimal slash-wrapper for the `brand-steward` agent. The wrapper enforces the re
 ## Usage
 
 ```
-/oh-my-claudecode:brand-steward                      # auto-detect session, standard synthesis
-/brand-steward --session1                            # first pass, standard synthesis
+/oh-my-claudecode:brand-steward                      # post-MVP (default), auto-session, standard synthesis
+/brand-steward --session1                            # first pass, post-MVP, standard synthesis
 /brand-steward --session2                            # refinement pass (delta against prior constitution)
 /brand-steward --refine                              # open-ended refinement
-/brand-steward --deep                                # auto-detect session, depth synthesis (10 hypothesis categories)
+/brand-steward --deep                                # post-MVP, depth synthesis (10 hypothesis categories)
 /brand-steward --session1 --deep                     # first pass with extended hypothesis set
 /brand-steward --session2 --philosophy               # refinement with extended hypothesis set (alias for --deep)
 /brand-steward --session2 --shallow                  # refine depth-mode constitution in standard posture (opt-out)
+/brand-steward --pre-mvp                             # pre-MVP mode: vision source required, competitors/research soft
+/brand-steward --pre-mvp --deep                      # pre-MVP depth synthesis (expect many LOW confidence markers)
+/brand-steward --session1 --pre-mvp                  # explicit pre-MVP first session
+/brand-steward --session2 --post-mvp                 # force post-MVP posture in session 2 (override continuation of prior pre-MVP)
 ```
 
-Session flags and depth flags compose independently. `--deep`, `--philosophy`, and `--depth` are synonyms. Depth mode can also be activated via natural-language triggers in the user's first message ("глубинный режим", "сложная философия", "боюсь поверхностных ответов", "deep mode", "go deep") — agent detects these itself when no flag is present. The wrapper only parses explicit flags; natural-language detection lives in the agent.
+Session flags, phase flags (pre-mvp/post-mvp), and depth flags all compose independently. `--deep`, `--philosophy`, and `--depth` are synonyms. `--premvp` and `--early-stage` are aliases for `--pre-mvp`. Natural-language triggers for both depth mode and pre-MVP mode are recognized in the user's first message by the agent:
+- Pre-MVP keywords: "pre-mvp", "до mvp", "нет mvp", "ещё не начали", "no mvp yet", "haven't built anything", "no users yet", "early stage"
+- Depth keywords: "глубинный режим", "сложная философия", "боюсь поверхностных ответов", "deep mode", "go deep"
+
+The wrapper only parses explicit flags; natural-language detection lives in the agent.
 
 <Purpose>
 Single command that invokes `brand-steward` agent to do research-driven synthesis of product identity. The wrapper is intentionally thin: it enforces the research-gate, detects session + depth modes, and invokes the agent. Everything else — reading data, synthesizing hypotheses, presenting for validation, revising on feedback, capturing vision/taste — happens inside the agent dialog directly with the user. The wrapper produces NO user-facing output except the hard-stop refusal when the research-gate fails.
 </Purpose>
 
 <Use_When>
-- Founding phase, research already collected — at least one vision source (`.omc/ideas/` from `/ideate` OR `.omc/specs/` from `/deep-interview`), `.omc/competitors/` (≥3 dossiers), `.omc/research/` (≥1 synthesis artifact) are in place and you want the first constitution.
-- Refinement phase (session 2) — after 10–14 days of accumulated product data, re-synthesize and present deltas against existing constitution.
-- Material market shift — new competitor dossier, research wave, regulatory change — that may invalidate existing anti-goals / positioning.
-- Product strategy pivot — when ideate has new vision material and prior constitution is now stale.
+- **Post-MVP founding** (default) — research already collected: vision source (`.omc/ideas/` OR `.omc/specs/`), `.omc/competitors/` (≥3 dossiers), `.omc/research/` (≥1 synthesis artifact) are in place, you want the first constitution.
+- **Pre-MVP founding** (`--pre-mvp`) — product not yet built, no users to research, competitor scouting may be partial. You want a hypothesis-grade constitution to direct the first build and guide which research to do first. Vision source still required; constitution will be capped at `status: partial` until session 2 with research promotes it to `post-mvp` and potentially `complete`.
+- **Refinement phase** (session 2) — after 10–14 days of accumulated product data (or after pre-MVP → post-MVP transition when research wave completes), re-synthesize and present deltas against existing constitution.
+- **Material market shift** — new competitor dossier, research wave, regulatory change — that may invalidate existing anti-goals / positioning.
+- **Product strategy pivot** — when ideate or specs have new vision material and prior constitution is now stale.
 </Use_When>
 
 <Do_Not_Use_When>
@@ -44,20 +53,36 @@ Single command that invokes `brand-steward` agent to do research-driven synthesi
 
 <Protocol>
 
-## Phase 0 — Research-Completeness Gate + Session + Depth Detection
+## Phase 0 — Mode Detection + Research-Completeness Gate + Session + Depth Detection
 
 Read silently (no output to user):
 1. `.omc/ideas/` — exists? count of non-empty `.md` files? (output of `/ideate` pipeline)
 2. `.omc/specs/` — exists? count of non-empty `.md` files? (output of `/deep-interview`)
 3. `.omc/competitors/` — exists? count of dossier files?
 4. `.omc/research/` — exists? count of synthesis artifacts (persona, pain-point report, JTBD analysis)?
-5. `.omc/constitution.md` — exists? note `status` field + existing `depth_mode` frontmatter if present.
+5. `.omc/constitution.md` — exists? note `status`, `depth_mode`, `phase` fields if present.
 6. `.omc/brand/` — exists? (informs alignment if brand-architect already ran)
 
-**Research-gate (hard-stop enforcement):**
-- If BOTH `.omc/ideas/` AND `.omc/specs/` are missing OR empty → FAIL GATE (need at least ONE vision source: `/ideate` output or `/deep-interview` output)
+**Phase detection** (from args + context):
+- `--pre-mvp` / `--premvp` / `--early-stage` flag → `phase: pre-mvp`.
+- `--post-mvp` flag → `phase: post-mvp`.
+- Prior constitution has `phase: pre-mvp` AND user did NOT pass `--post-mvp` → continue with `phase: pre-mvp`.
+- Otherwise → `phase: post-mvp` (default).
+
+Natural-language pre-MVP triggers in the user's first message (recognized by the AGENT, not the wrapper): "до mvp", "нет mvp", "ещё не начали", "no mvp yet", etc. The wrapper only parses explicit flags.
+
+**Research-gate (hard-stop enforcement) — branches by phase:**
+
+**Post-MVP mode (default):**
+- If BOTH `.omc/ideas/` AND `.omc/specs/` are missing OR empty → FAIL GATE (need at least ONE vision source)
 - If `.omc/competitors/` missing OR has fewer than 3 dossiers → FAIL GATE
 - If `.omc/research/` missing OR empty → FAIL GATE
+
+**Pre-MVP mode (`--pre-mvp`):**
+- If BOTH `.omc/ideas/` AND `.omc/specs/` are missing OR empty → FAIL GATE (vision source still required)
+- If `.omc/competitors/` missing OR <3 dossiers → NOT a gate fail; pass `degraded_inputs: [competitors_below_minimum]` to agent
+- If `.omc/research/` missing OR empty → NOT a gate fail; pass `degraded_inputs: [research_absent_or_light]` to agent
+- Agent will proceed with synthesis, marking affected sections LOW confidence or CANNOT-SYNTHESIZE (enforced by agent, not wrapper)
 
 **If gate FAILS**, the wrapper does NOT invoke the agent. Instead, the wrapper passes a `gate_failure: <details>` directive to the agent via Task tool so the agent emits its structured refusal (documented in its `<Synthesis_Protocol>` Phase 0). The refusal lists what's missing, why each input is required, and the recommended remediation sequence (`/ideate`, `/competitor-scout`, `/ux-researcher`). Session terminates. No constitution written.
 
@@ -85,8 +110,10 @@ Invoke `oh-my-claudecode:brand-steward` agent via Task tool (NOT as a teammate, 
 
 ```
 Session mode: [1 | 2 | refine]
+Phase: [pre-mvp | post-mvp]
 Depth mode: [true | false | continue]
 Gate status: [passed | failed-with-<details>]
+Degraded inputs: [<list or empty>]  # e.g., ["competitors_below_minimum", "research_absent_or_light"] — only populated in pre-MVP when competitors <3 or research missing
 Research sources present:
   - ideas_files: <N>       # from /ideate output at .omc/ideas/
   - specs_files: <N>       # from /deep-interview output at .omc/specs/
@@ -94,15 +121,21 @@ Research sources present:
   - competitor_dossiers: <N>
   - research_artifacts: <N>
 Prior constitution: [absent | draft | partial | complete]
+Prior constitution phase: [null | pre-mvp | post-mvp]
 Prior brand artifacts: [absent | present]
 
 Instructions:
 - Execute Synthesis_Protocol per agent prompt.
 - If gate passed: proceed Phase 1 (silent synthesis) → Phase 2 (hypothesis presentation) → Phase 3 (revision) → Phase 4 (vision/taste) → Phase 5 (write).
-- If gate failed: emit structured refusal per agent's Phase 0 hard-stop template. Do NOT proceed to Phase 1.
+- If gate failed: emit mode-appropriate refusal (<post-mvp-refusal-template> or <pre-mvp-refusal-template>). Do NOT proceed to Phase 1.
+- In pre-MVP mode with degraded_inputs: synthesize what you can, mark affected sections LOW confidence or CANNOT-SYNTHESIZE with `what_would_raise_confidence` notes. Do NOT fabricate. Cap constitution at `status: partial`. Set `phase: pre-mvp`, `requires_research_wave: true`, `max_status_until_refinement: partial` in frontmatter.
+- If prior constitution was pre-MVP AND now degraded_inputs is empty (research wave completed): explicitly announce "Transitioning pre-MVP → post-MVP" at Phase 2, re-synthesize previously-LOW sections with real data, flip frontmatter.
 - Absolute: no open-ended "what is your mission?" / "who is your user?" / "what are your values?" / "how do you feel about <competitor>?" questions. Every section synthesized from data, presented for founder validation.
-- Only blank-slate questions permitted: Phase 4 (≤ 3 total — personal why, aesthetic compass, 5-year aspiration).
+- Blank-slate questions permitted:
+  - Post-MVP mode: Phase 4, ≤ 3 total (personal why, aesthetic compass, 5-year aspiration).
+  - Pre-MVP mode: Phase 4, ≤ 4 total (above + "name first 10 intended users by role/archetype/channel" as research proxy).
 - 3-revision ceiling in Phase 3. If not converged after 3 rounds, raise research_insufficient flag.
+- Do NOT announce mode activation (depth or pre-mvp) as preamble — founder already opted in via flag/keyword.
 ```
 
 The wrapper produces NO user-facing output between invocation and agent's first message. The agent's first message is EITHER the hard-stop refusal (if gate failed) OR the full Phase 2 hypothesis block (if gate passed).
@@ -121,21 +154,28 @@ Session flags (optional, mutually exclusive):
 - `--session2` — force refinement (agent presents deltas against prior constitution)
 - `--refine` — open-ended refinement
 
-Depth flags (optional, orthogonal to session flags — compose freely):
+Phase flags (optional, orthogonal to session flags):
+- `--pre-mvp` (canonical) / `--premvp` / `--early-stage` (aliases) — explicit opt-in to pre-MVP mode. Relaxes gate: only vision source is hard-required; competitors and research are soft (mark affected sections LOW confidence or CANNOT-SYNTHESIZE). Caps constitution status at `partial`. Adds Q4 research proxy in Phase 4.
+- `--post-mvp` — explicit opt-out from pre-MVP mode; relevant when prior constitution has `phase: pre-mvp` but founder wants to force post-MVP posture (e.g., treating thin inputs as an error rather than expected state).
+- Default: `post-mvp`. Pre-MVP mode does NOT auto-infer — requires explicit flag or natural-language keyword.
+
+Depth flags (optional, orthogonal to session AND phase flags — compose freely):
 - `--deep` — synthesize extended hypothesis set (10 categories instead of 5)
 - `--philosophy` — alias for `--deep`
 - `--depth` — alias for `--deep`
 - `--shallow` — explicit opt-OUT from depth posture when prior constitution has `depth_mode: true`; ignored if no prior depth constitution
 
-Depth Mode adds 5 additional hypothesis categories to the synthesis: Value Ladders (feature → belief chains), Productive Tensions (held contradictions), Aspirational Archetype Seed (feeds brand-architect), Semiotic Stance (residual/dominant/emergent triplet), Antagonism Map (per-competitor deliberate-not). All still SYNTHESIZED from data, not interviewed. Method is identical; breadth of output is larger.
+Depth Mode adds 5 additional hypothesis categories to the synthesis: Value Ladders (feature → belief chains), Productive Tensions (held contradictions), Aspirational Archetype Seed (feeds brand-architect), Semiotic Stance (residual/dominant/emergent triplet), Antagonism Map (per-competitor deliberate-not). All still SYNTHESIZED from data, not interviewed.
 
-No positional args. The agent reads context from `.omc/ideas/`, `.omc/competitors/`, `.omc/research/`, `.omc/constitution.md`, `.omc/brand/` in its Phase 1.
+Pre-MVP Mode relaxes data requirements but does NOT weaken method — synthesis-first discipline holds, sections just get LOW confidence markers instead of being skipped or faked. In pre-MVP, the constitution is explicitly hypothesis-grade (capped at `status: partial`), transitions to evidence-grade on session 2 after research wave.
+
+No positional args. The agent reads context from `.omc/ideas/`, `.omc/specs/`, `.omc/competitors/`, `.omc/research/`, `.omc/constitution.md`, `.omc/brand/` in its Phase 1.
 </Input_Contract>
 
 <Output>
-- `.omc/constitution.md` — written by agent after Phase 3 convergence + Phase 4 vision/taste capture. Contains all validated hypotheses with inline `<!-- source: -->` citations. Frontmatter: `status`, `depth_mode`, `synthesis_method: research-driven`, `sessions`, `research_sources`, `revision_count`, `research_insufficient`.
+- `.omc/constitution.md` — written by agent after Phase 3 convergence + Phase 4 vision/taste capture. Contains all validated hypotheses with inline `<!-- source: -->` citations. Frontmatter: `status`, `phase`, `depth_mode`, `synthesis_method: research-driven`, `sessions`, `research_sources`, `degraded_inputs`, `confidence_summary`, `requires_research_wave`, `max_status_until_refinement`, `revision_count`, `research_insufficient`.
 - Agent's terminal message: ≤ 80 words, file-written + next-step + handoff. No ceremony.
-- **OR** agent's hard-stop refusal message (if Phase 0 gate failed): structured list of missing inputs + remediation sequence. No constitution written.
+- **OR** agent's hard-stop refusal message (if Phase 0 gate failed): structured list of missing inputs + remediation sequence. Mode-appropriate template (post-MVP vs pre-MVP). No constitution written.
 </Output>
 
 <Failure_Modes_To_Avoid>
@@ -150,21 +190,39 @@ No positional args. The agent reads context from `.omc/ideas/`, `.omc/competitor
 - **Duplicating agent-level keyword detection in the wrapper.** The agent scans the user's first message for natural-language depth triggers. The wrapper only handles the explicit flag case. Adding keyword-detection in the wrapper creates two detection layers that can disagree.
 - **Silently dropping `--deep` flag when args also include a session flag.** Flags compose; `--session1 --deep` means "first session with extended hypothesis set." Do not treat them as mutually exclusive.
 - **Converting `--shallow` into a "skip depth output" signal for non-depth constitutions.** `--shallow` is ONLY meaningful when prior constitution has `depth_mode: true`; it's an opt-out from continuing depth posture. Ignored otherwise.
+- **Auto-inferring pre-MVP mode from absence of research.** Pre-MVP is explicit opt-in only. If research is missing and user did NOT pass `--pre-mvp`, the correct behavior is post-MVP hard-stop (which itself recommends --pre-mvp in the refusal). Silent mode-switching creates surprising behavior.
+- **Accepting `--pre-mvp` when `.omc/research/` + `.omc/competitors/` are both populated.** If the project already has full data, `--pre-mvp` is likely a mistake. Agent should flag the contradiction in its first message and ask for confirmation before proceeding in pre-MVP posture — do not silently relax the gate when it would otherwise pass strictly.
+- **Dropping `--pre-mvp` when combined with session flags.** `--session1 --pre-mvp` and `--session2 --pre-mvp` are both valid compositions. Flags compose; do not treat phase flag as mutually exclusive with session flag.
+- **Ignoring pre-MVP → post-MVP transition on session 2.** When prior constitution has `phase: pre-mvp` AND current `.omc/research/` + `.omc/competitors/` now meet post-MVP thresholds, the wrapper must pass this transition signal to the agent ("prior_phase: pre-mvp, current_gate: post-mvp-eligible") so the agent emits the explicit transition announcement in Phase 2.
 </Failure_Modes_To_Avoid>
 
 <Integration_Notes>
 - Delegates to `oh-my-claudecode:brand-steward` agent via direct Task invocation.
-- **Dependency ordering (enforced by hard-stop gate):**
-  1a. `/deep-interview "<vague problem>"` — if the problem is not yet crystallized, use Socratic dialog to formulate (produces `.omc/specs/`). Pick this path when you're not sure what the actual problem is.
-  1b. `/ideate "<problem statement>"` — if the problem is stated clearly and you want divergent exploration + scored hypotheses + red-team (produces `.omc/ideas/` with Problem Contract, shortlist, Anti-goal Watchlist). Pick this path when you want strategic exploration.
-  (at least ONE of 1a/1b required — both acceptable)
-  2. `/competitor-scout --auto` — scout top 5–10 competitors (produces `.omc/competitors/` dossiers, ≥3 required)
-  3. `/ux-researcher` — synthesize user research from interviews / proxies (produces `.omc/research/`)
-  4. `/brand-steward [--deep]` — synthesize constitution from the above (this skill)
+
+**Dependency ordering (post-MVP path — full gate):**
+  1a. `/deep-interview "<vague problem>"` — if the problem is not yet crystallized, use Socratic dialog to formulate (produces `.omc/specs/`).
+  1b. `/ideate "<problem statement>"` — if the problem is stated clearly and you want divergent exploration + scored hypotheses + red-team (produces `.omc/ideas/`).
+  (at least ONE of 1a/1b required)
+  2. `/competitor-scout --auto` — scout top 5–10 competitors (≥3 required — HARD)
+  3. `/ux-researcher` — synthesize user research from interviews / proxies (≥1 required — HARD)
+  4. `/brand-steward [--deep]` — synthesize constitution from above
   5. `/brand-architect` — full brand system (archetype + grammar); reads constitution
-  6. (2 weeks of product usage / additional research)
+  6. (product usage / additional research accumulates)
   7. `/brand-steward --session2 [--deep]` — refinement with deltas
-- Depth mode recommendation: founders in competitive niches (where generic positioning is fatal), or founders who self-assess as giving surface answers to strategic questions, benefit from extended hypothesis set. 10 categories instead of 5. Same hard-stop gate applies.
+
+**Dependency ordering (pre-MVP path — relaxed gate):**
+  1a/1b. Same as above — vision source (deep-interview OR ideate) is HARD
+  2. `/competitor-scout --auto` — RECOMMENDED but not required (<3 dossiers → LOW confidence on antagonism-map / archetype seed / semiotic stance)
+  3. `/ux-researcher` — RECOMMENDED but not required (absent → LOW confidence on target user / tone)
+  4. `/brand-steward --pre-mvp [--deep]` — synthesize hypothesis-grade constitution
+  5. (build MVP; first 10-20 users come in)
+  6. `/ux-researcher` — wave 1 from real users (produces `.omc/research/`)
+  7. `/competitor-scout --auto` — expand to ≥3 dossiers if not already
+  8. `/brand-steward --session2 [--deep]` — auto-transitions pre-MVP → post-MVP, re-synthesizes previously-LOW sections with real data, promotes status to `partial` or `complete`
+  9. `/brand-architect` (or refine if already ran)
+
+- Pre-MVP mode recommendation: if product is not yet built, no users exist to research, and you want to proceed with brand framing to direct the first build — use `--pre-mvp`. Constitution is hypothesis-grade until session 2 with real data. Every LOW section includes an actionable data-gap note.
+- Depth mode recommendation: founders in competitive niches (where generic positioning is fatal), or founders who self-assess as giving surface answers to strategic questions, benefit from extended hypothesis set. 10 categories instead of 5. Compose with `--pre-mvp` if applicable: `/brand-steward --pre-mvp --deep`.
 - Related: `/brand-architect` (reads constitution's Aspirational Archetype Seed + Semiotic Stance as seed for full 12-archetype analysis + brand grammar), `/product-strategist` (per-feature gate using anti-goals this skill produces).
-- Synthesis-first discipline is enforced in the AGENT prompt. Wrapper stays minimal: gate check, flag parsing, directive formation, Task invocation. Protocol changes (new hypothesis categories, new phases) happen in one place — the agent prompt — not in this wrapper.
+- Synthesis-first discipline is enforced in the AGENT prompt. Wrapper stays minimal: gate check, flag parsing, directive formation, Task invocation. Protocol changes (new hypothesis categories, new phases, new modes) happen in one place — the agent prompt — not in this wrapper.
 </Integration_Notes>
