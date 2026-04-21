@@ -12,6 +12,11 @@
       "items": { "type": "string" },
       "uniqueItems": true
     },
+    "application_blocks": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
     "capability_packs": {
       "type": "array",
       "items": { "type": "string" },

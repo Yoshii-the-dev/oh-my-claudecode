@@ -5,7 +5,56 @@
   "type": "object",
   "required": ["schema_version", "surfaces", "capability_packs"],
   "properties": {
-    "schema_version": { "type": "integer", "const": 2 },
+    "schema_version": { "type": "integer", "const": 3 },
+    "discovery_policy": {
+      "type": "object",
+      "properties": {
+        "default_source_order": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "professional_source_domains": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "specialized_platform_domains": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "trusted_github_orgs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "query_expansions": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          }
+        },
+        "source_quality_weights": {
+          "type": "object",
+          "additionalProperties": { "type": "number" }
+        }
+      },
+      "additionalProperties": true
+    },
+    "application_blocks": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["surface"],
+        "properties": {
+          "canonical": { "type": "string", "minLength": 1 },
+          "surface": { "type": "string", "minLength": 1 },
+          "aliases": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
     "surfaces": {
       "type": "object",
       "minProperties": 1,
@@ -25,6 +74,38 @@
           "capability_packs": {
             "type": "array",
             "items": { "type": "string", "minLength": 1 }
+          },
+          "aspect_capability_packs": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 }
+            }
+          },
+          "aspect_aliases": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 }
+            }
+          },
+          "aspect_profiles": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["tech_match", "aspects"],
+              "properties": {
+                "tech_match": {
+                  "type": "array",
+                  "items": { "type": "string", "minLength": 1 }
+                },
+                "aspects": {
+                  "type": "array",
+                  "items": { "type": "string", "minLength": 1 }
+                }
+              },
+              "additionalProperties": true
+            }
           },
           "required_context": {
             "type": "array",
@@ -51,6 +132,41 @@
         },
         "additionalProperties": true
       }
+    },
+    "matching": {
+      "type": "object",
+      "properties": {
+        "negative_rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "slug_match": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 }
+              },
+              "surfaces": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 }
+              },
+              "technologies": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 }
+              },
+              "aspects": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 }
+              },
+              "capability_packs": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 }
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
     }
   },
   "additionalProperties": true

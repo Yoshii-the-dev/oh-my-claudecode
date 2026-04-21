@@ -92,14 +92,14 @@ describe('stack-provision executable workflow', () => {
       bundledRoot,
       'next-visual-system',
       'next-visual-system',
-      'Next.js React Tailwind visual QA and image generation patterns.',
+      'Next.js React Tailwind component-architecture testing visual-regression plus visual-creative visual QA and image generation patterns.',
       'Covers Next.js component architecture, visual-regression, image-generation, typography, and motion.',
     );
     writeSkill(
       pluginRoot,
       'visual-verdict',
       'visual-verdict',
-      'Visual QA screenshot verdict loop for generated assets.',
+      'Visual-creative visual QA screenshot verdict loop for generated assets.',
       'Covers visual-creative, visual-qa, image-generation, illustration, iconography, and motion.',
     );
 
@@ -310,6 +310,318 @@ describe('stack-provision executable workflow', () => {
       join(tempDir, 'target-skills'),
       '--json',
     ])).toContain('review confirmation is not approved');
+  });
+
+  it('uses structured metadata and aspect-specific packs to avoid false testing coverage', () => {
+    const tempDir = makeTempDir();
+    const runRoot = join(tempDir, 'runs');
+    const bundledRoot = join(tempDir, 'bundled-skills');
+
+    writeSkill(
+      bundledRoot,
+      'flutter-reducing-app-size',
+      'flutter-reducing-app-size',
+      'Flutter performance and app-size optimization.',
+      'This body deliberately mentions Flutter testing, but body text is not discovery metadata.',
+    );
+    writeSkill(
+      bundledRoot,
+      'flutter-testing',
+      'flutter-testing',
+      'Flutter testing for widget and integration tests.',
+      'This body deliberately mentions performance, but body text is not discovery metadata.',
+    );
+
+    run(initScript, [
+      'flutter, riverpod',
+      '--surfaces=mobile',
+      '--aspects=testing,performance',
+      '--run-id=structured-matching',
+      '--out',
+      runRoot,
+      '--json',
+    ]);
+    const runDir = join(runRoot, 'structured-matching');
+    run(provisionScript, [
+      'discover',
+      runDir,
+      '--sources=bundled',
+      '--bundled-root',
+      bundledRoot,
+      '--json',
+    ]);
+
+    const candidates = JSON.parse(readFileSync(join(runDir, 'candidates.json'), 'utf8'));
+    const reducing = candidates.candidates.find((candidate: { slug: string }) =>
+      candidate.slug === 'flutter-reducing-app-size',
+    );
+    const testing = candidates.candidates.find((candidate: { slug: string }) =>
+      candidate.slug === 'flutter-testing',
+    );
+
+    expect(reducing.covered_aspects).toEqual(['performance']);
+    expect(testing.covered_aspects).toEqual(['testing']);
+
+    const coverage = JSON.parse(readFileSync(join(runDir, 'coverage.json'), 'utf8'));
+    expect(coverage.cells).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          surface: 'mobile',
+          technology: 'riverpod',
+          aspect: 'performance',
+        }),
+      ]),
+    );
+  });
+
+  it('chooses the best candidate per cell using cell score instead of global score', () => {
+    const tempDir = makeTempDir();
+    const runRoot = join(tempDir, 'runs');
+    const bundledRoot = join(tempDir, 'bundled-skills');
+
+    writeSkill(
+      bundledRoot,
+      'flutter-kitchen-sink',
+      'flutter-kitchen-sink',
+      'Flutter architecture navigation state offline-data platform-apis accessibility security observability testing performance.',
+      'Broad mobile guidance.',
+    );
+    writeSkill(
+      bundledRoot,
+      'flutter-testing',
+      'flutter-testing',
+      'Flutter testing for widget and integration tests.',
+      'Focused testing guidance.',
+    );
+
+    run(initScript, [
+      'flutter',
+      '--surfaces=mobile',
+      '--run-id=per-cell-ranking',
+      '--out',
+      runRoot,
+      '--json',
+    ]);
+    const runDir = join(runRoot, 'per-cell-ranking');
+    run(provisionScript, [
+      'discover',
+      runDir,
+      '--sources=bundled',
+      '--bundled-root',
+      bundledRoot,
+      '--json',
+    ]);
+
+    const candidates = JSON.parse(readFileSync(join(runDir, 'candidates.json'), 'utf8'));
+    const broad = candidates.candidates.find((candidate: { slug: string }) =>
+      candidate.slug === 'flutter-kitchen-sink',
+    );
+    const focused = candidates.candidates.find((candidate: { slug: string }) =>
+      candidate.slug === 'flutter-testing',
+    );
+    expect(broad.score).toBeGreaterThan(focused.score);
+
+    const coverage = JSON.parse(readFileSync(join(runDir, 'coverage.json'), 'utf8'));
+    const testingCell = coverage.cells.find((cell: { surface: string; technology: string; aspect: string }) =>
+      cell.surface === 'mobile' && cell.technology === 'flutter' && cell.aspect === 'testing',
+    );
+    expect(testingCell.best_candidate_id).toBe(focused.candidate_id);
+  });
+
+  it('ranks professional external guidance above weaker local matches', () => {
+    const tempDir = makeTempDir();
+    const runRoot = join(tempDir, 'runs');
+    const bundledRoot = join(tempDir, 'bundled-skills');
+
+    writeSkill(
+      bundledRoot,
+      'postgres-local-performance',
+      'postgres-local-performance',
+      'Postgres performance tips.',
+      'Local lightweight Postgres performance notes.',
+    );
+
+    const skillsShIndex = join(tempDir, 'skills-sh.json');
+    writeFileSync(
+      skillsShIndex,
+      JSON.stringify([
+        {
+          name: 'official-postgres-performance',
+          description: 'Postgres performance query optimization indexes and database profiling.',
+          url: 'https://www.postgresql.org/docs/current/performance-tips.html',
+          tags: ['postgres', 'performance', 'database'],
+        },
+      ]),
+      'utf8',
+    );
+
+    run(initScript, [
+      'postgres',
+      '--surfaces=backend',
+      '--aspects=performance',
+      '--run-id=professional-source-ranking',
+      '--out',
+      runRoot,
+      '--json',
+    ]);
+    const runDir = join(runRoot, 'professional-source-ranking');
+    run(provisionScript, [
+      'discover',
+      runDir,
+      '--sources=bundled,skills-sh',
+      '--bundled-root',
+      bundledRoot,
+      '--skills-sh-index',
+      skillsShIndex,
+      '--json',
+    ]);
+
+    const candidates = JSON.parse(readFileSync(join(runDir, 'candidates.json'), 'utf8'));
+    const official = candidates.candidates.find((candidate: { slug: string }) =>
+      candidate.slug === 'official-postgres-performance',
+    );
+    const local = candidates.candidates.find((candidate: { slug: string }) =>
+      candidate.slug === 'postgres-local-performance',
+    );
+    expect(official.source_quality.signals).toEqual(
+      expect.arrayContaining(['external-index', 'professional-domain']),
+    );
+    expect(official.score).toBeGreaterThan(local.score);
+
+    const coverage = JSON.parse(readFileSync(join(runDir, 'coverage.json'), 'utf8'));
+    const performanceCell = coverage.cells.find((cell: { surface: string; technology: string; aspect: string }) =>
+      cell.surface === 'backend' && cell.technology === 'postgres' && cell.aspect === 'performance',
+    );
+    expect(performanceCell.best_candidate_id).toBe(official.candidate_id);
+  });
+
+  it('uses Dart methodology aliases for backend architecture and testing coverage', () => {
+    const tempDir = makeTempDir();
+    const runRoot = join(tempDir, 'runs');
+    const skillsShIndex = join(tempDir, 'skills-sh.json');
+
+    writeFileSync(
+      skillsShIndex,
+      JSON.stringify([
+        {
+          name: 'effective-dart-backend-methods',
+          description: 'Effective Dart clean architecture domain driven design API design and contract testing for Dart backend services.',
+          url: 'https://dart.dev/effective-dart',
+          tags: ['dart', 'backend', 'clean architecture', 'contract testing'],
+          methodologies: ['effective dart', 'clean architecture', 'domain driven design', 'contract testing'],
+        },
+      ]),
+      'utf8',
+    );
+
+    run(initScript, [
+      'dart, shelf',
+      '--surfaces=backend',
+      '--aspects=architecture,testing',
+      '--run-id=dart-backend-methodology',
+      '--out',
+      runRoot,
+      '--json',
+    ]);
+    const runDir = join(runRoot, 'dart-backend-methodology');
+    run(provisionScript, [
+      'discover',
+      runDir,
+      '--sources=skills-sh',
+      '--skills-sh-index',
+      skillsShIndex,
+      '--json',
+    ]);
+
+    const candidates = JSON.parse(readFileSync(join(runDir, 'candidates.json'), 'utf8'));
+    const dartCandidate = candidates.candidates.find((candidate: { slug: string }) =>
+      candidate.slug === 'effective-dart-backend-methods',
+    );
+    expect(dartCandidate.covered_technology).toContain('dart');
+    expect(dartCandidate.covered_aspects).toEqual(
+      expect.arrayContaining(['architecture', 'testing']),
+    );
+    expect(dartCandidate.source_quality.signals).toContain('professional-domain');
+
+    const coverage = JSON.parse(readFileSync(join(runDir, 'coverage.json'), 'utf8'));
+    const architectureCell = coverage.cells.find((cell: { surface: string; technology: string; aspect: string }) =>
+      cell.surface === 'backend' && cell.technology === 'dart' && cell.aspect === 'architecture',
+    );
+    expect(architectureCell.best_candidate_id).toBe(dartCandidate.candidate_id);
+  });
+
+  it('prioritizes professional guidance for application-block practices', () => {
+    const tempDir = makeTempDir();
+    const runRoot = join(tempDir, 'runs');
+    const bundledRoot = join(tempDir, 'bundled-skills');
+    const skillsShIndex = join(tempDir, 'skills-sh.json');
+
+    writeSkill(
+      bundledRoot,
+      'stripe-payments-notes',
+      'stripe-payments-notes',
+      'Stripe payments idempotency notes.',
+      'Lightweight Stripe payment notes with a passing mention of idempotency.',
+    );
+
+    writeFileSync(
+      skillsShIndex,
+      JSON.stringify([
+        {
+          name: 'stripe-idempotency-reconciliation-guide',
+          description: 'Stripe payments idempotency keys webhook reliability ledger reconciliation and financial transaction testing.',
+          url: 'https://docs.stripe.com/payments',
+          tags: ['stripe', 'payments', 'idempotency', 'reconciliation', 'ledger'],
+          methodologies: ['idempotency keys', 'webhook reliability', 'ledger reconciliation'],
+        },
+      ]),
+      'utf8',
+    );
+
+    run(initScript, [
+      'dart, shelf, stripe',
+      '--blocks=finance-transactions',
+      '--aspects=idempotency,reconciliation',
+      '--run-id=finance-block-guidance',
+      '--out',
+      runRoot,
+      '--json',
+    ]);
+    const runDir = join(runRoot, 'finance-block-guidance');
+    run(provisionScript, [
+      'discover',
+      runDir,
+      '--sources=bundled,skills-sh',
+      '--bundled-root',
+      bundledRoot,
+      '--skills-sh-index',
+      skillsShIndex,
+      '--json',
+    ]);
+
+    const candidates = JSON.parse(readFileSync(join(runDir, 'candidates.json'), 'utf8'));
+    const official = candidates.candidates.find((candidate: { slug: string }) =>
+      candidate.slug === 'stripe-idempotency-reconciliation-guide',
+    );
+    const local = candidates.candidates.find((candidate: { slug: string }) =>
+      candidate.slug === 'stripe-payments-notes',
+    );
+
+    expect(official.covered_surface).toContain('finance-transactions');
+    expect(official.covered_technology).toContain('stripe');
+    expect(official.covered_aspects).toEqual(
+      expect.arrayContaining(['idempotency', 'reconciliation']),
+    );
+    expect(official.source_quality.signals).toEqual(
+      expect.arrayContaining(['external-index', 'professional-domain']),
+    );
+    expect(official.score).toBeGreaterThan(local.score);
+
+    const coverage = JSON.parse(readFileSync(join(runDir, 'coverage.json'), 'utf8'));
+    const idempotencyCell = coverage.cells.find((cell: { surface: string; technology: string; aspect: string }) =>
+      cell.surface === 'finance-transactions' && cell.technology === 'stripe' && cell.aspect === 'idempotency',
+    );
+    expect(idempotencyCell.best_candidate_id).toBe(official.candidate_id);
   });
 
   it('blocks source-level approval for risk-bearing external candidates', () => {

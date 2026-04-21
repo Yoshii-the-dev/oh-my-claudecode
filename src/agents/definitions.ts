@@ -200,6 +200,17 @@ export const productStrategistAgent: AgentConfig = {
 };
 
 /**
+ * Technology-Strategist Agent - Stack and application capability decision owner (Opus)
+ */
+export const technologyStrategistAgent: AgentConfig = {
+  name: 'technology-strategist',
+  description: 'Technology strategy decision owner (opus) — selects and expands stack choices, application blocks, and skill provisioning targets.',
+  prompt: loadAgentPrompt('technology-strategist'),
+  model: 'opus',
+  defaultModel: 'opus'
+};
+
+/**
  * UX-Architect Agent - Macro-level UX: user flows, IA, screen states, navigation (Sonnet)
  */
 export const uxArchitectAgent: AgentConfig = {
@@ -309,6 +320,7 @@ const AGENT_CONFIG_KEY_MAP = {
   'performance-guardian': 'performanceGuardian',
   'copywriter': 'copywriter',
   'product-strategist': 'productStrategist',
+  'technology-strategist': 'technologyStrategist',
   'ux-architect': 'uxArchitect',
   'ux-researcher': 'uxResearcher',
 } as const satisfies Partial<Record<string, keyof NonNullable<PluginConfig['agents']>>>;
@@ -394,6 +406,7 @@ export function getAgentDefinitions(options?: {
     'performance-guardian': performanceGuardianAgent,
     'copywriter': copywriterAgent,
     'product-strategist': productStrategistAgent,
+    'technology-strategist': technologyStrategistAgent,
     'ux-architect': uxArchitectAgent,
     'ux-researcher': uxResearcherAgent,
     'competitor-scout': competitorScoutAgent,
@@ -454,7 +467,7 @@ You are BOUND to your task list. You do not stop. You do not quit. You do not ta
 ## Your Core Duty
 You coordinate specialized subagents to accomplish complex software engineering tasks. Abandoning work mid-task is not an option. If you stop without completing ALL tasks, you have failed.
 
-## Available Subagents (26 Agents)
+## Available Subagents (33 Agents)
 
 ### Build/Analysis Lane
 - **explore**: Internal codebase discovery (haiku) — fast pattern matching
@@ -486,6 +499,7 @@ You coordinate specialized subagents to accomplish complex software engineering 
 - **performance-guardian**: Performance auditing (sonnet) — Core Web Vitals, bundle size, runtime patterns
 - **copywriter**: UX copy specialist (sonnet) — microcopy, onboarding flows, error messages, i18n-aware copy management
 - **product-strategist**: Product strategy evaluator (sonnet) — feature evaluation, constitution alignment, roadmap prioritization
+- **technology-strategist**: Technology decision owner (opus) — stack selection, app capability blocks, skill provisioning targets
 - **ux-architect**: Macro-level UX (sonnet) — user flows, information architecture, app/screen states, navigation patterns
 - **ux-researcher**: UX research synthesis (sonnet) — user feedback analysis, study plans, usability pattern extraction
 

@@ -1,10 +1,241 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
+  "discovery_policy": {
+    "default_source_order": [
+      "skills-sh",
+      "plugin-marketplace",
+      "github",
+      "installed",
+      "bundled",
+      "plugin"
+    ],
+    "professional_source_domains": [
+      "dart.dev",
+      "flutter.dev",
+      "docs.flutter.dev",
+      "pub.dev",
+      "serverpod.dev",
+      "dartfrog.vgv.dev",
+      "clerk.com",
+      "auth0.com",
+      "openid.net",
+      "oauth.net",
+      "docs.sentry.io",
+      "supabase.com",
+      "postgresql.org",
+      "docs.stripe.com",
+      "stripe.com",
+      "docs.paddle.com",
+      "adyen.com",
+      "pcisecuritystandards.org",
+      "posthog.com",
+      "amplitude.com",
+      "segment.com",
+      "snowplow.io",
+      "rudderstack.com",
+      "mixpanel.com",
+      "docs.djangoproject.com",
+      "rubyonrails.org",
+      "spring.io",
+      "nodejs.org",
+      "expressjs.com",
+      "fastify.dev",
+      "nestjs.com",
+      "go.dev",
+      "kotlinlang.org",
+      "developer.android.com",
+      "developer.apple.com",
+      "react.dev",
+      "nextjs.org",
+      "vite.dev",
+      "playwright.dev",
+      "owasp.org",
+      "opentelemetry.io",
+      "martinfowler.com",
+      "12factor.net",
+      "learn.microsoft.com",
+      "docs.aws.amazon.com",
+      "cloud.google.com"
+    ],
+    "specialized_platform_domains": [
+      "pub.dev",
+      "github.com",
+      "skills.sh",
+      "npmjs.com",
+      "pkg.go.dev",
+      "crates.io"
+    ],
+    "trusted_github_orgs": [
+      "dart-lang",
+      "flutter",
+      "serverpod",
+      "verygoodopensource",
+      "supabase",
+      "getsentry",
+      "OWASP",
+      "open-telemetry",
+      "django",
+      "rails",
+      "spring-projects",
+      "expressjs",
+      "fastify",
+      "nestjs",
+      "vercel"
+    ],
+    "query_expansions": {
+      "auth": [
+        "authentication architecture",
+        "oauth oidc best practices",
+        "session management security",
+        "authorization rbac abac",
+        "account recovery security",
+        "identity provider integration testing"
+      ],
+      "authentication": [
+        "authentication architecture",
+        "oauth oidc best practices",
+        "session management security",
+        "authorization rbac abac",
+        "account recovery security",
+        "identity provider integration testing"
+      ],
+      "dart": [
+        "effective dart",
+        "dart analyzer lints",
+        "dart package design",
+        "dart clean architecture",
+        "dart domain driven design",
+        "dart property based testing",
+        "dart mutation testing",
+        "dart static analysis",
+        "dart isolates concurrency"
+      ],
+      "flutter": [
+        "flutter architecture",
+        "flutter performance best practices",
+        "flutter accessibility",
+        "flutter testing",
+        "flutter state management",
+        "flutter offline first"
+      ],
+      "backend": [
+        "backend clean architecture",
+        "backend domain driven design",
+        "backend hexagonal architecture",
+        "api design guidelines",
+        "contract testing",
+        "owasp api security",
+        "opentelemetry observability",
+        "twelve factor app"
+      ],
+      "product-analytics": [
+        "product analytics event taxonomy",
+        "analytics instrumentation plan",
+        "privacy safe product analytics",
+        "funnel analysis best practices",
+        "experimentation guardrails",
+        "analytics data quality testing"
+      ],
+      "analytics": [
+        "product analytics event taxonomy",
+        "analytics instrumentation plan",
+        "privacy safe product analytics",
+        "funnel analysis best practices",
+        "experimentation guardrails",
+        "analytics data quality testing"
+      ],
+      "finance-transactions": [
+        "payment integration idempotency",
+        "ledger reconciliation patterns",
+        "financial transaction testing",
+        "payment webhook reliability",
+        "refund dispute handling",
+        "pci compliance developer guide"
+      ],
+      "payments": [
+        "payment integration idempotency",
+        "ledger reconciliation patterns",
+        "financial transaction testing",
+        "payment webhook reliability",
+        "refund dispute handling",
+        "pci compliance developer guide"
+      ],
+      "ledger": [
+        "ledger reconciliation patterns",
+        "double entry accounting software",
+        "transaction audit trail",
+        "financial consistency model"
+      ],
+      "api-design": [
+        "rest api design",
+        "openapi contract",
+        "api versioning",
+        "idempotency",
+        "pagination patterns"
+      ],
+      "testing": [
+        "test driven development",
+        "contract testing",
+        "property based testing",
+        "mutation testing",
+        "integration testing"
+      ],
+      "security": [
+        "owasp top 10",
+        "owasp api security",
+        "threat modeling",
+        "secure coding guidelines"
+      ],
+      "observability": [
+        "opentelemetry",
+        "structured logging",
+        "distributed tracing",
+        "sli slo"
+      ]
+    },
+    "source_quality_weights": {
+      "professional_domain": 8,
+      "specialized_platform": 5,
+      "trusted_github_org": 4,
+      "external_index": 3,
+      "installed_local": 1
+    }
+  },
+  "application_blocks": {
+    "auth": {
+      "surface": "auth-identity",
+      "aliases": ["auth", "authentication", "identity", "login", "signup", "oauth", "oidc", "sessions", "authorization"]
+    },
+    "authentication": {
+      "canonical": "auth",
+      "surface": "auth-identity",
+      "aliases": ["auth", "authentication", "identity", "login", "signup", "oauth", "oidc", "sessions", "authorization"]
+    },
+    "product-analytics": {
+      "surface": "product-analytics",
+      "aliases": ["analytics", "product analytics", "events", "funnels", "metrics", "experimentation", "tracking"]
+    },
+    "analytics": {
+      "canonical": "product-analytics",
+      "surface": "product-analytics",
+      "aliases": ["analytics", "product analytics", "events", "funnels", "metrics", "experimentation", "tracking"]
+    },
+    "finance-transactions": {
+      "surface": "finance-transactions",
+      "aliases": ["finance", "financial", "transactions", "payments", "billing", "subscriptions", "ledger", "reconciliation", "refunds", "invoicing"]
+    },
+    "payments": {
+      "canonical": "finance-transactions",
+      "surface": "finance-transactions",
+      "aliases": ["finance", "financial", "transactions", "payments", "billing", "subscriptions", "ledger", "reconciliation", "refunds", "invoicing"]
+    }
+  },
   "surfaces": {
     "backend": {
       "description": "Server-side product capability: APIs, data, auth, integration boundaries, reliability, and security.",
       "default_aspects": [
         "api-design",
+        "architecture",
         "database",
         "auth",
         "security",
@@ -17,6 +248,10 @@
         "express",
         "fastify",
         "nestjs",
+        "dart",
+        "shelf",
+        "serverpod",
+        "dart-frog",
         "fastapi",
         "django",
         "rails",
@@ -35,11 +270,235 @@
       ],
       "capability_packs": [
         "api-contracts",
+        "backend-architecture",
         "database-performance",
         "auth-security",
         "observability",
         "backend-testing"
+      ],
+      "aspect_capability_packs": {
+        "api-design": ["api-contracts"],
+        "architecture": ["backend-architecture", "api-contracts"],
+        "database": ["database-performance"],
+        "auth": ["auth-security"],
+        "security": ["auth-security"],
+        "observability": ["observability"],
+        "testing": ["backend-testing"],
+        "performance": ["database-performance", "observability"]
+      },
+      "aspect_aliases": {
+        "api-design": ["api design", "rest api", "openapi", "contract first", "api versioning", "idempotency", "pagination"],
+        "architecture": ["clean architecture", "hexagonal architecture", "domain driven design", "layered architecture", "twelve factor app", "effective dart", "dart package design"],
+        "database": ["data modeling", "schema design", "query optimization", "indexes", "transactions"],
+        "auth": ["authentication", "authorization", "session management", "jwt", "oauth"],
+        "security": ["owasp", "owasp api security", "threat modeling", "secure coding"],
+        "observability": ["opentelemetry", "structured logging", "distributed tracing", "sli", "slo"],
+        "testing": ["test driven development", "contract testing", "integration testing", "property based testing", "mutation testing"],
+        "performance": ["caching", "profiling", "latency", "throughput", "load testing"]
+      },
+      "aspect_profiles": [
+        {
+          "tech_match": ["postgres", "mysql", "redis", "prisma", "supabase"],
+          "aspects": ["architecture", "database", "auth", "security", "observability", "testing", "performance"]
+        },
+        {
+          "tech_match": ["queue", "kafka"],
+          "aspects": ["api-design", "architecture", "observability", "testing", "performance"]
+        },
+        {
+          "tech_match": ["graphql", "rest", "node", "express", "fastify", "nestjs", "fastapi", "django", "rails", "spring", "go", "rust", "dart", "shelf", "serverpod", "dart-frog"],
+          "aspects": ["api-design", "architecture", "auth", "security", "observability", "testing", "performance"]
+        }
       ]
+    },
+    "auth-identity": {
+      "description": "Authentication and identity capability: login, signup, sessions, OAuth/OIDC, authorization, account recovery, privacy, and abuse boundaries.",
+      "default_aspects": [
+        "identity-model",
+        "session-management",
+        "oauth-oidc",
+        "authorization",
+        "security",
+        "privacy",
+        "testing",
+        "observability"
+      ],
+      "tech_match": [
+        "auth",
+        "authentication",
+        "identity",
+        "login",
+        "signup",
+        "oauth",
+        "oidc",
+        "jwt",
+        "session",
+        "sessions",
+        "authorization",
+        "rbac",
+        "abac",
+        "clerk",
+        "auth0",
+        "supabase-auth",
+        "firebase-auth",
+        "nextauth",
+        "better-auth",
+        "passport",
+        "keycloak",
+        "cognito",
+        "lucia"
+      ],
+      "capability_packs": [
+        "auth-architecture",
+        "auth-security",
+        "privacy-compliance",
+        "auth-testing",
+        "auth-observability"
+      ],
+      "aspect_capability_packs": {
+        "identity-model": ["auth-architecture"],
+        "session-management": ["auth-architecture", "auth-security"],
+        "oauth-oidc": ["auth-architecture", "auth-security"],
+        "authorization": ["auth-architecture", "auth-security"],
+        "security": ["auth-security"],
+        "privacy": ["privacy-compliance", "auth-security"],
+        "testing": ["auth-testing"],
+        "observability": ["auth-observability"]
+      },
+      "aspect_aliases": {
+        "identity-model": ["identity model", "account model", "user identity", "tenant identity"],
+        "session-management": ["session management", "refresh token", "cookie security", "session fixation"],
+        "oauth-oidc": ["oauth", "oidc", "openid connect", "authorization code", "pkce"],
+        "authorization": ["rbac", "abac", "permissions", "policy enforcement", "least privilege"],
+        "security": ["credential stuffing", "account takeover", "mfa", "password reset", "threat modeling"],
+        "privacy": ["pii", "data minimization", "privacy by design", "account deletion"],
+        "testing": ["auth integration testing", "permission tests", "session tests", "abuse cases"],
+        "observability": ["audit trail", "auth logs", "security events", "login telemetry"]
+      }
+    },
+    "product-analytics": {
+      "description": "Product analytics capability: event taxonomy, instrumentation, funnels, retention, experiments, privacy, metric governance, and data quality.",
+      "default_aspects": [
+        "event-taxonomy",
+        "instrumentation",
+        "privacy",
+        "funnels",
+        "experimentation",
+        "governance",
+        "testing",
+        "data-quality"
+      ],
+      "tech_match": [
+        "analytics",
+        "product-analytics",
+        "events",
+        "tracking",
+        "metrics",
+        "funnels",
+        "experimentation",
+        "posthog",
+        "amplitude",
+        "segment",
+        "mixpanel",
+        "rudderstack",
+        "snowplow",
+        "ga4",
+        "bigquery",
+        "warehouse"
+      ],
+      "capability_packs": [
+        "analytics-taxonomy",
+        "analytics-instrumentation",
+        "product-analytics",
+        "privacy-compliance",
+        "analytics-testing"
+      ],
+      "aspect_capability_packs": {
+        "event-taxonomy": ["analytics-taxonomy"],
+        "instrumentation": ["analytics-instrumentation"],
+        "privacy": ["privacy-compliance"],
+        "funnels": ["product-analytics"],
+        "experimentation": ["product-analytics"],
+        "governance": ["analytics-taxonomy", "product-analytics"],
+        "testing": ["analytics-testing"],
+        "data-quality": ["analytics-testing", "product-analytics"]
+      },
+      "aspect_aliases": {
+        "event-taxonomy": ["event taxonomy", "tracking plan", "event naming", "metric definitions"],
+        "instrumentation": ["analytics instrumentation", "client tracking", "server-side tracking", "event capture"],
+        "privacy": ["privacy safe analytics", "consent", "data minimization", "pii"],
+        "funnels": ["funnel analysis", "activation metrics", "retention", "cohort analysis"],
+        "experimentation": ["ab testing", "feature flags", "experiment guardrails", "sample ratio mismatch"],
+        "governance": ["metric governance", "source of truth", "analytics ownership"],
+        "testing": ["analytics testing", "tracking tests", "event contract tests"],
+        "data-quality": ["data quality", "schema validation", "event validation"]
+      }
+    },
+    "finance-transactions": {
+      "description": "Financial and transactional capability: payments, billing, subscriptions, ledger, idempotency, reconciliation, refunds, compliance, and auditability.",
+      "default_aspects": [
+        "money-model",
+        "payments",
+        "ledger",
+        "idempotency",
+        "reconciliation",
+        "compliance",
+        "security",
+        "testing",
+        "observability"
+      ],
+      "tech_match": [
+        "finance",
+        "financial",
+        "transactions",
+        "payments",
+        "billing",
+        "subscription",
+        "subscriptions",
+        "invoice",
+        "invoicing",
+        "refund",
+        "refunds",
+        "ledger",
+        "reconciliation",
+        "stripe",
+        "paddle",
+        "adyen",
+        "checkout",
+        "paypal",
+        "wallet",
+        "tax"
+      ],
+      "capability_packs": [
+        "finance-domain-modeling",
+        "payments-integration",
+        "ledger-reconciliation",
+        "finance-compliance",
+        "finance-testing",
+        "finance-observability"
+      ],
+      "aspect_capability_packs": {
+        "money-model": ["finance-domain-modeling"],
+        "payments": ["payments-integration", "finance-compliance"],
+        "ledger": ["ledger-reconciliation", "finance-domain-modeling"],
+        "idempotency": ["payments-integration", "ledger-reconciliation"],
+        "reconciliation": ["ledger-reconciliation"],
+        "compliance": ["finance-compliance"],
+        "security": ["finance-compliance", "auth-security"],
+        "testing": ["finance-testing"],
+        "observability": ["finance-observability", "ledger-reconciliation"]
+      },
+      "aspect_aliases": {
+        "money-model": ["money model", "currency", "minor units", "rounding", "double entry"],
+        "payments": ["payment integration", "checkout", "billing", "subscriptions", "refunds", "disputes"],
+        "ledger": ["ledger", "double entry accounting", "journal entries", "audit trail"],
+        "idempotency": ["idempotency", "idempotency keys", "duplicate webhook", "exactly once"],
+        "reconciliation": ["reconciliation", "settlement", "payout", "webhook reliability"],
+        "compliance": ["pci", "tax", "financial compliance", "auditability"],
+        "security": ["payment security", "fraud", "webhook signature", "secret handling"],
+        "testing": ["financial transaction testing", "payment webhook tests", "ledger tests"],
+        "observability": ["transaction audit trail", "payment logs", "reconciliation report"]
+      }
     },
     "frontend-engineering": {
       "description": "Client-side implementation capability: components, state, routing, forms, accessibility, performance, and test automation.",
@@ -77,6 +536,30 @@
         "frontend-performance",
         "frontend-testing",
         "visual-regression"
+      ],
+      "aspect_capability_packs": {
+        "component-architecture": ["frontend-architecture"],
+        "state": ["frontend-architecture"],
+        "routing": ["frontend-architecture"],
+        "forms": ["frontend-architecture"],
+        "accessibility": ["accessibility"],
+        "performance": ["frontend-performance"],
+        "testing": ["frontend-testing"],
+        "visual-regression": ["visual-regression"]
+      },
+      "aspect_profiles": [
+        {
+          "tech_match": ["react", "next", "next.js", "remix", "vue", "nuxt", "svelte", "sveltekit", "solid"],
+          "aspects": ["component-architecture", "state", "routing", "forms", "accessibility", "performance", "testing", "visual-regression"]
+        },
+        {
+          "tech_match": ["tailwind", "shadcn", "storybook"],
+          "aspects": ["component-architecture", "accessibility", "visual-regression"]
+        },
+        {
+          "tech_match": ["vite", "vitest", "playwright", "cypress"],
+          "aspects": ["testing", "visual-regression", "performance"]
+        }
       ]
     },
     "frontend-product": {
@@ -91,21 +574,29 @@
         "experimentation"
       ],
       "tech_match": [
-        "product",
+        "product-ux",
         "ux",
-        "analytics",
-        "posthog",
-        "amplitude",
-        "segment",
         "onboarding",
-        "forms"
+        "empty-states",
+        "copy",
+        "feedback",
+        "experimentation"
       ],
       "capability_packs": [
         "ux-architecture",
         "copy-and-tone",
         "product-analytics",
         "research-synthesis"
-      ]
+      ],
+      "aspect_capability_packs": {
+        "ux-patterns": ["ux-architecture"],
+        "flows": ["ux-architecture"],
+        "onboarding": ["ux-architecture", "copy-and-tone"],
+        "empty-states": ["ux-architecture", "copy-and-tone"],
+        "copy": ["copy-and-tone"],
+        "analytics": ["product-analytics"],
+        "experimentation": ["product-analytics", "research-synthesis"]
+      }
     },
     "visual-creative": {
       "description": "Creative visual capability: art direction, visual language, inspiration synthesis, generated assets, typography, iconography, illustration, motion, and visual QA.",
@@ -151,6 +642,36 @@
         "visual-qa",
         "meaning-driven-ui"
       ],
+      "aspect_capability_packs": {
+        "art-direction": ["brand-system", "creative-direction"],
+        "visual-language": ["brand-system", "creative-direction", "meaning-driven-ui"],
+        "inspiration-synthesis": ["inspiration-ledger"],
+        "image-generation": ["image-generation"],
+        "iconography": ["brand-system", "image-generation"],
+        "typography": ["brand-system", "creative-direction"],
+        "illustration": ["image-generation", "creative-direction"],
+        "motion": ["motion-system"],
+        "brand-assets": ["brand-system", "image-generation"],
+        "visual-qa": ["visual-qa"]
+      },
+      "aspect_profiles": [
+        {
+          "tech_match": ["figma", "typography", "font", "visual", "brand"],
+          "aspects": ["art-direction", "visual-language", "inspiration-synthesis", "iconography", "typography", "brand-assets", "visual-qa"]
+        },
+        {
+          "tech_match": ["framer", "framer-motion", "motion", "gsap", "lottie", "rive"],
+          "aspects": ["motion", "visual-language", "visual-qa"]
+        },
+        {
+          "tech_match": ["three", "three.js", "canvas", "webgl"],
+          "aspects": ["motion", "illustration", "visual-qa"]
+        },
+        {
+          "tech_match": ["svg", "illustration", "icon", "image"],
+          "aspects": ["image-generation", "iconography", "illustration", "brand-assets", "visual-qa"]
+        }
+      ],
       "required_context": [
         ".omc/constitution.md",
         ".omc/brand/index.md",
@@ -171,12 +692,24 @@
         "offline-data",
         "platform-apis",
         "accessibility",
+        "security",
+        "observability",
         "testing",
         "performance"
       ],
       "tech_match": [
         "flutter",
-        "dart",
+        "riverpod",
+        "bloc",
+        "provider",
+        "go-router",
+        "gorouter",
+        "drift",
+        "sqlite",
+        "hive",
+        "sentry",
+        "sentry-flutter",
+        "sentry_flutter",
         "react-native",
         "kotlin",
         "swift",
@@ -187,7 +720,55 @@
         "mobile-architecture",
         "mobile-testing",
         "mobile-accessibility",
+        "mobile-security",
+        "mobile-observability",
         "mobile-performance"
+      ],
+      "aspect_capability_packs": {
+        "architecture": ["mobile-architecture"],
+        "navigation": ["mobile-architecture"],
+        "state": ["mobile-architecture"],
+        "offline-data": ["mobile-architecture"],
+        "platform-apis": ["mobile-architecture"],
+        "accessibility": ["mobile-accessibility"],
+        "security": ["mobile-security"],
+        "observability": ["mobile-observability"],
+        "testing": ["mobile-testing"],
+        "performance": ["mobile-performance"]
+      },
+      "aspect_aliases": {
+        "architecture": ["clean architecture", "hexagonal architecture", "domain driven design", "layered architecture", "effective dart", "dart package design"],
+        "navigation": ["routing", "go router", "gorouter", "deep links"],
+        "state": ["state management", "riverpod", "bloc", "provider", "notifier"],
+        "offline-data": ["offline first", "local database", "sync", "drift", "sqlite"],
+        "platform-apis": ["platform channels", "native interop", "permissions"],
+        "accessibility": ["semantics", "screen reader", "wcag"],
+        "security": ["owasp mobile", "secure storage", "pii", "threat modeling"],
+        "observability": ["sentry", "crash reporting", "tracing", "structured logging"],
+        "testing": ["widget testing", "integration testing", "property based testing", "mutation testing", "test driven development"],
+        "performance": ["profiling", "jank", "app size", "memory", "startup time", "isolate"]
+      },
+      "aspect_profiles": [
+        {
+          "tech_match": ["flutter", "react-native", "kotlin", "swift", "ios", "android"],
+          "aspects": ["architecture", "navigation", "state", "offline-data", "platform-apis", "accessibility", "security", "observability", "testing", "performance"]
+        },
+        {
+          "tech_match": ["riverpod", "bloc", "provider"],
+          "aspects": ["architecture", "state", "testing"]
+        },
+        {
+          "tech_match": ["go-router", "gorouter"],
+          "aspects": ["architecture", "navigation", "testing"]
+        },
+        {
+          "tech_match": ["drift", "sqlite", "hive"],
+          "aspects": ["offline-data", "testing", "performance"]
+        },
+        {
+          "tech_match": ["sentry", "sentry-flutter", "sentry_flutter"],
+          "aspects": ["observability", "performance"]
+        }
       ]
     },
     "infra-devops": {
@@ -218,7 +799,16 @@
         "infra-security",
         "observability",
         "release-engineering"
-      ]
+      ],
+      "aspect_capability_packs": {
+        "ci-cd": ["release-engineering"],
+        "containers": ["deployment"],
+        "infrastructure": ["deployment"],
+        "secrets": ["infra-security"],
+        "monitoring": ["observability"],
+        "rollback": ["release-engineering"],
+        "cost": ["observability"]
+      }
     },
     "data-ai": {
       "description": "Data and AI capability: pipelines, evaluation, model APIs, vector search, quality, observability, and cost controls.",
@@ -251,7 +841,16 @@
         "ai-evals",
         "vector-search",
         "ai-cost-observability"
-      ]
+      ],
+      "aspect_capability_packs": {
+        "pipelines": ["data-pipelines"],
+        "data-quality": ["data-quality"],
+        "model-apis": ["ai-evals"],
+        "evals": ["ai-evals"],
+        "vector-search": ["vector-search"],
+        "observability": ["ai-cost-observability"],
+        "cost": ["ai-cost-observability"]
+      }
     }
   },
   "capability_packs": {
@@ -407,6 +1006,15 @@
       ],
       "skills": []
     },
+    "backend-architecture": {
+      "agents": [
+        "architect",
+        "executor",
+        "code-reviewer"
+      ],
+      "skills": [],
+      "optional_external": true
+    },
     "database-performance": {
       "agents": [
         "architect",
@@ -437,6 +1045,122 @@
       ],
       "skills": []
     },
+    "auth-architecture": {
+      "agents": [
+        "technology-strategist",
+        "architect",
+        "security-reviewer"
+      ],
+      "skills": [],
+      "optional_external": true
+    },
+    "privacy-compliance": {
+      "agents": [
+        "security-reviewer",
+        "product-strategist",
+        "domain-expert-reviewer"
+      ],
+      "skills": [],
+      "optional_external": true
+    },
+    "auth-testing": {
+      "agents": [
+        "test-engineer",
+        "security-reviewer"
+      ],
+      "skills": [],
+      "optional_external": true
+    },
+    "auth-observability": {
+      "agents": [
+        "debugger",
+        "security-reviewer"
+      ],
+      "skills": [],
+      "optional_external": true
+    },
+    "analytics-taxonomy": {
+      "agents": [
+        "product-strategist",
+        "analyst",
+        "scientist"
+      ],
+      "skills": [],
+      "optional_external": true
+    },
+    "analytics-instrumentation": {
+      "agents": [
+        "technology-strategist",
+        "executor",
+        "test-engineer"
+      ],
+      "skills": [],
+      "optional_external": true
+    },
+    "analytics-testing": {
+      "agents": [
+        "test-engineer",
+        "scientist"
+      ],
+      "skills": [
+        "data-quality-frameworks"
+      ],
+      "optional_external": true
+    },
+    "finance-domain-modeling": {
+      "agents": [
+        "technology-strategist",
+        "architect",
+        "analyst",
+        "domain-expert-reviewer"
+      ],
+      "skills": [],
+      "optional_external": true
+    },
+    "payments-integration": {
+      "agents": [
+        "technology-strategist",
+        "architect",
+        "security-reviewer",
+        "executor"
+      ],
+      "skills": [],
+      "optional_external": true
+    },
+    "ledger-reconciliation": {
+      "agents": [
+        "architect",
+        "test-engineer",
+        "code-reviewer"
+      ],
+      "skills": [],
+      "optional_external": true
+    },
+    "finance-compliance": {
+      "agents": [
+        "security-reviewer",
+        "domain-expert-reviewer",
+        "product-strategist"
+      ],
+      "skills": [],
+      "optional_external": true
+    },
+    "finance-testing": {
+      "agents": [
+        "test-engineer",
+        "qa-tester"
+      ],
+      "skills": [],
+      "optional_external": true
+    },
+    "finance-observability": {
+      "agents": [
+        "performance-guardian",
+        "debugger"
+      ],
+      "skills": [],
+      "optional_external": true
+    },
     "mobile-architecture": {
       "agents": [
         "architect",
@@ -464,6 +1188,25 @@
       ],
       "skills": [
         "flutter-improving-accessibility"
+      ],
+      "optional_external": true
+    },
+    "mobile-security": {
+      "agents": [
+        "security-reviewer"
+      ],
+      "skills": [
+        "owasp-mobile-security-checker"
+      ],
+      "optional_external": true
+    },
+    "mobile-observability": {
+      "agents": [
+        "performance-guardian",
+        "debugger"
+      ],
+      "skills": [
+        "sentry-flutter-sdk"
       ],
       "optional_external": true
     },
@@ -538,5 +1281,33 @@
       ],
       "skills": []
     }
+  },
+  "matching": {
+    "negative_rules": [
+      {
+        "slug_match": ["competitor-scout"],
+        "surfaces": ["backend", "frontend-engineering", "mobile", "infra-devops", "data-ai"]
+      },
+      {
+        "slug_match": ["visual-verdict"],
+        "surfaces": ["backend", "mobile", "infra-devops", "data-ai"]
+      },
+      {
+        "slug_match": ["meaning-driven-ui-builder"],
+        "surfaces": ["backend", "infra-devops", "data-ai"]
+      },
+      {
+        "slug_match": ["flutter-reducing-app-size"],
+        "aspects": ["architecture", "navigation", "state", "offline-data", "platform-apis", "accessibility", "security", "observability", "testing"]
+      },
+      {
+        "slug_match": ["owasp-mobile-security-checker"],
+        "aspects": ["architecture", "navigation", "state", "offline-data", "platform-apis", "accessibility", "observability", "testing", "performance"]
+      },
+      {
+        "slug_match": ["sentry-flutter-sdk"],
+        "aspects": ["architecture", "navigation", "state", "offline-data", "platform-apis", "accessibility", "security", "testing"]
+      }
+    ]
   }
 }

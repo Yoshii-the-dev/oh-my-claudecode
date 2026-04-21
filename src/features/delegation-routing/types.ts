@@ -40,6 +40,7 @@ export const ROLE_CATEGORY_DEFAULTS: Record<string, string> = {
   planner: 'planner',
   critic: 'critic',
   analyst: 'analyst',
+  'technology-strategist': 'technology-strategist',
 
   // Implementation roles
   executor: 'executor',

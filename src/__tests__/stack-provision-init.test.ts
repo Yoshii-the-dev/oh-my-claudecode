@@ -71,7 +71,7 @@ describe('stack-provision init helper', () => {
         expect.objectContaining({
           surface: 'visual-creative',
           technology: 'framer-motion',
-          aspect: 'image-generation',
+          aspect: 'motion',
         }),
         expect.objectContaining({
           surface: 'backend',
@@ -117,7 +117,7 @@ describe('stack-provision init helper', () => {
     expect(contract.created_at).toBe(fixedNow);
     expect(contract.policy.dry_run).toBe(false);
     expect(matrix.cells.some((cell: { surface: string; aspect: string }) =>
-      cell.surface === 'visual-creative' && cell.aspect === 'image-generation',
+      cell.surface === 'visual-creative' && cell.aspect === 'motion',
     )).toBe(true);
     expect(state.current_phase).toBe('contract');
     expect(state.status).toBe('initialized');
@@ -157,6 +157,174 @@ describe('stack-provision init helper', () => {
     );
     expect(result.surfaces).toEqual(
       expect.arrayContaining(['backend', 'frontend-engineering']),
+    );
+  });
+
+  it('does not cross-product unmatched explicit surfaces with every stack technology', () => {
+    const result = runStackProvision([
+      'flutter, dart, riverpod',
+      '--surfaces=backend,frontend-engineering,visual-creative',
+      '--creative-intent=custom mobile art direction',
+      '--aspects=testing,performance',
+      '--run-id=no-cross-product',
+      '--dry-run',
+      '--json',
+    ]);
+
+    const impossibleCells = result.capability_matrix.cells.filter(
+      (cell: { surface: string; technology: string }) =>
+        (
+          ['frontend-engineering', 'visual-creative'].includes(cell.surface) &&
+          ['flutter', 'dart', 'riverpod'].includes(cell.technology)
+        ) ||
+        (
+          cell.surface === 'backend' &&
+          ['flutter', 'riverpod'].includes(cell.technology)
+        ),
+    );
+    expect(impossibleCells).toEqual([]);
+    expect(result.capability_matrix.cells).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          surface: 'backend',
+          technology: 'dart',
+          aspect: 'testing',
+        }),
+        expect.objectContaining({
+          surface: 'visual-creative',
+          technology: 'visual-creative',
+          aspect: 'visual-qa',
+        }),
+      ]),
+    );
+  });
+
+  it('filters explicit aspects through technology-specific relevance profiles', () => {
+    const result = runStackProvision([
+      'flutter, dart, riverpod',
+      '--surfaces=mobile',
+      '--aspects=testing,performance',
+      '--run-id=tech-aware-aspects',
+      '--dry-run',
+      '--json',
+    ]);
+
+    expect(result.capability_matrix.cells).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          surface: 'mobile',
+          technology: 'riverpod',
+          aspect: 'testing',
+        }),
+        expect.objectContaining({
+          surface: 'mobile',
+          technology: 'flutter',
+          aspect: 'performance',
+        }),
+      ]),
+    );
+    expect(result.capability_matrix.cells).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          surface: 'mobile',
+          technology: 'riverpod',
+          aspect: 'performance',
+        }),
+      ]),
+    );
+  });
+
+  it('adds application blocks as first-class capability surfaces', () => {
+    const result = runStackProvision([
+      'dart, shelf, postgres',
+      '--blocks=auth,product-analytics,finance-transactions',
+      '--run-id=application-blocks',
+      '--dry-run',
+      '--json',
+    ]);
+
+    expect(result.application_blocks).toEqual([
+      'auth',
+      'product-analytics',
+      'finance-transactions',
+    ]);
+    expect(result.contract.application_blocks).toEqual(result.application_blocks);
+    expect(result.capability_matrix.application_blocks).toEqual(result.application_blocks);
+    expect(result.surfaces).toEqual(
+      expect.arrayContaining([
+        'backend',
+        'auth-identity',
+        'product-analytics',
+        'finance-transactions',
+      ]),
+    );
+    expect(result.surfaces).not.toContain('mobile');
+    expect(result.capability_packs).toEqual(
+      expect.arrayContaining([
+        'auth-architecture',
+        'analytics-taxonomy',
+        'finance-domain-modeling',
+      ]),
+    );
+    expect(result.capability_matrix.cells).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          surface: 'auth-identity',
+          technology: 'auth-identity',
+          aspect: 'oauth-oidc',
+        }),
+        expect.objectContaining({
+          surface: 'product-analytics',
+          technology: 'product-analytics',
+          aspect: 'event-taxonomy',
+        }),
+        expect.objectContaining({
+          surface: 'finance-transactions',
+          technology: 'finance-transactions',
+          aspect: 'ledger',
+        }),
+      ]),
+    );
+  });
+
+  it('infers application blocks from provider technologies without a fixed stack enum', () => {
+    const result = runStackProvision([
+      'dart, shelf, postgres, clerk, posthog, stripe',
+      '--run-id=inferred-application-blocks',
+      '--dry-run',
+      '--json',
+    ]);
+
+    expect(result.application_blocks).toEqual(
+      expect.arrayContaining(['auth', 'product-analytics', 'finance-transactions']),
+    );
+    expect(result.surfaces).toEqual(
+      expect.arrayContaining([
+        'backend',
+        'auth-identity',
+        'product-analytics',
+        'finance-transactions',
+      ]),
+    );
+    expect(result.surfaces).not.toContain('mobile');
+    expect(result.capability_matrix.cells).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          surface: 'auth-identity',
+          technology: 'clerk',
+          aspect: 'session-management',
+        }),
+        expect.objectContaining({
+          surface: 'product-analytics',
+          technology: 'posthog',
+          aspect: 'instrumentation',
+        }),
+        expect.objectContaining({
+          surface: 'finance-transactions',
+          technology: 'stripe',
+          aspect: 'idempotency',
+        }),
+      ]),
     );
   });
 });
