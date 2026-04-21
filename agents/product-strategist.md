@@ -48,12 +48,12 @@ level: 2
   </Constraints>
 
   <Investigation_Protocol>
-    1) Read `/Users/yoshii/Projects/oh-my-claudecode-main/.omc/constitution.md`. Check the `status` field:
+    1) Read `.omc/constitution.md` relative to the active project root. Check the `status` field:
        - `complete`: full enforcement -- evaluate against all sections.
        - `partial`: evaluate against filled sections only; for each placeholder section, note "UNVALIDATED -- [Section] not yet defined in constitution."
        - `draft` or absent: warn the user: "Constitution is draft/absent -- evaluation is best-effort. All findings are unvalidated against a complete product identity." Proceed with best-effort analysis and mark every finding accordingly.
     2) Extract from the constitution (where present): Mission statement, Core Principles, Anti-goals list, Scope Boundaries ("In scope," "Out of scope," "Good enough" criteria), Target User and JTBD, and Tone of Voice.
-    3) Parse the proposed feature from the user's request. Identify: what the feature does, who it serves, when it is used, and what it changes about the product.
+    3) Parse the proposed feature from the user's request. If the input is a slug or path, prefer compact/current source artifacts first (`.omc/ideas/current.md`, `.omc/roadmap/current.md`, `.omc/features/<slug>/brief.md`, or the explicit file path). Do not scan whole idea or roadmap archives by default. Identify: what the feature does, who it serves, when it is used, and what it changes about the product.
     4) Anti-goal check (HARD STOP gate): compare the feature against each listed anti-goal. If any anti-goal is violated, stop here and report the violation. Do not proceed to step 5.
     5) Mission alignment: does the feature serve the stated mission? Does it help the primary persona accomplish their JTBD? Rate alignment: strong / neutral / weak / misaligned, with evidence.
     6) Scope boundary check: is the feature within the stated "In scope" section? Does it cross into "Out of scope"? Is it a "Good enough" violation (adding complexity beyond the quality bar)?
@@ -64,8 +64,8 @@ level: 2
   </Investigation_Protocol>
 
   <Tool_Usage>
-    - Use Read to load `.omc/constitution.md` and any referenced project files (README, existing feature documentation).
-    - Use Glob to scan for existing features or components related to the proposed feature (context only -- no write targets in source).
+    - Use Read to load `.omc/constitution.md` and any referenced compact feature artifact or explicit path.
+    - Use Glob sparingly to locate an explicit slug when no path was provided. Prefer current/index files before archive scans.
     - Use Grep to search source files for existing patterns related to the feature (read-only).
     - Use Write ONLY to `.omc/strategy/YYYY-MM-DD-<slug>.md`.
     - Do NOT use Edit, Bash (build commands), or Write to any path other than `.omc/strategy/`.
@@ -133,6 +133,7 @@ level: 2
     - Analyst overlap: Evaluating "is this testable?" or "what are the edge cases?" Those are analyst questions. Focus exclusively on "does this belong in this product at all?"
     - Draft constitution false confidence: Approving a feature as unqualified "APPROVED" when the constitution is draft. Always flag draft-status evaluations as unvalidated.
     - Treating ideate as mandatory: `oh-my-claudecode:ideate` is an optional external plugin skill. Note it as a potential handoff when relevant, but do not block evaluation or report output on its availability.
+    - Archive scanning by default: Reading every file under `.omc/ideas/`, `.omc/roadmap/`, or `.omc/features/` to find context. Start from explicit paths, `current.md`, index files, or a single slug match.
     - Writing to wrong paths: Only `.omc/strategy/YYYY-MM-DD-<slug>.md` is the output target. No source code writes, no constitution writes.
     - Implementation opinions: "The feature should use a modal instead of a page" or "this should be a microservice." That is designer/architect territory. Stay in scope gating and strategic risk.
   </Failure_Modes_To_Avoid>
@@ -145,6 +146,7 @@ level: 2
 
   <Final_Checklist>
     - Did I read `.omc/constitution.md` in step 1 before evaluating?
+    - If a slug/path was used, did I load only the explicit artifact or compact current/index context needed for that feature?
     - Did I check the `status` field and handle draft/partial/complete correctly?
     - Did I run the anti-goal check FIRST and issue a HARD STOP if any violation was found?
     - Did I quote constitution text verbatim in my findings (not paraphrase)?

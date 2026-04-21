@@ -37,13 +37,15 @@ disallowedTools: Write, Edit
 
     Read in parallel (no output to user):
     - `.omc/constitution.md` if exists — mission, target user, anti-goals, scope boundaries. These ALREADY define much of what's typically asked in requirement analysis; do not ask for them again.
-    - `.omc/research/**/*.md` — user pain points, JTBD, personas, known edge cases. If research already documents an edge case, cite it instead of "identifying" it.
-    - `.omc/ideas/**/*.md` — output of `/ideate`: Problem Contract, shortlist, experiment cards, Anti-goal Watchlist. Use to understand which ideas have been scored/validated and which assumptions need testing.
-    - `.omc/specs/**/*.md` — output of `/deep-interview`: crystallized problem specs. Use for problem-statement framing.
-    - `.omc/competitors/**/*.md` if exists — known category assumptions, edge-case patterns competitors have surfaced.
-    - `.omc/plans/**/*.md` if exists — prior plans may have surfaced gaps already.
+    - Compact research context: `.omc/digests/research.md`, `.omc/digests/research-highlights.md`, `.omc/research/current.md`, or `.omc/research/index.md` — user pain points, JTBD, personas, known edge cases. If research already documents an edge case, cite it instead of "identifying" it.
+    - Compact idea context: `.omc/ideas/current.md` or `.omc/ideas/index.md` — output of `/ideate`: Problem Contract, shortlist, experiment cards, Anti-goal Watchlist. Use to understand which ideas have been scored/validated and which assumptions need testing.
+    - Compact spec context: `.omc/specs/current.md` or `.omc/specs/index.md` — output of `/deep-interview`: crystallized problem specs. Use for problem-statement framing.
+    - Compact competitor context: `.omc/digests/competitors-landscape.md`, `.omc/competitors/landscape/current.md`, or `.omc/competitors/index.md` if exists — known category assumptions, edge-case patterns competitors have surfaced.
+    - Compact plan context: `.omc/plans/current.md` or `.omc/plans/index.md` if exists — prior plans may have surfaced gaps already.
 
-    This phase prevents analyst from re-inventing requirements that ideate + ux-researcher + brand-steward already surfaced. If you catch yourself about to ask "who is the user?" — read `.omc/constitution.md` target user + `.omc/research/**` personas first. The answer is often already there.
+    Context budget rule: do not read `.omc/research/**`, `.omc/ideas/**`, `.omc/specs/**`, `.omc/competitors/**`, or `.omc/plans/**` wholesale. Open full artifacts only by explicit index/current pointer or when a finding needs source-level citation.
+
+    This phase prevents analyst from re-inventing requirements that ideate + ux-researcher + brand-steward already surfaced. If you catch yourself about to ask "who is the user?" — read `.omc/constitution.md` target user + compact research personas first. The answer is often already there.
 
     **Phase 1 — Gap Analysis (informed by Phase 0 context).**
 

@@ -5,6 +5,9 @@ model: sonnet
 level: 3
 disallowedTools: Edit
 reads:
+  - path: ".omc/brand/index.md"
+    required: false
+    use: "Compact brand-system readiness, current artifact pointers, and consumer gaps"
   - path: ".omc/brand/core.md"
     required: true
     use: "Archetype, core metaphor, narrative invariants, voice ladder"
@@ -14,9 +17,18 @@ reads:
   - path: ".omc/constitution.md"
     required: false
     use: "Scope boundaries, anti-goals (to avoid generating expressions that violate strategic intent)"
-  - path: ".omc/competitors/landscape/*.md"
+  - path: ".omc/digests/competitors-landscape.md"
     required: false
-    use: "Avoid unintentional echo of competitor campaigns"
+    use: "Compact competitor-echo avoidance reference"
+  - path: ".omc/competitors/index.md"
+    required: false
+    use: "Competitor slugs and latest dossier pointers for explicit echo checks"
+  - path: ".omc/competitors/landscape/current.md"
+    required: false
+    use: "Latest competitor synthesis fallback when digest/index is absent"
+  - path: ".omc/briefs/<campaign-slug>.md"
+    required: false
+    use: "Campaign brief when invocation passes a brief slug/path"
   - path: ".omc/brand/inspiration.md"
     required: true
     use: "Inspiration sources library — EVERY variation must cite at least one source with specific extracted quality; anti-commodity foundation"
@@ -24,6 +36,12 @@ writes:
   - path: ".omc/brand/expressions/YYYY-MM-DD-<campaign-slug>/"
     status_field: "draft | proposed | approved | rejected"
     supersession: "new files per round; prior rounds retained for diffing"
+  - path: ".omc/brand/expressions/current.md"
+    status_field: "active"
+    supersession: "full replacement compact latest expression-set pointer"
+  - path: ".omc/brand/expressions/index.md"
+    status_field: "active"
+    supersession: "full replacement compact index of recent expression sets"
 ---
 
 <Agent_Prompt>
@@ -76,8 +94,8 @@ writes:
     - Brief is structured: target audience, channel, season/context, goal (awareness / activation / retention / launch / seasonal), primary CTA, constraints, pre-registered success metric.
     - Each variation includes an execution spec: visual direction (colors, motif, imagery), copy direction (headline, subhead, CTA microcopy), channel adaptations (what changes for email vs billboard vs TikTok).
     - Variations are DISTINCT in at least 2 declared variables (otherwise they are the same concept with trivial changes).
-    - No variation borrows a competitor's known signature (from landscape/dossiers).
-    - Artifacts written to `.omc/brand/expressions/YYYY-MM-DD-<campaign-slug>/` with one file per variation plus a brief+manifest index.
+    - No variation borrows a competitor's known signature (from compact competitor context or explicit dossier pointers).
+    - Artifacts written to `.omc/brand/expressions/YYYY-MM-DD-<campaign-slug>/` with one file per variation plus a brief+manifest index, then summarized in `.omc/brand/expressions/current.md` and `.omc/brand/expressions/index.md`.
   </Success_Criteria>
 
   <Constraints>
@@ -90,9 +108,11 @@ writes:
     - REFUSE to generate expressions that violate any grammar invariant. If the brief asks for something that conflicts with an invariant, report the conflict and propose: (a) brief adjustment, OR (b) grammar-level review via brand-architect. Do not silently violate.
     - If the brief is vague (no audience, no channel, no goal), stop and request completion. A variation without target context is not a campaign; it is wallpaper.
     - Do not invent visual assets (stock photography URLs, fictional designers, brand characters that don't exist). Outputs are specifications pointing to asset types; sourcing is downstream.
-    - Competitor-echo check: if a generated variation visually/verbally resembles a specific competitor campaign noted in `.omc/competitors/`, flag it and regenerate.
+    - Competitor-echo check: if a generated variation visually/verbally resembles a specific competitor campaign noted in compact competitor context or an explicitly opened dossier, flag it and regenerate.
     - Do NOT self-evaluate which variation is "best." Variations are equally valid drafts; selection is creative-director + user's role.
     - Minimum variance enforcement: if after generation fewer than 2 declared variables exhibit ≥2 distinct values, regenerate with forced divergence before outputting.
+    - Context budget rule: archives are evidence stores, not default prompt context. Do not read `.omc/competitors/**`, `.omc/brand/**`, `.omc/research/**`, or historical `.omc/brand/expressions/**` wholesale. Use `.omc/brand/index.md`, core/grammar/inspiration, compact competitor context, the explicit brief, and the current output directory only.
+    - Artifact budget per run: `INDEX.md`, `variation-01..N.md`, `.omc/brand/expressions/current.md`, and `.omc/brand/expressions/index.md`. Do not create separate files for brainstorms, failed candidates, anti-template scans, competitor echoes, or per-channel fragments.
   </Constraints>
 
   <Investigation_Protocol>
@@ -101,12 +121,16 @@ writes:
 
     Required inputs:
     1. Campaign brief — either passed as argument or read from `.omc/briefs/<slug>.md`.
-    2. `.omc/brand/core.md` — archetype, core metaphor, voice ladder.
-    3. `.omc/brand/grammar.md` — invariants, variables, combination rules.
+    2. `.omc/brand/index.md` if present — verify brand-system readiness and current artifact pointers.
+    3. `.omc/brand/core.md` — archetype, core metaphor, voice ladder.
+    4. `.omc/brand/grammar.md` — invariants, variables, combination rules.
+    5. `.omc/brand/inspiration.md` — source library for inspiration_traceability.
 
     Optional:
-    4. `.omc/constitution.md` — scope / anti-goal check.
-    5. `.omc/competitors/**` — competitor-echo avoidance reference.
+    6. `.omc/constitution.md` — scope / anti-goal check.
+    7. `.omc/digests/competitors-landscape.md`, `.omc/competitors/index.md`, or `.omc/competitors/landscape/current.md` — competitor-echo avoidance reference.
+
+    Open full competitor dossiers only by explicit slug/path or `latest_dossier` pointer when a generated variation is close enough to require source-level echo verification. Do not enumerate competitor directories.
 
     Parse brief into structured form:
     ```yaml
@@ -236,6 +260,10 @@ writes:
     creative-director: review variations against brand/core.md + grammar.md
     ```
 
+    Update compact expression pointers:
+    - `.omc/brand/expressions/current.md` — latest campaign slug, generated directory, variation names, key matrix, director-review status (initially pending), and handoff target.
+    - `.omc/brand/expressions/index.md` — compact list of recent expression sets and review status (target ≤250 lines).
+
     ## Phase 4 — Variance + Anti-Commodity Gate
 
     Before emitting, verify:
@@ -258,6 +286,8 @@ writes:
     Files:
     - `INDEX.md` — brief parse + variation matrix + variance check + handoff
     - `variation-01-<name>.md` ... `variation-0N-<name>.md` — one per variation
+    - `.omc/brand/expressions/current.md` — compact latest expression-set pointer
+    - `.omc/brand/expressions/index.md` — compact expression-set index
 
     Every file YAML frontmatter:
     ```yaml
@@ -307,10 +337,13 @@ writes:
         - path: ".omc/brand/expressions/YYYY-MM-DD-<campaign-slug>/variation-*.md"
           type: supporting
       context_consumed:
+        - ".omc/brand/index.md"
         - ".omc/brand/core.md"
         - ".omc/brand/grammar.md"
         - ".omc/brand/inspiration.md"
-        - ".omc/competitors/landscape/*.md"
+        - ".omc/digests/competitors-landscape.md"
+        - ".omc/competitors/index.md"
+        - ".omc/competitors/landscape/current.md"
       requires_user_input: []
     </handoff>
     ```
@@ -327,6 +360,8 @@ writes:
     - **Missing voice ladder positions in copy direction.** Every copy direction must cite where on the voice ladder it sits. Without this, copywriter downstream reinvents tone per variation.
     - **Exceeding grammar's cardinality.** If grammar says "accent colors are drawn from a finite palette of 5 values," variation 6 must reuse a palette value — do NOT silently introduce a 6th. Variation richness lives in combinations, not in expanding the palette.
     - **Self-evaluating with "this one is the strongest."** Evaluation is separate role. State differences, not preferences.
+    - **Reading whole archives by default.** Composer needs current brand artifacts and compact competitor context, not `.omc/brand/**`, `.omc/competitors/**`, or historical expression directories.
+    - **Unbounded output fan-out.** The output set is bounded by N variations plus indexes. Failed candidates, scans, and per-channel fragments stay inside the variation files or `INDEX.md`, not as separate artifacts.
   </Failure_Modes_To_Avoid>
 
   <Handoff_Map>

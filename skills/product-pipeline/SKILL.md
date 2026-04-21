@@ -127,9 +127,10 @@ This skill makes every gate non-skippable. Each stage's output becomes the next 
 
 **Protocol:**
 1. **Pre-pass (copywriter):** If the feature is user-facing (any screen or notification text), invoke `oh-my-claudecode:copywriter` first to produce in-app string drafts aligned with the constitution's tone of voice. Strings are passed to designer as inputs, not left to implementation-time improvisation.
-2. **Coordinated implementation:** Use `/team` infrastructure to run designer and executor in a coordinated session:
+2. **Coordinated implementation:** Use the current OMC `/team` surface or CLI-first `omc team ...` runtime to run designer and executor in one coordinated session. Do not use deprecated MCP team-runtime calls.
    - designer: implements component-level UI for all states documented in the UX flow spec
    - executor: wires state management, routing, auth guards, API calls, and data flow
+   - dependencies: designer produces component contracts first; executor wires only against those contracts
 3. Stage handoff written to `.omc/handoffs/product-pipeline-stage5.md` (files created/modified, known gaps).
 
 **HARD STOP:** Designer must not begin until Stage 4 UX flow spec exists. Executor must not wire state management until designer has produced the component interfaces. Coordinate via task dependencies in the `/team` session.
@@ -174,9 +175,9 @@ This skill makes every gate non-skippable. Each stage's output becomes the next 
 <Execution_Policy>
 - Each stage is non-skippable except Stage 3 (UX Research — skipped if no user data sources detected via Glob).
 - HARD STOPs always halt the pipeline. The lead reports the stop reason, the specific violated constraint (quoted verbatim where applicable), and the required remediation path. No stage advances past a HARD STOP.
-- Pipeline runs as a `/team` session for Stage 5 coordination — uses TeamCreate, TaskCreate, and agent spawning per the team skill protocol. All other stages run as sequential single-agent invocations.
+- Pipeline runs as a `/team` session for Stage 5 coordination using the active OMC team runtime (`/team` or CLI-first `omc team ...`). All other stages run as sequential single-agent invocations.
 - Stage handoffs written to `.omc/handoffs/product-pipeline-<stage>.md` (stages 1–7) for resumability. If the pipeline is re-invoked after a HARD STOP, it reads the handoff files to resume from the halted stage rather than restarting.
-- On cancellation (user runs `/cancel` or `OMC_SKIP_HOOKS` is set): shut down active workers via TeamDelete, mark the current stage as cancelled in its handoff file, and preserve all completed handoffs for resumption.
+- On cancellation (user runs `/cancel` or `OMC_SKIP_HOOKS` is set): shut down active workers through the current team runtime, mark the current stage as cancelled in its handoff file, and preserve all completed handoffs for resumption.
 - Respects `OMC_SKIP_HOOKS` for testing and CI — when set, the pipeline skips brand-steward auto-interview and proceeds with constitution-draft warnings only.
 - Can be linked with `/ralph` for retry-on-failure persistence: `/ralph /product-pipeline "feature description"` wraps the pipeline in Ralph's loop so HARD STOPs that resolve on retry are automatically retried without user intervention.
 </Execution_Policy>
@@ -245,7 +246,7 @@ Final pipeline report aggregating outputs from all completed stages:
 </Failure_Modes_To_Avoid>
 
 <Integration_Notes>
-- Uses `/team` infrastructure under the hood for Stage 5 — see `skills/team/SKILL.md` for runtime details on TeamCreate, TaskCreate, and agent spawning.
+- Uses the current `/team` infrastructure under the hood for Stage 5 — prefer the active slash-command surface or CLI-first `omc team ...` runtime exposed by the environment, not deprecated MCP runtime calls.
 - Reads constitution status before every stage and passes constitution path to all agents that require it.
 - Refuses to proceed past Stage 1 if `status: draft` AND no brand-steward interaction has occurred this session. Check session state via `state_read` before auto-blocking.
 - Respects `OMC_SKIP_HOOKS` for testing/CI — set this env var to skip the brand-steward auto-interview check and run the pipeline with draft-constitution warnings only.

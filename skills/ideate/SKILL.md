@@ -30,7 +30,7 @@ Orchestrates divergent idea generation using multiple scientifically-grounded me
 - `--methods=<list>` — override auto-selection: `--methods=jtbd-odi,triz,blue-ocean`
 - `--skip-redteam` — produce shortlist without critic pass (not recommended; use only for early brainstorming)
 - `--n-ideas=<int>` — minimum raw ideas per method (default 5)
-- `--competitors=<list>` — focus Blue Ocean specifically on named competitors
+- `--competitors=<list>` — focus Blue Ocean specifically on named competitors; read matching dossiers only through `.omc/competitors/index.md` pointers or explicit paths
 - `--track=<backend|frontend|both>` — routing hint for downstream pipelines
 
 <Purpose>
@@ -82,14 +82,18 @@ Single-pass LLM "brainstorm" outputs are creativity theater. This skill enforces
 ## Phase 1 — Context Ingestion
 
 **Agent:** ideate (single invocation; no parallelism)
-**Input:** Problem description + `.omc/constitution.md` + `.omc/research/**` + `.omc/competitors/**` + `.omc/strategy/**`
+**Input:** Problem description + `.omc/constitution.md` + compact research/competitor/strategy artifacts:
+- `.omc/digests/research-highlights.md` or `.omc/research/current.md`
+- `.omc/digests/competitors-landscape.md`, `.omc/competitors/index.md`, or `.omc/competitors/landscape/current.md`
+- `.omc/strategy/index.md`, `.omc/strategy/current.md`, or an explicit strategy path
 **Output:** `.omc/ideas/contract/YYYY-MM-DD-<slug>.md` with the Problem Contract.
 
 **Protocol:**
 1. Invoke `oh-my-claudecode:ideate` with the problem description and directive: "Phase 1 only — produce the Problem Contract, do not generate ideas yet."
-2. Agent reads all context artifacts, extracts JTBD, known outcomes with Importance/Satisfaction if available, anti-goals, competitors, and constraints.
-3. Writes the Problem Contract yaml block to `.omc/ideas/contract/YYYY-MM-DD-<slug>.md`.
-4. Reports: known fields with HIGH confidence, UNKNOWN fields, and a recommendation for ux-researcher or competitor-scout if critical fields are missing.
+2. Agent reads compact context first, extracts JTBD, known outcomes with Importance/Satisfaction if available, anti-goals, competitors, and constraints.
+3. Agent opens full research, competitor, strategy, or prior idea files only by explicit invocation path, slug, or compact index pointer when a citation, score, or named competitor requires it. Do not enumerate `.omc/research/**`, `.omc/competitors/**`, `.omc/strategy/**`, or `.omc/ideas/**`.
+4. Writes the Problem Contract yaml block to `.omc/ideas/contract/YYYY-MM-DD-<slug>.md`.
+5. Reports: known fields with HIGH confidence, UNKNOWN fields, and a recommendation for ux-researcher or competitor-scout if critical fields are missing.
 
 **HARD STOP:** If the problem statement is too vague to produce a Problem Contract (no identifiable job_executor, no job_statement). Report: "Problem statement too vague — run `/oh-my-claudecode:deep-interview` first to crystallize the problem."
 
@@ -127,9 +131,9 @@ Single-pass LLM "brainstorm" outputs are creativity theater. This skill enforces
 **Output:** One raw idea file per method: `.omc/ideas/raw/YYYY-MM-DD-<method>-<slug>.md`
 
 **Protocol:**
-1. Create a team session via TeamCreate.
-2. For each selected method, TaskCreate with the directive: "Invoke `oh-my-claudecode:ideate` with `method: <name>` and the Problem Contract path. Produce ≥5 ideas following the method-specific protocol."
-3. Tasks run in parallel. Each ideate sub-invocation writes its raw file.
+1. Use the current OMC `/team` surface or CLI-first `omc team ...` runtime available in the environment. Do not use deprecated MCP runtime calls such as `TeamCreate` or `TaskCreate`.
+2. For each selected method, create one `ideate` role assignment with the directive: "Invoke `oh-my-claudecode:ideate` with `method: <name>` and the Problem Contract path. Produce ≥5 ideas following the method-specific protocol."
+3. Tasks run in parallel. Each ideate sub-invocation writes its raw file for the current run only.
 4. After all tasks complete, orchestrator reads raw files and verifies each method produced ≥5 ideas. If any method produced <3, re-run that method once with a more aggressive divergence directive; if it still fails, document the failure and continue.
 
 **HARD STOP:** If zero methods produced ≥3 ideas. Report: "Divergent generation failed across all selected methods. Problem statement may be over-specified or contain hidden contradictions. Run `/oh-my-claudecode:deep-interview` to reformulate."
@@ -172,7 +176,7 @@ Single-pass LLM "brainstorm" outputs are creativity theater. This skill enforces
 ## Phase 6 — Red-team
 
 **Agent:** critic (opus)
-**Input:** Shortlist + Problem Contract + `.omc/competitors/**`
+**Input:** Shortlist + Problem Contract + `.omc/digests/competitors-landscape.md` or `.omc/competitors/index.md` plus explicit dossier pointers for shortlist analogues
 **Output:** `.omc/ideas/redteam/YYYY-MM-DD-<slug>.md`
 
 **Protocol:**
@@ -253,7 +257,7 @@ Optional flags:
 - `--methods=<list>` (comma-separated: jtbd-odi, triz, scamper, blue-ocean, morphological, biomimicry, lateral-po, first-principles)
 - `--skip-redteam` (not recommended)
 - `--n-ideas=<int>` (default 5)
-- `--competitors=<list>` (focus Blue Ocean on named competitors; agent also reads all `.omc/competitors/**`)
+- `--competitors=<list>` (focus Blue Ocean on named competitors; resolve matching dossiers through `.omc/competitors/index.md` or explicit paths, not by reading all `.omc/competitors/**`)
 - `--track=<backend|frontend|both>` (routing hint for downstream pipeline selection)
 
 Quality input characteristics:
@@ -311,6 +315,8 @@ Supporting artifacts:
 - `.omc/ideas/scored/YYYY-MM-DD-<slug>.md` — score vectors
 - `.omc/ideas/redteam/YYYY-MM-DD-<slug>.md` — critic's findings
 - `.omc/ideas/experiments/YYYY-MM-DD-<slug>.md` — experiment cards
+- `.omc/ideas/current.md` — compact latest shortlist and handoff pointers for downstream agents
+- `.omc/ideas/index.md` — compact index of recent reports and shortlist IDs
 </Output>
 
 <Failure_Modes_To_Avoid>
@@ -323,10 +329,12 @@ Supporting artifacts:
 - **Using this skill for execution.** Ideate produces hypotheses and experiments, not code. Handoff to product-pipeline or backend-pipeline per shortlist idea.
 - **Running ideate with no constitution and no override.** Ideas produced without anti-goals are not filterable by product-strategist. At minimum, warn; ideally, run brand-steward first.
 - **Skipping Phase 1 Problem Contract.** Without the Contract, methods produce incomparable outputs and clustering degenerates. This phase is non-negotiable.
+- **Reading whole archives as context.** Use `.omc/digests/research-highlights.md`, `.omc/research/current.md`, `.omc/digests/competitors-landscape.md`, `.omc/competitors/index.md`, `.omc/competitors/landscape/current.md`, and strategy current/index files first. Open full files only by explicit path, slug, or compact pointer.
+- **Creating one file per idea or assumption.** Keep raw method output per method and consolidated artifacts per phase. Do not fan out into unbounded idea/cluster/assumption files.
 </Failure_Modes_To_Avoid>
 
 <Integration_Notes>
-- Uses `/team` infrastructure for Phase 3 — see `skills/team/SKILL.md` for TeamCreate / TaskCreate semantics.
+- Uses `/team` infrastructure for Phase 3 through the current native or CLI-first team surface; do not call deprecated MCP runtime tools directly.
 - Writes exclusively under `.omc/ideas/` — does not modify constitution, research, strategy, or source code.
 - Consumed by `oh-my-claudecode:priority-engine` — ranks ideas from `.omc/ideas/` against the existing backlog.
 - Consumed by `oh-my-claudecode:product-pipeline` — post-prioritization, a shortlist idea with UX scope flows into product-pipeline for UX delivery.
@@ -334,5 +342,5 @@ Supporting artifacts:
 - Composable with `/oh-my-claudecode:ralph` for retry-on-transient-failure.
 - Composable with `/oh-my-claudecode:sciomc` for deep parallel research on a specific idea's riskiest assumption before experiment design.
 - Composable with `/oh-my-claudecode:deep-interview` upstream — run deep-interview first when the problem statement is not Contract-ready.
-- For competitive work, ensure `.omc/competitors/` is populated (via competitor-scout or manual research) before running — otherwise Blue Ocean output will be LOW confidence.
+- For competitive work, ensure `.omc/competitors/index.md` and `.omc/competitors/landscape/current.md` are populated via competitor-scout or manual research before running — otherwise Blue Ocean output will be LOW confidence.
 </Integration_Notes>

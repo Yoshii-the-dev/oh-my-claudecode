@@ -49,6 +49,8 @@ Skill has multiple entry points controlled by flags. Each entry point is a self-
 
 <Purpose>
 Design partner programs produce the highest-leverage qualitative signal available pre-launch — but only when run with discipline. Ad-hoc partner programs drift into "friends who agree with us" and produce false validation. This skill encodes the discipline: selection criteria that guard against sycophancy, structured sessions that surface issues instead of praise, synthesis that converts notes into citable research, and graduation that ends the relationship cleanly instead of letting partners drift into passive users.
+
+Context budget rule: partner archives are evidence stores, not default prompt context. Do not read `.omc/partners/**` or `.omc/research/**` wholesale. Use `.omc/partners/current.md`, `.omc/partners/index.md`, `.omc/partners/roster.md`, `.omc/partners/sessions/index.md`, `.omc/partners/synthesis/current.md`, and explicit session paths first. Open full partner/session files only by explicit partner-id, index pointer, date window selection, or user-provided path.
 </Purpose>
 
 <Use_When>
@@ -101,9 +103,13 @@ It also resolves a specific OMC gap: agents like `ux-researcher` synthesize exis
 3. Write to `.omc/partners/program.md`.
 4. Create supporting scaffolding:
    - `.omc/partners/roster.md` (empty table to be populated by `--onboard`)
+   - `.omc/partners/current.md` (compact active-program summary: goals, target count, active count, latest synthesis, next action)
+   - `.omc/partners/index.md` (compact manifest of program artifacts and partner folders)
    - `.omc/partners/outreach/` (directory for `--recruit` artifacts)
    - `.omc/partners/sessions/` (directory for session notes)
+   - `.omc/partners/sessions/index.md` (session ledger: date, partner-id, feature, path, status, synthesized?)
    - `.omc/partners/synthesis/` (directory for synthesized outputs)
+   - `.omc/partners/synthesis/index.md` (synthesis manifest)
    - `.omc/partners/graduated/` (directory for exit artifacts)
 
 **HARD STOP:** Constitution absent or has no target-user section. Run `/oh-my-claudecode:brand-steward` first — selection criteria without an ICP produce a random-friends list.
@@ -126,6 +132,7 @@ It also resolves a specific OMC gap: agents like `ux-researcher` synthesize exis
    - **Tracking table schema**: candidate name, source, status (contacted / responded / qualified / onboarded / declined), first-contact date, notes.
 4. Do NOT invent specific candidate names or contact info — that is the user's task, not the agent's.
 5. Write outreach artifact.
+6. Update `.omc/partners/current.md` and `.omc/partners/index.md` with the latest outreach pointer and recruiting status.
 
 **HARD STOP:** Criteria so narrow that no plausible channels exist (e.g., "CTOs of US hospitals with ≥10 000 beds" — that's ~15 people globally). Widen criteria or plan bespoke outreach.
 
@@ -152,6 +159,7 @@ It also resolves a specific OMC gap: agents like `ux-researcher` synthesize exis
    |---|---|---|---|---|---|---|---|
    ```
 4. Status starts as `onboarded`. Advances through `active` → `graduating` → `alumni`/`advocate`/`inactive`.
+5. Update `.omc/partners/current.md` and `.omc/partners/index.md` with the partner folder pointer and active/onboarded counts.
 
 **HARD STOP:** Partner ID already exists in roster. Halt with duplicate warning.
 
@@ -164,9 +172,9 @@ It also resolves a specific OMC gap: agents like `ux-researcher` synthesize exis
 **Output:** Per-partner agenda + note template at `.omc/partners/<partner-id>/sessions/YYYY-MM-DD-<type>.md`
 
 **Protocol:**
-1. Read roster; filter to `active` partners.
+1. Read `.omc/partners/roster.md`, `.omc/partners/current.md`, and `.omc/partners/sessions/index.md`; filter roster to `active` partners.
 2. For each active partner, generate a session packet:
-   - **Context recap** (one paragraph referencing their prior sessions if present).
+   - **Context recap** (one paragraph referencing their prior sessions if present in `.omc/partners/sessions/index.md`; open at most the latest prior session path per partner only when a recap needs direct evidence).
    - **Agenda** (structured, 45 min default):
      - If `<feature-slug>` supplied: feature-specific deep-dive with task-based prompts ("show us how you would use this to accomplish X").
      - Else: recurring review (what's worked / what hasn't / what's missing / open questions).
@@ -184,6 +192,8 @@ It also resolves a specific OMC gap: agents like `ux-researcher` synthesize exis
      - Don't skip the silence — partners often talk when you wait.
 3. Do NOT write fabricated session content — the template is for the user to fill during/after the session.
 4. After session, user saves filled template to `.omc/partners/<partner-id>/sessions/YYYY-MM-DD-<type>.md`.
+5. Add each generated session template path to `.omc/partners/sessions/index.md` with status `template`. When the user later fills a template, update only that ledger row to `filled` if the path is provided or can be identified from the current run.
+6. Update `.omc/partners/current.md` with next scheduled synthesis window and session counts.
 
 **HARD STOP:** Zero `active` partners. Run `--recruit` and `--onboard` first.
 
@@ -192,19 +202,21 @@ It also resolves a specific OMC gap: agents like `ux-researcher` synthesize exis
 ## `--synthesize [--since=<date>]` — Research Synthesis
 
 **Agent:** ux-researcher
-**Input:** Session notes from `.omc/partners/**/sessions/` since `--since` date (default: last 14 days)
-**Output:** `.omc/partners/synthesis/YYYY-MM-DD-<topic>.md` + **linked copy** at `.omc/research/YYYY-MM-DD-<topic>.md`
+**Input:** Filled session note paths selected from `.omc/partners/sessions/index.md` since `--since` date (default: last 14 days)
+**Output:** `.omc/partners/synthesis/YYYY-MM-DD-<topic>.md` + `.omc/partners/synthesis/current.md` + **linked copy** at `.omc/research/YYYY-MM-DD-<topic>.md`
 
 **Protocol:**
-1. Glob session notes from partner directories since `--since` (or last 14 days).
-2. Invoke `oh-my-claudecode:ux-researcher` with directive: "Synthesize session notes from the provided paths. Cite every finding with partner-id + session-date + quote. Extract convergent themes (appearing in ≥2 partner sessions) vs unique individual observations. Produce structured research artifact."
-3. ux-researcher produces:
+1. Read `.omc/partners/sessions/index.md` and select rows with status `filled` and date >= `--since` (or last 14 days). If the index is missing, perform a metadata-only path listing to rebuild the ledger; do not read note contents during rebuild.
+2. Open only the selected session note files. Do not glob and load all partner session contents.
+3. Invoke `oh-my-claudecode:ux-researcher` with directive: "Synthesize session notes from the provided paths. Cite every finding with partner-id + session-date + quote. Extract convergent themes (appearing in ≥2 partner sessions) vs unique individual observations. Produce structured research artifact."
+4. ux-researcher produces:
    - **Convergent themes** (≥2 partners) — each with verbatim citations, partner count, severity (blocker / major friction / minor friction / delight).
    - **Unique observations** — single-partner findings worth tracking but weaker signal.
    - **Behavioral patterns** — what partners did (from observation, not self-report).
    - **Unprompted feature requests** — ranked by convergence.
    - **Open questions** — things no session surfaced but would be valuable; schedule for future sessions.
-4. Write to `.omc/partners/synthesis/` AND copy (or link) to `.omc/research/` so downstream agents (product-strategist, ideate, ux-architect, pre-launch-sprint) can consume it as standard research input.
+5. Write to `.omc/partners/synthesis/` AND copy (or link) to `.omc/research/` so downstream agents (product-strategist, ideate, ux-architect, pre-launch-sprint) can consume it as standard research input.
+6. Update `.omc/partners/synthesis/current.md`, `.omc/partners/synthesis/index.md`, `.omc/partners/current.md`, `.omc/partners/index.md`, `.omc/research/current.md` when present, and selected rows in `.omc/partners/sessions/index.md` with the synthesis pointer.
 
 **HARD STOP:** Zero session notes in window. Nothing to synthesize; run sessions first.
 
@@ -217,16 +229,18 @@ It also resolves a specific OMC gap: agents like `ux-researcher` synthesize exis
 **Output:** `.omc/partners/graduated/<partner-id>/` + roster update
 
 **Protocol:**
-1. Generate exit interview agenda (30 min):
+1. Read `.omc/partners/roster.md`, `.omc/partners/current.md`, and the selected partner's row/pointers from `.omc/partners/index.md`; open the partner folder and complete session history only for the requested `<partner-id>`.
+2. Generate exit interview agenda (30 min):
    - Overall experience with the program.
    - What they would tell a peer about the product (launch-testimonial potential).
    - Top 3 things they hope the team prioritizes.
    - Top 3 things they hope the team does NOT do (anti-goal signals).
    - Willingness to: (a) testimonial, (b) case study, (c) reference call, (d) advisory role, (e) just alumni.
-2. Exit-synthesis: ux-researcher produces a "partner journey" retrospective — what changed during their engagement, what they influenced, residual concerns.
-3. Generate exit-message draft (copywriter, brand-voice).
-4. Update roster status to `alumni` / `advocate` (if willing to testimonial+) / `inactive` (if disengaged).
-5. Move partner folder to `.omc/partners/graduated/<partner-id>/`.
+3. Exit-synthesis: ux-researcher produces a "partner journey" retrospective — what changed during their engagement, what they influenced, residual concerns.
+4. Generate exit-message draft (copywriter, brand-voice).
+5. Update roster status to `alumni` / `advocate` (if willing to testimonial+) / `inactive` (if disengaged).
+6. Move partner folder to `.omc/partners/graduated/<partner-id>/`.
+7. Update `.omc/partners/current.md`, `.omc/partners/index.md`, and `.omc/partners/sessions/index.md` partner folder pointers.
 
 **HARD STOP:** None — but if partner was never active (onboarded but no sessions), record that as learning for `--recruit` criteria calibration.
 
@@ -235,20 +249,22 @@ It also resolves a specific OMC gap: agents like `ux-researcher` synthesize exis
 ## `--status` — Program Health Dashboard
 
 **Agent:** design-partner-manager (this skill, no external agent)
-**Input:** Program document + roster + sessions + synthesis artifacts
+**Input:** Program document + roster + session ledger + latest synthesis pointer
 **Output:** Terminal summary + `.omc/partners/status/YYYY-MM-DD.md`
 
 **Protocol:**
-1. Count partners by status (onboarded / active / graduating / alumni / advocate / inactive).
-2. Count sessions per partner (lifetime + last-30-days).
-3. Compute health signals:
+1. Read `.omc/partners/program.md`, `.omc/partners/roster.md`, `.omc/partners/current.md`, `.omc/partners/sessions/index.md`, and `.omc/partners/synthesis/current.md` if present.
+2. Count partners by status (onboarded / active / graduating / alumni / advocate / inactive).
+3. Count sessions per partner from `.omc/partners/sessions/index.md` (lifetime + last-30-days).
+4. Compute health signals:
    - **Coverage**: are partners hitting ICP criteria, or has the roster drifted?
    - **Engagement**: what % of active partners had a session in the last 30 days?
    - **Synthesis freshness**: days since last `--synthesize` run.
    - **Convergence rate**: what fraction of findings are convergent (≥2 partners) vs unique?
    - **Inactive flag**: partners with no session in 45+ days → recommend `--graduate` as `inactive`.
-4. Top issues (from latest synthesis).
-5. Recommended next actions (with specific entry-point commands).
+5. Top issues (from latest synthesis current pointer).
+6. Recommended next actions (with specific entry-point commands).
+7. Write `.omc/partners/status/YYYY-MM-DD.md` and update `.omc/partners/current.md` / `.omc/partners/index.md` with the status pointer.
 
 </Entry_Point_Protocols>
 
@@ -257,6 +273,8 @@ It also resolves a specific OMC gap: agents like `ux-researcher` synthesize exis
 - Program document at `.omc/partners/program.md` is the single source of truth for criteria; entries under `roster.md` are derived.
 - Session notes are written by the USER after sessions (this skill provides templates, not fabricated content).
 - Synthesis is the ONLY writeback into `.omc/research/` — downstream agents consume `.omc/research/` uniformly whether data came from partners, app telemetry, or interviews.
+- Maintain compact navigation files on every entry point: `.omc/partners/current.md`, `.omc/partners/index.md`, `.omc/partners/sessions/index.md`, and `.omc/partners/synthesis/index.md` when applicable. These files are the default context for downstream workflows.
+- Do not read `.omc/partners/**` wholesale. If an index is absent or stale, rebuild it from file names, dates, roster rows, and explicit paths before reading note contents.
 - Composable with `/oh-my-claudecode:loop` for synthesis cadence: `/loop 7d /design-partner-manager --synthesize`.
 - Composable with `/oh-my-claudecode:pre-launch-sprint` as its Week 3 external-validation dependency.
 </Execution_Policy>
@@ -281,12 +299,17 @@ Program artifact tree under `.omc/partners/`:
 .omc/partners/
 ├── program.md                              # goals, criteria, cadence, graduation criteria
 ├── roster.md                               # current partners with status
+├── current.md                              # compact active-program summary and latest pointers
+├── index.md                                # compact manifest of program, partner, status, and synthesis artifacts
 ├── outreach/YYYY-MM-DD-<slug>.md           # recruitment artifacts
 ├── <partner-id>/
 │   ├── onboarding.md
 │   └── sessions/YYYY-MM-DD-<type>.md       # filled by user
 ├── sessions/                               # (if grouping by date rather than partner)
+│   └── index.md                            # session ledger; primary source for --synthesize and --status
 ├── synthesis/YYYY-MM-DD-<topic>.md         # ux-researcher output
+├── synthesis/current.md                    # latest compact synthesis pointer/summary
+├── synthesis/index.md                      # synthesis manifest
 ├── graduated/<partner-id>/                 # exit artifacts
 └── status/YYYY-MM-DD.md                    # health dashboard snapshots
 ```
@@ -295,6 +318,7 @@ Research cross-link:
 
 ```
 .omc/research/YYYY-MM-DD-<topic>.md         # copy / link of synthesis artifact
+.omc/research/current.md                    # latest research pointer/summary, updated when present
 ```
 </Output>
 
@@ -310,11 +334,12 @@ Research cross-link:
 - **Running this skill for launched products.** App telemetry + interviews replace design partners post-launch. This skill is structurally pre-launch.
 - **Initializing without a constitution.** Selection criteria need an ICP; ICP lives in the constitution. `--init` HARD STOPs if constitution is absent.
 - **Sharing partner quotes without attribution control.** Cross-check NDA before quoting partners in public-facing artifacts (landing pages, investor decks). Synthesis artifacts under `.omc/partners/` are internal by default.
+- **Reading all partner history into context.** The manager should operate from roster/current/index files, then open only explicit partner/session paths needed for the current entry point.
 </Failure_Modes_To_Avoid>
 
 <Integration_Notes>
-- Reads: `.omc/constitution.md`, prior `.omc/partners/**` state.
-- Writes: exclusively under `.omc/partners/**`; cross-links synthesis into `.omc/research/`.
+- Reads: `.omc/constitution.md`, `.omc/partners/program.md`, `.omc/partners/roster.md`, `.omc/partners/current.md`, `.omc/partners/index.md`, `.omc/partners/sessions/index.md`, `.omc/partners/synthesis/current.md`, and explicit partner/session paths selected by entry point.
+- Writes: exclusively under `.omc/partners/**`; synthesis also cross-links the selected synthesis artifact into `.omc/research/`.
 - Depends on: `oh-my-claudecode:ux-researcher` (synthesis), `oh-my-claudecode:copywriter` (outreach / onboarding / exit materials), optionally `oh-my-claudecode:product-strategist` (program foundation), optionally `oh-my-claudecode:competitor-scout` (channel identification for recruiting).
 - Feeds: `oh-my-claudecode:pre-launch-sprint` Week 3 external validation; `oh-my-claudecode:ideate` Phase 0 context; `oh-my-claudecode:product-strategist` strategy context; any skill that consumes `.omc/research/`.
 - Automation: pair with `/oh-my-claudecode:loop` for recurring synthesis: `/loop 14d /design-partner-manager --synthesize`.

@@ -136,13 +136,14 @@ level: 3
     ## Phase 0b — Research-Completeness Gate
 
     Read silently (no output to user):
-    - `.omc/ideas/` — output of `/ideate` pipeline. Count non-empty `.md` files.
-    - `.omc/specs/` — output of `/deep-interview`. Count non-empty `.md` files.
-    - `.omc/competitors/` — count dossier files (including `landscape/` subdir).
-    - `.omc/research/` — count synthesis artifacts.
-    - `.omc/constitution.md` — if exists, refinement session (read prior for delta).
-    - `.omc/brand/**` — if exists, inform alignment.
+    - `.omc/constitution.md` — if exists, refinement session; note `status`, `depth_mode`, and `phase`.
+    - Vision source index/current: `.omc/ideas/current.md` or `.omc/ideas/index.md`; `.omc/specs/current.md` or `.omc/specs/index.md`. Count files via index/current pointers or metadata-only listing if indexes are absent.
+    - Compact competitor context: `.omc/digests/competitors-landscape.md` if present; otherwise `.omc/competitors/landscape/current.md`, `.omc/competitors/index.md`, or the newest landscape file only. Count dossiers from the index or metadata-only listing.
+    - Compact research context: `.omc/digests/research.md` or `.omc/digests/research-highlights.md` if present; otherwise `.omc/research/current.md`, `.omc/research/index.md`, or the newest 1-3 synthesis artifacts only.
+    - Compact brand context: `.omc/digests/brand-core.md` if present; otherwise `.omc/brand/index.md`, `.omc/brand/core.md`, and `.omc/brand/grammar.md` if present.
     - `package.json`, `README.md` — product name + surface signals.
+
+    Context budget rule: archives are evidence stores, not default prompt context. Do not read `.omc/ideas/**`, `.omc/specs/**`, `.omc/competitors/**`, `.omc/research/**`, or `.omc/brand/**` wholesale. Open full artifacts only by explicit path, index pointer, or when a surviving hypothesis needs source-level citation.
 
     **Gate logic branches by mode.**
 
@@ -219,13 +220,14 @@ level: 3
 
     ## Phase 1 — Silent Synthesis (no user interaction)
 
-    Read in parallel (fully, not summarily):
-    - ALL `.omc/ideas/**/*.md` files (if present — `/ideate` output: Problem Contract, shortlist, convergent ideas, Anti-goal Watchlist)
-    - ALL `.omc/specs/**/*.md` files (if present — `/deep-interview` output: crystallized specs)
-    - ALL `.omc/competitors/**/*.md` files (landscape summaries + individual dossiers)
-    - ALL `.omc/research/**/*.md` files (personas, pain reports, interview syntheses, JTBD artifacts)
-    - `.omc/constitution.md` if exists
-    - `.omc/brand/**` if exists
+    Read in parallel from compact navigation first:
+    - `.omc/ideas/current.md`, `.omc/ideas/index.md`, or explicit `/ideate` output paths selected by the index.
+    - `.omc/specs/current.md`, `.omc/specs/index.md`, or explicit `/deep-interview` output paths selected by the index.
+    - `.omc/digests/competitors-landscape.md`, `.omc/competitors/landscape/current.md`, or `.omc/competitors/index.md`.
+    - `.omc/digests/research.md`, `.omc/digests/research-highlights.md`, `.omc/research/current.md`, or `.omc/research/index.md`.
+    - `.omc/constitution.md` if exists.
+    - `.omc/digests/brand-core.md`, `.omc/brand/index.md`, `.omc/brand/core.md`, and `.omc/brand/grammar.md` if present.
+    - Open full source artifacts only by explicit index pointer or when a surviving hypothesis needs source-level citation.
 
     Synthesize **standard hypothesis set** (5 categories, every session):
 
@@ -629,12 +631,13 @@ level: 3
         - path: ".omc/constitution.md"
           type: primary
       context_consumed:
-        - ".omc/ideas/**/*.md"    # if /ideate ran — Problem Contract, shortlist, Anti-goal Watchlist
-        - ".omc/specs/**/*.md"    # if /deep-interview ran — crystallized specs
-        - ".omc/competitors/**/*.md"
-        - ".omc/research/**/*.md"
-        - ".omc/constitution.md"  # if prior version existed
-        - ".omc/brand/**/*.md"    # if brand-architect output existed
+        - ".omc/constitution.md"
+        - ".omc/ideas/current.md | .omc/ideas/index.md | explicit /ideate output path"
+        - ".omc/specs/current.md | .omc/specs/index.md | explicit /deep-interview output path"
+        - ".omc/digests/competitors-landscape.md | .omc/competitors/landscape/current.md | .omc/competitors/index.md"
+        - ".omc/digests/research.md | .omc/digests/research-highlights.md | .omc/research/current.md | .omc/research/index.md"
+        - ".omc/digests/brand-core.md | .omc/brand/index.md | .omc/brand/core.md + .omc/brand/grammar.md"
+        # Add explicit source files opened by slug, never broad archive globs.
       requires_user_input:
         # Populated only by genuinely unresolvable ambiguity from data AND outside vision/taste scope.
         # Vision/taste items are NOT listed here — they're captured in Phase 4 directly.
@@ -659,6 +662,7 @@ level: 3
     - **Offering Depth Mode as pre-menu** ("want shallow or deep?"). Depth is opt-in via explicit user trigger only. If no trigger, run standard protocol silently. Do not volunteer the menu.
     - **Announcing "depth mode activated"** as preamble. User already opted in; no ceremony.
     - **Phase 2 emitting 10 hypotheses in depth mode when the founder only opted into 5.** The standard set is 5 categories; depth set ADDS 5 more. If only standard, emit 5. If depth, emit 10. Do not emit 7 ("some depth") — it's all or standard.
+    - **Reading whole archives by default.** `.omc/ideas/**`, `.omc/specs/**`, `.omc/competitors/**`, `.omc/research/**`, and `.omc/brand/**` are too large for default context. Start from digest/current/index artifacts and open only specific source files needed for citations or deltas.
     - **Over-writing on `complete`**: Modifying a complete constitution without explicit user confirmation.
     - **Writing to wrong paths**: Only `.omc/constitution.md` is in scope.
     - **Refinement session without deltas.** When `.omc/constitution.md` already exists, Phase 2 must present retained/changed/new/removed labels — not re-validate the entire hypothesis block from scratch. Rewriting unchanged sections is wasted founder time.
