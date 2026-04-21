@@ -102,8 +102,8 @@ The skill is also a **trust-boundary enforcement layer**. Skills are prompts; au
 **Output:** Per-tech candidate manifests at `.omc/provisioned/candidates/YYYY-MM-DD-<tech>.md`
 
 **Protocol:**
-1. Create a `/team` session via `TeamCreate`.
-2. For each tech in the stack, `TaskCreate` with directive:
+1. Start a current OMC `/team` session or CLI-first `omc team ...` run with one `document-specialist` worker per technology. Do not use deprecated MCP team-runtime calls.
+2. Assign each worker this directive:
    ```
    Discover skill candidates for technology: <tech>
    Aspects to cover: <aspect list>
@@ -129,8 +129,8 @@ The skill is also a **trust-boundary enforcement layer**. Skills are prompts; au
    Do NOT install. Do NOT write SKILL.md files. Discovery only.
    Write findings to .omc/provisioned/candidates/YYYY-MM-DD-<tech>.md
    ```
-3. Run tasks in parallel. Each `document-specialist` writes its candidate file.
-4. Orchestrator waits for all tasks, then merges candidates into a unified table per (tech × aspect).
+3. Run workers in parallel. Each `document-specialist` writes its candidate file.
+4. Orchestrator waits for all worker results, then merges candidates into a unified table per (tech × aspect).
 
 **HARD STOP:** Zero candidates across all sources for a tech marked `critical: true` in the config AND `--no-generate` is set. Remediation: either remove `--no-generate` (fall through to Phase 3 generation), supply additional sources via config, or remove the tech from the stack.
 
@@ -170,7 +170,7 @@ The skill is also a **trust-boundary enforcement layer**. Skills are prompts; au
 - No gaps detected after Phase 2.
 
 **Protocol:**
-1. For each gap cell, spawn `document-specialist` with directive:
+1. For each gap cell, run a `document-specialist` worker through the current `/team` or CLI-first `omc team ...` runtime with directive:
    ```
    Produce canonical <aspect> guidance for <tech>.
    Pull from: official documentation, high-signal community standards.
@@ -320,7 +320,7 @@ The skill is also a **trust-boundary enforcement layer**. Skills are prompts; au
 
 <Execution_Policy>
 - Every phase is sequential; Phase 4 (human gate) is non-skippable except via `--dry-run` (which exits after producing an install plan).
-- Parallelism is limited to Phase 1 (per-tech discovery) and Phase 3 (per-gap generation), both via `/team`.
+- Parallelism is limited to Phase 1 (per-tech discovery) and Phase 3 (per-gap generation), both via the active `/team` or CLI-first `omc team ...` runtime.
 - HARD STOPs halt the pipeline with a manifest tagged `status: halted_<phase>` and a remediation path. No stage advances past a HARD STOP.
 - Orchestrator NEVER writes to `~/.claude/skills/` before Phase 5. All intermediate artifacts land in `.omc/provisioned/**` and `.omc/provisioned/drafts/**`.
 - Generated drafts carry `unvalidated: true` permanently; promoting them is a manual user action (edit the file, remove the flag).
@@ -395,7 +395,7 @@ Final report at `.omc/provisioned/YYYY-MM-DD-<slug>-report.md` plus installed SK
 - **Pipeline position:** immediately after `/ralplan` (which produces the stack ADR) and before `/product-pipeline` (which consumes stack-specific skills during Stage 5 implementation).
 - **Required MCP / tools:** at least one of `WebFetch`, `WebSearch`, or `mcp__linkup__linkup-search`. For skills.sh installs: `npx` available in PATH.
 - **Co-skills:** uses `external-context` internally for Phase 3 research; uses `writer` (or inline formatting) for draft SKILL.md generation; uses `document-specialist` for parallel discovery.
-- **Team infrastructure:** Phases 1 and 3 spawn parallel workers via `TeamCreate` / `TaskCreate` — follows the pattern in `skills/team/SKILL.md`.
+- **Team infrastructure:** Phases 1 and 3 run parallel workers through the current OMC team runtime (`/team` or CLI-first `omc team ...`). Avoid deprecated MCP team-runtime calls.
 - **Config discovery:** `.omc/stack-provision.config.md` overrides baked-in defaults. Partial configs merge (missing keys fall back to defaults).
 - **Provenance manifest format:** YAML-in-markdown at `.omc/provisioned/YYYY-MM-DD-<slug>-manifest.md`. Machine-parsable for rollback tooling.
 - **Rollback:** no built-in rollback command yet — v1 emits instructions in the final report. Candidate for `stack-deprovision` follow-up skill.

@@ -71,15 +71,17 @@ Additionally, LLM-based competitor analysis without citation discipline is activ
 ## Phase 0 — Foundation and Capability Check
 
 **Agent:** competitor-scout (single invocation)
-**Input:** `.omc/constitution.md`, `.omc/competitors/**`, `.omc/research/**`, `.omc/ideas/**`
+**Input:** `.omc/constitution.md`, `.omc/competitors/watchlist.md`, `.omc/competitors/index.md`, `.omc/competitors/landscape/current.md`, compact research/idea current files
 **Output:** Scouting Contract at `.omc/competitors/contract/YYYY-MM-DD-<slug>.md`
 
 **Protocol:**
 1. Verify at least one discovery tool is available: `mcp__linkup__linkup-search`, `WebSearch`, or `WebFetch`. If none → HARD STOP.
 2. Read constitution (niche, target user, anti-goals).
-3. Read existing watchlist and dossiers — note last_scout per competitor.
-4. Read recent `.omc/ideas/**` to infer which competitive surfaces matter this cycle.
+3. Read existing watchlist, compact index, and current landscape — note last_scout per competitor without opening full dossier archives.
+4. Read `.omc/digests/research.md` or `.omc/research/current.md` plus `.omc/ideas/current.md` when available to infer which competitive surfaces matter this cycle.
 5. Emit Scouting Contract.
+
+**Context budget rule:** Do not read `.omc/competitors/**`, `.omc/research/**`, or `.omc/ideas/**` wholesale. Archives are evidence stores. Open full dossiers only by explicit slug or latest_dossier pointer for competitors selected for this session.
 
 **HARD STOP:** No discovery tools available. Report: "Competitor scouting requires web access tools. Install `linkup` MCP server or enable WebSearch / WebFetch. Without these, scout would produce LLM-domain-knowledge only — unreliable by design."
 
@@ -117,11 +119,11 @@ Default plan shape (orchestrator may not alter without user flag):
 **Output:** Per-source candidate lists → `.omc/competitors/candidates/YYYY-MM-DD-<source>.md`
 
 **Protocol:**
-1. Create a team session via TeamCreate.
-2. For each recency source, TaskCreate with directive: "Invoke `oh-my-claudecode:competitor-scout` with `source: <name>` and the scouting contract. Produce candidate list with required fields (slug, homepage_url, discovery_source, claimed_founding, initial_positioning_quote, corroborating_sources)."
+1. Use native `/team` or the CLI-first `omc team ...` runtime available in the current OMC environment. Do not use deprecated MCP runtime calls such as `TeamCreate` or `TaskCreate`.
+2. For each recency source, create one bounded worker task with directive: "Invoke `oh-my-claudecode:competitor-scout` with `source: <name>` and the scouting contract. Produce one candidate list with required fields (slug, homepage_url, discovery_source, claimed_founding, initial_positioning_quote, corroborating_sources)."
 3. Tasks run in parallel. Each sub-invocation writes its candidate file with citations.
 4. After all tasks complete, orchestrator merges candidate lists and deduplicates by slug / homepage.
-5. Candidates with ≥3 independent sources → promoted to Phase 4 dossier creation. Candidates with 1–2 sources → `.omc/competitors/unverified/<slug>.md` (Emerging Signal).
+5. Candidates with ≥3 independent sources → promoted to Phase 4 dossier creation, subject to the session artifact budget. Candidates with 1–2 sources → one session-level ledger `.omc/competitors/unverified/YYYY-MM-DD-<session>.md` (Emerging Signal). Do not create one file per weak signal.
 
 **HARD STOP:** Zero candidates found across all sources after a full sweep. Report: "No competitors surfaced. Either niche is not tracked by recency sources (niche too new, too narrow, or too technical), or discovery tools failed. Broaden keywords or switch sources."
 
@@ -152,6 +154,7 @@ Default plan shape (orchestrator may not alter without user flag):
 1. For each promoted candidate, invoke scout with directive: "Produce full dossier per the Output_Contract. Apply Disruption / 7 Powers / Wardley / Blue Ocean classification. Compute recency-weighted threat score. Identify weaknesses and attack surfaces."
 2. Dossier must carry confidence tags (CITED / INFERRED / DOMAIN) on every fact.
 3. Weaknesses and Attack Surfaces section is mandatory — no empty placeholders. If no weakness found, record "no leverage found in this scout; recommended deep-dive source: ..." explicitly.
+4. Default artifact budget: produce at most 6 full dossiers per session unless the user explicitly overrides. Rank by recency-weighted threat; put lower-priority promoted candidates into `.omc/competitors/index.md` as deferred.
 
 **HARD STOP:** Dossier produced without citation URLs. Auto-reject and re-run with stricter directive.
 
@@ -170,6 +173,7 @@ Default plan shape (orchestrator may not alter without user flag):
 4. Produce disruption matrix (sustaining / low-end / new-market / non-disruptive adjacent).
 5. Produce JTBD coverage heatmap — explicitly name white space.
 6. Summarize Power distribution (how many have ≥2 mature Powers).
+7. Also write `.omc/competitors/landscape/current.md` as a compact replacement summary (target ≤200 lines) for downstream agents.
 
 **HARD STOP:** None.
 
@@ -205,6 +209,7 @@ Default plan shape (orchestrator may not alter without user flag):
    - `established` (≥ 18mo): every 30 days (60 if power_maturity low AND velocity low).
 3. Competitors whose threat_score declined for 3 consecutive scouts AND velocity declined → move to `.omc/competitors/archive/` with reason.
 4. Sort watchlist: `new` (by threat_score desc), then `emerging`, then `established`.
+5. Update `.omc/competitors/index.md` (target ≤200 lines) with latest landscape/current paths, top 10 threats, latest dossier pointers, deferred candidates, unverified ledger path, and handoff readiness.
 
 **HARD STOP:** None.
 
@@ -228,7 +233,7 @@ Default plan shape (orchestrator may not alter without user flag):
 
 <Execution_Policy>
 - Phase 0, 1, 4 (per competitor), 5, 6 (per event), 7, 8 are sequential single-agent invocations.
-- Phase 2 is mandatory parallel via `/team` — one task per recency source.
+- Phase 2 is mandatory parallel via native `/team` or CLI-first `omc team ...` — one task per recency source. Avoid deprecated MCP runtime calls.
 - Phase 3 may parallelize in small batches if >10 refresh targets.
 - Default recency quota is 0.6; hard-clamped to ≥0.4 even on user override.
 - HARD STOPs halt the pipeline with the reason and required remediation path.
@@ -265,11 +270,13 @@ Session artifacts:
 
 - `.omc/competitors/contract/YYYY-MM-DD-<slug>.md` — Scouting Contract + source plan
 - `.omc/competitors/candidates/YYYY-MM-DD-<source>.md` — per-source raw candidates (Phase 2)
-- `.omc/competitors/unverified/<slug>.md` — quarantined 1–2 source candidates
+- `.omc/competitors/unverified/YYYY-MM-DD-<session>.md` — one ledger for quarantined 1–2 source candidates
 - `.omc/competitors/<slug>/YYYY-MM-DD-dossier.md` — per-competitor dossier
 - `.omc/competitors/landscape/YYYY-MM-DD.md` — strategy canvas + perceptual map + Wardley + disruption matrix + JTBD heatmap
+- `.omc/competitors/landscape/current.md` — compact latest landscape for downstream context
 - `.omc/competitors/alerts/YYYY-MM-DD-<slug>-<event>.md` — material-event alerts
 - `.omc/competitors/watchlist.md` — recency-first watchlist with next-scout cadence
+- `.omc/competitors/index.md` — compact routing/index artifact for downstream agents
 - `.omc/competitors/archive/<slug>/` — demoted-by-rule competitors
 
 Watchlist schema (excerpt):
@@ -304,14 +311,16 @@ Last updated: YYYY-MM-DD
 - **Running weekly `--refresh` and missing new entrants.** Refresh by itself is blind to new entrants. Either run `--new-only` weekly and `--refresh` biweekly, or run the full pipeline.
 - **Updating the watchlist without re-computing threat scores.** Scores change after a dossier updates; stale scores mis-rank the list.
 - **Skipping the unverified quarantine to "speed things up".** Promoting single-source candidates pollutes the watchlist and wastes downstream agent attention on ghosts.
+- **Creating one file per weak signal.** Batch weak candidates into the session-level unverified ledger. File fan-out is a context-budget bug.
 - **Inventing team sizes or funding numbers from LinkedIn-adjacent guesses.** If the number is not cited, it is unknown. Say unknown.
 - **Continuing to scout a dead competitor.** Three consecutive scout drops + velocity decline → archive with reason.
+- **Reading competitor/research/idea archives wholesale.** Use `watchlist.md`, `index.md`, `landscape/current.md`, `.omc/digests/research.md`, `.omc/research/current.md`, and `.omc/ideas/current.md` first. Open archive files only by explicit pointer.
 </Failure_Modes_To_Avoid>
 
 <Integration_Notes>
-- Reads constitution for niche and anti-goals. Reads research for JTBD (to catch non-obvious substitutes). Reads ideas to infer which competitive surfaces matter this cycle.
+- Reads constitution for niche and anti-goals. Reads compact research/current artifacts for JTBD (to catch non-obvious substitutes). Reads current ideas to infer which competitive surfaces matter this cycle.
 - Writes exclusively under `.omc/competitors/**`.
-- Consumed by `oh-my-claudecode:ideate` — dossiers feed Blue Ocean method in Phase 2 of ideate, and attack surfaces inform counter-move generation.
+- Consumed by `oh-my-claudecode:ideate` — `index.md`, `landscape/current.md`, and top dossier pointers feed Blue Ocean method in Phase 2 of ideate, and attack surfaces inform counter-move generation.
 - Consumed by `oh-my-claudecode:priority-engine` — alerts and landscape shifts feed the ranking inputs.
 - Consumed by `oh-my-claudecode:product-strategist` — strategic shifts and counter-positioning threats trigger constitution review.
 - Uses MCP tools when available: `mcp__linkup__linkup-search`, `mcp__linkup__linkup-fetch`; otherwise `WebSearch` / `WebFetch`.

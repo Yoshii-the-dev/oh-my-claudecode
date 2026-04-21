@@ -7,7 +7,7 @@ level: 4
 
 # Brand Variations Generate Skill
 
-Orchestrates the generative side of the brand system: takes a campaign brief + brand grammar, produces N variations through `campaign-composer`, then runs `creative-director` for grammar enforcement and variance gate. Output is a reviewed variation set ready for downstream design / copy / execution teams.
+Orchestrates the generative side of the brand system: takes a campaign brief + brand grammar, produces N variations through `campaign-composer`, then runs `creative-director` for grammar enforcement and variance gate. The workflow passes compact brand/competitor context and the fresh expression directory, not historical archives. Output is a reviewed variation set ready for downstream design / copy / execution teams.
 
 ## Usage
 
@@ -56,7 +56,9 @@ Single command that converts a campaign brief into a grammar-enforced variation 
 
 1. Verify `.omc/brand/core.md` exists and `status: partial` or `complete`.
 2. Verify `.omc/brand/grammar.md` exists and `status: partial` or `complete`.
-3. If either missing → HARD STOP: "Brand system required. Run `/brand-architect` first."
+3. Verify `.omc/brand/inspiration.md` exists and contains at least 3 sources, or HARD STOP: "Inspiration library required. Run `/brand-architect --inspiration` first."
+4. Read `.omc/brand/index.md` if present for current artifact pointers and readiness flags. Do not scan `.omc/brand/**`.
+5. If core or grammar is missing → HARD STOP: "Brand system required. Run `/brand-architect` first."
 
 ## Phase 1 — Brief Ingestion
 
@@ -81,20 +83,20 @@ If fields are missing (especially audience, channels, goal) → request from use
 ## Phase 2 — Generate (campaign-composer)
 
 Invoke `oh-my-claudecode:campaign-composer` agent with directive:
-- Read brand/core + grammar + brief.
+- Read `.omc/brand/index.md` if present, brand/core, brand/grammar, brand/inspiration, the brief, and compact competitor context (`.omc/digests/competitors-landscape.md`, `.omc/competitors/index.md`, or `.omc/competitors/landscape/current.md`). Do not read `.omc/brand/**`, `.omc/competitors/**`, or historical expression directories.
 - Generate N variations per the agent's Investigation_Protocol.
 - Enforce variance gate: ≥2 variables must exhibit ≥2 distinct values across the set.
-- Write to `.omc/brand/expressions/YYYY-MM-DD-<campaign-slug>/`.
+- Write to `.omc/brand/expressions/YYYY-MM-DD-<campaign-slug>/`, `.omc/brand/expressions/current.md`, and `.omc/brand/expressions/index.md`.
 
 **HARD STOP:** Composer returns `malformed_grammar` or cannot satisfy invariants (brief conflicts with grammar). Report conflict; user decides: adjust brief OR refine grammar via brand-architect.
 
 ## Phase 3 — Enforce (creative-director)
 
 Invoke `oh-my-claudecode:creative-director` agent with directive:
-- Read brand/core + grammar + the freshly generated expressions directory.
-- Run invariant check, variance gate, near-duplicate detection, competitor-echo check, brand-drift-over-time.
+- Read brand/index if present, brand/core, brand/grammar, brand/inspiration, `.omc/brand/expressions/YYYY-MM-DD-<campaign-slug>/INDEX.md`, its variation files, and compact competitor context. Do not read historical `.omc/brand/expressions/**` unless the director explicitly needs a bounded recent-campaign sample from `.omc/brand/expressions/index.md`.
+- Run invariant check, variance gate, near-duplicate detection, competitor-echo check, and bounded brand-drift-over-time.
 - Produce per-variation verdict (PASS / REVISE / REJECT).
-- Write review to `.omc/brand/reviews/YYYY-MM-DD-<campaign-slug>.md`.
+- Write review to `.omc/brand/reviews/YYYY-MM-DD-<campaign-slug>.md`, then update `.omc/brand/reviews/current.md` and `.omc/brand/reviews/index.md`.
 
 ## Phase 4 — Remediation Loop
 
@@ -155,7 +157,9 @@ Required brief fields (if missing, skill prompts user):
 
 <Output>
 - `.omc/brand/expressions/YYYY-MM-DD-<campaign-slug>/` (INDEX.md + variation-01…0N.md)
+- `.omc/brand/expressions/current.md` and `.omc/brand/expressions/index.md`
 - `.omc/brand/reviews/YYYY-MM-DD-<campaign-slug>.md` (director verdict)
+- `.omc/brand/reviews/current.md` and `.omc/brand/reviews/index.md`
 - Terminal summary with next-action recommendations per downstream agent.
 </Output>
 
@@ -166,10 +170,12 @@ Required brief fields (if missing, skill prompts user):
 - **Fabricating brief fields because the user didn't provide them.** Prompt user for missing fields; never assume audience or goal.
 - **Passing the whole variation set to execution teams without director's per-variation verdicts.** Designers/copywriters need verdict evidence to prioritize production.
 - **Ignoring brand-drift-over-time signals.** Even if current campaign passes, cumulative drift matters; surface in summary.
+- **Reading whole brand or competitor archives from the wrapper.** Use brand index/current artifacts, compact competitor context, and the fresh expression directory only.
+- **Creating extra sidecar artifacts for checks.** Composer and director outputs are already structured; scans, failed candidates, and matrices belong in `INDEX.md`, variation files, or the director review.
 </Failure_Modes_To_Avoid>
 
 <Integration_Notes>
-- Depends on: `oh-my-claudecode:campaign-composer`, `oh-my-claudecode:creative-director`, and `.omc/brand/core.md` + `grammar.md` from `/brand-architect`.
+- Depends on: `oh-my-claudecode:campaign-composer`, `oh-my-claudecode:creative-director`, and `.omc/brand/index.md` + core/grammar/inspiration from `/brand-architect`.
 - Composes with: `/oh-my-claudecode:loop` for recurring campaign cadence; `/oh-my-claudecode:competitor-scout` (fresher data = better echo detection).
 - Consumed by: designer + copywriter for production; user for final selection among approved variations.
 - If brief itself feels wrong (e.g., targets segment constitution doesn't recognize), escalate to `/product-strategist` for constitution alignment check.

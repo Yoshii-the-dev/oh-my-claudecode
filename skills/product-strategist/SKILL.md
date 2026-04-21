@@ -56,7 +56,7 @@ Read `.omc/constitution.md`.
 
 Input can be:
 1. **Inline feature description** — `/product-strategist "add X to Y"` — agent evaluates the description.
-2. **Slug reference** — `/product-strategist <slug>` — look for the feature in `.omc/ideas/` or `.omc/roadmap/` matching slug.
+2. **Slug reference** — `/product-strategist <slug>` — look for the feature in compact/index artifacts first: `.omc/features/<slug>/brief.md`, `.omc/ideas/current.md`, `.omc/roadmap/current.md`, or relevant index files. Do not scan whole archives unless the slug is not found.
 3. **Classification batch** — `--classify <path-to-ideas-file>` — agent classifies each idea in the file.
 
 ## Phase 2 — Invoke Agent
@@ -65,6 +65,7 @@ Input can be:
 
 Invoke `oh-my-claudecode:product-strategist` with directive:
 - Read `.omc/constitution.md` + feature description (from input).
+- If resolving a slug, read only the explicit feature artifact or compact current/index file needed to identify it.
 - Evaluate against: anti-goals (verbatim match for violations), mission alignment, scope boundaries, strategic risks.
 - Result: APPROVED | APPROVED WITH RISKS | NEEDS CLARIFICATION | BLOCKED.
 - Write `.omc/strategy/YYYY-MM-DD-<slug>.md`.
@@ -97,6 +98,7 @@ Classification mode: `.omc/classification/features-core-context.md` with per-ide
 <Failure_Modes_To_Avoid>
 - Running without a constitution — gate is meaningless without anti-goals.
 - Batch-classifying without reading constitution (each classification needs mission-citation).
+- Resolving slugs by loading entire `.omc/ideas/`, `.omc/roadmap/`, or `.omc/features/` archives. Use explicit paths, current files, and indexes first.
 - Silently overwriting prior classification file (supersession required).
 - Treating BLOCKED verdict as a veto without offering path: either constitution change via brand-steward, or feature revision.
 </Failure_Modes_To_Avoid>

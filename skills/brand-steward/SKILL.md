@@ -56,12 +56,11 @@ Single command that invokes `brand-steward` agent to do research-driven synthesi
 ## Phase 0 — Mode Detection + Research-Completeness Gate + Session + Depth Detection
 
 Read silently (no output to user):
-1. `.omc/ideas/` — exists? count of non-empty `.md` files? (output of `/ideate` pipeline)
-2. `.omc/specs/` — exists? count of non-empty `.md` files? (output of `/deep-interview`)
-3. `.omc/competitors/` — exists? count of dossier files?
-4. `.omc/research/` — exists? count of synthesis artifacts (persona, pain-point report, JTBD analysis)?
-5. `.omc/constitution.md` — exists? note `status`, `depth_mode`, `phase` fields if present.
-6. `.omc/brand/` — exists? (informs alignment if brand-architect already ran)
+1. `.omc/constitution.md` if exists — note `status` field.
+2. Vision source context: `.omc/ideas/current.md` or `.omc/ideas/index.md`; `.omc/specs/current.md` or `.omc/specs/index.md`. If indexes are absent, do metadata-only counts of non-empty files; do not read archive contents.
+3. Compact competitor context: `.omc/digests/competitors-landscape.md`, else `.omc/competitors/landscape/current.md`, else `.omc/competitors/index.md`, else metadata-only count. Do not enumerate competitor archives into prompt context.
+4. Compact research context: `.omc/digests/research.md` or `.omc/digests/research-highlights.md`, else `.omc/research/current.md`, else `.omc/research/index.md`, else newest 1-3 synthesis artifacts. Do not enumerate raw research archives.
+5. Compact brand context: `.omc/digests/brand-core.md`, else `.omc/brand/index.md`, else `.omc/brand/core.md` + `.omc/brand/grammar.md` if present.
 
 **Phase detection** (from args + context):
 - `--pre-mvp` / `--premvp` / `--early-stage` flag → `phase: pre-mvp`.
@@ -92,7 +91,7 @@ The hard-stop is intentional and non-negotiable: synthesis-first design depends 
 
 **Session mode** (from args + context):
 - `--session1` flag OR constitution absent OR `status: draft` with no fills → session 1.
-- `--session2` flag OR (`status: partial` AND this is not a first invocation) → session 2.
+- `--session2` flag OR (`status: partial` AND this is not a first invocation) OR (`status: partial` AND compact competitor/research context exists) → session 2.
 - `--refine` → open-ended refinement.
 
 **Depth mode** (orthogonal to session mode):
@@ -104,7 +103,7 @@ The hard-stop is intentional and non-negotiable: synthesis-first design depends 
 
 ## Phase 1 — Direct Invocation with Synthesis Directive
 
-Invoke `oh-my-claudecode:brand-steward` agent via Task tool (NOT as a teammate, NOT via SendMessage, NOT via TeamCreate). The agent runs in a direct conversational channel with the user.
+Invoke `oh-my-claudecode:brand-steward` agent via Task tool (NOT as a teammate, NOT through a relay channel). The agent runs in a direct conversational channel with the user.
 
 **Invocation directive** (passed in Task prompt):
 
@@ -114,6 +113,12 @@ Phase: [pre-mvp | post-mvp]
 Depth mode: [true | false | continue]
 Gate status: [passed | failed-with-<details>]
 Degraded inputs: [<list or empty>]  # e.g., ["competitors_below_minimum", "research_absent_or_light"] — only populated in pre-MVP when competitors <3 or research missing
+Available compact context paths:
+  - constitution: <path or absent>
+  - vision_source_context: <current/index/explicit path list>
+  - competitor_context: <digest/current/index path list>
+  - research_context: <digest/current/index path list>
+  - brand_context: <digest/current/index path list>
 Research sources present:
   - ideas_files: <N>       # from /ideate output at .omc/ideas/
   - specs_files: <N>       # from /deep-interview output at .omc/specs/
@@ -169,7 +174,7 @@ Depth Mode adds 5 additional hypothesis categories to the synthesis: Value Ladde
 
 Pre-MVP Mode relaxes data requirements but does NOT weaken method — synthesis-first discipline holds, sections just get LOW confidence markers instead of being skipped or faked. In pre-MVP, the constitution is explicitly hypothesis-grade (capped at `status: partial`), transitions to evidence-grade on session 2 after research wave.
 
-No positional args. The agent reads context from `.omc/ideas/`, `.omc/specs/`, `.omc/competitors/`, `.omc/research/`, `.omc/constitution.md`, `.omc/brand/` in its Phase 1.
+No positional args. The agent reads compact context from `.omc/ideas/current.md` or index files, `.omc/specs/current.md` or index files, compact competitor/research/brand digests, `.omc/constitution.md`, and explicit source paths selected by index pointers.
 </Input_Contract>
 
 <Output>
@@ -182,7 +187,7 @@ No positional args. The agent reads context from `.omc/ideas/`, `.omc/specs/`, `
 - **Soft-gating when research is missing.** The wrapper must enforce the hard-stop. "Competitor data is thin, but let's start anyway" is explicitly the failure mode the synthesis-first redesign was built to prevent. If gate fails, the agent refuses — full stop.
 - **Narrating Phase 0 gate results to the user in wrapper output.** The agent emits the refusal via its prompt; the wrapper does not produce a parallel commentary. Silent gate check, agent-owned refusal delivery.
 - **Narrating Phase 0 context ingestion to the user.** "I've read your competitors and research — here's what I found" is exactly the preamble that buries the agent's first message. Silent reads only; the synthesis quality shows in the SPECIFICITY of the hypothesis block.
-- **Invoking brand-steward as a teammate (TeamCreate + SendMessage relay).** That creates a proxy-UX where the user talks to a middleman. Use direct Task invocation only.
+- **Invoking brand-steward as a teammate through a team relay.** That creates a proxy-UX where the user talks to a middleman. Use direct Task invocation only.
 - **Announcing session mode to the user.** Session detection is internal. The agent knows the mode from the directive.
 - **Announcing depth-mode activation to the user.** User passed `--deep` explicitly — the first message they see should already be the Phase 2 hypothesis block, not "ok, entering depth mode." Ceremony defeats the opt-in.
 - **Adding post-completion summary.** The agent's terminal message is the summary. Anything from the wrapper on top is noise.
@@ -194,6 +199,8 @@ No positional args. The agent reads context from `.omc/ideas/`, `.omc/specs/`, `
 - **Accepting `--pre-mvp` when `.omc/research/` + `.omc/competitors/` are both populated.** If the project already has full data, `--pre-mvp` is likely a mistake. Agent should flag the contradiction in its first message and ask for confirmation before proceeding in pre-MVP posture — do not silently relax the gate when it would otherwise pass strictly.
 - **Dropping `--pre-mvp` when combined with session flags.** `--session1 --pre-mvp` and `--session2 --pre-mvp` are both valid compositions. Flags compose; do not treat phase flag as mutually exclusive with session flag.
 - **Ignoring pre-MVP → post-MVP transition on session 2.** When prior constitution has `phase: pre-mvp` AND current `.omc/research/` + `.omc/competitors/` now meet post-MVP thresholds, the wrapper must pass this transition signal to the agent ("prior_phase: pre-mvp, current_gate: post-mvp-eligible") so the agent emits the explicit transition announcement in Phase 2.
+- **Validating prerequisites too aggressively.** Session 2 without competitors is fine — the agent will flag it in conversation, not fail at wrapper level.
+- **Enumerating archives in the wrapper.** The wrapper should pass compact context paths, not load `.omc/ideas/**`, `.omc/specs/**`, `.omc/competitors/**`, `.omc/research/**`, or `.omc/brand/**`.
 </Failure_Modes_To_Avoid>
 
 <Integration_Notes>

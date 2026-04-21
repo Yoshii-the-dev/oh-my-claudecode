@@ -73,15 +73,21 @@ Additionally, it keeps mechanic divergence (ideate within a feature's scope) as 
 ## Phase 0 — Foundation and Classification
 
 **Agent:** product-strategist (if class not explicit)
-**Input:** Feature slug + `.omc/constitution.md` + `.omc/classification/features-core-context.md` (if exists)
+**Input:** Feature slug + `.omc/constitution.md` + compact feature/classification context:
+- `.omc/classification/features-core-context.md`
+- `.omc/features/<slug>/brief.md`
+- `.omc/roadmap/current.md`
+- `.omc/ideas/current.md` or `.omc/ideas/index.md`
+- `.omc/strategy/current.md`
 **Output:** Confirmed class + feature scope artifact at `.omc/sprints/<slug>/00-foundation.md`
 
 **Protocol:**
 1. If `--class` flag present, use it.
 2. Else if `.omc/classification/features-core-context.md` contains an entry for this slug, use that.
-3. Else invoke `oh-my-claudecode:product-strategist` with directive: "Classify <slug> as core / enabling / context per constitution. Cite mission and anti-goals. Flag if classification is unclear."
-4. Verify constitution status. If absent/draft AND class=core → warn strongly; deepening against a missing foundation produces brittle findings.
-5. Write Foundation artifact noting class, depth mode, and sprint duration:
+3. Else resolve feature scope from compact/current artifacts only: `.omc/features/<slug>/brief.md`, `.omc/roadmap/current.md`, `.omc/ideas/current.md`, `.omc/ideas/index.md`, or `.omc/strategy/current.md`. Do not scan roadmap/ideas/strategy/plan archives.
+4. Else invoke `oh-my-claudecode:product-strategist` with directive: "Classify <slug> as core / enabling / context per constitution. Cite mission and anti-goals. Flag if classification is unclear."
+5. Verify constitution status. If absent/draft AND class=core → warn strongly; deepening against a missing foundation produces brittle findings.
+6. Write Foundation artifact noting class, depth mode, and sprint duration:
    - core → 4 weeks, all phases mandatory
    - enabling → ~1 week, Weeks 1 & 2 condensed, Week 3 light, Week 4 skipped
    - context → 1–2 days, Week 2 only with proven patterns, no deepening
@@ -99,7 +105,7 @@ Additionally, it keeps mechanic divergence (ideate within a feature's scope) as 
 **Protocol:**
 1. **Divergent mechanic exploration** (core only):
    - Invoke `/oh-my-claudecode:ideate --scope=feature:<slug> --methods=first-principles,triz,morphological`
-   - Read `.omc/ideas/YYYY-MM-DD-<slug>.md` shortlist — select one alternative mechanic.
+   - Read `.omc/ideas/current.md`, `.omc/ideas/index.md`, or the explicit ideation report path emitted by the run — select one alternative mechanic. Do not scan `.omc/ideas/**`.
    - Enabling features skip this step; they take the existing mechanic as given.
 2. **Architectural options**: Invoke `oh-my-claudecode:architect` with directive: "Propose ≥2 implementation options for <chosen mechanic> with reversibility class (Type-1/Type-2) and trade-offs."
 3. **Premortem**: Invoke `oh-my-claudecode:critic` with directive: "Premortem the chosen implementation option. Assume it fails in production — most plausible failure story? Cite specific failure mechanisms."
@@ -150,7 +156,7 @@ Additionally, it keeps mechanic divergence (ideate within a feature's scope) as 
    - Run structured prototype test (Maze / UserTesting / corridor) or manual WoZ with ≥3 sessions.
    - Record completion rate, task-success, and verbatim quotes.
 4. **Second premortem** (post-evidence):
-   - Invoke `oh-my-claudecode:critic` with directive: "Given the design-partner findings, expert-review findings, and prototype results, produce a second premortem. Update failure modes from Week 1."
+   - Invoke `oh-my-claudecode:critic` with directive: "Given `.omc/sprints/<slug>/week1-mechanic.md`, `.omc/sprints/<slug>/week2-build.md`, `.omc/research/current.md` or the explicit design-partner synthesis path, `.omc/expert-review/current.md` or the explicit expert-review path, and prototype results, produce a second premortem. Update failure modes from Week 1."
 5. Consolidate into Week 3 artifact with convergent findings, unique findings, conflicts, and updated failure modes.
 
 **HARD STOP:** Design-partner count below minimum for class. Report: "Core features require ≥5 design partners before launch validation. Run `/oh-my-claudecode:design-partner-manager --recruit` to reach minimum."
@@ -214,6 +220,8 @@ Verdict + evidence + pre-registered post-launch metrics (success thresholds to m
 - Weeks are nominal targets; a "week" is a work unit, not a calendar week. A core sprint can compress to 2–3 calendar weeks with focus or expand to 6.
 - HARD STOPs halt with the reason and the required remediation path. Never advance past a HARD STOP with a workaround.
 - Each phase writes a dated artifact under `.omc/sprints/<slug>/` enabling resumption.
+- Each phase also updates compact sprint pointers: `.omc/sprints/<slug>/current.md`, `.omc/sprints/current.md`, and `.omc/sprints/index.md` when the phase changes, so downstream agents do not scan sprint archives.
+- Context budget rule: resolve feature/sprint context from explicit slug paths, current/index artifacts, and phase handoffs. Do not read `.omc/roadmap/**`, `.omc/ideas/**`, `.omc/research/**`, `.omc/competitors/**`, `.omc/partners/**`, `.omc/plans/**`, or `.omc/sprints/**` wholesale.
 - Composable with `/oh-my-claudecode:ralph` for retry-on-transient-failure: `/ralph /pre-launch-sprint <slug>`.
 - Composable with `/oh-my-claudecode:autopilot` for Phase 2 implementation once Week 1 is locked.
 - Respects `OMC_SKIP_HOOKS`.
@@ -227,7 +235,7 @@ Primary argument: the feature slug (kebab-case).
 /pre-launch-sprint matching-algorithm
 ```
 
-The slug must correspond to a feature already known to the product — either in `.omc/roadmap/`, `.omc/plans/`, `.omc/strategy/`, or `.omc/classification/`. Unknown slugs halt Phase 0.
+The slug must correspond to a feature already known to the product through compact/index artifacts: `.omc/features/<slug>/brief.md`, `.omc/roadmap/current.md`, `.omc/ideas/current.md`, `.omc/ideas/index.md`, `.omc/strategy/current.md`, `.omc/plans/index.md`, or `.omc/classification/features-core-context.md`. Unknown slugs halt Phase 0.
 
 Quality input characteristics:
 - Feature is named and scoped.
@@ -245,10 +253,11 @@ Consolidated sprint folder: `.omc/sprints/<slug>/`
 ├── week2-build.md             # pipeline handoff + property tests summary
 ├── week3-validation.md        # partner + expert + prototype findings
 ├── week4-harden.md            # findings → fixes map
-└── 05-launch-gate.md          # GO / HOLD / ONE-MORE-CYCLE verdict + post-launch metrics
+├── 05-launch-gate.md          # GO / HOLD / ONE-MORE-CYCLE verdict + post-launch metrics
+└── current.md                 # compact latest phase pointer and blockers
 ```
 
-Each artifact is self-contained; sprint is resumable from any week.
+Each artifact is self-contained; sprint is resumable from any week. The global pointers `.omc/sprints/current.md` and `.omc/sprints/index.md` summarize active and recent sprints.
 
 Final launch-gate artifact schema:
 
@@ -296,11 +305,13 @@ Final launch-gate artifact schema:
 - **Ignoring ONE-MORE-CYCLE and shipping anyway.** Skills output a verdict; the team owns the decision, but overriding ONE-MORE-CYCLE should produce a written "accepted risk" entry in the gate artifact, not a silent bypass.
 - **Invoking this skill before the feature is strategy-approved.** Deepening a feature product-strategist hasn't approved wastes the sprint. Run strategy-gate first.
 - **Assuming partners' silence equals approval.** Partners who don't surface issues in session may have attention or context gaps. Convergent absence across ≥3 partners is signal; single-partner silence is not.
+- **Reading planning/research archives wholesale.** This skill is an orchestrator; it should pass explicit phase artifacts and compact current/index pointers to child agents, not load every roadmap, idea, research, competitor, partner, plan, or sprint file.
+- **Writing sidecar files per finding or partner quote.** Keep sprint phase artifacts bounded; supporting evidence belongs in partner/research/expert systems and is referenced by path.
 </Failure_Modes_To_Avoid>
 
 <Integration_Notes>
-- Reads: `.omc/constitution.md`, `.omc/classification/features-core-context.md`, `.omc/roadmap/**`, `.omc/ideas/**`, `.omc/research/**`, `.omc/competitors/**`, `.omc/partners/**`, `.omc/plans/**`.
-- Writes: exclusively under `.omc/sprints/<slug>/`; indirectly triggers writes into `.omc/expert-review/`, `.omc/research/`, `.omc/partners/sessions/` via invoked agents.
+- Reads compact/current/index artifacts: `.omc/constitution.md`, `.omc/classification/features-core-context.md`, `.omc/features/<slug>/brief.md`, `.omc/roadmap/current.md`, `.omc/ideas/current.md`, `.omc/ideas/index.md`, `.omc/strategy/current.md`, `.omc/plans/index.md`, `.omc/research/current.md`, `.omc/expert-review/current.md`, `.omc/partners/index.md`, and explicit sprint phase artifacts. Do not scan archive directories by default.
+- Writes: under `.omc/sprints/<slug>/`, `.omc/sprints/current.md`, and `.omc/sprints/index.md`; indirectly triggers writes into `.omc/expert-review/`, `.omc/research/`, `.omc/partners/sessions/` via invoked agents.
 - Depends on: `oh-my-claudecode:ideate`, `oh-my-claudecode:architect`, `oh-my-claudecode:critic`, `oh-my-claudecode:analyst`, `oh-my-claudecode:backend-pipeline`, `oh-my-claudecode:product-pipeline`, `oh-my-claudecode:design-partner-manager`, `oh-my-claudecode:domain-expert-reviewer`, `oh-my-claudecode:performance-guardian`, `oh-my-claudecode:security-reviewer`, `oh-my-claudecode:verifier`, `oh-my-claudecode:code-reviewer`, `oh-my-claudecode:trace`.
 - Depends on `oh-my-claudecode:design-partner-manager` being initialized for class=core.
 - Composable with `/oh-my-claudecode:ralph` for retry-on-failure.

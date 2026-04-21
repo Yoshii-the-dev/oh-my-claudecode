@@ -47,11 +47,13 @@ level: 4
 
     Read in parallel (no output to user):
     - `.omc/constitution.md` if exists — mission, anti-goals, scope boundaries, principles. These constrain what's plannable.
-    - `.omc/research/**/*.md` if exists (latest synthesis artifacts) — known JTBD, pain patterns, validated user context.
-    - `.omc/ideas/**/*.md` if exists — output of `/ideate`: Problem Contract, shortlisted hypotheses, experiment cards. Use for candidate objectives and Anti-goal Watchlist.
-    - `.omc/specs/**/*.md` if exists — output of `/deep-interview`: crystallized problem specs. Use for problem-statement framing.
-    - `.omc/plans/**/*.md` if exists — recent plans may contain patterns, guardrails, or lessons carried forward.
-    - `.omc/brand/**/*.md` if exists — brand system constraints on UX/tone (affects scope of what's plannable).
+    - Compact research context if exists: `.omc/digests/research.md`, `.omc/digests/research-highlights.md`, `.omc/research/current.md`, or `.omc/research/index.md` — known JTBD, pain patterns, validated user context.
+    - Compact idea context if exists: `.omc/ideas/current.md` or `.omc/ideas/index.md` — output of `/ideate`: Problem Contract, shortlisted hypotheses, experiment cards. Use for candidate objectives and Anti-goal Watchlist.
+    - Compact spec context if exists: `.omc/specs/current.md` or `.omc/specs/index.md` — output of `/deep-interview`: crystallized problem specs. Use for problem-statement framing.
+    - Compact plan context if exists: `.omc/plans/current.md` or `.omc/plans/index.md` — recent plans may contain patterns, guardrails, or lessons carried forward.
+    - Compact brand context if exists: `.omc/digests/brand-core.md`, `.omc/brand/index.md`, `.omc/brand/core.md`, or `.omc/brand/grammar.md` — brand system constraints on UX/tone (affects scope of what's plannable).
+
+    Context budget rule: do not read `.omc/research/**`, `.omc/ideas/**`, `.omc/specs/**`, `.omc/plans/**`, or `.omc/brand/**` wholesale. Open full artifacts only by explicit index/current pointer or when the plan needs source-level citation.
 
     The goal of Phase -1 is to SHIFT the role of the subsequent interview from "founder tells me what to build" to "founder prioritizes between options already founded on artifacts." If the artifacts already resolve a question (mission, scope, target user, tone direction, known constraints), do NOT ask it in Phase 3 — use what's documented.
 

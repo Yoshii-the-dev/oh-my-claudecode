@@ -40,7 +40,13 @@ export interface PluginConfig {
     critic?: { model?: string };
     documentSpecialist?: { model?: string };
     accessibilityAuditor?: { model?: string };
+    brandArchitect?: { model?: string };
     brandSteward?: { model?: string };
+    campaignComposer?: { model?: string };
+    competitorScout?: { model?: string };
+    creativeDirector?: { model?: string };
+    domainExpertReviewer?: { model?: string };
+    ideate?: { model?: string };
     copywriter?: { model?: string };
     performanceGuardian?: { model?: string };
     productStrategist?: { model?: string };
@@ -417,7 +423,13 @@ export const CANONICAL_TEAM_ROLES = [
   'explore',
   'document-specialist',
   'accessibility-auditor',
+  'brand-architect',
   'brand-steward',
+  'campaign-composer',
+  'competitor-scout',
+  'creative-director',
+  'domain-expert-reviewer',
+  'ideate',
   'copywriter',
   'performance-guardian',
   'product-strategist',
@@ -456,7 +468,13 @@ export const KNOWN_AGENT_NAMES = [
   'critic',
   'documentSpecialist',
   'accessibilityAuditor',
+  'brandArchitect',
   'brandSteward',
+  'campaignComposer',
+  'competitorScout',
+  'creativeDirector',
+  'domainExpertReviewer',
+  'ideate',
   'copywriter',
   'performanceGuardian',
   'productStrategist',

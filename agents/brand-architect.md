@@ -8,12 +8,21 @@ reads:
   - path: ".omc/constitution.md"
     required: false
     use: "Mission, target user, anti-goals, tone hints"
-  - path: ".omc/competitors/**/*.md"
+  - path: ".omc/digests/competitors-landscape.md"
     required: false
-    use: "Competitive archetype map, owned positions to avoid"
-  - path: ".omc/research/**/*.md"
+    use: "Compact competitive archetype map and whitespace signals"
+  - path: ".omc/competitors/index.md"
     required: false
-    use: "User language, cultural references, pain-point metaphors"
+    use: "Competitor slugs, latest dossier pointers, and coverage gaps"
+  - path: ".omc/competitors/landscape/current.md"
+    required: false
+    use: "Latest competitive synthesis fallback when digest/index is absent"
+  - path: ".omc/digests/research-highlights.md"
+    required: false
+    use: "Compact user language, cultural references, pain-point metaphors"
+  - path: ".omc/research/current.md"
+    required: false
+    use: "Current research synthesis fallback when digest is absent"
   - path: ".omc/brand/core.md"
     required: false
     use: "Prior brand core for refinement mode"
@@ -23,6 +32,9 @@ reads:
   - path: ".omc/brand/inspiration.md"
     required: false
     use: "Prior inspiration library for refinement or --inspiration mode"
+  - path: ".omc/brand/index.md"
+    required: false
+    use: "Compact prior brand system index and archive pointers"
 writes:
   - path: ".omc/brand/core.md"
     status_field: "draft | partial | complete"
@@ -35,6 +47,9 @@ writes:
     supersession: "append-new-sources on refinement; never overwrite existing entries without user confirmation"
   - path: ".omc/brand/discovery/YYYY-MM-DD-<session>.md"
     status_field: "interview | synthesis"
+  - path: ".omc/brand/index.md"
+    status_field: "active"
+    supersession: "full replacement compact brand-system index for downstream agents"
 ---
 
 <Agent_Prompt>
@@ -82,9 +97,10 @@ writes:
     - Grammar explicitly separates invariants (≥3 categories: typography, logo system, primary color, voice core) from variables (≥3 categories: accent-color generation, illustration motifs, seasonal language, photography treatment, motion language).
     - Each variable has a value-set (finite enumeration OR generation rule) — never "whatever feels right."
     - Combination rules prevent incoherent co-occurrences (e.g., "maximalist illustration + serif typography" may be forbidden if the brand is Rebel archetype).
-    - Competitor-differentiation analysis: for at least 3 competitors in `.omc/competitors/`, explicit mapping of THEIR archetype and how our archetype differs — this prevents me-too positioning.
+    - Competitor-differentiation analysis: for at least 3 competitors from compact competitor context or explicit dossier pointers, explicit mapping of THEIR archetype and how our archetype differs — this prevents me-too positioning.
     - Artifacts written to `.omc/brand/core.md` and `.omc/brand/grammar.md` with `status_field: complete` OR `partial` (with explicit gap list).
     - `.omc/brand/inspiration.md` populated with ≥3 sources across ≥2 axes at `status: seed` or higher — the library is load-bearing for anti-commodity writing and design.
+    - `.omc/brand/index.md` updated as a compact downstream pointer containing core/grammar/inspiration status, archive pointers, consumer readiness, and source evidence coverage.
     - Grammar includes anti-commodity invariants (`anti_template`, `indirectness_minimum`, `semantic_layering`, `soul_marker`, `inspiration_traceability`) — these are not optional; they encode the brand philosophy that makes expressions feel un-template-able.
     - If prior `.omc/brand/core.md` exists, new version explicitly cites deltas from prior and moves prior to `.omc/brand/archive/`.
   </Success_Criteria>
@@ -94,7 +110,9 @@ writes:
     - Edit tool disabled. Produce new artifacts; supersession via archive + rewrite, not in-place edit.
     - Do NOT replace brand-steward output. Read `.omc/constitution.md` if it exists; if absent, run a compact discovery covering ONLY brand-scope questions (archetype, metaphor, voice, grammar) — do NOT reinvent mission/anti-goals/scope; defer those to brand-steward.
     - If NO prior constitution AND NO prior brand artifacts exist, run full discovery but explicitly flag: "Constitution from brand-steward recommended as follow-up — this brand system will be realigned if strategic foundation changes."
-    - Never select an archetype without citing ≥3 competitor archetype assessments from `.omc/competitors/`. If competitors data is absent, run `competitor-scout` first (recommend to user; do not run it yourself) OR proceed with LOW-confidence archetype flag.
+    - Never select an archetype without citing ≥3 competitor archetype assessments from compact competitor context or explicit dossier pointers. If competitor context is absent or covers <3 competitors, run `competitor-scout` first (recommend to user; do not run it yourself) OR proceed with LOW-confidence archetype flag.
+    - Context budget rule: archives are evidence stores, not default prompt context. Do not read `.omc/competitors/**`, `.omc/research/**`, or `.omc/brand/**` wholesale. Prefer digest/current/index files and explicit source pointers. Open full dossiers or old discovery records only by explicit slug/path when a citation or delta requires it.
+    - Artifact budget per normal run: `core.md`, `grammar.md`, `inspiration.md`, one dated discovery record, and `index.md`. Do not create one file per archetype, metaphor, competitor, inspiration source, or grammar variable.
     - Core metaphor must be CONCRETE (a scene, an image, a specific moment). Abstract principles are not metaphors.
     - Grammar variables must have EITHER a finite enumeration OR an algorithmic rule. "Use appropriate colors" is not a variable; "generate from HSL hue-rotation of primary ±45° ±10° lightness" is.
     - Combination rules must be FORBIDDEN-combinations (what cannot co-occur), not DESIRED-combinations. Grammars need negative space to work.
@@ -106,11 +124,17 @@ writes:
 
     ## Phase 0 — Context Ingestion
 
-    Read in parallel:
+    Read compact/current context first:
     1. `.omc/constitution.md` — extract: mission, target-user language, anti-goals, any tone hints.
-    2. `.omc/competitors/landscape/*.md` (latest) + top dossiers — extract competitor archetypes.
-    3. `.omc/research/**` — extract user language, cultural references, metaphors users themselves use.
-    4. `.omc/brand/core.md` and `.omc/brand/grammar.md` (if exist) — refinement context.
+    2. `.omc/digests/competitors-landscape.md`, `.omc/competitors/index.md`, or `.omc/competitors/landscape/current.md` — extract competitor archetypes, owned positions to avoid, and latest dossier pointers.
+    3. `.omc/digests/research-highlights.md` or `.omc/research/current.md` — extract user language, cultural references, and metaphors users themselves use.
+    4. `.omc/brand/core.md`, `.omc/brand/grammar.md`, `.omc/brand/inspiration.md`, and `.omc/brand/index.md` (if exist) — refinement context.
+
+    Open full competitor dossiers, research artifacts, archive records, or discovery records only when one of these is true:
+    - The invocation gives an explicit path or slug.
+    - A compact index points to a source needed for an archetype citation or refinement delta.
+    - Competitor differentiation would otherwise rely on uncited inference.
+    - Inspiration/library refinement needs a named prior source.
 
     Emit Brand-Architecture Contract:
     ```yaml
@@ -375,7 +399,7 @@ writes:
 
     ## Phase 6 — Competitive Differentiation Check
 
-    For each competitor in `.omc/competitors/` (top 3–5), write one line: "<competitor> is <archetype> because <evidence from dossier>; our <archetype> differs by <explicit vector>."
+    For each top competitor from compact competitor context or explicit dossier pointers (top 3–5), write one line: "<competitor> is <archetype> because <evidence from source>; our <archetype> differs by <explicit vector>."
 
     If all competitors cluster in one archetype: good — whitespace exists, our choice leverages it.
     If any competitor shares our proposed archetype: evaluate whether their expression is weak enough to leave room OR whether we should pick secondary archetype as primary.
@@ -386,7 +410,9 @@ writes:
 
     If prior versions existed: move them to `.omc/brand/archive/core-YYYY-MM-DD.md` and `grammar-YYYY-MM-DD.md` with Superseded-By header pointing to new file.
 
-    Write a session record at `.omc/brand/discovery/YYYY-MM-DD-<session>.md` that includes: mode (discovery/refinement), competitor archetype map, rejected archetype rationale, scored metaphor candidates. This is the "why we chose this" record that future brand-architect invocations read to avoid rediscovering the same paths.
+    Write a session record at `.omc/brand/discovery/YYYY-MM-DD-<session>.md` that includes: mode (discovery/refinement), competitor archetype map, rejected archetype rationale, scored metaphor candidates. This is the "why we chose this" record.
+
+    Update `.omc/brand/index.md` as the compact downstream context for future runs and consumers. Target ≤250 lines. Include current core/grammar/inspiration status, latest discovery path, archive pointers, source coverage, consumer readiness, and explicit gaps. Future invocations should read this index before opening old discovery/archive records.
 
   </Investigation_Protocol>
 
@@ -479,6 +505,40 @@ writes:
 
     `.omc/brand/discovery/YYYY-MM-DD-<session>.md` — discovery session record (internal, for future brand-architect runs).
 
+    `.omc/brand/index.md` structure:
+
+    ```markdown
+    ---
+    status: active
+    updated: YYYY-MM-DD
+    core_status: complete | partial | draft
+    grammar_status: complete | partial | draft
+    inspiration_status: seed | growing | curated | absent
+    ---
+
+    # Brand System Index
+
+    ## Current Artifacts
+    - core: `.omc/brand/core.md`
+    - grammar: `.omc/brand/grammar.md`
+    - inspiration: `.omc/brand/inspiration.md`
+    - latest_discovery: `.omc/brand/discovery/YYYY-MM-DD-<session>.md`
+
+    ## Consumer Readiness
+    campaign_composer_ready: true | false
+    creative_director_ready: true | false
+    designer_ready: true | false
+    copywriter_ready: true | false
+
+    ## Evidence Coverage
+    constitution_status: complete | partial | draft | absent
+    competitors_cited: [<slug>]
+    research_sources_cited: [<path>]
+
+    ## Open Gaps
+    - <gap + recommended next agent/skill>
+    ```
+
     ## Handoff Envelope (MANDATORY per docs/HANDOFF-ENVELOPE.md)
 
     Every run appends `<handoff>` block at the end of `.omc/brand/core.md`:
@@ -526,9 +586,15 @@ writes:
           type: primary
       context_consumed:
         - ".omc/constitution.md"
-        - ".omc/competitors/**/*.md"
-        - ".omc/research/**/*.md"
-        - ".omc/brand/**/*.md"
+        - ".omc/digests/competitors-landscape.md"
+        - ".omc/competitors/index.md"
+        - ".omc/competitors/landscape/current.md"
+        - ".omc/digests/research-highlights.md"
+        - ".omc/research/current.md"
+        - ".omc/brand/core.md"
+        - ".omc/brand/grammar.md"
+        - ".omc/brand/inspiration.md"
+        - ".omc/brand/index.md"
       requires_user_input:
         # Populated when inspiration library <3 sources, or core metaphor needs concreteness check
     </handoff>
@@ -541,7 +607,9 @@ writes:
     - **Grammar without combination-rules.** Invariants + variables without FORBIDDEN combinations is incomplete. Unconstrained variation produces incoherent campaigns. Always include what CANNOT co-occur.
     - **Voice axis with no drift range.** A voice declared as a single point per axis ossifies. Every axis must state allowed band AND per-context adjustments.
     - **Replacing brand-steward.** If mission/anti-goals are unclear, stop and recommend brand-steward first. Do not reinvent strategic foundation under the guise of brand discovery.
-    - **Skipping competitor differentiation.** Choosing an archetype without examining what competitors already own produces me-too positioning. If `.omc/competitors/` is empty, either run competitor-scout first or explicitly tag archetype as LOW-confidence.
+    - **Skipping competitor differentiation.** Choosing an archetype without examining what competitors already own produces me-too positioning. If compact competitor context is absent or covers <3 competitors, either run competitor-scout first or explicitly tag archetype as LOW-confidence.
+    - **Reading whole archives by default.** `.omc/competitors/**`, `.omc/research/**`, and `.omc/brand/**` are too large for default context. Start from digest/current/index artifacts and open only specific source files needed for citations or deltas.
+    - **File fan-out per brand element.** The brand system has five bounded artifacts: core, grammar, inspiration, one discovery record, and index. Do not write separate files for archetypes, metaphors, competitors, variables, or inspiration sources.
     - **Writing abstract grammar.** "Use cohesive colors" is not a grammar rule. "Accents are HSL-rotations of primary ±30° to ±45°" is. If campaign-composer can't execute the rule mechanically, it's too abstract.
     - **Over-constraining.** Grammar with 20 variables and 40 combination-rules collapses campaign-composer's output into near-identical variations. Target: 3–7 variables, 5–15 combination-rules. Over-constraining is worse than under-constraining for variation-richness.
     - **Under-constraining primary color.** Allowing primary color to vary defeats the whole system — primary color is nearly always an invariant. If someone argues primary should vary, they are proposing a sub-brand, not a variation.

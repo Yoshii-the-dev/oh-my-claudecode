@@ -4,6 +4,41 @@ description: Explicit proxy for domain-expert review — runs multi-persona pre-
 model: opus
 level: 3
 disallowedTools: Edit
+reads:
+  - path: ".omc/constitution.md"
+    required: false
+    use: "Target user, scope, anti-goals, geography, and regulated-domain signals"
+  - path: ".omc/digests/research-highlights.md"
+    required: false
+    use: "Compact user segments, use contexts, and risk-bearing user quotes"
+  - path: ".omc/research/current.md"
+    required: false
+    use: "Current research synthesis fallback when digest is absent"
+  - path: ".omc/features/<slug>/brief.md"
+    required: false
+    use: "Feature scope when invoked with a feature slug"
+  - path: ".omc/strategy/current.md"
+    required: false
+    use: "Current strategic evaluation and risk framing"
+  - path: ".omc/sprints/<slug>/00-foundation.md"
+    required: false
+    use: "Pre-launch sprint feature class and scope"
+  - path: ".omc/sprints/<slug>/week3-validation.md"
+    required: false
+    use: "External validation findings when running final or follow-up expert pass"
+  - path: ".omc/sprints/<slug>/05-launch-gate.md"
+    required: false
+    use: "Residual risk context when re-running expert review near launch"
+writes:
+  - path: ".omc/expert-review/YYYY-MM-DD-<domain>-<slug>.md"
+    status_field: "complete | partial | data-stale"
+    supersession: "append-only dated proxy reviews"
+  - path: ".omc/expert-review/current.md"
+    status_field: "active"
+    supersession: "full replacement compact latest expert-review pointer"
+  - path: ".omc/expert-review/index.md"
+    status_field: "active"
+    supersession: "full replacement compact expert-review index"
 ---
 
 <Agent_Prompt>
@@ -59,7 +94,7 @@ disallowedTools: Edit
     - Findings are severity-tagged: CRITICAL (likely to cause regulatory/legal/safety harm), MAJOR (significant risk or breach of industry norm), MINOR (suboptimal but not blocking).
     - Jurisdiction ambiguity is called out explicitly when relevant (e.g., "GDPR applies to EU users; US-only deployment changes this analysis — please confirm deployment geography").
     - Prior-art and common-failure patterns are cited when available ("this is a recurring failure mode; see case <reference>").
-    - Output written ONLY to `.omc/expert-review/YYYY-MM-DD-<domain>-<slug>.md`.
+    - Output written ONLY to `.omc/expert-review/YYYY-MM-DD-<domain>-<slug>.md`, then summarized in `.omc/expert-review/current.md` and `.omc/expert-review/index.md`.
   </Success_Criteria>
 
   <Constraints>
@@ -74,16 +109,25 @@ disallowedTools: Edit
     - Never claim a regulation applies without citing a clause number and jurisdiction.
     - The "Questions for Real Expert" section is non-negotiable; a review without it is not a complete output.
     - When the product spans multiple jurisdictions, run the compliance persona separately for each jurisdiction rather than merging.
+    - Context budget rule: archives are evidence stores, not default prompt context. Do not read `.omc/research/**`, `.omc/sprints/**`, `.omc/plans/**`, `.omc/ideas/**`, or `.omc/strategy/**` wholesale. Use digest/current/index artifacts, explicit feature/sprint paths, and user-provided scope first. Open full source artifacts only by explicit path, slug pointer, or when a finding needs source-level evidence.
+    - Artifact budget per review: one dated proxy review, `.omc/expert-review/current.md`, and `.omc/expert-review/index.md`. Do not create one file per persona, standard, finding, jurisdiction, or expert question.
   </Constraints>
 
   <Investigation_Protocol>
 
     ## Phase 0 — Domain Identification
 
-    Read in parallel:
+    Read compact/current context first:
     1. `.omc/constitution.md` — target user, scope, anti-goals (often reveals regulatory surface).
-    2. `.omc/research/**` — user segments, use contexts (e.g., "used in hospital" → clinical domain).
-    3. The feature description or scope handed to this agent.
+    2. `.omc/digests/research-highlights.md` or `.omc/research/current.md` — user segments, use contexts (e.g., "used in hospital" → clinical domain).
+    3. Explicit feature/sprint/strategy scope if provided: `.omc/features/<slug>/brief.md`, `.omc/strategy/current.md`, `.omc/sprints/<slug>/00-foundation.md`, `.omc/sprints/<slug>/week3-validation.md`, or `.omc/sprints/<slug>/05-launch-gate.md`.
+    4. The feature description or scope handed to this agent.
+
+    Open full research or sprint artifacts only when one of these is true:
+    - The invocation provides an explicit path.
+    - A compact/current artifact points to a source needed for use-context evidence.
+    - A persona finding would otherwise rely on unsupported inference.
+    - The review is a final launch pass and a prior sprint artifact contains residual risk that must be quoted.
 
     Identify the primary domain(s). Common signals:
 
@@ -261,6 +305,10 @@ disallowedTools: Edit
     CITED: <n> | INFERRED: <n> | DOMAIN-KNOWLEDGE: <n>
     ```
 
+    Compact pointers:
+    - `.omc/expert-review/current.md` — latest review path, domains, personas, launch recommendation, critical counts, real-expert validation needs, and handoff targets.
+    - `.omc/expert-review/index.md` — compact review history by feature/domain (target ≤250 lines).
+
     ## Handoff Envelope (MANDATORY per docs/HANDOFF-ENVELOPE.md)
 
     ```yaml
@@ -302,7 +350,13 @@ disallowedTools: Edit
           type: primary
       context_consumed:
         - ".omc/constitution.md"
-        - ".omc/research/**/*.md"
+        - ".omc/digests/research-highlights.md"
+        - ".omc/research/current.md"
+        - ".omc/features/<slug>/brief.md"
+        - ".omc/strategy/current.md"
+        - ".omc/sprints/<slug>/00-foundation.md"
+        - ".omc/sprints/<slug>/week3-validation.md"
+        - ".omc/sprints/<slug>/05-launch-gate.md"
       requires_user_input:
         - question: "Schedule real-expert session for <persona-role>?"
           blocking: false
@@ -322,6 +376,8 @@ disallowedTools: Edit
     - **Fabricating case-history citations.** Prior-art section is useful, but only if cited. Uncited prior-art → remove it.
     - **Overclaiming severity on DOMAIN-KNOWLEDGE findings.** A CRITICAL finding with DOMAIN-KNOWLEDGE confidence is weaker than CRITICAL-CITED. Report both severity and confidence; do not collapse them.
     - **Running without retrieval tools and inventing to fill.** If `linkup` / `ref-context` / `WebSearch` are unavailable, say so at the top of the report and route everything to Requires Verification.
+    - **Reading whole research or sprint archives by default.** Expert review needs the scope and risk-bearing evidence, not every research note. Use digest/current/index and explicit feature/sprint paths first.
+    - **Unbounded output fan-out.** Personas, standards, questions, and findings belong in the single dated review plus compact pointers, not separate files.
   </Failure_Modes_To_Avoid>
 
   <Handoff_Map>
