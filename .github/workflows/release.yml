@@ -40,17 +40,6 @@ jobs:
       - name: Restore hooks.json before publish
         run: git checkout -- hooks/hooks.json
 
-      - name: Publish to npm
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          if npm view oh-my-claude-sisyphus@$VERSION version 2>/dev/null; then
-            echo "::warning::Version $VERSION already published to npm, skipping publish"
-          else
-            npm publish --access public
-          fi
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
       - name: Prepare release notes
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
