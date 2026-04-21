@@ -213,7 +213,7 @@ async function discover(runDir, options) {
   const config = readJsonValidated(resolve(options.configPath), 'config', options.configPath);
   const selectedSources = options.sources.length > 0
     ? options.sources
-    : ['installed', 'bundled', 'plugin', 'skills-sh', 'plugin-marketplace', 'github'];
+    : config.discovery_policy?.default_source_order || ['skills-sh', 'plugin-marketplace', 'github', 'installed', 'bundled', 'plugin'];
   const warnings = [];
   const allCandidates = [];
 
@@ -346,8 +346,8 @@ function localSkillCandidate(source, root, skillFile, run, config) {
   const metadata = parseFrontmatter(content);
   const slug = sanitizeSlug(metadata.name || basename(dirname(skillFile)));
   const description = metadata.description || firstNonEmptyLine(content) || slug;
-  const text = `${slug}\n${description}\n${content.slice(0, 12000)}`.toLowerCase();
-  const coverage = scoreCoverage(text, slug, run.matrix.cells, config);
+  const profile = localCandidateProfile(metadata, slug, description, source, config);
+  const coverage = scoreCoverage(profile, slug, run.matrix.cells, config);
 
   if (coverage.covered_cells.length === 0) {
     return null;
@@ -368,6 +368,7 @@ function localSkillCandidate(source, root, skillFile, run, config) {
     covered_aspects: unique(coverage.covered_cells.map((cell) => cell.aspect)),
     covered_cells: coverage.covered_cells,
     risk_flags: localRiskFlags(source, skillFile),
+    source_quality: profile.sourceQuality,
     sha256: hash,
     score: coverage.score,
     install: {
@@ -390,11 +391,11 @@ async function discoverIndexSource({ source, index, run, config, warnings, netwo
   }
 
   const entries = [];
-  for (const technology of run.contract.stack) {
+  for (const query of discoveryQueries(run, config)) {
     try {
-      entries.push(...await fetchJsonEntries(fallbackSearch(technology), timeoutMs));
+      entries.push(...await fetchJsonEntries(fallbackSearch(query), timeoutMs));
     } catch (error) {
-      warnings.push(`${source} network search failed for ${technology}: ${errorMessage(error)}`);
+      warnings.push(`${source} network search failed for ${query}: ${errorMessage(error)}`);
     }
   }
   return normalizeExternalEntries(source, entries, run, config);
@@ -412,9 +413,9 @@ async function discoverGithub({ index, orgs, run, config, warnings, network, tim
   }
 
   const entries = [];
-  for (const technology of run.contract.stack) {
+  for (const queryTerm of discoveryQueries(run, config)) {
     const orgQuery = orgs.map((org) => `org:${org}`).join(' ');
-    const query = `${technology} claude skill SKILL.md ${orgQuery}`.trim();
+    const query = `${queryTerm} claude skill SKILL.md ${orgQuery}`.trim();
     const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&per_page=5`;
     try {
       const payload = await fetchJson(url, timeoutMs);
@@ -427,11 +428,11 @@ async function discoverGithub({ index, orgs, run, config, warnings, network, tim
           stars: item.stargazers_count,
           last_updated: item.updated_at,
           source: 'github',
-          tags: [technology],
+          tags: [queryTerm],
         });
       }
     } catch (error) {
-      warnings.push(`github search failed for ${technology}: ${errorMessage(error)}`);
+      warnings.push(`github search failed for ${queryTerm}: ${errorMessage(error)}`);
     }
   }
   return normalizeExternalEntries('github', entries, run, config);
@@ -442,17 +443,8 @@ function normalizeExternalEntries(source, entries, run, config) {
   for (const entry of entries) {
     const slug = sanitizeSlug(entry.slug || entry.name || entry.ref || entry.url || source);
     const description = String(entry.description || entry.summary || '');
-    const text = [
-      slug,
-      entry.name,
-      entry.title,
-      description,
-      entry.url,
-      entry.ref,
-      ...(Array.isArray(entry.tags) ? entry.tags : []),
-      ...(Array.isArray(entry.keywords) ? entry.keywords : []),
-    ].filter(Boolean).join('\n').toLowerCase();
-    const coverage = scoreCoverage(text, slug, run.matrix.cells, config);
+    const profile = externalCandidateProfile(entry, slug, description, source, config);
+    const coverage = scoreCoverage(profile, slug, run.matrix.cells, config);
     if (coverage.covered_cells.length === 0) {
       continue;
     }
@@ -476,12 +468,277 @@ function normalizeExternalEntries(source, entries, run, config) {
       covered_aspects: unique(coverage.covered_cells.map((cell) => cell.aspect)),
       covered_cells: coverage.covered_cells,
       risk_flags: externalRiskFlags(source, entry, install),
+      source_quality: profile.sourceQuality,
       sha256: candidateHash,
       score: coverage.score,
       install,
     });
   }
   return candidates;
+}
+
+function localCandidateProfile(metadata, slug, description, source, config) {
+  const sourceQuality = sourceQualityForCandidate(source, { url: null, name: metadata.name || slug }, config);
+  return candidateProfile({
+    slug,
+    sourceQuality,
+    skills: [slug, ...metadataValues(metadata, 'name', 'skill')],
+    surfaces: metadataValues(metadata, 'surfaces', 'surface'),
+    technologies: metadataValues(metadata, 'technologies', 'technology', 'tech', 'stack'),
+    aspects: metadataValues(metadata, 'aspects', 'aspect'),
+    capabilityPacks: metadataValues(metadata, 'capability_packs', 'capability-packs', 'packs'),
+    methodologies: metadataValues(metadata, 'methodologies', 'methodology', 'practices', 'guidelines'),
+    fields: [
+      slug,
+      metadata.name,
+      metadata.title,
+      metadata.summary,
+      metadata.description,
+      description,
+      ...metadataValues(metadata, 'tags', 'keywords', 'triggers'),
+      ...metadataValues(metadata, 'methodologies', 'methodology', 'practices', 'guidelines'),
+      ...metadataValues(metadata, 'surfaces', 'surface'),
+      ...metadataValues(metadata, 'technologies', 'technology', 'tech', 'stack'),
+      ...metadataValues(metadata, 'aspects', 'aspect'),
+      ...metadataValues(metadata, 'capability_packs', 'capability-packs', 'packs'),
+    ],
+  });
+}
+
+function externalCandidateProfile(entry, slug, description, source, config) {
+  const sourceQuality = sourceQualityForCandidate(source, entry, config);
+  return candidateProfile({
+    slug,
+    sourceQuality,
+    skills: [slug, ...entryValues(entry, 'name', 'slug', 'ref')],
+    surfaces: entryValues(entry, 'surfaces', 'surface'),
+    technologies: entryValues(entry, 'technologies', 'technology', 'tech', 'stack'),
+    aspects: entryValues(entry, 'aspects', 'aspect'),
+    capabilityPacks: entryValues(entry, 'capability_packs', 'capabilityPacks', 'packs'),
+    methodologies: entryValues(entry, 'methodologies', 'methodology', 'practices', 'guidelines'),
+    fields: [
+      slug,
+      entry.name,
+      entry.title,
+      description,
+      entry.summary,
+      entry.url,
+      entry.ref,
+      ...entryValues(entry, 'tags', 'keywords'),
+      ...entryValues(entry, 'methodologies', 'methodology', 'practices', 'guidelines'),
+      ...entryValues(entry, 'surfaces', 'surface'),
+      ...entryValues(entry, 'technologies', 'technology', 'tech', 'stack'),
+      ...entryValues(entry, 'aspects', 'aspect'),
+      ...entryValues(entry, 'capability_packs', 'capabilityPacks', 'packs'),
+    ],
+  });
+}
+
+function sourceQualityForCandidate(source, entry, config) {
+  const policy = config.discovery_policy || {};
+  const weights = policy.source_quality_weights || {};
+  const signals = [];
+  let score = 0;
+  const url = String(entry.url || entry.html_url || entry.skill_md_url || entry.source_url || '');
+  const domain = domainFromUrl(url);
+
+  const addSignal = (signal, weightKey) => {
+    const weight = Number(weights[weightKey] || 0);
+    if (weight <= 0 || signals.includes(signal)) {
+      return;
+    }
+    signals.push(signal);
+    score += weight;
+  };
+
+  if (['skills-sh', 'plugin-marketplace', 'github'].includes(source)) {
+    addSignal('external-index', 'external_index');
+  }
+  if (source === 'installed-skill') {
+    addSignal('installed-local', 'installed_local');
+  }
+  if (domain && domainMatches(domain, policy.professional_source_domains || [])) {
+    addSignal('professional-domain', 'professional_domain');
+  }
+  if (domain && domainMatches(domain, policy.specialized_platform_domains || [])) {
+    addSignal('specialized-platform', 'specialized_platform');
+  }
+
+  const githubOrg = githubOrgFromUrl(url);
+  if (githubOrg && includesNormalized(policy.trusted_github_orgs || [], githubOrg)) {
+    addSignal('trusted-github-org', 'trusted_github_org');
+  }
+
+  return { score, signals };
+}
+
+function discoveryQueries(run, config) {
+  const queries = [];
+  const policy = config.discovery_policy || {};
+  const cells = run.matrix?.cells || [];
+
+  queries.push(...toList(run.contract?.stack));
+  for (const cell of cells) {
+    queries.push(cell.surface, cell.technology, cell.aspect);
+    queries.push(`${cell.surface} ${cell.aspect}`);
+    if (cell.technology !== cell.surface) {
+      queries.push(`${cell.technology} ${cell.aspect}`);
+      queries.push(`${cell.technology} ${cell.surface}`);
+      queries.push(`${cell.technology} ${cell.surface} ${cell.aspect}`);
+    }
+    for (const alias of aspectAliases(cell, config)) {
+      queries.push(alias);
+      queries.push(`${cell.surface} ${alias}`);
+      if (cell.technology !== cell.surface) {
+        queries.push(`${cell.technology} ${alias}`);
+      }
+    }
+  }
+
+  const expanded = [];
+  for (const query of queries) {
+    expanded.push(query);
+    expanded.push(...queryExpansions(query, policy));
+  }
+
+  return uniqueQueries(expanded).slice(0, 80);
+}
+
+function queryExpansions(query, policy) {
+  const text = String(query || '').trim();
+  if (!text) {
+    return [];
+  }
+  const expanded = [];
+  const spaced = text.replace(/[-_]+/g, ' ');
+  if (spaced !== text) {
+    expanded.push(spaced);
+  }
+
+  const expansionMap = policy.query_expansions || {};
+  const compacted = compact(text);
+  for (const [key, values] of Object.entries(expansionMap)) {
+    const normalizedKey = compact(key);
+    if (
+      normalizedKey &&
+      (compacted === normalizedKey ||
+        containsToken(text, key) ||
+        containsToken(spaced, key))
+    ) {
+      expanded.push(...toList(values));
+    }
+  }
+
+  return expanded;
+}
+
+function uniqueQueries(values) {
+  const seen = new Set();
+  const result = [];
+  for (const value of values) {
+    const query = String(value || '').replace(/\s+/g, ' ').trim();
+    const key = query.toLowerCase();
+    if (!query || seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    result.push(query);
+  }
+  return result;
+}
+
+function domainFromUrl(url) {
+  if (!url) {
+    return '';
+  }
+  try {
+    return new URL(url).hostname.toLowerCase().replace(/^www\./, '');
+  } catch {
+    return '';
+  }
+}
+
+function domainMatches(domain, configuredDomains) {
+  const normalizedDomain = String(domain || '').toLowerCase().replace(/^www\./, '');
+  return toList(configuredDomains).some((value) => {
+    const configured = String(value || '').toLowerCase().replace(/^www\./, '');
+    return configured &&
+      (normalizedDomain === configured || normalizedDomain.endsWith(`.${configured}`));
+  });
+}
+
+function githubOrgFromUrl(url) {
+  if (!url) {
+    return '';
+  }
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+    if (host !== 'github.com') {
+      return '';
+    }
+    return parsed.pathname.split('/').filter(Boolean)[0] || '';
+  } catch {
+    return '';
+  }
+}
+
+function candidateProfile({ slug, sourceQuality, skills, surfaces, technologies, aspects, capabilityPacks, methodologies, fields }) {
+  const cleanFields = fields
+    .flatMap((value) => toList(value))
+    .map((value) => String(value).trim())
+    .filter(Boolean);
+  return {
+    slug,
+    text: unique(cleanFields).join('\n').toLowerCase(),
+    skills: normalizeList(skills),
+    surfaces: normalizeList(surfaces),
+    technologies: normalizeList(technologies),
+    aspects: normalizeList(aspects),
+    capabilityPacks: normalizeList(capabilityPacks),
+    methodologies: normalizeList(methodologies),
+    sourceQuality,
+  };
+}
+
+function metadataValues(metadata, ...keys) {
+  return keys.flatMap((key) => toList(metadata[key]));
+}
+
+function entryValues(entry, ...keys) {
+  return keys.flatMap((key) => toList(entry[key]));
+}
+
+function toList(value) {
+  if (value == null) {
+    return [];
+  }
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => toList(item));
+  }
+  const raw = String(value).trim();
+  if (!raw) {
+    return [];
+  }
+  if (raw.startsWith('[') && raw.endsWith(']')) {
+    return raw
+      .slice(1, -1)
+      .split(',')
+      .map((item) => item.replace(/^['"]|['"]$/g, '').trim())
+      .filter(Boolean);
+  }
+  return raw
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function normalizeList(values) {
+  return unique(
+    toList(values)
+      .map((value) => compact(value))
+      .filter(Boolean),
+  );
 }
 
 function externalInstall(source, entry, slug) {
@@ -863,9 +1120,18 @@ function verify(runDir, options) {
 
 function buildCoverage(matrix, candidates) {
   const cells = matrix.cells.map((cell, index) => {
-    const candidateIds = candidates
-      .filter((candidate) => candidate.covered_cells.some((covered) => covered.cell_id === cellId(index, cell)))
-      .map((candidate) => candidate.candidate_id);
+    const candidateMatches = candidates
+      .map((candidate) => {
+        const covered = candidate.covered_cells.find((item) => item.cell_id === cellId(index, cell));
+        return covered ? { candidate, covered } : null;
+      })
+      .filter(Boolean)
+      .sort((a, b) =>
+        b.covered.score - a.covered.score ||
+        b.candidate.score - a.candidate.score ||
+        a.candidate.candidate_id.localeCompare(b.candidate.candidate_id),
+      );
+    const candidateIds = candidateMatches.map((match) => match.candidate.candidate_id);
     return {
       ...cell,
       cell_id: cellId(index, cell),
@@ -905,39 +1171,150 @@ function dedupeCandidates(candidates) {
   return [...byKey.values()];
 }
 
-function scoreCoverage(text, slug, cells, config) {
+function scoreCoverage(profile, slug, cells, config) {
   const covered = [];
   let score = 0;
   cells.forEach((cell, index) => {
-    let cellScore = 0;
-    if (containsToken(text, cell.technology)) cellScore += 6;
-    if (containsToken(text, cell.aspect)) cellScore += 4;
-    if (containsToken(text, cell.surface)) cellScore += 2;
-    for (const pack of cell.capability_packs || []) {
-      if (containsToken(text, pack)) cellScore += 3;
-      const packDefinition = config.capability_packs?.[pack] || {};
-      if ((packDefinition.skills || []).some((skill) => sanitizeSlug(skill) === slug || containsToken(text, skill))) {
-        cellScore += 10;
-      }
-      if ((packDefinition.agents || []).some((agent) => containsToken(text, agent))) {
-        cellScore += 2;
-      }
+    if (isBlockedByNegativeRule(profile, slug, cell, config)) {
+      return;
     }
-    if (cellScore > 0) {
-      score += cellScore;
-      covered.push({
-        cell_id: cellId(index, cell),
-        surface: cell.surface,
-        technology: cell.technology,
-        aspect: cell.aspect,
-        score: cellScore,
-      });
+
+    const signals = coverageSignals(profile, slug, cell, config);
+    if (!isCoverageEligible(signals, cell)) {
+      return;
     }
+
+    const cellScore = (
+      (signals.hasTechnology ? 6 : 0) +
+      (signals.hasAspect ? 4 : 0) +
+      (signals.hasSurface ? 2 : 0) +
+      (signals.hasPack ? 3 : 0) +
+      (signals.hasMappedSkill ? 10 : 0) +
+      (signals.hasMappedAgent ? 2 : 0) +
+      signals.sourceQualityScore
+    );
+    score += cellScore;
+    covered.push({
+      cell_id: cellId(index, cell),
+      surface: cell.surface,
+      technology: cell.technology,
+      aspect: cell.aspect,
+      score: cellScore,
+      signals: signalNames(signals),
+    });
   });
   return {
     score,
     covered_cells: covered,
   };
+}
+
+function coverageSignals(profile, slug, cell, config) {
+  const text = profile.text;
+  const aliases = aspectAliases(cell, config);
+  const hasSurface = containsToken(text, cell.surface) || includesNormalized(profile.surfaces, cell.surface);
+  const hasTechnology = cell.technology === cell.surface
+    ? hasSurface
+    : containsToken(text, cell.technology) || includesNormalized(profile.technologies, cell.technology);
+  const hasAspect = containsToken(text, cell.aspect) ||
+    includesNormalized(profile.aspects, cell.aspect) ||
+    aliases.some((alias) =>
+      containsToken(text, alias) ||
+      includesNormalized(profile.aspects, alias) ||
+      includesNormalized(profile.methodologies, alias),
+    );
+  let hasPack = false;
+  let hasMappedSkill = false;
+  let hasMappedAgent = false;
+  const sourceQualityScore = Number(profile.sourceQuality?.score || 0);
+
+  for (const pack of cell.capability_packs || []) {
+    const packDefinition = config.capability_packs?.[pack] || {};
+    hasPack = hasPack || containsToken(text, pack) || includesNormalized(profile.capabilityPacks, pack);
+    hasMappedSkill = hasMappedSkill || (packDefinition.skills || []).some((skill) =>
+      sanitizeSlug(skill) === slug ||
+      containsToken(text, skill) ||
+      includesNormalized(profile.skills, skill),
+    );
+    hasMappedAgent = hasMappedAgent || (packDefinition.agents || []).some((agent) =>
+      containsToken(text, agent),
+    );
+  }
+
+  return {
+    hasSurface,
+    hasTechnology,
+    hasAspect,
+    hasPack,
+    hasMappedSkill,
+    hasMappedAgent,
+    sourceQualityScore,
+  };
+}
+
+function isCoverageEligible(signals, cell) {
+  return signals.hasMappedSkill ||
+    (signals.hasTechnology && (signals.hasAspect || signals.hasPack)) ||
+    (cell.technology === cell.surface && signals.hasSurface && signals.hasAspect);
+}
+
+function signalNames(signals) {
+  return Object.entries(signals)
+    .filter(([, value]) => value === true || (typeof value === 'number' && value > 0))
+    .map(([name]) => name);
+}
+
+function aspectAliases(cell, config) {
+  const surfaceAliases = config.surfaces?.[cell.surface]?.aspect_aliases || {};
+  const globalAliases = config.matching?.aspect_aliases || {};
+  return unique([
+    ...toList(surfaceAliases[cell.aspect]),
+    ...toList(globalAliases[cell.aspect]),
+  ]);
+}
+
+function isBlockedByNegativeRule(profile, slug, cell, config) {
+  const rules = config.matching?.negative_rules || [];
+  return rules.some((rule) =>
+    matchesCandidateRule(rule, profile, slug) &&
+    matchesCellRule(rule, cell),
+  );
+}
+
+function matchesCandidateRule(rule, profile, slug) {
+  const slugRules = rule.slug_match || [];
+  if (slugRules.length === 0) {
+    return false;
+  }
+  return slugRules.some((ruleSlug) =>
+    containsToken(slug, ruleSlug) ||
+    includesNormalized(profile.skills, ruleSlug) ||
+    containsToken(profile.text, ruleSlug),
+  );
+}
+
+function matchesCellRule(rule, cell) {
+  return matchesRuleList(rule.surfaces, cell.surface) &&
+    matchesRuleList(rule.technologies, cell.technology) &&
+    matchesRuleList(rule.aspects, cell.aspect) &&
+    matchesAnyRuleList(rule.capability_packs, cell.capability_packs || []);
+}
+
+function matchesRuleList(ruleValues, value) {
+  return !Array.isArray(ruleValues) ||
+    ruleValues.length === 0 ||
+    includesNormalized(ruleValues, value);
+}
+
+function matchesAnyRuleList(ruleValues, values) {
+  return !Array.isArray(ruleValues) ||
+    ruleValues.length === 0 ||
+    values.some((value) => includesNormalized(ruleValues, value));
+}
+
+function includesNormalized(values, value) {
+  const normalized = compact(value);
+  return normalized.length > 0 && values.some((candidate) => compact(candidate) === normalized);
 }
 
 function cellId(index, cell) {
@@ -1037,6 +1414,7 @@ function renderReviewMarkdown(contract, candidatesDoc, installPlan, decision) {
       `- Install kind: ${candidate.install?.kind || 'unknown'}`,
       `- Risk flags: ${(candidate.risk_flags || []).join(', ') || 'none'}`,
       `- Risk severity: ${formatRiskSeverities(candidate)}`,
+      `- Source quality: ${formatSourceQuality(candidate)}`,
       `- Approval mode: ${requiresExplicitApproval(candidate) ? 'explicit candidate id required' : 'source-level eligible'}`,
       `- Covered surfaces: ${(candidate.covered_surface || []).join(', ')}`,
       `- Covered technologies: ${(candidate.covered_technology || []).join(', ')}`,
@@ -1063,6 +1441,12 @@ function renderReviewMarkdown(contract, candidatesDoc, installPlan, decision) {
 function requiresExplicitApproval(candidate) {
   return !batchApprovalSources.has(candidate.source) ||
     (candidate.risk_flags || []).some((flag) => riskFlagSeverity(flag) !== 'info');
+}
+
+function formatSourceQuality(candidate) {
+  const score = Number(candidate.source_quality?.score || 0);
+  const signals = candidate.source_quality?.signals || [];
+  return `${score}${signals.length > 0 ? ` (${signals.join(', ')})` : ''}`;
 }
 
 function approvalBlock(candidate) {
@@ -1183,14 +1567,33 @@ function parseFrontmatter(content) {
   }
   const metadata = {};
   const frontmatter = content.slice(4, end).split(/\r?\n/);
+  let currentKey = null;
   for (const line of frontmatter) {
-    const match = /^([A-Za-z0-9_-]+):\s*(.*)$/.exec(line);
-    if (!match) {
+    const listMatch = /^\s*-\s*(.+)$/.exec(line);
+    if (listMatch && currentKey) {
+      const existing = Array.isArray(metadata[currentKey]) ? metadata[currentKey] : [];
+      metadata[currentKey] = [
+        ...existing,
+        parseMetadataValue(listMatch[1]),
+      ];
       continue;
     }
-    metadata[match[1]] = match[2].replace(/^['"]|['"]$/g, '').trim();
+
+    const match = /^([A-Za-z0-9_-]+):\s*(.*)$/.exec(line);
+    if (!match) {
+      currentKey = null;
+      continue;
+    }
+    const key = match[1];
+    const value = match[2].trim();
+    metadata[key] = value ? parseMetadataValue(value) : [];
+    currentKey = value ? null : key;
   }
   return metadata;
+}
+
+function parseMetadataValue(value) {
+  return String(value).replace(/^['"]|['"]$/g, '').trim();
 }
 
 function firstNonEmptyLine(content) {
@@ -1331,9 +1734,19 @@ function removeEmptyParents(dir, boundary) {
 }
 
 function containsToken(text, token) {
-  const normalizedText = compact(text);
-  const normalizedToken = compact(token);
-  return normalizedToken.length > 0 && normalizedText.includes(normalizedToken);
+  const parts = String(token)
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
+  if (parts.length === 0) {
+    return false;
+  }
+  const pattern = parts.map(escapeRegExp).join('[^a-z0-9]+');
+  return new RegExp(`(^|[^a-z0-9])${pattern}([^a-z0-9]|$)`, 'i').test(String(text));
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function stableId(prefix, value) {

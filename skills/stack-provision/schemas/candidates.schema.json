@@ -72,6 +72,17 @@
             "type": "array",
             "items": { "type": "string" }
           },
+          "source_quality": {
+            "type": "object",
+            "properties": {
+              "score": { "type": "number" },
+              "signals": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            },
+            "additionalProperties": true
+          },
           "sha256": { "type": "string", "pattern": "^sha256:" },
           "score": { "type": "number" },
           "install": {

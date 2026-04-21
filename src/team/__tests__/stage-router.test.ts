@@ -35,6 +35,7 @@ const EXPECTED_DEFAULTS: Record<CanonicalTeamRole, { model: string; agent: strin
   'performance-guardian': { model: CLAUDE_FAMILY_DEFAULTS.SONNET, agent: 'performanceGuardian' },
   copywriter: { model: CLAUDE_FAMILY_DEFAULTS.SONNET, agent: 'copywriter' },
   'product-strategist': { model: CLAUDE_FAMILY_DEFAULTS.SONNET, agent: 'productStrategist' },
+  'technology-strategist': { model: CLAUDE_FAMILY_DEFAULTS.OPUS, agent: 'technologyStrategist' },
   'ux-architect': { model: CLAUDE_FAMILY_DEFAULTS.SONNET, agent: 'uxArchitect' },
   'ux-researcher': { model: CLAUDE_FAMILY_DEFAULTS.SONNET, agent: 'uxResearcher' },
 };

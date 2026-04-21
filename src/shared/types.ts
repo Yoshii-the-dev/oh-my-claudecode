@@ -50,6 +50,7 @@ export interface PluginConfig {
     copywriter?: { model?: string };
     performanceGuardian?: { model?: string };
     productStrategist?: { model?: string };
+    technologyStrategist?: { model?: string };
     uxArchitect?: { model?: string };
     uxResearcher?: { model?: string };
   };
@@ -433,6 +434,7 @@ export const CANONICAL_TEAM_ROLES = [
   'copywriter',
   'performance-guardian',
   'product-strategist',
+  'technology-strategist',
   'ux-architect',
   'ux-researcher',
 ] as const;
@@ -478,6 +480,7 @@ export const KNOWN_AGENT_NAMES = [
   'copywriter',
   'performanceGuardian',
   'productStrategist',
+  'technologyStrategist',
   'uxArchitect',
   'uxResearcher',
 ] as const;

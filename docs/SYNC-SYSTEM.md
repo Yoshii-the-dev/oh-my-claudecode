@@ -80,7 +80,7 @@ Syncs all files. Output:
 
 Version: 3.5.0
 Package: oh-my-claudecode
-Agents: 32
+Agents: 33
 Skills: 45
 
 ✓ README.md

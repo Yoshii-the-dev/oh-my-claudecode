@@ -38,6 +38,11 @@
       "minItems": 1,
       "uniqueItems": true
     },
+    "application_blocks": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
     "creative_intent": { "type": "string" },
     "policy": {
       "type": "object",

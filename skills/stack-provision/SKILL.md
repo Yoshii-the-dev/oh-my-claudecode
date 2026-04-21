@@ -1,13 +1,15 @@
 ---
 name: stack-provision
 description: Capability provisioner for backend, frontend, mobile, infra, data/AI, product UX, and visual-creative work. Use after a stack decision or when adopting technologies to derive capability packs, skill coverage, agents, creative context, review gates, quarantine installs, manifests, and rollback plans from an ADR or explicit stack list.
-argument-hint: "[ADR-path | \"tech1, tech2, ...\"] [--surfaces=<list>] [--creative-intent=<brief>] [--aspects=<list>] [--no-generate] [--dry-run]"
+argument-hint: "[ADR-path | \"tech1, tech2, ...\"] [--blocks=<list>] [--surfaces=<list>] [--creative-intent=<brief>] [--aspects=<list>] [--no-generate] [--dry-run]"
 level: 4
 ---
 
 # Stack Provision
 
-Turn a chosen stack into a reviewed capability system: agents, skills, context files, discovery targets, generated drafts, install decisions, manifests, and rollback records. This skill is not only for backend packages. It covers backend, frontend engineering, product UX, visual creativity, mobile, infra/devops, and data/AI.
+Turn a chosen stack into a reviewed capability system: agents, skills, context files, discovery targets, generated drafts, install decisions, manifests, and rollback records. This skill is not only for backend packages. It covers backend, frontend engineering, product UX, visual creativity, mobile, infra/devops, data/AI, and application capability blocks such as authentication, product analytics, and financial transactions.
+
+If the stack itself is not yet chosen, use the `technology-strategist` agent first. That agent owns the decision of which technologies and application blocks belong in the stack ADR; `stack-provision` consumes that ADR or its handoff command and provisions the matching skills/guidelines.
 
 The core contract is deterministic. Always initialize a run with the bundled helper before discovery or installation.
 
@@ -23,13 +25,15 @@ node skills/stack-provision/scripts/provision.mjs discover .omc/provisioned/runs
 /stack-provision "next.js, react, tailwind, supabase, postgres, playwright"
 /stack-provision "next.js, react, tailwind, framer-motion, three.js, supabase" --surfaces=frontend-engineering,frontend-product,visual-creative --creative-intent="distinct visual identity, generated assets, motion system"
 /stack-provision "flutter, supabase, sentry" --surfaces=mobile,backend --aspects=testing,security,performance
+/stack-provision "dart, shelf, postgres, stripe, posthog, clerk" --blocks=auth,product-analytics,finance-transactions
 /stack-provision "airflow, dbt, postgres" --surfaces=data-ai,backend --no-generate
 /stack-provision "next.js, supabase" --dry-run --json
 ```
 
 ## Flags
 
-- `--surfaces=<list>`: Explicit capability surfaces. Known values: `backend`, `frontend-engineering`, `frontend-product`, `visual-creative`, `mobile`, `infra-devops`, `data-ai`.
+- `--surfaces=<list>`: Explicit capability surfaces. Known values: `backend`, `frontend-engineering`, `frontend-product`, `visual-creative`, `mobile`, `infra-devops`, `data-ai`, `auth-identity`, `product-analytics`, `finance-transactions`.
+- `--blocks=<list>`: Explicit application capability blocks. Known values include `auth`, `product-analytics`, and `finance-transactions`; aliases like `authentication`, `analytics`, and `payments` map to the canonical blocks.
 - `--surfaces-only`: Use only the explicit `--surfaces` list instead of unioning it with inferred surfaces.
 - `--creative-intent=<brief>`: Adds the `visual-creative` surface and preserves its full creative aspect set.
 - `--aspects=<list>`: Narrow aspects for non-creative surfaces. With `--creative-intent`, visual aspects still include art direction, generated imagery, typography, illustration, motion, brand assets, and visual QA.
@@ -75,6 +79,21 @@ The generated contract is the source of truth for all later phases. Do not inven
 - `mobile`: App architecture, navigation, native/platform APIs, offline data, accessibility, release readiness.
 - `infra-devops`: CI/CD, containers, cloud infra, secrets, monitoring, rollback, cost.
 - `data-ai`: Data pipelines, data quality, model APIs, evals, vector search, AI observability, cost.
+- `auth-identity`: Authentication, sessions, OAuth/OIDC, authorization, privacy, abuse/security, and account recovery.
+- `product-analytics`: Event taxonomy, instrumentation, funnels, experiments, privacy-safe tracking, and metric governance.
+- `finance-transactions`: Payments, billing, subscriptions, ledgers, idempotency, reconciliation, refunds, compliance, and audit trails.
+
+## Technology Decision Contract
+
+Use `technology-strategist` before this skill when the user has product intent but the stack is incomplete or undecided. It should produce `.omc/decisions/YYYY-MM-DD-technology-<slug>.md` with:
+
+- `stack`: concrete technologies already chosen or proposed.
+- `application_blocks`: product capability blocks such as `auth`, `product-analytics`, `finance-transactions`.
+- decision drivers and alternatives considered.
+- skill/guideline targets for each block.
+- a concrete `stack-provision` handoff command.
+
+Stack technologies are not a fixed enum. Additions are expected. Prefer adding them through `technology-strategist` ADRs and, when needed, a project override config passed with `--config=<path>` that extends `tech_match`, `application_blocks`, `aspect_aliases`, and `query_expansions`.
 
 ## Visual-Creative Contract
 
@@ -142,6 +161,7 @@ node skills/stack-provision/scripts/provision.mjs rollback .omc/provisioned/runs
 
 Discovery sources:
 
+- Default discovery is research-first: `skills-sh`, `plugin-marketplace`, and `github` are searched before installed/bundled/plugin-cache skills.
 - `installed`: scans installed skill roots. Override with repeated `--installed-root=<path>`.
 - `bundled`: scans project bundled skills. Override with repeated `--bundled-root=<path>`.
 - `plugin`: scans local plugin skill caches. Override with repeated `--plugin-root=<path>`.
@@ -162,9 +182,17 @@ Read `capability-matrix.json` first. Each cell is one coverage need:
   "surface": "visual-creative",
   "technology": "framer-motion",
   "aspect": "motion",
-  "capability_packs": ["brand-system", "creative-direction", "image-generation", "motion-system", "visual-qa"]
+  "capability_packs": ["motion-system"]
 }
 ```
+
+Matrix generation is intentionally conservative:
+
+- A surface only uses technologies that match that surface's `tech_match` list. Explicit surfaces with no matching stack technology use the surface name as a generic intent marker instead of cross-producting every stack technology.
+- Application blocks from `--blocks` are mapped to their own capability surfaces and preserved in `contract.application_blocks`; they are not collapsed into backend/frontend.
+- Explicit `--aspects` are filtered through each surface's `default_aspects`; irrelevant aspects are dropped for that surface.
+- Technology profiles may narrow aspects further, e.g. `riverpod` can produce `state` and `testing` cells without producing `performance` cells.
+- Each cell gets aspect-specific capability packs, not every pack for the surface.
 
 For each cell, collect candidates with:
 
@@ -180,6 +208,10 @@ For each cell, collect candidates with:
 - `sha256` of the exact content or install plan
 
 Discovery must not install anything. It writes candidate records under the current run directory only.
+
+Discovery scoring uses structured metadata only: slug, frontmatter fields, index fields, tags, keywords, declared surfaces, technologies, aspects, and capability packs. Do not award coverage from arbitrary `SKILL.md` body text. A candidate covers a cell only when it has a meaningful technology+aspect/pack, surface+aspect, or configured skill-to-pack match. Negative matching rules block known broad skills from unrelated cells.
+
+For external discovery, expand literal technologies into adjacent professional practices and methodology terms from `config/default-capability-packs.json`. For example, `dart` + `backend` searches can include Effective Dart, Dart package design, clean/hexagonal architecture, domain-driven design, API design, contract testing, OWASP API security, OpenTelemetry, and twelve-factor app guidance. Candidates from configured professional domains, specialized platforms, and trusted GitHub organizations receive source-quality scoring and are surfaced in `review.md`.
 
 Discovery writes:
 

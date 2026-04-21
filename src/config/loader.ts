@@ -75,6 +75,7 @@ export function buildDefaultConfig(): PluginConfig {
       performanceGuardian: { model: defaultTierModels.MEDIUM },
       copywriter: { model: defaultTierModels.MEDIUM },
       productStrategist: { model: defaultTierModels.MEDIUM },
+      technologyStrategist: { model: defaultTierModels.HIGH },
       uxArchitect: { model: defaultTierModels.MEDIUM },
       uxResearcher: { model: defaultTierModels.MEDIUM },
     },
@@ -895,6 +896,11 @@ export function generateConfigSchema(): object {
             additionalProperties: false,
           },
           productStrategist: {
+            type: "object",
+            properties: { model: { type: "string" } },
+            additionalProperties: false,
+          },
+          technologyStrategist: {
             type: "object",
             properties: { model: { type: "string" } },
             additionalProperties: false,

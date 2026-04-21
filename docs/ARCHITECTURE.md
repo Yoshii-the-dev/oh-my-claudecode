@@ -49,7 +49,7 @@ User Input --> Hooks (event detection) --> Skills (behavior injection)
 
 ### Overview
 
-OMC provides 19 specialized agents organized into 4 lanes. Each agent is invoked as `oh-my-claudecode:<agent-name>` and runs on the appropriate model tier.
+OMC provides 33 specialized agents organized into 4 lanes. Each agent is invoked as `oh-my-claudecode:<agent-name>` and runs on the appropriate model tier.
 
 ### Build/Analysis Lane
 
@@ -83,6 +83,7 @@ Domain experts called in when needed.
 |-------|---------------|------|
 | `test-engineer` | sonnet | Test strategy, coverage, flaky-test hardening |
 | `designer` | sonnet | UI/UX architecture, interaction design |
+| `technology-strategist` | opus | Technology and application-capability decisions before stack provisioning |
 | `writer` | haiku | Documentation, migration notes |
 | `qa-tester` | sonnet | Interactive CLI/service runtime validation via tmux |
 | `scientist` | sonnet | Data analysis, statistical research |
@@ -111,7 +112,7 @@ OMC uses three model tiers:
 Default assignments by role:
 - **haiku**: Fast lookups and simple tasks (`explore`, `writer`)
 - **sonnet**: Code implementation, debugging, testing (`executor`, `debugger`, `test-engineer`)
-- **opus**: Architecture, strategic analysis, review (`architect`, `planner`, `critic`, `code-reviewer`)
+- **opus**: Architecture, strategic analysis, review (`architect`, `planner`, `critic`, `code-reviewer`, `technology-strategist`)
 
 ### Delegation
 
@@ -147,6 +148,7 @@ Task(
 | Simple bug fix | `debugger` | sonnet |
 | Complex debugging | `architect` | opus |
 | UI component | `designer` | sonnet |
+| Technology or application-block decision | `technology-strategist` | opus |
 | Documentation | `writer` | haiku |
 | Test strategy | `test-engineer` | sonnet |
 | Security review | `security-reviewer` | sonnet |

@@ -63,6 +63,7 @@ export {
   performanceGuardianAgent,
   copywriterAgent,
   productStrategistAgent,
+  technologyStrategistAgent,
   uxArchitectAgent,
   uxResearcherAgent,
   competitorScoutAgent,

@@ -31,9 +31,14 @@ function run(argv) {
 
   const inferredSurfaces = inferSurfaces(stack, config);
   const explicitSurfaces = normalizeSurfaceList(options.surfaces, config);
+  const inferredApplicationBlocks = inferApplicationBlocks(stack, config);
+  const explicitApplicationBlocks = normalizeBlockList(options.blocks, config);
+  const applicationBlocks = unique([...inferredApplicationBlocks, ...explicitApplicationBlocks]);
+  const blockSurfaces = surfacesForBlocks(applicationBlocks, config);
   const surfaces = selectSurfaces({
     inferredSurfaces,
     explicitSurfaces,
+    blockSurfaces,
     creativeIntent: options.creativeIntent,
     surfacesOnly: options.surfacesOnly,
     config,
@@ -58,6 +63,7 @@ function run(argv) {
     },
     stack,
     surfaces,
+    application_blocks: applicationBlocks,
     creative_intent: options.creativeIntent,
     aspects_by_surface: aspectsBySurface,
     capability_packs: capabilityPacks,
@@ -74,8 +80,9 @@ function run(argv) {
     schema_version: 1,
     run_id: runId,
     surfaces,
+    application_blocks: applicationBlocks,
     capability_packs: capabilityPacks,
-    cells: buildMatrixCells(stack, surfaces, aspectsBySurface, config, explicitSurfaces),
+    cells: buildMatrixCells(stack, surfaces, aspectsBySurface, config),
   };
   validateData('contract', contract, 'contract');
   validateData('capability-matrix', capabilityMatrix, 'capability-matrix');
@@ -94,6 +101,7 @@ function run(argv) {
     dry_run: options.dryRun,
     stack,
     surfaces,
+    application_blocks: applicationBlocks,
     capability_packs: capabilityPacks,
     artifacts: output.artifacts,
     contract,
@@ -105,6 +113,7 @@ function parseArgs(argv) {
   const options = {
     rawInput: '',
     surfaces: [],
+    blocks: [],
     aspects: [],
     creativeIntent: '',
     configPath: defaultConfigPath,
@@ -132,6 +141,11 @@ function parseArgs(argv) {
     } else if (arg === '--surfaces') {
       index += 1;
       options.surfaces = splitList(requireValue(argv[index], '--surfaces'));
+    } else if (arg.startsWith('--blocks=')) {
+      options.blocks = splitList(arg.slice('--blocks='.length));
+    } else if (arg === '--blocks') {
+      index += 1;
+      options.blocks = splitList(requireValue(argv[index], '--blocks'));
     } else if (arg.startsWith('--aspects=')) {
       options.aspects = splitList(arg.slice('--aspects='.length));
     } else if (arg === '--aspects') {
@@ -288,6 +302,52 @@ function normalizeSurfaceList(surfaces, config) {
   );
 }
 
+function normalizeBlockList(blocks, config) {
+  return unique(blocks.map((block) => normalizeBlock(block, config)));
+}
+
+function normalizeBlock(block, config) {
+  const normalized = block.toLowerCase().trim().replace(/\s+/g, '-');
+  const blocks = config.application_blocks || {};
+  if (blocks[normalized]) {
+    return blocks[normalized].canonical || normalized;
+  }
+
+  for (const [name, definition] of Object.entries(blocks)) {
+    const aliases = definition.aliases || [];
+    if (aliases.some((alias) => compact(alias) === compact(block))) {
+      return definition.canonical || name;
+    }
+  }
+
+  throw new Error(`stack-provision: unknown application block "${block}"`);
+}
+
+function inferApplicationBlocks(stack, config) {
+  const blocks = config.application_blocks || {};
+  const inferred = [];
+  for (const [name, definition] of Object.entries(blocks)) {
+    const aliases = [name, ...(definition.aliases || [])];
+    const surfaceDefinition = definition.surface ? config.surfaces?.[definition.surface] : null;
+    if (stack.some((technology) =>
+      aliases.some((alias) => technologyMatches(technology, alias)) ||
+      (surfaceDefinition && technologyMatchesSurface(technology, surfaceDefinition))
+    )) {
+      inferred.push(definition.canonical || name);
+    }
+  }
+  return unique(inferred);
+}
+
+function surfacesForBlocks(blocks, config) {
+  const blockDefinitions = config.application_blocks || {};
+  return unique(
+    blocks
+      .map((block) => blockDefinitions[block]?.surface)
+      .filter((surface) => surface && config.surfaces[surface]),
+  );
+}
+
 function inferSurfaces(stack, config) {
   const inferred = [];
   for (const [surface, definition] of Object.entries(config.surfaces)) {
@@ -298,10 +358,10 @@ function inferSurfaces(stack, config) {
   return inferred;
 }
 
-function selectSurfaces({ inferredSurfaces, explicitSurfaces, creativeIntent, surfacesOnly, config }) {
+function selectSurfaces({ inferredSurfaces, explicitSurfaces, blockSurfaces, creativeIntent, surfacesOnly, config }) {
   const selected = surfacesOnly
-    ? explicitSurfaces
-    : unique([...inferredSurfaces, ...explicitSurfaces]);
+    ? unique([...explicitSurfaces, ...blockSurfaces])
+    : unique([...inferredSurfaces, ...explicitSurfaces, ...blockSurfaces]);
 
   if (creativeIntent && config.surfaces['visual-creative'] && !selected.includes('visual-creative')) {
     selected.push('visual-creative');
@@ -313,12 +373,13 @@ function buildAspectsBySurface(surfaces, explicitAspects, creativeIntent, config
   const result = {};
   for (const surface of surfaces) {
     const defaults = config.surfaces[surface].default_aspects || [];
+    const relevantExplicit = explicitAspects.filter((aspect) => defaults.includes(aspect));
     if (explicitAspects.length === 0) {
       result[surface] = defaults;
     } else if (surface === 'visual-creative' && creativeIntent) {
-      result[surface] = unique([...explicitAspects, ...defaults]);
+      result[surface] = unique([...relevantExplicit, ...defaults]);
     } else {
-      result[surface] = explicitAspects;
+      result[surface] = relevantExplicit;
     }
   }
   return result;
@@ -330,23 +391,21 @@ function collectCapabilityPacks(surfaces, config) {
   );
 }
 
-function buildMatrixCells(stack, surfaces, aspectsBySurface, config, explicitSurfaces) {
-  const explicitSet = new Set(explicitSurfaces);
+function buildMatrixCells(stack, surfaces, aspectsBySurface, config) {
   const cells = [];
   for (const surface of surfaces) {
     const definition = config.surfaces[surface];
     const matchedStack = stack.filter((technology) => technologyMatchesSurface(technology, definition));
-    const technologies = matchedStack.length > 0 || !explicitSet.has(surface)
-      ? matchedStack
-      : stack;
+    const technologies = matchedStack.length > 0 ? matchedStack : [surface];
 
     for (const technology of technologies) {
-      for (const aspect of aspectsBySurface[surface] || []) {
+      const aspects = aspectsForTechnology(technology, surface, aspectsBySurface[surface] || [], definition);
+      for (const aspect of aspects) {
         cells.push({
           surface,
           technology,
           aspect,
-          capability_packs: definition.capability_packs || [],
+          capability_packs: capabilityPacksForAspect(definition, aspect),
         });
       }
     }
@@ -354,15 +413,43 @@ function buildMatrixCells(stack, surfaces, aspectsBySurface, config, explicitSur
   return cells;
 }
 
+function aspectsForTechnology(technology, surface, baseAspects, definition) {
+  if (technology === surface) {
+    return baseAspects;
+  }
+
+  const profile = (definition.aspect_profiles || []).find((candidate) =>
+    (candidate.tech_match || []).some((matcher) => technologyMatches(technology, matcher)),
+  );
+  if (!profile) {
+    return baseAspects;
+  }
+
+  const allowed = new Set(profile.aspects || []);
+  return baseAspects.filter((aspect) => allowed.has(aspect));
+}
+
+function capabilityPacksForAspect(definition, aspect) {
+  const mapped = definition.aspect_capability_packs?.[aspect] || [];
+  return mapped.length > 0 ? mapped : (definition.capability_packs || []);
+}
+
 function technologyMatchesSurface(technology, definition) {
-  const normalizedTechnology = compact(technology);
   return (definition.tech_match || []).some((matcher) => {
-    const normalizedMatcher = compact(matcher);
-    return (
-      normalizedTechnology === normalizedMatcher ||
-      normalizedTechnology.includes(normalizedMatcher)
-    );
+    return technologyMatches(technology, matcher);
   });
+}
+
+function technologyMatches(technology, matcher) {
+  const normalizedTechnology = compact(technology);
+  const normalizedMatcher = compact(matcher);
+  return (
+    normalizedTechnology === normalizedMatcher ||
+    (normalizedMatcher.length >= 5 && (
+      normalizedTechnology.startsWith(normalizedMatcher) ||
+      normalizedTechnology.endsWith(normalizedMatcher)
+    ))
+  );
 }
 
 function compact(value) {
@@ -432,6 +519,13 @@ function buildReviewMarkdown(contract, capabilityMatrix, config) {
     })
     .join('\n');
 
+  const blockRows = (contract.application_blocks || [])
+    .map((block) => {
+      const surface = config.application_blocks?.[block]?.surface || 'unknown';
+      return `| ${block} | ${surface} |`;
+    })
+    .join('\n') || '| none | none |';
+
   const visualSection = contract.surfaces.includes('visual-creative')
     ? `
 ## Visual-Creative Contract
@@ -461,6 +555,12 @@ ${contract.stack.map((technology) => `- ${technology}`).join('\n')}
 | Surface | Aspects |
 | --- | --- |
 ${surfaceRows}
+
+## Application Blocks
+
+| Block | Surface |
+| --- | --- |
+${blockRows}
 
 ## Capability Packs
 

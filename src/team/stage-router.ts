@@ -55,6 +55,7 @@ const ROLE_TO_AGENT: Record<CanonicalTeamRole, KnownAgentName> = {
   'performance-guardian': 'performanceGuardian',
   copywriter: 'copywriter',
   'product-strategist': 'productStrategist',
+  'technology-strategist': 'technologyStrategist',
   'ux-architect': 'uxArchitect',
   'ux-researcher': 'uxResearcher',
 };
@@ -87,6 +88,7 @@ const ROLE_DEFAULT_TIER: Record<CanonicalTeamRole, TeamRoleTier> = {
   'performance-guardian': 'MEDIUM',
   copywriter: 'MEDIUM',
   'product-strategist': 'MEDIUM',
+  'technology-strategist': 'HIGH',
   'ux-architect': 'MEDIUM',
   'ux-researcher': 'MEDIUM',
 };
