@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -70,6 +71,10 @@ function writeSkill(skillRoot: string, slug: string, name: string, description: 
     ].join('\n'),
     'utf8',
   );
+}
+
+function sha256(content: string) {
+  return `sha256:${createHash('sha256').update(content).digest('hex')}`;
 }
 
 describe('stack-provision executable workflow', () => {
@@ -264,6 +269,207 @@ describe('stack-provision executable workflow', () => {
     for (const item of manifest.installed) {
       expect(existsSync(item.target_path)).toBe(false);
     }
+  });
+
+  it('shortlists marketplace discovery and blocks download candidates without content checksums', () => {
+    const tempDir = makeTempDir();
+    const runRoot = join(tempDir, 'runs');
+    const skillsShIndex = join(tempDir, 'skills-sh.json');
+
+    writeFileSync(
+      skillsShIndex,
+      JSON.stringify(Array.from({ length: 5 }, (_, index) => ({
+        name: `next-download-testing-${index}`,
+        description: 'Next.js frontend testing and Playwright visual-regression.',
+        url: `https://skills.sh/example/next-download-testing-${index}`,
+        skill_md_url: `https://skills.sh/example/next-download-testing-${index}/SKILL.md`,
+        updated_at: fixedNow,
+        license: 'MIT',
+        tags: ['next.js', 'testing', 'visual-regression'],
+      }))),
+      'utf8',
+    );
+
+    run(initScript, [
+      'next.js, playwright',
+      '--surfaces=frontend-engineering',
+      '--aspects=testing',
+      '--run-id=download-checksum-required',
+      '--out',
+      runRoot,
+      '--json',
+    ]);
+    const runDir = join(runRoot, 'download-checksum-required');
+
+    run(provisionScript, [
+      'discover',
+      runDir,
+      '--sources=skills-sh',
+      '--skills-sh-index',
+      skillsShIndex,
+      '--json',
+    ]);
+
+    const candidates = JSON.parse(readFileSync(join(runDir, 'candidates.json'), 'utf8'));
+    expect(candidates.selection_summary.discovered_candidates).toBe(5);
+    expect(candidates.candidates).toHaveLength(3);
+    expect(candidates.candidates[0].install.kind).toBe('download-skill');
+    expect(candidates.candidates[0].risk_flags).toEqual(
+      expect.arrayContaining(['missing-content-checksum', 'strict-gate:checksum_invalid']),
+    );
+    expect(candidates.candidates[0].strict_gate.install_allowed).toBe(false);
+  });
+
+  it('promotes download-skill candidates only when fetched content matches expected sha256', () => {
+    const tempDir = makeTempDir();
+    const runRoot = join(tempDir, 'runs');
+    const targetSkillRoot = join(tempDir, 'target-skills');
+    const skillsShIndex = join(tempDir, 'skills-sh.json');
+    const content = [
+      '---',
+      'name: verified-next-testing',
+      'description: Next.js frontend testing and visual-regression.',
+      '---',
+      '',
+      'Use Playwright visual-regression tests for Next.js components.',
+      '',
+    ].join('\n');
+
+    writeFileSync(
+      skillsShIndex,
+      JSON.stringify([
+        {
+          name: 'verified-next-testing',
+          description: 'Next.js frontend testing and Playwright visual-regression.',
+          url: 'https://skills.sh/example/verified-next-testing',
+          skill_md_url: `data:text/markdown;charset=utf-8,${encodeURIComponent(content)}`,
+          sha256: sha256(content),
+          updated_at: fixedNow,
+          license: 'MIT',
+          tags: ['next.js', 'testing', 'visual-regression'],
+        },
+      ]),
+      'utf8',
+    );
+
+    run(initScript, [
+      'next.js, playwright',
+      '--surfaces=frontend-engineering',
+      '--aspects=testing',
+      '--run-id=verified-download',
+      '--out',
+      runRoot,
+      '--json',
+    ]);
+    const runDir = join(runRoot, 'verified-download');
+
+    run(provisionScript, [
+      'discover',
+      runDir,
+      '--sources=skills-sh',
+      '--skills-sh-index',
+      skillsShIndex,
+      '--json',
+    ]);
+    const candidates = JSON.parse(readFileSync(join(runDir, 'candidates.json'), 'utf8'));
+    expect(candidates.candidates[0].checksum_valid).toBe(true);
+    expect(candidates.candidates[0].strict_gate.install_allowed).toBe(true);
+
+    run(provisionScript, [
+      'review',
+      runDir,
+      '--approve',
+      candidates.candidates[0].candidate_id,
+      '--critic-verdict=approve',
+      '--json',
+    ]);
+    const promotion = run(provisionScript, [
+      'promote',
+      runDir,
+      '--skill-root',
+      targetSkillRoot,
+      '--network',
+      '--json',
+    ]);
+
+    expect(promotion.status).toBe('success');
+    expect(promotion.installed).toBe(1);
+    expect(readFileSync(join(targetSkillRoot, 'verified-next-testing', 'SKILL.md'), 'utf8')).toBe(content);
+  });
+
+  it('rejects download-skill content when the fetched checksum does not match review', () => {
+    const tempDir = makeTempDir();
+    const runRoot = join(tempDir, 'runs');
+    const targetSkillRoot = join(tempDir, 'target-skills');
+    const skillsShIndex = join(tempDir, 'skills-sh.json');
+    const content = [
+      '---',
+      'name: tampered-next-testing',
+      'description: Next.js frontend testing and visual-regression.',
+      '---',
+      '',
+      'Original reviewed content.',
+      '',
+    ].join('\n');
+    const fetchedContent = content.replace('Original reviewed content.', 'Tampered downloaded content.');
+
+    writeFileSync(
+      skillsShIndex,
+      JSON.stringify([
+        {
+          name: 'tampered-next-testing',
+          description: 'Next.js frontend testing and Playwright visual-regression.',
+          url: 'https://skills.sh/example/tampered-next-testing',
+          skill_md_url: `data:text/markdown;charset=utf-8,${encodeURIComponent(fetchedContent)}`,
+          sha256: sha256(content),
+          updated_at: fixedNow,
+          license: 'MIT',
+          tags: ['next.js', 'testing', 'visual-regression'],
+        },
+      ]),
+      'utf8',
+    );
+
+    run(initScript, [
+      'next.js, playwright',
+      '--surfaces=frontend-engineering',
+      '--aspects=testing',
+      '--run-id=tampered-download',
+      '--out',
+      runRoot,
+      '--json',
+    ]);
+    const runDir = join(runRoot, 'tampered-download');
+
+    run(provisionScript, [
+      'discover',
+      runDir,
+      '--sources=skills-sh',
+      '--skills-sh-index',
+      skillsShIndex,
+      '--json',
+    ]);
+    const candidates = JSON.parse(readFileSync(join(runDir, 'candidates.json'), 'utf8'));
+    run(provisionScript, [
+      'review',
+      runDir,
+      '--approve',
+      candidates.candidates[0].candidate_id,
+      '--critic-verdict=approve',
+      '--json',
+    ]);
+
+    const promotion = run(provisionScript, [
+      'promote',
+      runDir,
+      '--skill-root',
+      targetSkillRoot,
+      '--network',
+      '--json',
+    ]);
+    expect(promotion.status).toBe('failed');
+    expect(promotion.errors.join('\n')).toContain('downloaded skill checksum mismatch');
+    expect(existsSync(join(targetSkillRoot, 'tampered-next-testing', 'SKILL.md'))).toBe(false);
   });
 
   it('blocks promotion unless the review decision is approved', () => {
@@ -494,6 +700,58 @@ describe('stack-provision executable workflow', () => {
       cell.surface === 'backend' && cell.technology === 'postgres' && cell.aspect === 'performance',
     );
     expect(performanceCell.best_candidate_id).toBe(official.candidate_id);
+  });
+
+  it('scores official UI and visual sources for frontend capability discovery', () => {
+    const tempDir = makeTempDir();
+    const runRoot = join(tempDir, 'runs');
+    const skillsShIndex = join(tempDir, 'skills-sh.json');
+
+    writeFileSync(
+      skillsShIndex,
+      JSON.stringify([
+        {
+          name: 'shadcn-component-system',
+          description: 'shadcn UI component architecture, accessibility, design tokens, visual-creative, and visual-qa.',
+          url: 'https://ui.shadcn.com/docs/components/button',
+          updated_at: fixedNow,
+          license: 'MIT',
+          tags: ['shadcn', 'component-architecture', 'accessibility', 'visual-creative', 'visual-qa'],
+        },
+      ]),
+      'utf8',
+    );
+
+    run(initScript, [
+      'react, shadcn, tailwind',
+      '--surfaces=frontend-engineering,visual-creative',
+      '--aspects=component-architecture,visual-qa',
+      '--run-id=official-ui-source-ranking',
+      '--out',
+      runRoot,
+      '--json',
+    ]);
+    const runDir = join(runRoot, 'official-ui-source-ranking');
+    run(provisionScript, [
+      'discover',
+      runDir,
+      '--sources=skills-sh',
+      '--skills-sh-index',
+      skillsShIndex,
+      '--json',
+    ]);
+
+    const candidates = JSON.parse(readFileSync(join(runDir, 'candidates.json'), 'utf8'));
+    const candidate = candidates.candidates.find((item: { slug: string }) =>
+      item.slug === 'shadcn-component-system',
+    );
+    expect(candidate.source_quality.signals).toEqual(
+      expect.arrayContaining(['external-index', 'professional-domain']),
+    );
+    expect(candidate.covered_surface).toContain('frontend-engineering');
+    expect(candidate.covered_aspects).toEqual(
+      expect.arrayContaining(['component-architecture', 'visual-qa']),
+    );
   });
 
   it('uses Dart methodology aliases for backend architecture and testing coverage', () => {

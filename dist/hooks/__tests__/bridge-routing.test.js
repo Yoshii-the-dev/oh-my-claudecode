@@ -748,6 +748,28 @@ $ ultrawork search the codebase`,
                 rmSync(tempDir, { recursive: true, force: true });
             }
         });
+        it('seeds workflow slot for explicit /product-foundation slash invocation in UserPromptSubmit', async () => {
+            const tempDir = mkdtempSync(join(tmpdir(), 'bridge-routing-pf-slash-'));
+            try {
+                execFileSync('git', ['init'], { cwd: tempDir, stdio: 'pipe' });
+                const sessionId = 'pf-slash-session';
+                const result = await processHook('keyword-detector', {
+                    sessionId,
+                    prompt: '/oh-my-claudecode:product-foundation build a healthcare workflow product',
+                    directory: tempDir,
+                });
+                expect(result.continue).toBe(true);
+                const slotPath = join(tempDir, '.omc', 'state', 'sessions', sessionId, 'skill-active-state.json');
+                expect(existsSync(slotPath)).toBe(true);
+                const slot = JSON.parse(readFileSync(slotPath, 'utf-8'));
+                expect(slot.version).toBe(2);
+                expect(slot.active_skills?.['product-foundation']?.initialized_mode).toBe('product-foundation');
+                expect(slot.active_skills?.['product-foundation']?.session_id).toBe(sessionId);
+            }
+            finally {
+                rmSync(tempDir, { recursive: true, force: true });
+            }
+        });
         it('seeds workflow slot when Skill tool invokes oh-my-claudecode:deep-interview', async () => {
             const tempDir = mkdtempSync(join(tmpdir(), 'bridge-routing-di-skill-'));
             try {
@@ -789,6 +811,29 @@ $ ultrawork search the codebase`,
                 expect(slot.version).toBe(2);
                 expect(slot.active_skills?.['self-improve']?.initialized_mode).toBe('self-improve');
                 expect(slot.active_skills?.['self-improve']?.session_id).toBe(sessionId);
+            }
+            finally {
+                rmSync(tempDir, { recursive: true, force: true });
+            }
+        });
+        it('seeds workflow slot when Skill tool invokes oh-my-claudecode:product-foundation', async () => {
+            const tempDir = mkdtempSync(join(tmpdir(), 'bridge-routing-pf-skill-'));
+            try {
+                execFileSync('git', ['init'], { cwd: tempDir, stdio: 'pipe' });
+                const sessionId = 'pf-skill-session';
+                const result = await processHook('pre-tool-use', {
+                    sessionId,
+                    toolName: 'Skill',
+                    toolInput: { skill: 'oh-my-claudecode:product-foundation' },
+                    directory: tempDir,
+                });
+                expect(result.continue).toBe(true);
+                const slotPath = join(tempDir, '.omc', 'state', 'sessions', sessionId, 'skill-active-state.json');
+                expect(existsSync(slotPath)).toBe(true);
+                const slot = JSON.parse(readFileSync(slotPath, 'utf-8'));
+                expect(slot.version).toBe(2);
+                expect(slot.active_skills?.['product-foundation']?.initialized_mode).toBe('product-foundation');
+                expect(slot.active_skills?.['product-foundation']?.session_id).toBe(sessionId);
             }
             finally {
                 rmSync(tempDir, { recursive: true, force: true });

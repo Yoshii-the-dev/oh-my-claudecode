@@ -172,7 +172,7 @@ Discovery sources:
 
 Review is non-optional. `promote` refuses to run unless `review-decision.json` confirms approval and its `install_plan_hash` still matches `install-plan.json`.
 
-Strict gate is also mandatory before install: `source_trust >= 0.85`, `freshness <= 180 days`, valid checksum, and no license conflict. Candidates failing strict gate stay in quarantine and require manual follow-up.
+Strict gate is also mandatory before install: `source_trust >= 0.85`, `freshness <= 180 days`, valid checksum, and no license conflict. Network `download-skill` candidates must carry an expected `sha256`/`checksum_sha256`/`content_sha256`; the downloaded `SKILL.md` is hashed again before copy. Candidates failing strict gate stay in quarantine and require manual follow-up.
 
 Source-level approval is intentionally narrow. `--approve-source` and `--approve-local` may batch-approve only low-risk installed or bundled skill candidates. External, plugin-cache, generated, network-download, command-based, or warning/critical risk candidates require explicit `--approve=<candidate-id>` after reading the review bundle.
 
@@ -208,13 +208,15 @@ For each cell, collect candidates with:
 - `covered_technology`
 - `covered_aspects`
 - `risk_flags`
-- `sha256` of the exact content or install plan
+- `sha256` of the exact local content, expected download content, or non-installable manual plan
 
 Discovery must not install anything. It writes candidate records under the current run directory only.
 
 Discovery scoring uses structured metadata only: slug, frontmatter fields, index fields, tags, keywords, declared surfaces, technologies, aspects, and capability packs. Do not award coverage from arbitrary `SKILL.md` body text. A candidate covers a cell only when it has a meaningful technology+aspect/pack, surface+aspect, or configured skill-to-pack match. Negative matching rules block known broad skills from unrelated cells.
 
-For external discovery, expand literal technologies into adjacent professional practices and methodology terms from `config/default-capability-packs.json`. For example, `dart` + `backend` searches can include Effective Dart, Dart package design, clean/hexagonal architecture, domain-driven design, API design, contract testing, OWASP API security, OpenTelemetry, and twelve-factor app guidance. Candidates from configured professional domains, specialized platforms, and trusted GitHub organizations receive source-quality scoring and are surfaced in `review.md`.
+For external discovery, expand literal technologies into adjacent professional practices and methodology terms from `config/default-capability-packs.json`. For example, `dart` + `backend` searches can include Effective Dart, Dart package design, clean/hexagonal architecture, domain-driven design, API design, contract testing, OWASP API security, OpenTelemetry, and twelve-factor app guidance. Frontend and visual discovery expands into design systems, accessible primitives, shadcn/Radix/Storybook, Tailwind, Figma, Motion, Three.js, visual QA, and brand-system terms. Candidates from configured professional domains, specialized platforms, and trusted GitHub organizations receive source-quality scoring and are surfaced in `review.md`.
+
+Selection is intentionally bounded. Discovery shortlists at most the configured candidates per matrix cell and per run, then `review` requires explicit candidate ids for external, plugin, network, command-based, warning, or critical candidates. This keeps provisioning focused on missing capability cells instead of installing a marketplace dump.
 
 Discovery writes:
 

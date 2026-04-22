@@ -51,15 +51,16 @@ const CANONICAL_WORKFLOW_SLASH_SKILLS = [
     'ultrawork',
     'ultraqa',
     'deep-interview',
+    'product-foundation',
     'ralplan',
     'self-improve',
 ];
 /**
  * Map workflow slash skills to keyword types so explicit slash invocations
  * surface alongside ordinary keyword detection. Skills with no dedicated
- * KeywordType (`ultraqa`, `self-improve`) are intentionally absent — the
- * bridge handles their seeding via the parser result instead of through the
- * keyword-priority loop.
+ * KeywordType (`ultraqa`, `product-foundation`, `self-improve`) are
+ * intentionally absent — the bridge handles their seeding via the parser result
+ * instead of through the keyword-priority loop.
  */
 const SLASH_SKILL_TO_KEYWORD_TYPE = {
     autopilot: 'autopilot',

@@ -725,4 +725,23 @@ describe('Skill active state cleanup on PostToolUse (issue #2103)', () => {
       expect(existsSync(legacySkillStatePath(tempDir))).toBe(false);
     });
   });
+
+  it('clears skill-active-state when product-foundation Skill completes', () => {
+    withTempDir((tempDir) => {
+      const sessionId = 'product-foundation-complete-01';
+      writeSkillStateFixtures(tempDir, sessionId, 'product-foundation');
+
+      const out = runPostToolVerifier({
+        tool_name: 'Skill',
+        tool_input: { skill: 'oh-my-claudecode:product-foundation' },
+        tool_response: { ok: true },
+        session_id: sessionId,
+        cwd: tempDir,
+      });
+
+      expect(out).toEqual({ continue: true, suppressOutput: true });
+      expect(existsSync(skillStatePath(tempDir, sessionId))).toBe(false);
+      expect(existsSync(legacySkillStatePath(tempDir))).toBe(false);
+    });
+  });
 });

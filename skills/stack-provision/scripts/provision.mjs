@@ -300,9 +300,15 @@ async function discover(runDir, options) {
     }
   }
 
-  const candidates = dedupeCandidates(allCandidates)
+  const dedupedCandidates = dedupeCandidates(allCandidates)
     .sort((a, b) => b.score - a.score || a.candidate_id.localeCompare(b.candidate_id))
-    .slice(0, options.limit);
+  const selection = shortlistCandidates(
+    dedupedCandidates,
+    run.matrix,
+    config.discovery_policy?.selection_policy || {},
+    options.limit,
+  );
+  const candidates = selection.candidates;
   const coverage = buildCoverage(run.matrix, candidates);
   const candidatesDoc = {
     schema_version: 1,
@@ -310,6 +316,8 @@ async function discover(runDir, options) {
     created_at: now(),
     sources: selectedSources,
     warnings,
+    selection_policy: selection.policy,
+    selection_summary: selection.summary,
     candidates,
   };
 
@@ -484,17 +492,20 @@ function normalizeExternalEntries(source, entries, run, config) {
       continue;
     }
 
-    const install = externalInstall(source, entry, slug);
+    const expectedSha256 = expectedSha256FromEntry(entry);
+    const install = externalInstall(source, entry, slug, expectedSha256);
     const candidateBody = JSON.stringify({ source, entry, install });
     const candidateHash = install.kind === 'copy-skill' && install.source_path && existsSync(install.source_path)
       ? sha256(readFileSync(install.source_path, 'utf8'))
+      : install.kind === 'download-skill' && expectedSha256
+        ? expectedSha256
       : sha256(candidateBody);
     const trust = externalTrustMetadata(source, entry, profile.sourceQuality);
     const baseRiskFlags = externalRiskFlags(source, entry, install);
     const strictGate = evaluateStrictGateForCandidate({
       source_trust: trust.source_trust,
       freshness_days: trust.freshness_days,
-      checksum_valid: true,
+      checksum_valid: checksumValidForInstall(install, candidateHash),
       license_status: trust.license_status,
       source,
       risk_flags: baseRiskFlags,
@@ -920,7 +931,7 @@ function normalizeList(values) {
   );
 }
 
-function externalInstall(source, entry, slug) {
+function externalInstall(source, entry, slug, expectedSha256 = '') {
   if (entry.content_path) {
     return {
       kind: 'copy-skill',
@@ -932,6 +943,7 @@ function externalInstall(source, entry, slug) {
     return {
       kind: 'download-skill',
       source_url: entry.skill_md_url,
+      ...(expectedSha256 ? { expected_sha256: expectedSha256 } : {}),
       target_slug: slug,
     };
   }
@@ -947,6 +959,38 @@ function externalInstall(source, entry, slug) {
     command: entry.install_cmd || entry.command || `review manually: ${entry.url || slug}`,
     target: slug,
   };
+}
+
+function expectedSha256FromEntry(entry) {
+  const raw = String(
+    entry.expected_sha256 ||
+    entry.content_sha256 ||
+    entry.checksum_sha256 ||
+    entry.sha256 ||
+    entry.checksum ||
+    '',
+  ).trim();
+  if (!raw) {
+    return '';
+  }
+  const prefixed = /^sha256:([a-f0-9]{64})$/i.exec(raw);
+  if (prefixed) {
+    return `sha256:${prefixed[1].toLowerCase()}`;
+  }
+  if (/^[a-f0-9]{64}$/i.test(raw)) {
+    return `sha256:${raw.toLowerCase()}`;
+  }
+  return '';
+}
+
+function checksumValidForInstall(install, candidateHash) {
+  if (install.kind === 'copy-skill') {
+    return true;
+  }
+  if (install.kind === 'download-skill') {
+    return Boolean(install.expected_sha256 && install.expected_sha256 === candidateHash);
+  }
+  return false;
 }
 
 function review(runDir, options) {
@@ -1170,7 +1214,14 @@ async function promoteCandidate(candidate, runDir, skillRoot, options) {
     if (!options.network) {
       return pendingAction(candidate, `download and review ${install.source_url}`);
     }
+    if (!install.expected_sha256) {
+      throw new Error('downloaded skill is missing expected sha256');
+    }
     const content = await fetchText(install.source_url, options.timeoutMs);
+    const contentHash = sha256(content);
+    if (contentHash !== install.expected_sha256) {
+      throw new Error(`downloaded skill checksum mismatch: expected ${install.expected_sha256}, got ${contentHash}`);
+    }
     const tempSource = join(runDir, 'downloads', sanitizeSlug(candidate.slug), 'SKILL.md');
     mkdirSync(dirname(tempSource), { recursive: true });
     writeFileSync(tempSource, content, 'utf8');
@@ -1425,6 +1476,60 @@ function dedupeCandidates(candidates) {
   return [...byKey.values()];
 }
 
+function shortlistCandidates(candidates, matrix, policy, cliLimit) {
+  const maxPerRun = boundedPositiveInt(policy.max_candidates_per_run, cliLimit);
+  const limit = Math.min(cliLimit, maxPerRun);
+  const maxPerCell = boundedPositiveInt(policy.max_candidates_per_cell, 3);
+  const minCellScore = Number.isFinite(Number(policy.min_cell_score))
+    ? Number(policy.min_cell_score)
+    : 0;
+  const selected = new Map();
+
+  for (const [index, cell] of (matrix.cells || []).entries()) {
+    const id = cellId(index, cell);
+    const matches = candidates
+      .map((candidate) => {
+        const covered = candidate.covered_cells.find((item) => item.cell_id === id);
+        return covered && covered.score >= minCellScore ? { candidate, covered } : null;
+      })
+      .filter(Boolean)
+      .sort((a, b) =>
+        b.covered.score - a.covered.score ||
+        b.candidate.score - a.candidate.score ||
+        a.candidate.candidate_id.localeCompare(b.candidate.candidate_id),
+      );
+    for (const match of matches.slice(0, maxPerCell)) {
+      selected.set(match.candidate.candidate_id, match.candidate);
+    }
+  }
+
+  const shortlisted = [...selected.values()]
+    .sort((a, b) => b.score - a.score || a.candidate_id.localeCompare(b.candidate_id))
+    .slice(0, limit);
+
+  return {
+    candidates: shortlisted,
+    policy: {
+      max_candidates_per_run: limit,
+      max_candidates_per_cell: maxPerCell,
+      min_cell_score: minCellScore,
+    },
+    summary: {
+      discovered_candidates: candidates.length,
+      shortlisted_candidates: shortlisted.length,
+      dropped_candidates: Math.max(0, candidates.length - shortlisted.length),
+    },
+  };
+}
+
+function boundedPositiveInt(value, fallback) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 1) {
+    return fallback;
+  }
+  return Math.floor(parsed);
+}
+
 function scoreCoverage(profile, slug, cells, config) {
   const covered = [];
   let score = 0;
@@ -1655,6 +1760,7 @@ function renderReviewMarkdown(contract, candidatesDoc, installPlan, decision) {
     `Research acknowledged: ${decision.confirmation.research_acknowledged === true ? 'yes' : 'no'}`,
     `Provisioning mode: ${contract.policy?.provisioning_mode || 'strict-gate'}`,
     `Strict gate thresholds: source_trust>=${strictPolicy.source_trust_min}, freshness<=${strictPolicy.freshness_days_max}d, checksum=${strictPolicy.checksum_required}, license_conflict_allowed=${strictPolicy.license_conflict_allowed}`,
+    `Selection policy: ${formatSelectionPolicy(candidatesDoc)}`,
     `Approval policy: source-level approval is allowed only for low-risk installed/bundled candidates; external, plugin-cache, generated, download, command, and warning/critical candidates require explicit candidate IDs.`,
     '',
     '## Candidates',
@@ -1726,6 +1832,12 @@ function formatStrictGate(candidate) {
   }
   const reasons = Array.isArray(gate.reasons) ? gate.reasons : [];
   return reasons.length > 0 ? `fail (${reasons.join(', ')})` : 'fail';
+}
+
+function formatSelectionPolicy(candidatesDoc) {
+  const policy = candidatesDoc.selection_policy || {};
+  const summary = candidatesDoc.selection_summary || {};
+  return `shortlisted ${summary.shortlisted_candidates ?? 'unknown'} of ${summary.discovered_candidates ?? 'unknown'} discovered; max_per_run=${policy.max_candidates_per_run ?? 'unknown'}, max_per_cell=${policy.max_candidates_per_cell ?? 'unknown'}, min_cell_score=${policy.min_cell_score ?? 0}`;
 }
 
 function approvalBlock(candidate) {
@@ -1992,6 +2104,9 @@ function externalRiskFlags(source, entry, install) {
   }
   if (install.kind === 'download-skill') {
     flags.push('network-download-required');
+    if (!install.expected_sha256) {
+      flags.push('missing-content-checksum');
+    }
   }
   return flags;
 }
