@@ -17,7 +17,7 @@ import { getAgentDefinitions, omcSystemPrompt } from './agents/definitions.js';
 import { type BackgroundTaskManager, type TaskExecutionDecision } from './features/background-tasks.js';
 import type { PluginConfig, SessionState } from './shared/types.js';
 export { loadConfig, getAgentDefinitions, omcSystemPrompt };
-export { getDefaultMcpServers, toSdkMcpFormat } from './mcp/servers.js';
+export { getDefaultMcpServers, toSdkMcpFormat, createLinkupServer, createRefServer } from './mcp/servers.js';
 export { lspTools, astTools, allCustomTools } from './tools/index.js';
 export { omcToolsServer, omcToolNames, getOmcToolNames } from './mcp/omc-tools-server.js';
 export { createMagicKeywordProcessor, detectMagicKeywords } from './features/magic-keywords.js';

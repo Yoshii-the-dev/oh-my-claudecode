@@ -1,6 +1,7 @@
 ---
 name: release
 description: Generic release assistant — analyzes repo release rules, caches them in .omc/RELEASE_RULE.md, then guides the release
+argument-hint: "[major|minor|patch]"
 level: 3
 ---
 

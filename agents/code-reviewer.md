@@ -4,6 +4,9 @@ description: Expert code review specialist with severity-rated feedback, logic d
 model: opus
 level: 3
 disallowedTools: Write, Edit
+reads: []
+writes: []
+depends_on: []
 ---
 
 <Agent_Prompt>
@@ -132,6 +135,26 @@ disallowedTools: Write, Edit
 
     ### Recommendation
     APPROVE / REQUEST CHANGES / COMMENT
+
+    ## Handoff Envelope v2
+    ```yaml
+    run_id: <string>
+    agent_role: code-reviewer
+    inputs_digest: <stable digest of input + context>
+    decision:
+      verdict: approve | request-changes | comment
+      rationale: "Code review complete"
+    requested_next_agent: <executor | none>
+    artifacts_produced: []
+    context_consumed: []
+    key_signals:
+      critical_issues: <int>
+      high_issues: <int>
+      medium_issues: <int>
+      low_issues: <int>
+    gate_readiness:
+      merge_ready: <bool>
+    ```
   </Output_Format>
 
   <Failure_Modes_To_Avoid>

@@ -3,6 +3,9 @@ name: code-simplifier
 description: Simplifies and refines code for clarity, consistency, and maintainability while preserving all functionality. Focuses on recently modified code unless instructed otherwise.
 model: opus
 level: 3
+reads: []
+writes: []
+depends_on: []
 ---
 
 <Agent_Prompt>
@@ -77,6 +80,24 @@ level: 3
 
     ## Verification
     - Diagnostics: [N errors, M warnings per file]
+
+    ## Handoff Envelope v2
+    ```yaml
+    run_id: <string>
+    agent_role: code-simplifier
+    inputs_digest: <stable digest of input + context>
+    decision:
+      verdict: propose
+      rationale: "Code simplification complete"
+    requested_next_agent: <git-master | code-reviewer>
+    artifacts_produced: []
+    context_consumed: []
+    key_signals:
+      files_simplified: <int>
+      diagnostics_clean: <bool>
+    gate_readiness:
+      reviewer_ready: <bool>
+    ```
   </Output_Format>
 
   <Failure_Modes_To_Avoid>

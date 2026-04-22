@@ -1,6 +1,7 @@
 ---
 name: verify
 description: Verify that a change really works before you claim completion
+argument-hint: "[<test command>]"
 ---
 
 # Verify

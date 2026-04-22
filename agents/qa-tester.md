@@ -3,6 +3,9 @@ name: qa-tester
 description: Interactive CLI testing specialist using tmux for session management
 model: sonnet
 level: 3
+reads: []
+writes: []
+depends_on: []
 ---
 
 <Agent_Prompt>
@@ -75,6 +78,25 @@ level: 3
     ### Cleanup
     - Session killed: YES
     - Artifacts removed: YES
+
+    ## Handoff Envelope v2
+    ```yaml
+    run_id: <string>
+    agent_role: qa-tester
+    inputs_digest: <stable digest of input + context>
+    decision:
+      verdict: approve | reject
+      rationale: "QA testing complete"
+    requested_next_agent: <none>
+    artifacts_produced: []
+    context_consumed: []
+    key_signals:
+      tests_total: <int>
+      tests_passed: <int>
+      tests_failed: <int>
+    gate_readiness:
+      pipeline_ready: <bool>
+    ```
   </Output_Format>
 
   <Failure_Modes_To_Avoid>

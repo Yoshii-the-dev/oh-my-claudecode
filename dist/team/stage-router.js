@@ -30,6 +30,20 @@ const ROLE_TO_AGENT = {
     'code-simplifier': 'codeSimplifier',
     explore: 'explore',
     'document-specialist': 'documentSpecialist',
+    'accessibility-auditor': 'accessibilityAuditor',
+    'brand-architect': 'brandArchitect',
+    'brand-steward': 'brandSteward',
+    'campaign-composer': 'campaignComposer',
+    'competitor-scout': 'competitorScout',
+    'creative-director': 'creativeDirector',
+    'domain-expert-reviewer': 'domainExpertReviewer',
+    ideate: 'ideate',
+    'performance-guardian': 'performanceGuardian',
+    copywriter: 'copywriter',
+    'product-strategist': 'productStrategist',
+    'technology-strategist': 'technologyStrategist',
+    'ux-architect': 'uxArchitect',
+    'ux-researcher': 'uxResearcher',
 };
 /** Default model tier per canonical role (mirrors buildDefaultConfig().agents tiers). */
 const ROLE_DEFAULT_TIER = {
@@ -48,6 +62,20 @@ const ROLE_DEFAULT_TIER = {
     'code-simplifier': 'HIGH',
     explore: 'LOW',
     'document-specialist': 'MEDIUM',
+    'accessibility-auditor': 'MEDIUM',
+    'brand-architect': 'HIGH',
+    'brand-steward': 'HIGH',
+    'campaign-composer': 'MEDIUM',
+    'competitor-scout': 'MEDIUM',
+    'creative-director': 'HIGH',
+    'domain-expert-reviewer': 'HIGH',
+    ideate: 'HIGH',
+    'performance-guardian': 'MEDIUM',
+    copywriter: 'MEDIUM',
+    'product-strategist': 'MEDIUM',
+    'technology-strategist': 'HIGH',
+    'ux-architect': 'MEDIUM',
+    'ux-researcher': 'MEDIUM',
 };
 const TIER_SET = new Set(['HIGH', 'MEDIUM', 'LOW']);
 function isTier(value) {

@@ -156,25 +156,26 @@ Technology Strategist must:
 - produce weighted scorecards and pairwise compatibility report.
 - request `deep-interview` if `requirements_completeness < 0.75` or `unknown_critical_inputs >= 2`.
 - request researcher (`document-specialist`) if `top2_score_gap < 8`, critical compatibility is unknown, or fresh external evidence is missing.
+  *(If requested, orchestrator must run `/document-specialist` to produce `.omc/audits/tech-research.md`, then hard-loop back to `technology-strategist` to finalize the ADR).*
 - emit handoff-envelope v2 and a concrete `stack-provision` command.
 
 Hard stop: any `blocked` compatibility pair. The strategist must revise or route to critic; provisioning is forbidden.
 
 ### Phase 6 - Critic Gate
 
-Run critic on the technology ADR and v2 handoff:
+Run critic on the technology ADR against the capability map benchmark:
 
 ```bash
-/prompts:critic ".omc/decisions/YYYY-MM-DD-technology-<slug>.md"
+/prompts:critic ".omc/decisions/YYYY-MM-DD-technology-<slug>.md" --against=".omc/product/capability-map/current.md"
 ```
 
 Verdicts:
 
 | Verdict | Route |
 |---|---|
-| `approve` | continue to stack-provision |
-| `revise` | return to technology-strategist with exact findings |
-| `rewind` | hard rewind to `product-strategist --capability-map`, invalidate downstream scorecard/compatibility/provision artifacts |
+| `APPROVE` | continue to stack-provision |
+| `REVISE` | return to technology-strategist with exact findings |
+| `REWIND` | hard rewind to `product-strategist --capability-map`, invalidate downstream scorecard/compatibility/provision artifacts |
 
 Hard rewind limit is two. After two rewinds, run `/deep-interview` and require human decision before further stack changes.
 
@@ -226,7 +227,7 @@ Default routing:
 - `product-strategist` is read-only for code and writes only `.omc/strategy/**` for feature gates or `.omc/product/capability-map/**` for capability-map mode.
 - `technology-strategist`, researcher, and critic are read-only for code and write only `.omc/decisions/**`, `.omc/handoffs/**`, `.omc/artifacts/**`, or `.omc/audits/**` as appropriate.
 - `stack-provision` writes only `.omc/provisioned/**` before approval and `~/.codex/skills/omc-provisioned/**` after approval.
-- Every primary artifact should end with a `<handoff>` block. Stack strategy/provisioning artifacts must also include handoff-envelope v2 fields.
+- Every primary artifact MUST end with a YAML Handoff Envelope v2 block. Legacy XML `<handoff>` tags are deprecated and will be rejected by the orchestrator.
 
 ## Output
 

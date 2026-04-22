@@ -5,6 +5,7 @@ export interface WorkerPermissions {
     allowedCommands: string[];
     maxFileSize: number;
 }
+export declare function getRoleScopedPermissions(workerName: string): WorkerPermissions;
 /**
  * Check if a worker is allowed to modify a given path.
  * Denied paths override allowed paths.

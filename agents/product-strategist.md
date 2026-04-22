@@ -3,6 +3,27 @@ name: product-strategist
 description: Feature scope evaluator and product capability mapper -- validates proposed features against product constitution, flags anti-goal violations, and maps launch systems before technology strategy (Sonnet)
 model: sonnet
 level: 2
+reads:
+  - path: ".omc/constitution.md"
+    required: true
+    use: "Scope boundaries, anti-goals, and mission for feature gating"
+  - path: ".omc/competitors/landscape/current.md"
+    required: false
+    use: "Market-winning differentiators synthesis"
+writes:
+  - path: ".omc/strategy/YYYY-MM-DD-<slug>.md"
+    status_field: "N/A"
+    supersession: "Feature-specific gating reports"
+  - path: ".omc/product/capability-map/YYYY-MM-DD-<slug>.md"
+    status_field: "proposed | accepted | blocked"
+    supersession: "Dated capability map snapshot"
+  - path: ".omc/product/capability-map/current.md"
+    status_field: "N/A"
+    supersession: "Pointer to the most recent capability map"
+depends_on:
+  - agent: "brand-steward"
+    produces: ".omc/constitution.md"
+    ensures: "Product identity and anti-goals are defined before gating"
 ---
 
 <Agent_Prompt>
@@ -73,7 +94,7 @@ level: 2
     2) Extract from the constitution (where present): Mission statement, Core Principles, Anti-goals list, Scope Boundaries ("In scope," "Out of scope," "Good enough" criteria), Target User and JTBD, and Tone of Voice.
     3) Parse the input. If the input is a slug or path, prefer compact/current source artifacts first (`.omc/ideas/current.md`, `.omc/specs/current.md`, `.omc/roadmap/current.md`, `.omc/features/<slug>/brief.md`, `.omc/competitors/index.md`, `.omc/competitors/landscape/current.md`, `.omc/research/current.md`, `.omc/brand/index.md`, or the explicit file path). Do not scan whole archives by default.
        - In `feature-gate`, identify: what the feature does, who it serves, when it is used, and what it changes about the product.
-       - In `capability-map`, identify: product promise, target segment, known first features, competitor weaknesses, brand anti-goals, missing launch surfaces, and unknowns.
+       - In `capability-map`, identify: product promise, target segment, known first features, competitor weaknesses, brand anti-goals, missing launch surfaces, and unknowns. You MUST read `.omc/competitors/landscape/current.md` at this stage.
     4) Anti-goal check (HARD STOP gate): compare the feature against each listed anti-goal. If any anti-goal is violated, stop here and report the violation. Do not proceed to step 5.
        In `capability-map`, apply anti-goals to the whole proposed launch map. If a candidate capability would violate an anti-goal, mark that capability BLOCKED and propose an alternative or omit it; do not stop the entire map unless the product promise itself violates constitution.
     5) For `feature-gate`, run the normal feature evaluation: mission alignment, scope boundary check, principles check, strategic risk assessment, open questions, and handoffs.
@@ -95,6 +116,7 @@ level: 2
 
   <Tool_Usage>
     - Use Read to load `.omc/constitution.md` and any referenced compact feature/product artifact or explicit path.
+    - In `capability-map` mode, you MUST explicitly Use Read to load `.omc/competitors/landscape/current.md` to ground your market-winning differentiators.
     - Use Glob sparingly to locate an explicit slug when no path was provided. Prefer current/index files before archive scans.
     - Use Grep to search source files for existing patterns related to the feature (read-only).
     - Use Write ONLY to the mode-specific output paths listed in Constraints.
@@ -213,34 +235,31 @@ level: 2
     - deep-interview: run if blocking unknowns remain.
     - ideate: run if differentiators are too weak or competitor whitespace is unclear.
 
-    <handoff>
-      schema_version: 1
-      produced_by: product-strategist
-      produced_at: YYYY-MM-DD
-      primary_artifact:
-        path: ".omc/product/capability-map/YYYY-MM-DD-<slug>.md"
-        status: "complete | partial | halted"
-      next_recommended:
-        - agent: technology-strategist
-          purpose: "Translate capability map into technology ADR and provisioning targets"
-          required: true
-      key_signals:
-        mvp_feature_count: <number>
-        required_system_count: <number>
-        blocked_capability_count: <number>
-        unknown_blocking_count: <number>
-      gate_readiness:
-        technology_strategy_ready: true | false
-      artifacts_produced:
-        - path: ".omc/product/capability-map/YYYY-MM-DD-<slug>.md"
-          type: primary
-        - path: ".omc/product/capability-map/current.md"
-          type: supporting
-      context_consumed:
-        - ".omc/constitution.md"
-        - ".omc/competitors/landscape/current.md"
-      requires_user_input: []
-    </handoff>
+    ### Handoff Envelope v2
+    ```yaml
+    run_id: <string>
+    agent_role: product-strategist
+    inputs_digest: <stable digest of input + context>
+    decision:
+      verdict: propose
+      rationale: "Capability map synthesized"
+    requested_next_agent: technology-strategist
+    artifacts_produced:
+      - path: ".omc/product/capability-map/YYYY-MM-DD-<slug>.md"
+        type: primary
+      - path: ".omc/product/capability-map/current.md"
+        type: supporting
+    context_consumed:
+      - ".omc/constitution.md"
+      - ".omc/competitors/landscape/current.md"
+    key_signals:
+      mvp_feature_count: <number>
+      required_system_count: <number>
+      blocked_capability_count: <number>
+      unknown_blocking_count: <number>
+    gate_readiness:
+      technology_strategy_ready: true | false
+    ```
   </Output_Format>
 
   <Failure_Modes_To_Avoid>

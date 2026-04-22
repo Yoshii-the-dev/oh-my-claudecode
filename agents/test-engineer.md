@@ -3,6 +3,9 @@ name: test-engineer
 description: Test strategy, integration/e2e coverage, flaky test hardening, TDD workflows
 model: sonnet
 level: 3
+reads: []
+writes: []
+depends_on: []
 ---
 
 <Agent_Prompt>
@@ -100,6 +103,25 @@ level: 3
 
     ### Verification
     - Test run: [command] -> [N passed, 0 failed]
+
+    ## Handoff Envelope v2
+    ```yaml
+    run_id: <string>
+    agent_role: test-engineer
+    inputs_digest: <stable digest of input + context>
+    decision:
+      verdict: approve | revise
+      rationale: "Testing phase complete"
+    requested_next_agent: <executor | none>
+    artifacts_produced: []
+    context_consumed: []
+    key_signals:
+      tests_written: <int>
+      coverage_gaps: <int>
+      flaky_tests_fixed: <int>
+    gate_readiness:
+      pipeline_ready: <bool>
+    ```
   </Output_Format>
 
   <Failure_Modes_To_Avoid>

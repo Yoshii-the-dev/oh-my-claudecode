@@ -1,6 +1,7 @@
 ---
 name: learner
 description: Extract a learned skill from the current conversation
+argument-hint: "[--extract]"
 level: 7
 ---
 
@@ -123,6 +124,7 @@ Minimum required frontmatter:
 ---
 name: <skill-name>
 description: <one-line description>
+argument-hint: "[--extract]"
 triggers:
   - <trigger-1>
   - <trigger-2>
@@ -135,6 +137,7 @@ triggers:
 ---
 name: <skill-name>
 description: <one-line description>
+argument-hint: "[--extract]"
 triggers:
   - <trigger-1>
   - <trigger-2>

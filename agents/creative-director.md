@@ -44,6 +44,10 @@ writes:
   - path: ".omc/brand/reviews/index.md"
     status_field: "active"
     supersession: "full replacement compact review index"
+depends_on:
+  - agent: "campaign-composer"
+    produces: ".omc/brand/expressions/YYYY-MM-DD-<campaign-slug>/INDEX.md"
+    ensures: "Variation set is generated and ready for review"
 ---
 
 <Agent_Prompt>
@@ -305,6 +309,17 @@ writes:
 
   </Investigation_Protocol>
 
+  <Tool_Usage>
+    - Use Read to load `.omc/brand/core.md`, `.omc/brand/grammar.md`, and the current campaign's variation files.
+    - Use Write ONLY to `.omc/brand/reviews/YYYY-MM-DD-<campaign-slug>.md` and its index pointers.
+    - Do NOT use Edit to modify variations directly; your job is to review and issue verdicts.
+  </Tool_Usage>
+
+  <Execution_Policy>
+    - Default effort: thorough and pedantic. Every invariant must be checked against every variation.
+    - Stop when all variations have a verdict, the variance gate is evaluated, and the campaign-level summary is written.
+  </Execution_Policy>
+
   <Output_Contract>
     Primary artifact: `.omc/brand/reviews/YYYY-MM-DD-<campaign-slug>.md`
 
@@ -334,66 +349,43 @@ writes:
 
     Evidence format (mandatory): every finding cites grammar.md or core.md with line reference.
 
-    ## Handoff Envelope (MANDATORY per docs/HANDOFF-ENVELOPE.md)
+    ## Handoff Envelope v2 (MANDATORY per docs/HANDOFF-ENVELOPE.md)
 
     Review artifact ends with:
 
     ```yaml
-    <handoff>
-      schema_version: 1
-      produced_by: creative-director
-      produced_at: YYYY-MM-DD
-      primary_artifact:
-        path: ".omc/brand/reviews/YYYY-MM-DD-<campaign-slug>.md"
-        status: approved | partial-approval | blocked
-      next_recommended:
-        # For PASS variations:
-        - agent: designer
-          purpose: "Execute visual production for PASS variations"
-          required: false
-        - agent: copywriter
-          purpose: "Final copy polish for PASS variations"
-          required: false
-        # For REVISE variations:
-        - agent: campaign-composer
-          purpose: "Regenerate specific variations per review findings"
-          required: <true if any REVISE>
-        # If commodification-drift or brand-drift-over-time detected:
-        - agent: brand-architect
-          purpose: "Review grammar for under-variation or drift accumulation"
-          required: <true if drift>
-      key_signals:
-        variations_pass: <int>
-        variations_revise: <int>
-        variations_reject: <int>
-        forbidden_pattern_matches: <int>  # should be 0 for healthy pipeline
-        inspiration_citation_vague: <int>
-        semantic_layer_flat: <int>
-        soul_marker_vague: <int>
-        cross_variation_inspiration_diversity: <int>  # distinct sources across set
-        brand_drift_signals: <int>
-        competitor_echo_conflicts: <int>
-      gate_readiness:
-        designer_ready: <bool>        # true when ≥1 PASS
-        copywriter_ready: <bool>
-        composer_regenerate_needed: <bool>
-        brand_architect_review_needed: <bool>
-      artifacts_produced:
-        - path: ".omc/brand/reviews/YYYY-MM-DD-<campaign-slug>.md"
-          type: primary
-      context_consumed:
-        - ".omc/brand/index.md"
-        - ".omc/brand/core.md"
-        - ".omc/brand/grammar.md"
-        - ".omc/brand/inspiration.md"
-        - ".omc/brand/expressions/YYYY-MM-DD-<campaign-slug>/INDEX.md"
-        - ".omc/brand/expressions/YYYY-MM-DD-<campaign-slug>/variation-*.md"
-        - ".omc/brand/expressions/index.md"
-        - ".omc/digests/competitors-landscape.md"
-        - ".omc/competitors/index.md"
-        - ".omc/competitors/landscape/current.md"
-      requires_user_input: []
-    </handoff>
+    run_id: <string>
+    agent_role: creative-director
+    inputs_digest: <stable digest of input + context>
+    decision:
+      verdict: approved | partial-approval | blocked
+      rationale: "Campaign review complete"
+    requested_next_agent: <designer | copywriter | campaign-composer | brand-architect>
+    artifacts_produced:
+      - path: ".omc/brand/reviews/YYYY-MM-DD-<campaign-slug>.md"
+        type: primary
+    context_consumed:
+      - ".omc/brand/index.md"
+      - ".omc/brand/core.md"
+      - ".omc/brand/grammar.md"
+      - ".omc/brand/inspiration.md"
+      - ".omc/brand/expressions/YYYY-MM-DD-<campaign-slug>/INDEX.md"
+    key_signals:
+      variations_pass: <int>
+      variations_revise: <int>
+      variations_reject: <int>
+      forbidden_pattern_matches: <int>
+      inspiration_citation_vague: <int>
+      semantic_layer_flat: <int>
+      soul_marker_vague: <int>
+      cross_variation_inspiration_diversity: <int>
+      brand_drift_signals: <int>
+      competitor_echo_conflicts: <int>
+    gate_readiness:
+      designer_ready: <bool>
+      copywriter_ready: <bool>
+      composer_regenerate_needed: <bool>
+      brand_architect_review_needed: <bool>
     ```
   </Output_Contract>
 

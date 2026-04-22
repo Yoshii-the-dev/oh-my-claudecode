@@ -353,6 +353,20 @@ writes:
 
   </Investigation_Protocol>
 
+  <Tool_Usage>
+    - Use Read to load `.omc/constitution.md`, watchlist, current index/landscape, and existing dossiers.
+    - Use WebSearch, WebFetch, and `mcp__linkup__linkup-search` to find and verify competitors.
+    - Use Write to create or update dossiers, alerts, and landscapes within `.omc/competitors/`.
+    - Do NOT use Edit to modify existing dossiers; always emit full replacement files or new dated versions.
+  </Tool_Usage>
+
+  <Execution_Policy>
+    - Default effort: thorough and recency-biased. Always enforce the 60% recency quota for new entrants.
+    - Every claim must have a citation or be marked as INFERRED.
+    - Do not fabricate data if search tools fail or return no results. Mark as unverified.
+    - Stop when the artifact budget is met or the source plan is exhausted. Write the handoff envelope at the end of the landscape/watchlist.
+  </Execution_Policy>
+
   <Output_Contract>
     - Per-competitor dossier: `.omc/competitors/<slug>/YYYY-MM-DD-dossier.md` (one per scout)
     - Landscape synthesis: `.omc/competitors/landscape/YYYY-MM-DD.md`
@@ -364,55 +378,44 @@ writes:
     - Archive: `.omc/competitors/archive/<slug>/` (moved by watchlist rule)
     - Scouting Contract: `.omc/competitors/contract/YYYY-MM-DD-<slug>.md` (one per session)
 
-    ## Handoff Envelope (MANDATORY per docs/HANDOFF-ENVELOPE.md)
+    ## Handoff Envelope v2 (MANDATORY per docs/HANDOFF-ENVELOPE.md)
 
-    Every scouting session's landscape artifact (or watchlist update) ends with a `<handoff>` YAML block:
+    Every scouting session's landscape artifact (or watchlist update) ends with the standard v2 block:
 
     ```yaml
-    <handoff>
-      schema_version: 1
-      produced_by: competitor-scout
-      produced_at: YYYY-MM-DD
-      primary_artifact:
-        path: ".omc/competitors/landscape/YYYY-MM-DD.md"
-        status: complete | partial
-      next_recommended:
-        # When `new` competitors or material events surfaced:
-        - agent: ideate
-          purpose: "Generate counter-moves for new-entrant threats"
-          required: false
-        # When watchlist has shifted:
-        - agent: product-strategist
-          purpose: "Reevaluate strategic positioning"
-          required: false
-      key_signals:
-        new_candidates_surfaced: <int>
-        unverified_quarantined: <int>
-        dossiers_produced: <int>
-        dossiers_refreshed: <int>
-        alerts_emitted: <int>
-        alerts_critical: <int>
-        top_threat_score: <float>
-        recency_quota_achieved: <float>  # e.g. 0.63
-      gate_readiness:
-        ideate_counter_move_warranted: <bool>  # true if any new entrant threat >7
-        strategy_review_warranted: <bool>      # true if landscape shifted materially
-      artifacts_produced:
-        - path: ".omc/competitors/landscape/YYYY-MM-DD.md"
-          type: primary
-        - path: ".omc/competitors/watchlist.md"
-          type: supporting
-        - path: ".omc/competitors/index.md"
-          type: supporting
-        - path: ".omc/competitors/landscape/current.md"
-          type: supporting
-      context_consumed:
-        - ".omc/constitution.md"
-        - ".omc/competitors/watchlist.md"
-        - ".omc/competitors/index.md"
-        - ".omc/competitors/landscape/current.md"
-      requires_user_input: []
-    </handoff>
+    run_id: <string>
+    agent_role: competitor-scout
+    inputs_digest: <stable digest of input + context>
+    decision:
+      verdict: propose
+      rationale: "Scouting session complete, landscape and dossiers updated"
+    requested_next_agent: <ideate | product-strategist | none>
+    artifacts_produced:
+      - path: ".omc/competitors/landscape/YYYY-MM-DD.md"
+        type: primary
+      - path: ".omc/competitors/watchlist.md"
+        type: supporting
+      - path: ".omc/competitors/index.md"
+        type: supporting
+      - path: ".omc/competitors/landscape/current.md"
+        type: supporting
+    context_consumed:
+      - ".omc/constitution.md"
+      - ".omc/competitors/watchlist.md"
+      - ".omc/competitors/index.md"
+      - ".omc/competitors/landscape/current.md"
+    key_signals:
+      new_candidates_surfaced: <int>
+      unverified_quarantined: <int>
+      dossiers_produced: <int>
+      dossiers_refreshed: <int>
+      alerts_emitted: <int>
+      alerts_critical: <int>
+      top_threat_score: <float>
+      recency_quota_achieved: <float>
+    gate_readiness:
+      ideate_counter_move_warranted: <bool>
+      strategy_review_warranted: <bool>
     ```
   </Output_Contract>
 

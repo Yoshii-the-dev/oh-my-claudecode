@@ -159,10 +159,28 @@ depends_on:
     ### Open Questions
     - [ ] [Product or design decision needed before implementation — be specific]
 
-    ### Handoffs
-    - designer: [list of screens/states requiring component design, with state details]
-    - executor: [list of state management wiring, auth guard logic, routing changes needed]
-    - ux-researcher: [flows or states where research evidence is missing and would reduce risk]
+    ### Handoff Envelope v2
+    ```yaml
+    run_id: <string>
+    agent_role: ux-architect
+    inputs_digest: <stable digest of input + context>
+    decision:
+      verdict: propose
+      rationale: "UX Flow Spec complete"
+    requested_next_agent: <designer | executor | ux-researcher>
+    artifacts_produced:
+      - path: ".omc/ux/YYYY-MM-DD-<feature>.md"
+        type: primary
+    context_consumed:
+      - ".omc/constitution.md"
+    key_signals:
+      states_covered_count: <int>
+      decision_nodes_mapped: <int>
+      open_questions_count: <int>
+    gate_readiness:
+      designer_ready: <bool>
+      executor_ready: <bool>
+    ```
   </Output_Format>
 
   <Failure_Modes_To_Avoid>

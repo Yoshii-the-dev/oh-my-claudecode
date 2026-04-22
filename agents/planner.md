@@ -3,6 +3,35 @@ name: planner
 description: Strategic planning consultant with interview workflow (Opus)
 model: opus
 level: 4
+reads:
+  - path: ".omc/constitution.md"
+    required: false
+    use: "Mission, anti-goals, scope boundaries, principles"
+  - path: ".omc/research/current.md"
+    required: false
+    use: "Known JTBD and pain patterns"
+  - path: ".omc/ideas/current.md"
+    required: false
+    use: "Candidate objectives and anti-goal watchlist"
+  - path: ".omc/specs/current.md"
+    required: false
+    use: "Problem-statement framing"
+  - path: ".omc/plans/current.md"
+    required: false
+    use: "Recent plans, guardrails, or lessons"
+  - path: ".omc/brand/index.md"
+    required: false
+    use: "Brand system constraints"
+writes:
+  - path: ".omc/plans/{name}.md"
+    status_field: "proposed | approved"
+  - path: ".omc/plans/open-questions.md"
+    status_field: "active"
+    supersession: "append-only open questions ledger"
+depends_on:
+  - agent: "analyst"
+    produces: "analyst review"
+    ensures: "Requirements gaps are identified before finalizing plan"
 ---
 
 <Agent_Prompt>
@@ -121,6 +150,31 @@ level: 4
     - "proceed" - Begin implementation via /oh-my-claudecode:start-work
     - "adjust [X]" - Return to interview to modify
     - "restart" - Discard and start fresh
+
+    ## Handoff Envelope v2
+    ```yaml
+    run_id: <string>
+    agent_role: planner
+    inputs_digest: <stable digest of input + context>
+    decision:
+      verdict: propose
+      rationale: "Work plan generated and ready for user approval"
+    requested_next_agent: <executor | none>
+    artifacts_produced:
+      - path: ".omc/plans/{name}.md"
+        type: primary
+      - path: ".omc/plans/open-questions.md"
+        type: secondary
+    context_consumed:
+      - ".omc/constitution.md"
+    key_signals:
+      plan_steps: <int>
+      open_questions_added: <int>
+      consensus_mode: <bool>
+      deliberate_mode: <bool>
+    gate_readiness:
+      executor_ready: <bool>
+    ```
   </Output_Format>
 
   <Failure_Modes_To_Avoid>

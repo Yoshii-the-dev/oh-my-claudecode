@@ -1229,7 +1229,21 @@ var CANONICAL_TEAM_ROLES = [
   "writer",
   "code-simplifier",
   "explore",
-  "document-specialist"
+  "document-specialist",
+  "accessibility-auditor",
+  "brand-architect",
+  "brand-steward",
+  "campaign-composer",
+  "competitor-scout",
+  "creative-director",
+  "domain-expert-reviewer",
+  "ideate",
+  "copywriter",
+  "performance-guardian",
+  "product-strategist",
+  "technology-strategist",
+  "ux-architect",
+  "ux-researcher"
 ];
 var KNOWN_AGENT_NAMES = [
   "omc",
@@ -1251,7 +1265,21 @@ var KNOWN_AGENT_NAMES = [
   "gitMaster",
   "codeSimplifier",
   "critic",
-  "documentSpecialist"
+  "documentSpecialist",
+  "accessibilityAuditor",
+  "brandArchitect",
+  "brandSteward",
+  "campaignComposer",
+  "competitorScout",
+  "creativeDirector",
+  "domainExpertReviewer",
+  "ideate",
+  "copywriter",
+  "performanceGuardian",
+  "productStrategist",
+  "technologyStrategist",
+  "uxArchitect",
+  "uxResearcher"
 ];
 
 // src/utils/paths.ts
@@ -1626,7 +1654,21 @@ function buildDefaultConfig() {
       gitMaster: { model: defaultTierModels.MEDIUM },
       codeSimplifier: { model: defaultTierModels.HIGH },
       critic: { model: defaultTierModels.HIGH },
-      documentSpecialist: { model: defaultTierModels.MEDIUM }
+      documentSpecialist: { model: defaultTierModels.MEDIUM },
+      brandArchitect: { model: defaultTierModels.HIGH },
+      brandSteward: { model: defaultTierModels.HIGH },
+      campaignComposer: { model: defaultTierModels.MEDIUM },
+      competitorScout: { model: defaultTierModels.MEDIUM },
+      creativeDirector: { model: defaultTierModels.HIGH },
+      domainExpertReviewer: { model: defaultTierModels.HIGH },
+      ideate: { model: defaultTierModels.HIGH },
+      accessibilityAuditor: { model: defaultTierModels.MEDIUM },
+      performanceGuardian: { model: defaultTierModels.MEDIUM },
+      copywriter: { model: defaultTierModels.MEDIUM },
+      productStrategist: { model: defaultTierModels.MEDIUM },
+      technologyStrategist: { model: defaultTierModels.HIGH },
+      uxArchitect: { model: defaultTierModels.MEDIUM },
+      uxResearcher: { model: defaultTierModels.MEDIUM }
     },
     features: {
       parallelExecution: true,
@@ -2545,6 +2587,104 @@ var codeSimplifierAgent = {
   name: "code-simplifier",
   description: "Simplifies and refines code for clarity, consistency, and maintainability (Opus).",
   prompt: loadAgentPrompt("code-simplifier"),
+  model: "opus",
+  defaultModel: "opus"
+};
+var brandStewardAgent = {
+  name: "brand-steward",
+  description: "Product constitution owner (opus) \u2014 brand identity, tone, visual language governance.",
+  prompt: loadAgentPrompt("brand-steward"),
+  model: "opus",
+  defaultModel: "opus"
+};
+var accessibilityAuditorAgent = {
+  name: "accessibility-auditor",
+  description: "WCAG compliance auditing (sonnet) \u2014 keyboard nav, contrast, ARIA, semantic HTML.",
+  prompt: loadAgentPrompt("accessibility-auditor"),
+  model: "sonnet",
+  defaultModel: "sonnet"
+};
+var performanceGuardianAgent = {
+  name: "performance-guardian",
+  description: "Performance auditing (sonnet) \u2014 Core Web Vitals, bundle size, runtime patterns.",
+  prompt: loadAgentPrompt("performance-guardian"),
+  model: "sonnet",
+  defaultModel: "sonnet"
+};
+var copywriterAgent = {
+  name: "copywriter",
+  description: "UX copywriter (sonnet) \u2014 microcopy, onboarding flows, error messages, i18n-aware copy management.",
+  prompt: loadAgentPrompt("copywriter"),
+  model: "sonnet",
+  defaultModel: "sonnet"
+};
+var productStrategistAgent = {
+  name: "product-strategist",
+  description: "Product strategy evaluator (sonnet) \u2014 feature evaluation, constitution alignment, roadmap prioritization.",
+  prompt: loadAgentPrompt("product-strategist"),
+  model: "sonnet",
+  defaultModel: "sonnet"
+};
+var technologyStrategistAgent = {
+  name: "technology-strategist",
+  description: "Technology strategy decision owner (opus) \u2014 selects and expands stack choices, application blocks, and skill provisioning targets.",
+  prompt: loadAgentPrompt("technology-strategist"),
+  model: "opus",
+  defaultModel: "opus"
+};
+var uxArchitectAgent = {
+  name: "ux-architect",
+  description: "Macro-level UX (sonnet) \u2014 user flows, information architecture, app/screen states, navigation patterns.",
+  prompt: loadAgentPrompt("ux-architect"),
+  model: "sonnet",
+  defaultModel: "sonnet"
+};
+var uxResearcherAgent = {
+  name: "ux-researcher",
+  description: "UX research synthesis (sonnet) \u2014 user feedback analysis, study plans, usability pattern extraction.",
+  prompt: loadAgentPrompt("ux-researcher"),
+  model: "sonnet",
+  defaultModel: "sonnet"
+};
+var competitorScoutAgent = {
+  name: "competitor-scout",
+  description: "Competitive intelligence scout with structural recency bias \u2014 produces evidence-cited dossiers with Disruption/7-Powers/Wardley classification (sonnet).",
+  prompt: loadAgentPrompt("competitor-scout"),
+  model: "sonnet",
+  defaultModel: "sonnet"
+};
+var ideateAgent = {
+  name: "ideate",
+  description: "Divergent idea generator grounded in JTBD/ODI, TRIZ, Blue Ocean, SCAMPER \u2014 produces scored, falsifiable hypotheses (opus).",
+  prompt: loadAgentPrompt("ideate"),
+  model: "opus",
+  defaultModel: "opus"
+};
+var domainExpertReviewerAgent = {
+  name: "domain-expert-reviewer",
+  description: 'Explicit proxy for domain-expert review \u2014 runs multi-persona pre-launch audit and produces a "questions for real expert" list (opus, read-only).',
+  prompt: loadAgentPrompt("domain-expert-reviewer"),
+  model: "opus",
+  defaultModel: "opus"
+};
+var brandArchitectAgent = {
+  name: "brand-architect",
+  description: "Designs the brand system (Jungian archetype, core metaphor, variation grammar) \u2014 self-sufficient discovery; produces .omc/brand/core.md + grammar.md (opus).",
+  prompt: loadAgentPrompt("brand-architect"),
+  model: "opus",
+  defaultModel: "opus"
+};
+var campaignComposerAgent = {
+  name: "campaign-composer",
+  description: "Generates N brand-coherent marketing/design/copy variations from grammar + brief, with grammar-traceability per variation (sonnet).",
+  prompt: loadAgentPrompt("campaign-composer"),
+  model: "sonnet",
+  defaultModel: "sonnet"
+};
+var creativeDirectorAgent = {
+  name: "creative-director",
+  description: "Brand-variation guardrail \u2014 enforces grammar invariants and variance gate on campaign variations; produces per-variation PASS/REVISE/REJECT verdict (opus, read-only).",
+  prompt: loadAgentPrompt("creative-director"),
   model: "opus",
   defaultModel: "opus"
 };
@@ -5450,7 +5590,21 @@ var ROLE_TO_AGENT = {
   writer: "writer",
   "code-simplifier": "codeSimplifier",
   explore: "explore",
-  "document-specialist": "documentSpecialist"
+  "document-specialist": "documentSpecialist",
+  "accessibility-auditor": "accessibilityAuditor",
+  "brand-architect": "brandArchitect",
+  "brand-steward": "brandSteward",
+  "campaign-composer": "campaignComposer",
+  "competitor-scout": "competitorScout",
+  "creative-director": "creativeDirector",
+  "domain-expert-reviewer": "domainExpertReviewer",
+  ideate: "ideate",
+  "performance-guardian": "performanceGuardian",
+  copywriter: "copywriter",
+  "product-strategist": "productStrategist",
+  "technology-strategist": "technologyStrategist",
+  "ux-architect": "uxArchitect",
+  "ux-researcher": "uxResearcher"
 };
 var ROLE_DEFAULT_TIER = {
   orchestrator: "HIGH",
@@ -5467,7 +5621,21 @@ var ROLE_DEFAULT_TIER = {
   writer: "LOW",
   "code-simplifier": "HIGH",
   explore: "LOW",
-  "document-specialist": "MEDIUM"
+  "document-specialist": "MEDIUM",
+  "accessibility-auditor": "MEDIUM",
+  "brand-architect": "HIGH",
+  "brand-steward": "HIGH",
+  "campaign-composer": "MEDIUM",
+  "competitor-scout": "MEDIUM",
+  "creative-director": "HIGH",
+  "domain-expert-reviewer": "HIGH",
+  ideate: "HIGH",
+  "performance-guardian": "MEDIUM",
+  copywriter: "MEDIUM",
+  "product-strategist": "MEDIUM",
+  "technology-strategist": "HIGH",
+  "ux-architect": "MEDIUM",
+  "ux-researcher": "MEDIUM"
 };
 var TIER_SET = /* @__PURE__ */ new Set(["HIGH", "MEDIUM", "LOW"]);
 function isTier(value) {
@@ -5540,6 +5708,38 @@ function buildResolvedRoutingSnapshot(cfg) {
 
 // src/team/role-router.ts
 var INTENT_PATTERNS = [
+  {
+    intent: "strategy",
+    patterns: [
+      /\btechnology\s+strategy\b/i,
+      /\bstrategy\b/i,
+      /\bstack\s+decision\b/i,
+      /\bcapability\s+map\b/i,
+      /\bweighted\s+ranking\b/i,
+      /\bcompatibility\s+matrix\b/i
+    ]
+  },
+  {
+    intent: "research",
+    patterns: [
+      /\bresearch\b/i,
+      /\blook\s+up\b/i,
+      /\binvestigate\s+external\b/i,
+      /\bvalidate\s+sources\b/i,
+      /\bfresh\s+evidence\b/i,
+      /\bdocumentation\s+lookup\b/i
+    ]
+  },
+  {
+    intent: "critique",
+    patterns: [
+      /\bcritic\b/i,
+      /\bred.?team\b/i,
+      /\bchallenge\s+the\s+plan\b/i,
+      /\bcritical\s+review\b/i,
+      /\brewind\b/i
+    ]
+  },
   {
     intent: "build-fix",
     patterns: [
@@ -5637,6 +5837,9 @@ var INTENT_PATTERNS = [
 ];
 var SECURITY_DOMAIN_RE = /\b(?:auth(?:entication|orization)?|cve|injection|owasp|security|vulnerability|vuln|xss|csrf|sqli|rce|privilege.?escalat)\b/i;
 var ROLE_KEYWORDS = {
+  "technology-strategist": [/\bstrategy\b/i, /\bstack\b/i, /\bcompatibility\b/i, /\bcapability\b/i],
+  "document-specialist": [/\bresearch\b/i, /\bsource\b/i, /\bdocumentation\b/i, /\blookup\b/i],
+  critic: [/\bcritic\b/i, /\bred.?team\b/i, /\brewind\b/i, /\bchallenge\b/i],
   "build-fixer": [/\bbuild\b/i, /\bci\b/i, /\bcompile\b/i, /\btsc\b/i, /\blint\b/i],
   debugger: [/\bdebug\b/i, /\btroubleshoot\b/i, /\binvestigate\b/i, /\bdiagnos/i],
   writer: [/\bdoc(?:ument)?/i, /\breadme\b/i, /\bchangelog\b/i, /\bcomment/i],
@@ -5663,6 +5866,12 @@ function routeTaskToRole(taskSubject, taskDescription, fallbackRole) {
   const intent = inferLaneIntent(combined);
   const isSecurityDomain = SECURITY_DOMAIN_RE.test(combined);
   switch (intent) {
+    case "strategy":
+      return { role: "technology-strategist", confidence: "high", reason: "strategy intent detected" };
+    case "research":
+      return { role: "document-specialist", confidence: "high", reason: "research intent detected" };
+    case "critique":
+      return { role: "critic", confidence: "high", reason: "critique intent detected" };
     case "build-fix":
       return { role: "build-fixer", confidence: "high", reason: "build-fix intent detected" };
     case "debug":

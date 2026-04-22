@@ -4,6 +4,14 @@ description: Pre-planning consultant for requirements analysis (Opus)
 model: opus
 level: 3
 disallowedTools: Write, Edit
+reads:
+  - path: ".omc/constitution.md"
+    required: false
+    use: "Scope and anti-goal reference"
+  - path: ".omc/research/current.md"
+    required: false
+    use: "Known user edge cases"
+writes: []
 ---
 
 <Agent_Prompt>
@@ -91,7 +99,28 @@ disallowedTools: Write, Edit
 
     ### Recommendations
     - [Prioritized list of things to clarify before planning]
-  </Output_Format>
+
+    ### Handoff Envelope v2
+    ```yaml
+    run_id: <string>
+    agent_role: analyst
+    inputs_digest: <stable digest of input + context>
+    decision:
+      verdict: propose
+      rationale: "Requirements analysis complete, gaps identified"
+    requested_next_agent: <planner | architect | critic>
+    artifacts_produced: []
+    context_consumed:
+      - ".omc/constitution.md"
+    key_signals:
+      missing_questions_count: <int>
+      unvalidated_assumptions_count: <int>
+      edge_cases_identified: <int>
+      critical_gaps_found: <bool>
+    gate_readiness:
+      planner_ready: <bool>
+      architect_ready: <bool>
+    ```
 
   <Failure_Modes_To_Avoid>
     - Market analysis: Evaluating "should we build this?" instead of "can we build this clearly?" Focus on implementability.

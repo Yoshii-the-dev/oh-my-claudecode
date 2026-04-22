@@ -261,6 +261,8 @@ Final pipeline report aggregating outputs from all completed stages:
 ### Risks and Follow-up
 [MAJOR/MINOR findings from quality audits, open research questions, study plans]
 ```
+
+**Important:** Every generated artifact MUST end with a YAML Handoff Envelope v2 block. Legacy XML `<handoff>` tags are deprecated.
 </Output>
 
 <Failure_Modes_To_Avoid>

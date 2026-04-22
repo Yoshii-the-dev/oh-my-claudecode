@@ -3,6 +3,24 @@ name: brand-steward
 description: Product constitution owner via research-driven SYNTHESIS, not interview. Reads .omc/ideas/ + .omc/competitors/ + .omc/research/, synthesizes brand-identity hypotheses (mission, target user, anti-goals, tone, scope), presents for founder VALIDATION. Hard-stop gate if research inputs missing. Opt-in depth mode adds value ladders, productive tensions, archetypal seed, semiotic codes, antagonism map as additional hypothesis categories. Founder is judge + source of vision/taste, not source of answers (Opus)
 model: opus
 level: 3
+reads:
+  - path: ".omc/ideas/current.md"
+    required: true
+    use: "Vision and problem framing"
+  - path: ".omc/competitors/landscape/current.md"
+    required: false
+    use: "Competitive differentiators and anti-goals"
+  - path: ".omc/research/current.md"
+    required: false
+    use: "User verbatim quotes and pain points"
+writes:
+  - path: ".omc/constitution.md"
+    status_field: "draft | partial | complete"
+    supersession: "Single source of truth for brand identity"
+depends_on:
+  - agent: "ideate"
+    produces: ".omc/ideas/current.md"
+    ensures: "Vision source exists before synthesis"
 ---
 
 <Agent_Prompt>
@@ -515,8 +533,8 @@ level: 3
   </Synthesis_Protocol>
 
   <Tool_Usage>
-    - Use Read to load `.omc/constitution.md` and any referenced project files (README, package.json, existing design tokens).
-    - Use Glob to scan for existing brand signals in the project.
+    - Use Read to load `.omc/constitution.md` and any referenced project files.
+    - Use Glob sparingly, only to locate specific index files if explicit paths are not provided. Do not scan whole `.omc/ideas/`, `.omc/competitors/`, or `.omc/research/` archives.
     - Use Write ONLY to `.omc/constitution.md`.
     - Use Bash only to inspect project structure (e.g., `ls`, `head`). No build commands.
   </Tool_Usage>
@@ -541,107 +559,33 @@ level: 3
     Constitution file ends with:
 
     ```yaml
-    <handoff>
-      schema_version: 1
-      produced_by: brand-steward
-      produced_at: YYYY-MM-DD
-      primary_artifact:
-        path: ".omc/constitution.md"
-        status: draft | partial | complete
-      next_recommended:
-        # After session 1:
-        - agent: brand-architect
-          purpose: "Design archetype + grammar from strategic foundation (reads aspirational_archetype_hint if depth_mode: true)"
-          required: true
-        # If session 1 and constitution is partial, also:
-        - agent: brand-steward
-          purpose: "Session 2 refinement in 10-14 days after accumulated product data"
-          required: false
-        # If Phase 0 hard-stop fired:
-        - agent: [ideate | competitor-scout | ux-researcher]
-          purpose: "Produce required research inputs before brand-steward can synthesize"
-          required: true
-        # If anti-goals flagged for specific competitor reference:
-        - agent: competitor-scout
-          purpose: "Deep-dive on flagged competitors if not yet scouted"
-          required: false
-      key_signals:
-        # Phase 0 gate signals
-        phase: pre-mvp | post-mvp         # pre-MVP mode flag — affects gate strictness, Phase 4 questions, status cap
-        phase_0_passed: <bool>             # false if hard-stop fired; rest of signals null in that case
-        ideas_files_read: <int>            # from .omc/ideas/ (/ideate output)
-        specs_files_read: <int>            # from .omc/specs/ (/deep-interview output)
-        vision_source_used: <string>       # "ideas" | "specs" | "both" | "none" (gate fail)
-        competitor_dossiers_read: <int>
-        research_artifacts_read: <int>
-        degraded_inputs: <list>            # subset of [competitors_below_minimum, research_absent_or_light]
-        requires_research_wave: <bool>     # true in pre-MVP or when LOW/CANNOT-SYNTHESIZE in any section
-        max_status_until_refinement: <null | "partial">  # pre-MVP caps at partial until session 2 with research
-
-        # Synthesis session signals
-        session_number: 1 | 2 | refine
-        synthesis_method: research-driven  # constant — signals this agent version, not interview-based
-        revision_count: <int>  # how many Phase 3 iterations before convergence; >= 3 triggers research_insufficient flag
-        research_insufficient: <bool>  # true if revisions hit 3-ceiling without founder-convergence
-        citations_per_section_min: <int>  # minimum citation count across all synthesized sections; <1 is a failure
-
-        # Per-section confidence (populated for every synthesized section)
-        mission_confidence: HIGH | MEDIUM | LOW
-        target_user_confidence: HIGH | MEDIUM | LOW
-        anti_goals_confidence: HIGH | MEDIUM | LOW | CANNOT-SYNTHESIZE
-        tone_confidence: HIGH | MEDIUM | LOW
-        scope_confidence: HIGH | MEDIUM | LOW
-        sections_with_low_confidence: <list>  # slugs of sections marked LOW or CANNOT-SYNTHESIZE
-        sections_with_what_would_raise_confidence: <int>  # count of sections with actionable data-gap notes
-
-        # Standard hypothesis set
-        mission_validated: <bool>
-        target_user_validated: <bool>
-        anti_goals_count: <int>
-        anti_goals_competitor_specific_artifact: <int>  # how many anti-goals cite a concrete competitor decision (feature/UI/pricing), not just archetype summary
-        tone_hints_validated: <bool>
-        scope_boundaries_validated: <bool>
-
-        # Vision/taste capture (Phase 4)
-        personal_why_captured: <bool>
-        aesthetic_compass_captured: <bool>
-        five_year_aspiration_captured: <bool>
-        first_ten_users_captured: <bool>   # pre-MVP only — populated only when Question 4 asked (Q4 present iff phase == pre-mvp)
-
-        # Depth Mode signals — populated only when depth_mode: true
-        depth_mode: <bool>
-        value_ladders_count: <int>
-        value_ladders_reached_belief_layer: <int>  # chains that descended all rungs from research data (not fabricated)
-        productive_tensions_count: <int>
-        productive_tensions_from_data: <int>  # tensions where both poles have citations (not fabricated)
-        aspirational_archetype_hint_primary: <name or null>
-        aspirational_archetype_hint_rejected: <name or null>
-        aspirational_archetype_whitespace_cited: <bool>  # true when seed derivation cites competitor archetype map
-        semiotic_stance_declared: <bool>
-        semiotic_residual_rejected: <string or null>
-        semiotic_emergent_embraced: <string or null>
-        semiotic_competitor_grounded: <bool>  # true when each code assignment names specific competitors
-        antagonism_map_entries: <int>  # per-competitor entries with concrete decisions
-      gate_readiness:
-        product_strategist_ready: <bool>  # true when anti_goals_count >= 3 AND all have competitor-specific artifact citation
-        brand_architect_ready: <bool>     # true when mission + target_user + anti_goals all validated
-        brand_architect_depth_seeded: <bool>  # true when depth_mode AND aspirational_archetype_hint populated AND semiotic_stance_declared — brand-architect can skip redundant archetype discovery
-        refinement_recommended_at: "YYYY-MM-DD (≈10-14 days from now)"
-      artifacts_produced:
-        - path: ".omc/constitution.md"
-          type: primary
-      context_consumed:
-        - ".omc/constitution.md"
-        - ".omc/ideas/current.md | .omc/ideas/index.md | explicit /ideate output path"
-        - ".omc/specs/current.md | .omc/specs/index.md | explicit /deep-interview output path"
-        - ".omc/digests/competitors-landscape.md | .omc/competitors/landscape/current.md | .omc/competitors/index.md"
-        - ".omc/digests/research.md | .omc/digests/research-highlights.md | .omc/research/current.md | .omc/research/index.md"
-        - ".omc/digests/brand-core.md | .omc/brand/index.md | .omc/brand/core.md + .omc/brand/grammar.md"
-        # Add explicit source files opened by slug, never broad archive globs.
-      requires_user_input:
-        # Populated only by genuinely unresolvable ambiguity from data AND outside vision/taste scope.
-        # Vision/taste items are NOT listed here — they're captured in Phase 4 directly.
-    </handoff>
+    ### Handoff Envelope v2
+    ```yaml
+    run_id: <string>
+    agent_role: brand-steward
+    inputs_digest: <stable digest of input + context>
+    decision:
+      verdict: propose
+      rationale: "Constitution synthesized and validated"
+    requested_next_agent: brand-architect
+    artifacts_produced:
+      - path: ".omc/constitution.md"
+        type: primary
+    context_consumed:
+      - ".omc/constitution.md"
+      - ".omc/ideas/current.md"
+      - ".omc/competitors/landscape/current.md"
+      - ".omc/research/current.md"
+    key_signals:
+      phase: pre-mvp | post-mvp
+      phase_0_passed: <bool>
+      session_number: 1 | 2 | refine
+      research_insufficient: <bool>
+      sections_with_low_confidence: <list>
+    gate_readiness:
+      product_strategist_ready: <bool>
+      brand_architect_ready: <bool>
+    ```
     ```
   </Output_Format>
 

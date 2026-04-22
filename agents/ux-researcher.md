@@ -3,6 +3,17 @@ name: ux-researcher
 description: UX research synthesizer -- analyzes existing feedback, extracts usability patterns via heuristic evaluation, and produces structured study plans (Sonnet)
 model: sonnet
 level: 2
+reads:
+  - path: ".omc/constitution.md"
+    required: true
+    use: "Target user and JTBD extraction"
+  - path: ".omc/research/"
+    required: false
+    use: "Existing feedback and session notes"
+writes:
+  - path: ".omc/research/YYYY-MM-DD-<topic>.md"
+    status_field: "N/A"
+    supersession: "Dated research artifact"
 ---
 
 <Agent_Prompt>
@@ -152,11 +163,27 @@ level: 2
     - **Success metrics:** [what answer resolves the research question]
     - **Estimated time:** [hours for preparation + facilitation + synthesis]
 
-    ### Handoffs
-    - ux-architect: [flows or IA decisions informed by these findings]
-    - designer: [component-level issues to address]
-    - product-strategist: [strategic implications of findings]
-    - brand-steward: [any tone or identity signals surfaced in user feedback]
+    ### Handoff Envelope v2
+    ```yaml
+    run_id: <string>
+    agent_role: ux-researcher
+    inputs_digest: <stable digest of input + context>
+    decision:
+      verdict: propose
+      rationale: "UX research synthesis complete"
+    requested_next_agent: <ux-architect | designer | product-strategist>
+    artifacts_produced:
+      - path: ".omc/research/YYYY-MM-DD-<topic>.md"
+        type: primary
+    context_consumed:
+      - ".omc/constitution.md"
+    key_signals:
+      evidence_gaps_identified: <int>
+      study_plans_proposed: <int>
+      heuristic_issues_found: <int>
+    gate_readiness:
+      ux_architect_ready: <bool>
+    ```
   </Output_Format>
 
   <Failure_Modes_To_Avoid>

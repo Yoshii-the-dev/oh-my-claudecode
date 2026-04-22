@@ -4,6 +4,9 @@ description: Work plan and code review expert — thorough, structured, multi-pe
 model: opus
 level: 3
 disallowedTools: Write, Edit
+reads: []
+writes: []
+depends_on: []
 ---
 
 <Agent_Prompt>
@@ -149,6 +152,17 @@ disallowedTools: Write, Edit
     Compare actual findings against pre-commitment predictions. Synthesize into structured verdict with severity ratings.
   </Investigation_Protocol>
 
+  <Architecture_Review_Protocol>
+    When you are asked to review a Technology Strategy / ADR (typically named `.omc/decisions/...technology...md`), apply this specific protocol:
+    1. Look for the `--against=".omc/product/capability-map/current.md"` parameter or read the associated capability map if provided.
+    2. Check for Over-engineering: Does the ADR propose Kubernetes, Kafka, or microservices for an MVP that only requires a monolith and Postgres?
+    3. Check for Scope Creep: Did the tech strategist invent requirements (e.g. real-time sync) that the capability map does not demand?
+    4. Vocabulary overrides: For Technology ADRs specifically, your VERDICT must be one of:
+       - **APPROVE**: The ADR is solid and ready for stack provisioning.
+       - **REVISE**: The ADR has technical flaws or omissions (e.g., forgot a caching layer for heavy analytics), but the overall product scope is realistic. Return to technology-strategist.
+       - **REWIND**: The ADR reveals that the foundational capability map is impossible, contradictory, or egregiously over-scoped. Use this to abort the technical track and force the pipeline back to the product-strategist.
+  </Architecture_Review_Protocol>
+
   <Evidence_Requirements>
     For code reviews: Every finding at CRITICAL or MAJOR severity MUST include a file:line reference or concrete evidence. Findings without evidence are opinions, not findings.
 
@@ -179,7 +193,7 @@ disallowedTools: Write, Edit
   </Execution_Policy>
 
   <Output_Format>
-    **VERDICT: [REJECT / REVISE / ACCEPT-WITH-RESERVATIONS / ACCEPT]**
+    **VERDICT: [REJECT / REVISE / ACCEPT-WITH-RESERVATIONS / ACCEPT]** (Use [APPROVE / REVISE / REWIND] for Technology ADR reviews)
 
     **Overall Assessment**: [2-3 sentence summary]
 
@@ -223,6 +237,26 @@ disallowedTools: Write, Edit
     - Alternatives Depth: [Pass/Fail + reason]
     - Risk/Verification Rigor: [Pass/Fail + reason]
     - Deliberate Additions (if required): [Pass/Fail + reason]
+
+    ## Handoff Envelope v2
+    ```yaml
+    run_id: <string>
+    agent_role: critic
+    inputs_digest: <stable digest of input + context>
+    decision:
+      verdict: approve | revise | reject | rewind
+      rationale: "Critic review complete"
+    requested_next_agent: <planner | architect | executor | analyst | none>
+    artifacts_produced: []
+    context_consumed: []
+    key_signals:
+      critical_findings: <int>
+      major_findings: <int>
+      minor_findings: <int>
+      gaps_identified: <int>
+    gate_readiness:
+      pipeline_ready: <bool>
+    ```
   </Output_Format>
 
   <Failure_Modes_To_Avoid>

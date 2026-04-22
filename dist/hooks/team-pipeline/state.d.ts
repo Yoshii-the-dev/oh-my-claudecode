@@ -1,5 +1,6 @@
 import type { TeamPipelineState, TeamPipelinePhase, TeamTransitionResult } from './types.js';
-export declare function initTeamPipelineState(directory: string, sessionId: string, options?: Partial<Pick<TeamPipelineState, 'project_path' | 'max_iterations'>>): TeamPipelineState;
+export declare function hydrateTeamPipelineState(state: Partial<TeamPipelineState>, defaults?: Partial<Pick<TeamPipelineState, 'project_path' | 'session_id' | 'phase'>>): TeamPipelineState;
+export declare function initTeamPipelineState(directory: string, sessionId: string, options?: Partial<Pick<TeamPipelineState, 'project_path' | 'max_iterations' | 'pipeline_profile' | 'provisioning_mode'>>): TeamPipelineState;
 export declare function readTeamPipelineState(directory: string, sessionId?: string): TeamPipelineState | null;
 export declare function writeTeamPipelineState(directory: string, state: TeamPipelineState, sessionId?: string): boolean;
 export declare function clearTeamPipelineState(directory: string, sessionId?: string): boolean;

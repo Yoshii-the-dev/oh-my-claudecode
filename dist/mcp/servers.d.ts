@@ -2,8 +2,8 @@
  * MCP Server Configurations
  *
  * Predefined MCP server configurations for common integrations:
- * - Exa: AI-powered web search
- * - Context7: Official documentation lookup
+ * - Linkup: AI-powered web search
+ * - Ref: Official documentation lookup
  * - Playwright: Browser automation
  * - Filesystem: Sandboxed file system access
  * - Memory: Persistent knowledge graph
@@ -14,15 +14,15 @@ export interface McpServerConfig {
     env?: Record<string, string>;
 }
 /**
- * Exa MCP Server - AI-powered web search
- * Requires: EXA_API_KEY environment variable
+ * Linkup MCP Server - AI-powered web search
+ * Requires: LINKUP_API_KEY (passed as arg)
  */
-export declare function createExaServer(apiKey?: string): McpServerConfig;
+export declare function createLinkupServer(apiKey?: string): McpServerConfig;
 /**
- * Context7 MCP Server - Official documentation lookup
+ * Ref MCP Server - Official documentation lookup
  * Provides access to official docs for popular libraries
  */
-export declare function createContext7Server(): McpServerConfig;
+export declare function createRefServer(apiKey?: string): McpServerConfig;
 /**
  * Playwright MCP Server - Browser automation
  * Enables agents to interact with web pages
@@ -42,15 +42,16 @@ export declare function createMemoryServer(): McpServerConfig;
  * Get all default MCP servers for the OMC system
  */
 export interface McpServersConfig {
-    exa?: McpServerConfig;
-    context7?: McpServerConfig;
+    linkup?: McpServerConfig;
+    ref?: McpServerConfig;
     playwright?: McpServerConfig;
     memory?: McpServerConfig;
 }
 export declare function getDefaultMcpServers(options?: {
-    exaApiKey?: string;
-    enableExa?: boolean;
-    enableContext7?: boolean;
+    linkupApiKey?: string;
+    refApiKey?: string;
+    enableLinkup?: boolean;
+    enableRef?: boolean;
     enablePlaywright?: boolean;
     enableMemory?: boolean;
 }): McpServersConfig;

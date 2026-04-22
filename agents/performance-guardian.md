@@ -159,6 +159,28 @@ depends_on:
     ### Handoffs
     - executor: [list of findings requiring code changes]
     - architect: [list of findings requiring structural changes]
+
+    ## Handoff Envelope v2
+    ```yaml
+    run_id: <string>
+    agent_role: performance-guardian
+    inputs_digest: <stable digest of input + context>
+    decision:
+      verdict: approve | revise | reject
+      rationale: "Performance audit complete"
+    requested_next_agent: <executor | architect | none>
+    artifacts_produced:
+      - path: ".omc/audits/YYYY-MM-DD-perf-<scope>.md"
+        type: primary
+    context_consumed:
+      - ".omc/constitution.md"
+    key_signals:
+      critical_issues: <int>
+      major_issues: <int>
+      budget_breaches: <int>
+    gate_readiness:
+      pipeline_ready: <bool>
+    ```
   </Output_Format>
 
   <Failure_Modes_To_Avoid>

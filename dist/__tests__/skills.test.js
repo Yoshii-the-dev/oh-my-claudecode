@@ -73,10 +73,10 @@ describe('Builtin Skills', () => {
         clearSkillsCache();
     });
     describe('createBuiltinSkills()', () => {
-        it('should return correct number of skills (33 canonical + 1 alias)', () => {
+        it('should return correct number of skills (49 canonical + 1 alias)', () => {
             const skills = createBuiltinSkills();
-            // 34 entries: 33 canonical skills + 1 deprecated alias (psm)
-            expect(skills).toHaveLength(34);
+            // 50 entries: 49 canonical skills + 1 deprecated alias (psm)
+            expect(skills).toHaveLength(50);
         });
         it('should return an array of BuiltinSkill objects', () => {
             const skills = createBuiltinSkills();
@@ -121,6 +121,21 @@ describe('Builtin Skills', () => {
             const expectedSkills = [
                 'ask',
                 'ai-slop-cleaner',
+                'artifact-lifecycle',
+                'backend-pipeline',
+                'brand-architect',
+                'brand-steward',
+                'brand-variations-generate',
+                'competitor-scout',
+                'design-partner-manager',
+                'digest-maintain',
+                'handoff-orchestrator',
+                'ideate',
+                'inspiration-fetch',
+                'pre-launch-sprint',
+                'product-foundation',
+                'product-pipeline',
+                'product-strategist',
                 'autopilot',
                 'cancel',
                 'ccg',
@@ -146,6 +161,7 @@ describe('Builtin Skills', () => {
                 'self-improve',
                 'setup',
                 'skill',
+                'stack-provision',
                 'team',
                 'trace',
                 'ultraqa',
@@ -183,6 +199,15 @@ describe('Builtin Skills', () => {
             expect(skill?.template).toContain('skills/project-session-manager');
             expect(skill?.template).toContain('`lib/`');
             expect(skill?.template).toContain('`psm.sh`');
+        });
+        it('should surface stack-provision contract resources', () => {
+            const skill = getBuiltinSkill('stack-provision');
+            expect(skill).toBeDefined();
+            expect(skill?.template).toContain('## Skill Resources');
+            expect(skill?.template).toContain('skills/stack-provision');
+            expect(skill?.template).toContain('`config/`');
+            expect(skill?.template).toContain('`schemas/`');
+            expect(skill?.template).toContain('`scripts/`');
         });
         it('stages mcp-setup AskUserQuestion menus so each prompt stays within the current option limit', () => {
             const skill = getBuiltinSkill('mcp-setup');
@@ -455,7 +480,7 @@ describe('Builtin Skills', () => {
     describe('listBuiltinSkillNames()', () => {
         it('should return canonical skill names by default', () => {
             const names = listBuiltinSkillNames();
-            expect(names).toHaveLength(33);
+            expect(names).toHaveLength(49);
             expect(names).toContain('ai-slop-cleaner');
             expect(names).toContain('ask');
             expect(names).toContain('autopilot');
@@ -471,6 +496,7 @@ describe('Builtin Skills', () => {
             expect(names).toContain('omc-doctor');
             expect(names).toContain('hud');
             expect(names).toContain('omc-setup');
+            expect(names).toContain('product-foundation');
             expect(names).toContain('setup');
             expect(names).toContain('trace');
             expect(names).toContain('visual-verdict');
@@ -486,9 +512,10 @@ describe('Builtin Skills', () => {
         it('should include aliases when explicitly requested', () => {
             const names = listBuiltinSkillNames({ includeAliases: true });
             // swarm alias removed in #1131, psm still exists
-            expect(names).toHaveLength(34);
+            expect(names).toHaveLength(50);
             expect(names).toContain('ai-slop-cleaner');
             expect(names).toContain('trace');
+            expect(names).toContain('product-foundation');
             expect(names).toContain('visual-verdict');
             expect(names).not.toContain('swarm');
             expect(names).toContain('psm');
