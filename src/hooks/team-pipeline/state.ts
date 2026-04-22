@@ -146,9 +146,25 @@ export function hydrateTeamPipelineState(
   state: Partial<TeamPipelineState>,
   defaults?: Partial<Pick<TeamPipelineState, 'project_path' | 'session_id' | 'phase'>>,
 ): TeamPipelineState {
-  const phase: TeamPipelinePhase = (typeof state.phase === 'string'
-    ? state.phase
-    : defaults?.phase || 'team-plan') as TeamPipelinePhase;
+  const stateRecord = state as Record<string, unknown>;
+  let rawPhase = stateRecord.phase
+    ?? stateRecord.current_phase
+    ?? stateRecord.currentStage
+    ?? stateRecord.current_stage
+    ?? stateRecord.stage;
+
+  const rawStatus = typeof stateRecord.status === 'string' ? stateRecord.status.trim().toLowerCase() : null;
+  if (rawStatus === 'cancelled' || rawStatus === 'canceled' || rawStatus === 'cancel') {
+    rawPhase = 'cancelled';
+  } else if (rawStatus === 'failed') {
+    rawPhase = 'failed';
+  } else if (rawStatus === 'complete' || rawStatus === 'completed') {
+    rawPhase = 'complete';
+  }
+
+  const phase: TeamPipelinePhase = (typeof rawPhase === 'string'
+    ? rawPhase
+    : (defaults?.phase ?? 'unknown')) as TeamPipelinePhase;
   const profile = normalizeProfile(state.pipeline_profile);
   const currentSubphase = asStringArrayIncludes(TEAM_PIPELINE_SUBPHASES, state.current_subphase)
     ? state.current_subphase
@@ -345,7 +361,6 @@ export function readTeamPipelineState(directory: string, sessionId?: string): Te
         const state = hydrateTeamPipelineState(parsed, {
           session_id: sessionId,
           project_path: directory,
-          phase: 'team-plan',
         });
         coarseState = state;
         if (state.active === true && !isTerminalTeamPipelineState(state)) {
