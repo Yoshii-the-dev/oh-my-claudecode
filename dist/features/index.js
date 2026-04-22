@@ -2,7 +2,7 @@
  * Features Module Exports
  */
 export { createMagicKeywordProcessor, detectMagicKeywords, builtInMagicKeywords } from './magic-keywords.js';
-export { createContinuationHook, continuationSystemPromptAddition, detectCompletionSignals, generateVerificationPrompt } from './continuation-enforcement.js';
+export { createContinuationHook, continuationSystemPromptAddition, evaluateCompletionGate, detectCompletionSignals, generateVerificationPrompt } from './continuation-enforcement.js';
 export { 
 // Constants
 REPO_OWNER, REPO_NAME, GITHUB_API_URL, GITHUB_RAW_URL, CLAUDE_CONFIG_DIR, VERSION_FILE, 

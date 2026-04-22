@@ -1815,6 +1815,15 @@ This article argues that fake popularity signals damage trust in open source.`;
             expect(result.skill).toBe('self-improve');
             expect(result.args).toBe('');
         });
+        it('parses product-foundation slash invocations as a workflow skill', () => {
+            const bare = parseExplicitWorkflowSlashInvocation('/product-foundation build a fintech app');
+            const omc = parseExplicitWorkflowSlashInvocation('/omc:product-foundation build a fintech app');
+            const full = parseExplicitWorkflowSlashInvocation('/oh-my-claudecode:product-foundation build a fintech app');
+            expect(bare.skill).toBe('product-foundation');
+            expect(omc.skill).toBe('product-foundation');
+            expect(full.skill).toBe('product-foundation');
+            expect(bare.args).toBe('build a fintech app');
+        });
         it('returns null for /ralph-logs/foo.txt (path lookahead prevents match)', () => {
             expect(parseExplicitWorkflowSlashInvocation('/ralph-logs/foo.txt')).toBeNull();
         });

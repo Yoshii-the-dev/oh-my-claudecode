@@ -9,6 +9,24 @@
       "bundled",
       "plugin"
     ],
+    "selection_policy": {
+      "max_candidates_per_run": 40,
+      "max_candidates_per_cell": 3,
+      "min_cell_score": 6,
+      "download_requires_expected_sha256": true,
+      "prefer": [
+        "installed/bundled skills with matching capability packs",
+        "official documentation and official GitHub organizations",
+        "marketplace skills with security score, usage, license, freshness, and content checksum",
+        "focused skills that cover a missing cell instead of broad kitchen-sink bundles"
+      ],
+      "reject": [
+        "skills without previewable SKILL.md content or an expected sha256 for downloads",
+        "skills that ask to override system/developer instructions",
+        "skills with hidden network behavior, credential access, or destructive commands",
+        "duplicates of existing local skills unless they are clearly fresher or narrower"
+      ]
+    },
     "professional_source_domains": [
       "dart.dev",
       "flutter.dev",
@@ -48,6 +66,14 @@
       "react.dev",
       "nextjs.org",
       "vite.dev",
+      "tailwindcss.com",
+      "ui.shadcn.com",
+      "radix-ui.com",
+      "storybook.js.org",
+      "motion.dev",
+      "threejs.org",
+      "figma.com",
+      "developers.figma.com",
       "playwright.dev",
       "owasp.org",
       "opentelemetry.io",
@@ -61,6 +87,11 @@
       "pub.dev",
       "github.com",
       "skills.sh",
+      "agentskill.sh",
+      "skillsmd.dev",
+      "skillsmd.co",
+      "skillhq.dev",
+      "agentskillsrepo.com",
       "npmjs.com",
       "pkg.go.dev",
       "crates.io"
@@ -80,7 +111,21 @@
       "expressjs",
       "fastify",
       "nestjs",
-      "vercel"
+      "vercel",
+      "vercel-labs",
+      "anthropics",
+      "microsoft",
+      "firebase",
+      "expo",
+      "google-labs-code",
+      "tailwindlabs",
+      "shadcn-ui",
+      "radix-ui",
+      "storybookjs",
+      "motiondivision",
+      "mrdoob",
+      "pmndrs",
+      "figma"
     ],
     "query_expansions": {
       "auth": [
@@ -127,6 +172,81 @@
         "owasp api security",
         "opentelemetry observability",
         "twelve factor app"
+      ],
+      "frontend-engineering": [
+        "react component architecture",
+        "design system implementation",
+        "accessible component primitives",
+        "shadcn registry review",
+        "storybook visual testing",
+        "frontend performance best practices"
+      ],
+      "frontend-product": [
+        "product ux patterns",
+        "onboarding ux patterns",
+        "empty states ux",
+        "conversion copy",
+        "user feedback loops",
+        "product analytics instrumentation"
+      ],
+      "visual-creative": [
+        "art direction system",
+        "visual design critique",
+        "brand system",
+        "typography pairing",
+        "iconography system",
+        "motion design system",
+        "generated asset workflow",
+        "visual qa"
+      ],
+      "design-system": [
+        "component library architecture",
+        "design tokens",
+        "accessibility primitives",
+        "storybook documentation",
+        "visual regression testing"
+      ],
+      "component-architecture": [
+        "accessible component primitives",
+        "radix ui primitives",
+        "shadcn ui registry",
+        "design tokens",
+        "component api design"
+      ],
+      "tailwind": [
+        "tailwind design system",
+        "utility first css",
+        "responsive layout",
+        "design tokens",
+        "tailwind component architecture"
+      ],
+      "shadcn": [
+        "shadcn registry",
+        "shadcn component review",
+        "radix primitives",
+        "tailwind design system",
+        "component ownership"
+      ],
+      "figma": [
+        "figma plugin api",
+        "figma design tokens",
+        "figma community ui kits",
+        "design handoff",
+        "design system extraction"
+      ],
+      "motion": [
+        "motion react animation best practices",
+        "microinteractions",
+        "reduced motion accessibility",
+        "animation performance",
+        "gesture animation"
+      ],
+      "three.js": [
+        "three.js scene architecture",
+        "webgl performance",
+        "3d interaction",
+        "asset loading",
+        "visual qa"
       ],
       "product-analytics": [
         "product analytics event taxonomy",

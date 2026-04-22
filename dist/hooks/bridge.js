@@ -709,11 +709,12 @@ async function seedModeStateForExplicitWorkflowSlash(skill, directory, promptTex
             await seedAutopilotStartupState(directory, promptText, sessionId);
             return;
         default:
-            // ralph / ultrawork / team / ultraqa / deep-interview / self-improve
-            // own their state activation inside their own Skill PostToolUse handlers.
-            // Pre-Skill seeding for these would clobber existing in-flight state
-            // (e.g. nested `autopilot → ralph`); the workflow slot alone is enough
-            // to keep stop-hook enforcement from premature termination.
+            // ralph / ultrawork / team / ultraqa / deep-interview /
+            // product-foundation / self-improve own their state activation inside
+            // their own Skill PostToolUse handlers. Pre-Skill seeding for these would
+            // clobber existing in-flight state (e.g. nested `autopilot -> ralph`);
+            // the workflow slot alone is enough to keep stop-hook enforcement from
+            // premature termination.
             return;
     }
 }
@@ -745,9 +746,10 @@ async function processKeywordDetector(input) {
     const messages = [];
     // Unified explicit slash invocation handler — covers all 8 canonical
     // workflow skills (autopilot, ralph, team, ultrawork, ultraqa,
-    // deep-interview, ralplan, self-improve). Seeds the workflow slot via the
-    // sanctioned dual-copy helper BEFORE the Skill tool fires, and seeds the
-    // mode-specific state file when the mode requires pre-Skill state. The
+    // deep-interview, product-foundation, ralplan, self-improve). Seeds the
+    // workflow slot via the sanctioned dual-copy helper BEFORE the Skill tool
+    // fires, and seeds the mode-specific state file when the mode requires
+    // pre-Skill state. The
     // ralplan path additionally returns the legacy [RALPLAN INIT] context
     // injection so existing routing tests remain green.
     const explicitSlash = parseExplicitWorkflowSlashInvocation(promptText);
@@ -1531,7 +1533,7 @@ function processPreToolUse(input) {
                     activateRalplanState(directory, input.sessionId);
                 }
                 // Workflow-slot ledger: when the Skill tool is invoked for one of the
-                // 8 canonical workflow skills, ensure the slot is present and freshly
+                // canonical workflow skills, ensure the slot is present and freshly
                 // confirmed. Seed first (idempotent — preserves existing fields when
                 // the slot was already armed during UserPromptSubmit), then refresh
                 // `last_confirmed_at` so stop-hook reconciliation can distinguish a

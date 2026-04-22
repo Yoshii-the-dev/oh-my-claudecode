@@ -11,8 +11,13 @@ export {
 export {
   createContinuationHook,
   continuationSystemPromptAddition,
+  evaluateCompletionGate,
   detectCompletionSignals,
-  generateVerificationPrompt
+  generateVerificationPrompt,
+  type CompletionGateInput,
+  type CompletionGateResult,
+  type CompletionGateTask,
+  type CompletionVerificationEvidence
 } from './continuation-enforcement.js';
 
 export {
@@ -313,4 +318,3 @@ export {
   type SessionHistorySearchOptions,
   type SessionHistorySearchReport,
 } from './session-history-search/index.js';
-
