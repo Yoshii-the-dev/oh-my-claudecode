@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
   copyFileSync,
@@ -34,6 +35,7 @@ const DEFAULT_STRICT_GATE = Object.freeze({
   checksum_required: true,
   license_conflict_allowed: false,
 });
+let cachedGitHubToken;
 
 try {
   const result = await run(process.argv.slice(2));
@@ -2066,14 +2068,87 @@ async function fetchText(url, timeoutMs) {
   try {
     const response = await fetch(url, {
       signal: controller.signal,
-      headers: { accept: 'application/json,text/plain,*/*' },
+      headers: requestHeadersForUrl(url),
     });
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+      const body = clipHttpError(await response.text().catch(() => ''));
+      throw new Error(formatHttpError(url, response.status, body));
     }
     return await response.text();
   } finally {
     clearTimeout(timeout);
+  }
+}
+
+function requestHeadersForUrl(url) {
+  const headers = { accept: 'application/json,text/plain,*/*' };
+  if (!isGitHubHost(url)) {
+    return headers;
+  }
+
+  const token = githubAuthToken();
+  if (token) {
+    headers.authorization = `Bearer ${token}`;
+  }
+  if (isGitHubApiUrl(url)) {
+    headers['x-github-api-version'] = '2022-11-28';
+  }
+  return headers;
+}
+
+function githubAuthToken() {
+  if (cachedGitHubToken !== undefined) {
+    return cachedGitHubToken;
+  }
+
+  cachedGitHubToken = String(process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '').trim();
+  if (cachedGitHubToken || process.env.STACK_PROVISION_DISABLE_GH_AUTH_TOKEN === '1') {
+    return cachedGitHubToken;
+  }
+
+  try {
+    cachedGitHubToken = execFileSync('gh', ['auth', 'token'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+      timeout: 2000,
+    }).trim();
+  } catch {
+    cachedGitHubToken = '';
+  }
+  return cachedGitHubToken;
+}
+
+function formatHttpError(url, status, body) {
+  let message = `HTTP ${status}`;
+  if (status === 403 && isGitHubApiUrl(url)) {
+    message += githubAuthToken()
+      ? ' (GitHub API denied the authenticated request; check token scopes or rate limits)'
+      : ' (GitHub API unauthenticated or rate-limited; set GITHUB_TOKEN/GH_TOKEN or run gh auth login)';
+  }
+  return body ? `${message}: ${body}` : message;
+}
+
+function clipHttpError(body) {
+  return String(body || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 280);
+}
+
+function isGitHubHost(url) {
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return host === 'api.github.com' || host === 'raw.githubusercontent.com';
+  } catch {
+    return false;
+  }
+}
+
+function isGitHubApiUrl(url) {
+  try {
+    return new URL(url).hostname.toLowerCase() === 'api.github.com';
+  } catch {
+    return false;
   }
 }
 
