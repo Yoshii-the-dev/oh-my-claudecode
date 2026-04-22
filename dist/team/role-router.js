@@ -5,6 +5,38 @@
 /** Patterns that signal a specific lane intent */
 const INTENT_PATTERNS = [
     {
+        intent: 'strategy',
+        patterns: [
+            /\btechnology\s+strategy\b/i,
+            /\bstrategy\b/i,
+            /\bstack\s+decision\b/i,
+            /\bcapability\s+map\b/i,
+            /\bweighted\s+ranking\b/i,
+            /\bcompatibility\s+matrix\b/i,
+        ],
+    },
+    {
+        intent: 'research',
+        patterns: [
+            /\bresearch\b/i,
+            /\blook\s+up\b/i,
+            /\binvestigate\s+external\b/i,
+            /\bvalidate\s+sources\b/i,
+            /\bfresh\s+evidence\b/i,
+            /\bdocumentation\s+lookup\b/i,
+        ],
+    },
+    {
+        intent: 'critique',
+        patterns: [
+            /\bcritic\b/i,
+            /\bred.?team\b/i,
+            /\bchallenge\s+the\s+plan\b/i,
+            /\bcritical\s+review\b/i,
+            /\brewind\b/i,
+        ],
+    },
+    {
         intent: 'build-fix',
         patterns: [
             /\bfix(?:ing)?\s+(?:the\s+)?(?:build|ci|lint|compile|tsc|type.?check)/i,
@@ -103,6 +135,9 @@ const INTENT_PATTERNS = [
 const SECURITY_DOMAIN_RE = /\b(?:auth(?:entication|orization)?|cve|injection|owasp|security|vulnerability|vuln|xss|csrf|sqli|rce|privilege.?escalat)\b/i;
 /** Role-to-keyword mapping for keyword-count scoring fallback */
 export const ROLE_KEYWORDS = {
+    'technology-strategist': [/\bstrategy\b/i, /\bstack\b/i, /\bcompatibility\b/i, /\bcapability\b/i],
+    'document-specialist': [/\bresearch\b/i, /\bsource\b/i, /\bdocumentation\b/i, /\blookup\b/i],
+    critic: [/\bcritic\b/i, /\bred.?team\b/i, /\brewind\b/i, /\bchallenge\b/i],
     'build-fixer': [/\bbuild\b/i, /\bci\b/i, /\bcompile\b/i, /\btsc\b/i, /\blint\b/i],
     debugger: [/\bdebug\b/i, /\btroubleshoot\b/i, /\binvestigate\b/i, /\bdiagnos/i],
     writer: [/\bdoc(?:ument)?/i, /\breadme\b/i, /\bchangelog\b/i, /\bcomment/i],
@@ -136,22 +171,31 @@ export function inferLaneIntent(text) {
  * Route a task to the most appropriate role based on intent and domain.
  *
  * Priority:
- * 1. build-fix → 'build-fixer' (high)
- * 2. debug → 'debugger' (high)
- * 3. docs → 'writer' (high)
- * 4. design → 'designer' (high)
- * 5. cleanup → 'code-simplifier' (high)
- * 6. review + security domain → 'security-reviewer' (high), else 'quality-reviewer' (high)
- * 7. verification → 'test-engineer' (high)
- * 8. implementation + security domain → fallbackRole (stays put)
- * 9. Keyword-count scoring for ambiguous intents
- * 10. Unknown → fallbackRole (low)
+ * 1. strategy → 'technology-strategist' (high)
+ * 2. research → 'document-specialist' (high)
+ * 3. critique → 'critic' (high)
+ * 4. build-fix → 'build-fixer' (high)
+ * 5. debug → 'debugger' (high)
+ * 6. docs → 'writer' (high)
+ * 7. design → 'designer' (high)
+ * 8. cleanup → 'code-simplifier' (high)
+ * 9. review + security domain → 'security-reviewer' (high), else 'quality-reviewer' (high)
+ * 10. verification → 'test-engineer' (high)
+ * 11. implementation + security domain → fallbackRole (stays put)
+ * 12. Keyword-count scoring for ambiguous intents
+ * 13. Unknown → fallbackRole (low)
  */
 export function routeTaskToRole(taskSubject, taskDescription, fallbackRole) {
     const combined = `${taskSubject} ${taskDescription}`.trim();
     const intent = inferLaneIntent(combined);
     const isSecurityDomain = SECURITY_DOMAIN_RE.test(combined);
     switch (intent) {
+        case 'strategy':
+            return { role: 'technology-strategist', confidence: 'high', reason: 'strategy intent detected' };
+        case 'research':
+            return { role: 'document-specialist', confidence: 'high', reason: 'research intent detected' };
+        case 'critique':
+            return { role: 'critic', confidence: 'high', reason: 'critique intent detected' };
         case 'build-fix':
             return { role: 'build-fixer', confidence: 'high', reason: 'build-fix intent detected' };
         case 'debug':

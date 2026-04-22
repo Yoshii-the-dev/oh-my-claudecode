@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isPathAllowed, isCommandAllowed, formatPermissionInstructions, getDefaultPermissions, } from '../permissions.js';
+import { isPathAllowed, isCommandAllowed, formatPermissionInstructions, getDefaultPermissions, getRoleScopedPermissions, getEffectivePermissions, } from '../permissions.js';
 describe('permissions', () => {
     const workDir = '/home/user/project';
     describe('isPathAllowed', () => {
@@ -164,6 +164,23 @@ describe('permissions', () => {
             expect(perms.deniedPaths).toEqual([]);
             expect(perms.allowedCommands).toEqual([]);
             expect(perms.maxFileSize).toBe(Infinity);
+        });
+    });
+    describe('role scoped defaults', () => {
+        it('applies strategist profile as read-only code permissions', () => {
+            const perms = getRoleScopedPermissions('technology-strategist-worker');
+            expect(perms.allowedPaths).toContain('.omc/decisions/**');
+            expect(perms.deniedPaths).toContain('src/**');
+        });
+        it('applies stack provisioning profile for quarantine/install zones', () => {
+            const perms = getRoleScopedPermissions('stack-provision-worker');
+            expect(perms.allowedPaths).toContain('.omc/provisioned/**');
+            expect(perms.deniedPaths).toContain('src/**');
+        });
+        it('merges secure deny defaults into role-scoped effective permissions', () => {
+            const perms = getEffectivePermissions({ workerName: 'critic-worker' });
+            expect(perms.deniedPaths).toEqual(expect.arrayContaining(['.git/**', '.env*']));
+            expect(perms.allowedPaths).toContain('.omc/audits/**');
         });
     });
 });

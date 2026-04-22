@@ -312,6 +312,8 @@ See Stage 9 Consolidated Report + stage-specific artifacts:
 - `.omc/audits/YYYY-MM-DD-security-<slug>.md`
 - `.omc/audits/YYYY-MM-DD-perf-<slug>.md`
 - Source files modified or created (paths in Stage 6 handoff)
+
+**Important:** Every generated artifact MUST end with a YAML Handoff Envelope v2 block. Legacy XML `<handoff>` tags are deprecated.
 </Output>
 
 <Failure_Modes_To_Avoid>

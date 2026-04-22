@@ -22,7 +22,7 @@ export { getActivityLog, formatActivityTimeline } from './activity-log.js';
 export { recordTaskUsage, measureCharCounts, generateUsageReport, } from './usage-tracker.js';
 export { checkMergeConflicts, mergeWorkerBranch, mergeAllWorkerBranches, } from './merge-coordinator.js';
 export { generateTeamReport, saveTeamReport } from './summary-report.js';
-export { isPathAllowed, isCommandAllowed, formatPermissionInstructions, getDefaultPermissions, } from './permissions.js';
+export { isPathAllowed, isCommandAllowed, formatPermissionInstructions, getDefaultPermissions, getRoleScopedPermissions, getEffectivePermissions, } from './permissions.js';
 export { TeamPaths, absPath, teamStateRoot } from './state-paths.js';
 export { checkSentinelReadiness, waitForSentinelReadiness, } from './sentinel-gate.js';
 export { getContract, isCliAvailable as isCliAvailableForAgent, validateCliAvailable as validateCliAvailableForAgent, buildLaunchArgs, buildWorkerCommand, parseCliOutput, 

@@ -7,6 +7,69 @@
  * prompts as instructions for the LLM to follow.
  */
 import { relative, resolve } from 'node:path';
+const ROLE_PERMISSION_PROFILES = {
+    orchestrator: {
+        allowedPaths: ['.omc/state/**', '.omc/handoffs/**', '.omc/provisioned/**'],
+        deniedPaths: ['src/**', 'agents/**', 'skills/**', 'docs/**'],
+        allowedCommands: [],
+        maxFileSize: Infinity,
+    },
+    'technology-strategist': {
+        allowedPaths: ['.omc/decisions/**', '.omc/state/**', '.omc/handoffs/**', '.omc/artifacts/**'],
+        deniedPaths: ['src/**', 'skills/**', 'agents/**'],
+        allowedCommands: [],
+        maxFileSize: Infinity,
+    },
+    researcher: {
+        allowedPaths: ['.omc/state/**', '.omc/handoffs/**', '.omc/artifacts/**'],
+        deniedPaths: ['src/**', 'skills/**', 'agents/**'],
+        allowedCommands: [],
+        maxFileSize: Infinity,
+    },
+    critic: {
+        allowedPaths: ['.omc/state/**', '.omc/handoffs/**', '.omc/artifacts/**', '.omc/audits/**'],
+        deniedPaths: ['src/**', 'skills/**', 'agents/**'],
+        allowedCommands: [],
+        maxFileSize: Infinity,
+    },
+    'stack-provision': {
+        allowedPaths: ['.omc/provisioned/**', '.codex/skills/omc-provisioned/**'],
+        deniedPaths: ['src/**', 'agents/**', 'docs/**'],
+        allowedCommands: [],
+        maxFileSize: Infinity,
+    },
+    default: {
+        allowedPaths: [],
+        deniedPaths: [],
+        allowedCommands: [],
+        maxFileSize: Infinity,
+    },
+};
+function inferPermissionProfile(workerName) {
+    const normalized = workerName.toLowerCase();
+    if (normalized.includes('technology-strategist'))
+        return 'technology-strategist';
+    if (normalized.includes('document-specialist') || normalized.includes('research'))
+        return 'researcher';
+    if (normalized.includes('critic'))
+        return 'critic';
+    if (normalized.includes('stack-provision') || normalized.includes('provision'))
+        return 'stack-provision';
+    if (normalized.includes('orchestrator') || normalized === 'omc' || normalized.startsWith('omc-'))
+        return 'orchestrator';
+    return 'default';
+}
+export function getRoleScopedPermissions(workerName) {
+    const profile = inferPermissionProfile(workerName);
+    const template = ROLE_PERMISSION_PROFILES[profile] || ROLE_PERMISSION_PROFILES.default;
+    return {
+        workerName,
+        allowedPaths: [...template.allowedPaths],
+        deniedPaths: [...template.deniedPaths],
+        allowedCommands: [...template.allowedCommands],
+        maxFileSize: template.maxFileSize,
+    };
+}
 /**
  * Simple glob matching for path patterns.
  * Supports: * (any non-/ chars), ** (any depth including /), ? (single non-/ char), exact match.
@@ -170,9 +233,21 @@ const SECURE_DENY_DEFAULTS = [
  * The deny-defaults are always prepended to deniedPaths so they cannot be overridden.
  */
 export function getEffectivePermissions(base) {
-    const perms = base
-        ? { ...getDefaultPermissions(base.workerName), ...base }
+    const defaults = base
+        ? getRoleScopedPermissions(base.workerName)
         : getDefaultPermissions('default');
+    const perms = {
+        ...defaults,
+        ...(base ?? {}),
+        allowedPaths: base?.allowedPaths && base.allowedPaths.length > 0
+            ? base.allowedPaths
+            : defaults.allowedPaths,
+        deniedPaths: base?.deniedPaths ?? defaults.deniedPaths,
+        allowedCommands: base?.allowedCommands && base.allowedCommands.length > 0
+            ? base.allowedCommands
+            : defaults.allowedCommands,
+        maxFileSize: base?.maxFileSize ?? defaults.maxFileSize,
+    };
     // Prepend secure defaults (deduplicating against existing deniedPaths)
     const existingSet = new Set(perms.deniedPaths);
     const merged = [

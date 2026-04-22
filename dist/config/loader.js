@@ -48,6 +48,20 @@ export function buildDefaultConfig() {
             codeSimplifier: { model: defaultTierModels.HIGH },
             critic: { model: defaultTierModels.HIGH },
             documentSpecialist: { model: defaultTierModels.MEDIUM },
+            brandArchitect: { model: defaultTierModels.HIGH },
+            brandSteward: { model: defaultTierModels.HIGH },
+            campaignComposer: { model: defaultTierModels.MEDIUM },
+            competitorScout: { model: defaultTierModels.MEDIUM },
+            creativeDirector: { model: defaultTierModels.HIGH },
+            domainExpertReviewer: { model: defaultTierModels.HIGH },
+            ideate: { model: defaultTierModels.HIGH },
+            accessibilityAuditor: { model: defaultTierModels.MEDIUM },
+            performanceGuardian: { model: defaultTierModels.MEDIUM },
+            copywriter: { model: defaultTierModels.MEDIUM },
+            productStrategist: { model: defaultTierModels.MEDIUM },
+            technologyStrategist: { model: defaultTierModels.HIGH },
+            uxArchitect: { model: defaultTierModels.MEDIUM },
+            uxResearcher: { model: defaultTierModels.MEDIUM },
         },
         features: {
             parallelExecution: true,
@@ -57,8 +71,8 @@ export function buildDefaultConfig() {
             autoContextInjection: true,
         },
         mcpServers: {
-            exa: { enabled: true },
-            context7: { enabled: true },
+            linkup: { enabled: true },
+            ref: { enabled: true },
         },
         companyContext: {
             onError: "warn",
@@ -240,10 +254,10 @@ export function deepMerge(target, source) {
 export function loadEnvConfig() {
     const config = {};
     // MCP API keys
-    if (process.env.EXA_API_KEY) {
+    if (process.env.LINKUP_API_KEY) {
         config.mcpServers = {
             ...config.mcpServers,
-            exa: { enabled: true, apiKey: process.env.EXA_API_KEY },
+            linkup: { enabled: true, apiKey: process.env.LINKUP_API_KEY },
         };
     }
     // Feature flags from environment
@@ -706,6 +720,76 @@ export function generateConfigSchema() {
                         type: "object",
                         properties: { model: { type: "string" } },
                     },
+                    brandArchitect: {
+                        type: "object",
+                        properties: { model: { type: "string" } },
+                        additionalProperties: false,
+                    },
+                    brandSteward: {
+                        type: "object",
+                        properties: { model: { type: "string" } },
+                        additionalProperties: false,
+                    },
+                    campaignComposer: {
+                        type: "object",
+                        properties: { model: { type: "string" } },
+                        additionalProperties: false,
+                    },
+                    competitorScout: {
+                        type: "object",
+                        properties: { model: { type: "string" } },
+                        additionalProperties: false,
+                    },
+                    creativeDirector: {
+                        type: "object",
+                        properties: { model: { type: "string" } },
+                        additionalProperties: false,
+                    },
+                    domainExpertReviewer: {
+                        type: "object",
+                        properties: { model: { type: "string" } },
+                        additionalProperties: false,
+                    },
+                    ideate: {
+                        type: "object",
+                        properties: { model: { type: "string" } },
+                        additionalProperties: false,
+                    },
+                    accessibilityAuditor: {
+                        type: "object",
+                        properties: { model: { type: "string" } },
+                        additionalProperties: false,
+                    },
+                    performanceGuardian: {
+                        type: "object",
+                        properties: { model: { type: "string" } },
+                        additionalProperties: false,
+                    },
+                    copywriter: {
+                        type: "object",
+                        properties: { model: { type: "string" } },
+                        additionalProperties: false,
+                    },
+                    productStrategist: {
+                        type: "object",
+                        properties: { model: { type: "string" } },
+                        additionalProperties: false,
+                    },
+                    technologyStrategist: {
+                        type: "object",
+                        properties: { model: { type: "string" } },
+                        additionalProperties: false,
+                    },
+                    uxArchitect: {
+                        type: "object",
+                        properties: { model: { type: "string" } },
+                        additionalProperties: false,
+                    },
+                    uxResearcher: {
+                        type: "object",
+                        properties: { model: { type: "string" } },
+                        additionalProperties: false,
+                    },
                 },
             },
             features: {
@@ -723,16 +807,19 @@ export function generateConfigSchema() {
                 type: "object",
                 description: "MCP server configurations",
                 properties: {
-                    exa: {
+                    linkup: {
                         type: "object",
                         properties: {
                             enabled: { type: "boolean" },
                             apiKey: { type: "string" },
                         },
                     },
-                    context7: {
+                    ref: {
                         type: "object",
-                        properties: { enabled: { type: "boolean" } },
+                        properties: {
+                            enabled: { type: "boolean" },
+                            apiKey: { type: "string" },
+                        },
                     },
                 },
             },

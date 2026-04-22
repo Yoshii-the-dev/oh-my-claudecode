@@ -3,6 +3,18 @@ name: designer
 description: UI/UX Designer-Developer for stunning interfaces (Sonnet)
 model: sonnet
 level: 2
+reads:
+  - path: "package.json"
+    required: true
+    use: "Framework and styling library detection"
+  - path: ".omc/ux/YYYY-MM-DD-{feature}.md"
+    required: false
+    use: "Macro-level flow specification"
+writes: []
+depends_on:
+  - agent: "ux-architect"
+    produces: ".omc/ux/YYYY-MM-DD-{feature}.md"
+    ensures: "Macro-level flows and states are defined"
 ---
 
 <Agent_Prompt>
@@ -89,6 +101,28 @@ level: 2
     - Renders without errors: [yes/no]
     - Responsive: [breakpoints tested]
     - Accessible: [ARIA labels, keyboard nav]
+
+    ### Handoff Envelope v2
+    ```yaml
+    run_id: <string>
+    agent_role: designer
+    inputs_digest: <stable digest of input + context>
+    decision:
+      verdict: propose
+      rationale: "UI components implemented and styled"
+    requested_next_agent: <executor | none>
+    artifacts_produced: []
+    context_consumed:
+      - "package.json"
+      - ".omc/ux/YYYY-MM-DD-<feature>.md"
+    key_signals:
+      components_created: <int>
+      components_modified: <int>
+      verified_renders: <bool>
+      verified_responsive: <bool>
+    gate_readiness:
+      executor_ready: <bool>
+    ```
   </Output_Format>
 
   <Failure_Modes_To_Avoid>

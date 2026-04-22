@@ -20,7 +20,7 @@ describe('Cleanup Validation', () => {
         expect('detectDeprecatedKeywords' in keywordModule).toBe(false);
         expect('DEPRECATED_KEYWORD_PATTERNS' in keywordModule).toBe(false);
     });
-    it('PluginConfig.agents matches 19-agent registry + omc', async () => {
+    it('PluginConfig.agents matches 33-agent registry + omc', async () => {
         const { DEFAULT_CONFIG } = await import('../config/loader.js');
         const agentKeys = Object.keys(DEFAULT_CONFIG.agents || {});
         expect(agentKeys).toContain('omc');
@@ -28,6 +28,7 @@ describe('Cleanup Validation', () => {
         expect(agentKeys).toContain('architect');
         expect(agentKeys).toContain('executor');
         expect(agentKeys).toContain('documentSpecialist');
+        expect(agentKeys).toContain('technologyStrategist');
         expect(agentKeys).toContain('critic');
         expect(agentKeys).toContain('tracer');
         // Stale entries should NOT be present
@@ -40,11 +41,17 @@ describe('Cleanup Validation', () => {
         expect(agentKeys).not.toContain('deepExecutor');
         expect(agentKeys).not.toContain('buildFixer');
     });
-    it('agent registry has 19 agents', async () => {
+    it('agent registry has 33 agents', async () => {
         const { getAgentDefinitions } = await import('../agents/definitions.js');
         const defs = getAgentDefinitions();
-        expect(Object.keys(defs)).toHaveLength(19);
+        expect(Object.keys(defs)).toHaveLength(33);
         expect(defs).toHaveProperty('tracer');
+        expect(defs).toHaveProperty('technology-strategist');
+        expect(defs).toHaveProperty('brand-architect');
+        expect(defs).toHaveProperty('campaign-composer');
+        expect(defs).toHaveProperty('creative-director');
+        expect(defs).toHaveProperty('domain-expert-reviewer');
+        expect(defs).toHaveProperty('product-strategist');
     });
 });
 //# sourceMappingURL=cleanup-validation.test.js.map

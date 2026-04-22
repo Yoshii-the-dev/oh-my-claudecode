@@ -26,6 +26,7 @@ export const ROLE_CATEGORY_DEFAULTS = {
     planner: 'planner',
     critic: 'critic',
     analyst: 'analyst',
+    'technology-strategist': 'technology-strategist',
     // Implementation roles
     executor: 'executor',
     // Review roles

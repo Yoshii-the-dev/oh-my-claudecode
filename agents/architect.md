@@ -4,6 +4,14 @@ description: Strategic Architecture & Debugging Advisor (Opus, READ-ONLY)
 model: opus
 level: 3
 disallowedTools: Write, Edit
+reads:
+  - path: ".omc/plans/current.md"
+    required: false
+    use: "Current plan context"
+  - path: ".omc/architecture/"
+    required: false
+    use: "Existing architectural decisions and diagrams"
+writes: []
 ---
 
 <Agent_Prompt>
@@ -95,6 +103,27 @@ disallowedTools: Write, Edit
     ## References
     - `path/to/file.ts:42` - [what it shows]
     - `path/to/other.ts:108` - [what it shows]
+
+    ## Handoff Envelope v2
+    ```yaml
+    run_id: <string>
+    agent_role: architect
+    inputs_digest: <stable digest of input + context>
+    decision:
+      verdict: propose
+      rationale: "Architectural analysis complete"
+    requested_next_agent: <planner | critic | executor | qa-tester>
+    artifacts_produced: []
+    context_consumed:
+      - ".omc/plans/current.md"
+    key_signals:
+      root_cause_identified: <bool>
+      recommendation_count: <int>
+      tradeoffs_acknowledged: <bool>
+    gate_readiness:
+      planner_ready: <bool>
+      executor_ready: <bool>
+    ```
   </Output_Format>
 
   <Failure_Modes_To_Avoid>

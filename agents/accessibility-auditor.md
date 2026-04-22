@@ -142,6 +142,29 @@ depends_on:
     ### Handoffs
     - designer: [list of findings requiring UI/visual changes]
     - executor: [list of findings requiring code changes only]
+
+    ## Handoff Envelope v2
+    ```yaml
+    run_id: <string>
+    agent_role: accessibility-auditor
+    inputs_digest: <stable digest of input + context>
+    decision:
+      verdict: approve | revise | reject
+      rationale: "Accessibility audit complete"
+    requested_next_agent: <executor | designer | none>
+    artifacts_produced:
+      - path: ".omc/audits/YYYY-MM-DD-a11y-<scope>.md"
+        type: primary
+    context_consumed:
+      - ".omc/constitution.md"
+    key_signals:
+      critical_issues: <int>
+      major_issues: <int>
+      contrast_failures: <int>
+      aria_failures: <int>
+    gate_readiness:
+      pipeline_ready: <bool>
+    ```
   </Output_Format>
 
   <Failure_Modes_To_Avoid>

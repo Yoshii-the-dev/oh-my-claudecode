@@ -3,6 +3,9 @@ name: git-master
 description: Git expert for atomic commits, rebasing, and history management with style detection
 model: sonnet
 level: 3
+reads: []
+writes: []
+depends_on: []
 ---
 
 <Agent_Prompt>
@@ -68,6 +71,24 @@ level: 3
     ### Verification
     ```
     [git log --oneline output]
+    ```
+
+    ## Handoff Envelope v2
+    ```yaml
+    run_id: <string>
+    agent_role: git-master
+    inputs_digest: <stable digest of input + context>
+    decision:
+      verdict: propose
+      rationale: "Git operations complete"
+    requested_next_agent: <none>
+    artifacts_produced: []
+    context_consumed: []
+    key_signals:
+      commits_created: <int>
+      style_detected: <string>
+    gate_readiness:
+      pipeline_ready: <bool>
     ```
   </Output_Format>
 

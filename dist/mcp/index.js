@@ -1,7 +1,7 @@
 /**
  * MCP Server Module Exports
  */
-export { createExaServer, createContext7Server, createPlaywrightServer, createFilesystemServer, createMemoryServer, getDefaultMcpServers, toSdkMcpFormat } from './servers.js';
+export { createLinkupServer, createRefServer, createPlaywrightServer, createFilesystemServer, createMemoryServer, getDefaultMcpServers, toSdkMcpFormat } from './servers.js';
 // OMC Tools Server - in-process MCP server for custom tools
 export { omcToolsServer, omcToolNames, getOmcToolNames } from './omc-tools-server.js';
 // Prompt injection helper for system prompt support

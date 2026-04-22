@@ -75,6 +75,48 @@ export interface PluginConfig {
         documentSpecialist?: {
             model?: string;
         };
+        accessibilityAuditor?: {
+            model?: string;
+        };
+        brandArchitect?: {
+            model?: string;
+        };
+        brandSteward?: {
+            model?: string;
+        };
+        campaignComposer?: {
+            model?: string;
+        };
+        competitorScout?: {
+            model?: string;
+        };
+        creativeDirector?: {
+            model?: string;
+        };
+        domainExpertReviewer?: {
+            model?: string;
+        };
+        ideate?: {
+            model?: string;
+        };
+        copywriter?: {
+            model?: string;
+        };
+        performanceGuardian?: {
+            model?: string;
+        };
+        productStrategist?: {
+            model?: string;
+        };
+        technologyStrategist?: {
+            model?: string;
+        };
+        uxArchitect?: {
+            model?: string;
+        };
+        uxResearcher?: {
+            model?: string;
+        };
     };
     features?: {
         parallelExecution?: boolean;
@@ -84,12 +126,13 @@ export interface PluginConfig {
         autoContextInjection?: boolean;
     };
     mcpServers?: {
-        exa?: {
+        linkup?: {
             enabled?: boolean;
             apiKey?: string;
         };
-        context7?: {
+        ref?: {
             enabled?: boolean;
+            apiKey?: string;
         };
     };
     companyContext?: {
@@ -369,14 +412,14 @@ export interface ResolveDelegationOptions {
     config?: DelegationRoutingConfig;
 }
 /** Canonical role names accepted in `team.roleRouting` (source of truth). */
-export declare const CANONICAL_TEAM_ROLES: readonly ["orchestrator", "planner", "analyst", "architect", "executor", "debugger", "critic", "code-reviewer", "security-reviewer", "test-engineer", "designer", "writer", "code-simplifier", "explore", "document-specialist"];
+export declare const CANONICAL_TEAM_ROLES: readonly ["orchestrator", "planner", "analyst", "architect", "executor", "debugger", "critic", "code-reviewer", "security-reviewer", "test-engineer", "designer", "writer", "code-simplifier", "explore", "document-specialist", "accessibility-auditor", "brand-architect", "brand-steward", "campaign-composer", "competitor-scout", "creative-director", "domain-expert-reviewer", "ideate", "copywriter", "performance-guardian", "product-strategist", "technology-strategist", "ux-architect", "ux-researcher"];
 export type CanonicalTeamRole = typeof CANONICAL_TEAM_ROLES[number];
 /** Provider for /team role routing. */
 export type TeamRoleProvider = 'claude' | 'codex' | 'gemini';
 /** Tier name accepted in role-assignment `model` field. */
 export type TeamRoleTier = 'HIGH' | 'MEDIUM' | 'LOW';
 /** Known agent names derived from `buildDefaultConfig().agents` keys in src/config/loader.ts. */
-export declare const KNOWN_AGENT_NAMES: readonly ["omc", "explore", "analyst", "planner", "architect", "debugger", "executor", "verifier", "securityReviewer", "codeReviewer", "testEngineer", "designer", "writer", "qaTester", "scientist", "tracer", "gitMaster", "codeSimplifier", "critic", "documentSpecialist"];
+export declare const KNOWN_AGENT_NAMES: readonly ["omc", "explore", "analyst", "planner", "architect", "debugger", "executor", "verifier", "securityReviewer", "codeReviewer", "testEngineer", "designer", "writer", "qaTester", "scientist", "tracer", "gitMaster", "codeSimplifier", "critic", "documentSpecialist", "accessibilityAuditor", "brandArchitect", "brandSteward", "campaignComposer", "competitorScout", "creativeDirector", "domainExpertReviewer", "ideate", "copywriter", "performanceGuardian", "productStrategist", "technologyStrategist", "uxArchitect", "uxResearcher"];
 export type KnownAgentName = typeof KNOWN_AGENT_NAMES[number];
 /** User-facing per-role spec in `team.roleRouting`. */
 export interface TeamRoleAssignmentSpec {

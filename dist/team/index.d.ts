@@ -36,7 +36,7 @@ export type { TaskUsageRecord, WorkerUsageSummary, TeamUsageReport } from './usa
 export { checkMergeConflicts, mergeWorkerBranch, mergeAllWorkerBranches, } from './merge-coordinator.js';
 export type { MergeResult } from './merge-coordinator.js';
 export { generateTeamReport, saveTeamReport } from './summary-report.js';
-export { isPathAllowed, isCommandAllowed, formatPermissionInstructions, getDefaultPermissions, } from './permissions.js';
+export { isPathAllowed, isCommandAllowed, formatPermissionInstructions, getDefaultPermissions, getRoleScopedPermissions, getEffectivePermissions, } from './permissions.js';
 export type { WorkerPermissions } from './permissions.js';
 export { TeamPaths, absPath, teamStateRoot } from './state-paths.js';
 export { checkSentinelReadiness, waitForSentinelReadiness, } from './sentinel-gate.js';

@@ -1,6 +1,7 @@
 ---
 name: deepinit
 description: Deep codebase initialization with hierarchical AGENTS.md documentation
+argument-hint: "[--force]"
 level: 4
 ---
 

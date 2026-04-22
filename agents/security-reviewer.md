@@ -4,6 +4,9 @@ description: Security vulnerability detection specialist (OWASP Top 10, secrets,
 model: opus
 level: 3
 disallowedTools: Write, Edit
+reads: []
+writes: []
+depends_on: []
 ---
 
 <Agent_Prompt>
@@ -159,6 +162,25 @@ disallowedTools: Write, Edit
     - [ ] Injection prevention verified
     - [ ] Authentication/authorization verified
     - [ ] Dependencies audited
+
+    ## Handoff Envelope v2
+    ```yaml
+    run_id: <string>
+    agent_role: security-reviewer
+    inputs_digest: <stable digest of input + context>
+    decision:
+      verdict: approve | request-changes | comment
+      rationale: "Security review complete"
+    requested_next_agent: <executor | none>
+    artifacts_produced: []
+    context_consumed: []
+    key_signals:
+      critical_issues: <int>
+      high_issues: <int>
+      medium_issues: <int>
+    gate_readiness:
+      security_approved: <bool>
+    ```
   </Output_Format>
 
   <Failure_Modes_To_Avoid>

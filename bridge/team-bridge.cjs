@@ -965,6 +965,64 @@ function logAuditEvent(workingDirectory, event) {
 
 // src/team/permissions.ts
 var import_node_path2 = require("node:path");
+var ROLE_PERMISSION_PROFILES = {
+  orchestrator: {
+    allowedPaths: [".omc/state/**", ".omc/handoffs/**", ".omc/provisioned/**"],
+    deniedPaths: ["src/**", "agents/**", "skills/**", "docs/**"],
+    allowedCommands: [],
+    maxFileSize: Infinity
+  },
+  "technology-strategist": {
+    allowedPaths: [".omc/decisions/**", ".omc/state/**", ".omc/handoffs/**", ".omc/artifacts/**"],
+    deniedPaths: ["src/**", "skills/**", "agents/**"],
+    allowedCommands: [],
+    maxFileSize: Infinity
+  },
+  researcher: {
+    allowedPaths: [".omc/state/**", ".omc/handoffs/**", ".omc/artifacts/**"],
+    deniedPaths: ["src/**", "skills/**", "agents/**"],
+    allowedCommands: [],
+    maxFileSize: Infinity
+  },
+  critic: {
+    allowedPaths: [".omc/state/**", ".omc/handoffs/**", ".omc/artifacts/**", ".omc/audits/**"],
+    deniedPaths: ["src/**", "skills/**", "agents/**"],
+    allowedCommands: [],
+    maxFileSize: Infinity
+  },
+  "stack-provision": {
+    allowedPaths: [".omc/provisioned/**", ".codex/skills/omc-provisioned/**"],
+    deniedPaths: ["src/**", "agents/**", "docs/**"],
+    allowedCommands: [],
+    maxFileSize: Infinity
+  },
+  default: {
+    allowedPaths: [],
+    deniedPaths: [],
+    allowedCommands: [],
+    maxFileSize: Infinity
+  }
+};
+function inferPermissionProfile(workerName) {
+  const normalized = workerName.toLowerCase();
+  if (normalized.includes("technology-strategist")) return "technology-strategist";
+  if (normalized.includes("document-specialist") || normalized.includes("research")) return "researcher";
+  if (normalized.includes("critic")) return "critic";
+  if (normalized.includes("stack-provision") || normalized.includes("provision")) return "stack-provision";
+  if (normalized.includes("orchestrator") || normalized === "omc" || normalized.startsWith("omc-")) return "orchestrator";
+  return "default";
+}
+function getRoleScopedPermissions(workerName) {
+  const profile = inferPermissionProfile(workerName);
+  const template = ROLE_PERMISSION_PROFILES[profile] || ROLE_PERMISSION_PROFILES.default;
+  return {
+    workerName,
+    allowedPaths: [...template.allowedPaths],
+    deniedPaths: [...template.deniedPaths],
+    allowedCommands: [...template.allowedCommands],
+    maxFileSize: template.maxFileSize
+  };
+}
 function matchGlob(pattern, path4) {
   let pi = 0;
   let si = 0;
@@ -1050,7 +1108,15 @@ var SECURE_DENY_DEFAULTS = [
   "**/node_modules/.cache/**"
 ];
 function getEffectivePermissions(base) {
-  const perms = base ? { ...getDefaultPermissions(base.workerName), ...base } : getDefaultPermissions("default");
+  const defaults = base ? getRoleScopedPermissions(base.workerName) : getDefaultPermissions("default");
+  const perms = {
+    ...defaults,
+    ...base ?? {},
+    allowedPaths: base?.allowedPaths && base.allowedPaths.length > 0 ? base.allowedPaths : defaults.allowedPaths,
+    deniedPaths: base?.deniedPaths ?? defaults.deniedPaths,
+    allowedCommands: base?.allowedCommands && base.allowedCommands.length > 0 ? base.allowedCommands : defaults.allowedCommands,
+    maxFileSize: base?.maxFileSize ?? defaults.maxFileSize
+  };
   const existingSet = new Set(perms.deniedPaths);
   const merged = [
     ...SECURE_DENY_DEFAULTS.filter((p) => !existingSet.has(p)),

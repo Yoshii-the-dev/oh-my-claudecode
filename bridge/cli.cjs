@@ -3078,7 +3078,21 @@ var init_types = __esm({
       "writer",
       "code-simplifier",
       "explore",
-      "document-specialist"
+      "document-specialist",
+      "accessibility-auditor",
+      "brand-architect",
+      "brand-steward",
+      "campaign-composer",
+      "competitor-scout",
+      "creative-director",
+      "domain-expert-reviewer",
+      "ideate",
+      "copywriter",
+      "performance-guardian",
+      "product-strategist",
+      "technology-strategist",
+      "ux-architect",
+      "ux-researcher"
     ];
     KNOWN_AGENT_NAMES = [
       "omc",
@@ -3100,7 +3114,21 @@ var init_types = __esm({
       "gitMaster",
       "codeSimplifier",
       "critic",
-      "documentSpecialist"
+      "documentSpecialist",
+      "accessibilityAuditor",
+      "brandArchitect",
+      "brandSteward",
+      "campaignComposer",
+      "competitorScout",
+      "creativeDirector",
+      "domainExpertReviewer",
+      "ideate",
+      "copywriter",
+      "performanceGuardian",
+      "productStrategist",
+      "technologyStrategist",
+      "uxArchitect",
+      "uxResearcher"
     ];
   }
 });
@@ -3687,7 +3715,21 @@ function buildDefaultConfig() {
       gitMaster: { model: defaultTierModels.MEDIUM },
       codeSimplifier: { model: defaultTierModels.HIGH },
       critic: { model: defaultTierModels.HIGH },
-      documentSpecialist: { model: defaultTierModels.MEDIUM }
+      documentSpecialist: { model: defaultTierModels.MEDIUM },
+      brandArchitect: { model: defaultTierModels.HIGH },
+      brandSteward: { model: defaultTierModels.HIGH },
+      campaignComposer: { model: defaultTierModels.MEDIUM },
+      competitorScout: { model: defaultTierModels.MEDIUM },
+      creativeDirector: { model: defaultTierModels.HIGH },
+      domainExpertReviewer: { model: defaultTierModels.HIGH },
+      ideate: { model: defaultTierModels.HIGH },
+      accessibilityAuditor: { model: defaultTierModels.MEDIUM },
+      performanceGuardian: { model: defaultTierModels.MEDIUM },
+      copywriter: { model: defaultTierModels.MEDIUM },
+      productStrategist: { model: defaultTierModels.MEDIUM },
+      technologyStrategist: { model: defaultTierModels.HIGH },
+      uxArchitect: { model: defaultTierModels.MEDIUM },
+      uxResearcher: { model: defaultTierModels.MEDIUM }
     },
     features: {
       parallelExecution: true,
@@ -5044,6 +5086,23 @@ function getAgentDefinitions(options) {
     // ============================================================
     critic: criticAgent,
     // ============================================================
+    // PRODUCT QUALITY
+    // ============================================================
+    "brand-steward": brandStewardAgent,
+    "accessibility-auditor": accessibilityAuditorAgent,
+    "performance-guardian": performanceGuardianAgent,
+    "copywriter": copywriterAgent,
+    "product-strategist": productStrategistAgent,
+    "technology-strategist": technologyStrategistAgent,
+    "ux-architect": uxArchitectAgent,
+    "ux-researcher": uxResearcherAgent,
+    "competitor-scout": competitorScoutAgent,
+    ideate: ideateAgent,
+    "domain-expert-reviewer": domainExpertReviewerAgent,
+    "brand-architect": brandArchitectAgent,
+    "campaign-composer": campaignComposerAgent,
+    "creative-director": creativeDirectorAgent,
+    // ============================================================
     // BACKWARD COMPATIBILITY (Deprecated)
     // ============================================================
     "document-specialist": documentSpecialistAgent
@@ -5071,7 +5130,7 @@ function getAgentDefinitions(options) {
   }
   return result;
 }
-var debuggerAgent, verifierAgent, testEngineerAgent, securityReviewerAgent, codeReviewerAgent, gitMasterAgent, codeSimplifierAgent, AGENT_CONFIG_KEY_MAP, omcSystemPrompt;
+var debuggerAgent, verifierAgent, testEngineerAgent, securityReviewerAgent, codeReviewerAgent, gitMasterAgent, codeSimplifierAgent, brandStewardAgent, accessibilityAuditorAgent, performanceGuardianAgent, copywriterAgent, productStrategistAgent, technologyStrategistAgent, uxArchitectAgent, uxResearcherAgent, competitorScoutAgent, ideateAgent, domainExpertReviewerAgent, brandArchitectAgent, campaignComposerAgent, creativeDirectorAgent, AGENT_CONFIG_KEY_MAP, omcSystemPrompt;
 var init_definitions = __esm({
   "src/agents/definitions.ts"() {
     "use strict";
@@ -5151,6 +5210,104 @@ var init_definitions = __esm({
       model: "opus",
       defaultModel: "opus"
     };
+    brandStewardAgent = {
+      name: "brand-steward",
+      description: "Product constitution owner (opus) \u2014 brand identity, tone, visual language governance.",
+      prompt: loadAgentPrompt("brand-steward"),
+      model: "opus",
+      defaultModel: "opus"
+    };
+    accessibilityAuditorAgent = {
+      name: "accessibility-auditor",
+      description: "WCAG compliance auditing (sonnet) \u2014 keyboard nav, contrast, ARIA, semantic HTML.",
+      prompt: loadAgentPrompt("accessibility-auditor"),
+      model: "sonnet",
+      defaultModel: "sonnet"
+    };
+    performanceGuardianAgent = {
+      name: "performance-guardian",
+      description: "Performance auditing (sonnet) \u2014 Core Web Vitals, bundle size, runtime patterns.",
+      prompt: loadAgentPrompt("performance-guardian"),
+      model: "sonnet",
+      defaultModel: "sonnet"
+    };
+    copywriterAgent = {
+      name: "copywriter",
+      description: "UX copywriter (sonnet) \u2014 microcopy, onboarding flows, error messages, i18n-aware copy management.",
+      prompt: loadAgentPrompt("copywriter"),
+      model: "sonnet",
+      defaultModel: "sonnet"
+    };
+    productStrategistAgent = {
+      name: "product-strategist",
+      description: "Product strategy evaluator (sonnet) \u2014 feature evaluation, constitution alignment, roadmap prioritization.",
+      prompt: loadAgentPrompt("product-strategist"),
+      model: "sonnet",
+      defaultModel: "sonnet"
+    };
+    technologyStrategistAgent = {
+      name: "technology-strategist",
+      description: "Technology strategy decision owner (opus) \u2014 selects and expands stack choices, application blocks, and skill provisioning targets.",
+      prompt: loadAgentPrompt("technology-strategist"),
+      model: "opus",
+      defaultModel: "opus"
+    };
+    uxArchitectAgent = {
+      name: "ux-architect",
+      description: "Macro-level UX (sonnet) \u2014 user flows, information architecture, app/screen states, navigation patterns.",
+      prompt: loadAgentPrompt("ux-architect"),
+      model: "sonnet",
+      defaultModel: "sonnet"
+    };
+    uxResearcherAgent = {
+      name: "ux-researcher",
+      description: "UX research synthesis (sonnet) \u2014 user feedback analysis, study plans, usability pattern extraction.",
+      prompt: loadAgentPrompt("ux-researcher"),
+      model: "sonnet",
+      defaultModel: "sonnet"
+    };
+    competitorScoutAgent = {
+      name: "competitor-scout",
+      description: "Competitive intelligence scout with structural recency bias \u2014 produces evidence-cited dossiers with Disruption/7-Powers/Wardley classification (sonnet).",
+      prompt: loadAgentPrompt("competitor-scout"),
+      model: "sonnet",
+      defaultModel: "sonnet"
+    };
+    ideateAgent = {
+      name: "ideate",
+      description: "Divergent idea generator grounded in JTBD/ODI, TRIZ, Blue Ocean, SCAMPER \u2014 produces scored, falsifiable hypotheses (opus).",
+      prompt: loadAgentPrompt("ideate"),
+      model: "opus",
+      defaultModel: "opus"
+    };
+    domainExpertReviewerAgent = {
+      name: "domain-expert-reviewer",
+      description: 'Explicit proxy for domain-expert review \u2014 runs multi-persona pre-launch audit and produces a "questions for real expert" list (opus, read-only).',
+      prompt: loadAgentPrompt("domain-expert-reviewer"),
+      model: "opus",
+      defaultModel: "opus"
+    };
+    brandArchitectAgent = {
+      name: "brand-architect",
+      description: "Designs the brand system (Jungian archetype, core metaphor, variation grammar) \u2014 self-sufficient discovery; produces .omc/brand/core.md + grammar.md (opus).",
+      prompt: loadAgentPrompt("brand-architect"),
+      model: "opus",
+      defaultModel: "opus"
+    };
+    campaignComposerAgent = {
+      name: "campaign-composer",
+      description: "Generates N brand-coherent marketing/design/copy variations from grammar + brief, with grammar-traceability per variation (sonnet).",
+      prompt: loadAgentPrompt("campaign-composer"),
+      model: "sonnet",
+      defaultModel: "sonnet"
+    };
+    creativeDirectorAgent = {
+      name: "creative-director",
+      description: "Brand-variation guardrail \u2014 enforces grammar invariants and variance gate on campaign variations; produces per-variation PASS/REVISE/REJECT verdict (opus, read-only).",
+      prompt: loadAgentPrompt("creative-director"),
+      model: "opus",
+      defaultModel: "opus"
+    };
     AGENT_CONFIG_KEY_MAP = {
       explore: "explore",
       analyst: "analyst",
@@ -5170,7 +5327,21 @@ var init_definitions = __esm({
       "git-master": "gitMaster",
       "code-simplifier": "codeSimplifier",
       critic: "critic",
-      "document-specialist": "documentSpecialist"
+      "document-specialist": "documentSpecialist",
+      "brand-architect": "brandArchitect",
+      "brand-steward": "brandSteward",
+      "campaign-composer": "campaignComposer",
+      "competitor-scout": "competitorScout",
+      "creative-director": "creativeDirector",
+      "domain-expert-reviewer": "domainExpertReviewer",
+      ideate: "ideate",
+      "accessibility-auditor": "accessibilityAuditor",
+      "performance-guardian": "performanceGuardian",
+      "copywriter": "copywriter",
+      "product-strategist": "productStrategist",
+      "technology-strategist": "technologyStrategist",
+      "ux-architect": "uxArchitect",
+      "ux-researcher": "uxResearcher"
     };
     omcSystemPrompt = `You are the relentless orchestrator of a multi-agent development system.
 
@@ -5181,7 +5352,7 @@ You are BOUND to your task list. You do not stop. You do not quit. You do not ta
 ## Your Core Duty
 You coordinate specialized subagents to accomplish complex software engineering tasks. Abandoning work mid-task is not an option. If you stop without completing ALL tasks, you have failed.
 
-## Available Subagents (19 Agents)
+## Available Subagents (33 Agents)
 
 ### Build/Analysis Lane
 - **explore**: Internal codebase discovery (haiku) \u2014 fast pattern matching
@@ -5206,6 +5377,16 @@ You coordinate specialized subagents to accomplish complex software engineering 
 - **git-master**: Git operations (sonnet) \u2014 commits, rebasing, history
 - **document-specialist**: External docs & reference lookup (sonnet) \u2014 SDK/API/package research
 - **code-simplifier**: Code clarity (opus) \u2014 simplification and maintainability
+
+### Product Quality
+- **brand-steward**: Product constitution owner (opus) \u2014 brand identity, tone, visual language governance
+- **accessibility-auditor**: WCAG compliance auditing (sonnet) \u2014 keyboard nav, contrast, ARIA, semantic HTML
+- **performance-guardian**: Performance auditing (sonnet) \u2014 Core Web Vitals, bundle size, runtime patterns
+- **copywriter**: UX copy specialist (sonnet) \u2014 microcopy, onboarding flows, error messages, i18n-aware copy management
+- **product-strategist**: Product strategy evaluator (sonnet) \u2014 feature evaluation, constitution alignment, roadmap prioritization
+- **technology-strategist**: Technology decision owner (opus) \u2014 stack selection, app capability blocks, skill provisioning targets
+- **ux-architect**: Macro-level UX (sonnet) \u2014 user flows, information architecture, app/screen states, navigation patterns
+- **ux-researcher**: UX research synthesis (sonnet) \u2014 user feedback analysis, study plans, usability pattern extraction
 
 ### Coordination
 - **critic**: Plan review + thorough gap analysis (opus) \u2014 critical challenge, multi-perspective investigation, structured "What's Missing" analysis
@@ -11912,6 +12093,153 @@ var init_types3 = __esm({
 });
 
 // src/hooks/team-pipeline/state.ts
+function nowIso() {
+  return (/* @__PURE__ */ new Date()).toISOString();
+}
+function asStringArrayIncludes(values, value) {
+  return typeof value === "string" && values.includes(value);
+}
+function clamp01(value, fallback = 0) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
+  if (value < 0) return 0;
+  if (value > 1) return 1;
+  return value;
+}
+function nonNegativeInteger(value, fallback = 0) {
+  if (typeof value !== "number" || !Number.isFinite(value) || !Number.isInteger(value) || value < 0) {
+    return fallback;
+  }
+  return value;
+}
+function normalizeStrategyMetrics(value) {
+  const metrics = value && typeof value === "object" ? value : {};
+  return {
+    requirements_completeness: clamp01(metrics.requirements_completeness, 1),
+    unknown_critical_inputs: nonNegativeInteger(metrics.unknown_critical_inputs, 0),
+    top2_score_gap: typeof metrics.top2_score_gap === "number" && Number.isFinite(metrics.top2_score_gap) ? Number(metrics.top2_score_gap) : 100,
+    has_fresh_external_validation: metrics.has_fresh_external_validation === true
+  };
+}
+function defaultArtifacts(state) {
+  return {
+    plan_path: state?.artifacts?.plan_path ?? null,
+    prd_path: state?.artifacts?.prd_path ?? null,
+    verify_report_path: state?.artifacts?.verify_report_path ?? null,
+    scorecard_path: state?.artifacts?.scorecard_path ?? null,
+    compatibility_report_path: state?.artifacts?.compatibility_report_path ?? null,
+    risk_register_path: state?.artifacts?.risk_register_path ?? null,
+    handoff_path: state?.artifacts?.handoff_path ?? null,
+    critic_verdict_path: state?.artifacts?.critic_verdict_path ?? null
+  };
+}
+function defaultSubphaseForPhase(phase) {
+  switch (phase) {
+    case "team-plan":
+      return "intake";
+    case "team-prd":
+      return "capability-map";
+    case "team-exec":
+      return "weighted-ranking";
+    case "team-verify":
+      return "critic-gate";
+    case "team-fix":
+      return "capability-map";
+    default:
+      return "provision-verify";
+  }
+}
+function normalizeProfile(value) {
+  if (asStringArrayIncludes(TEAM_PIPELINE_PROFILES, value)) {
+    return value;
+  }
+  return "default";
+}
+function normalizeRiskLevel(value) {
+  if (asStringArrayIncludes(TEAM_PIPELINE_RISK_LEVELS, value)) {
+    return value;
+  }
+  return "medium";
+}
+function normalizeCompatibilityStatus(value) {
+  if (asStringArrayIncludes(TEAM_PIPELINE_COMPAT_STATUSES, value)) {
+    return value;
+  }
+  return "unknown";
+}
+function normalizeProvisioningMode(value) {
+  if (asStringArrayIncludes(TEAM_PIPELINE_PROVISIONING_MODES, value)) {
+    return value;
+  }
+  return "strict-gate";
+}
+function normalizeCriticVerdict(value) {
+  if (asStringArrayIncludes(TEAM_PIPELINE_CRITIC_VERDICTS, value)) {
+    return value;
+  }
+  return null;
+}
+function hydrateTeamPipelineState(state, defaults) {
+  const stateRecord = state;
+  let rawPhase = stateRecord.phase ?? stateRecord.current_phase ?? stateRecord.currentStage ?? stateRecord.current_stage ?? stateRecord.stage;
+  const rawStatus = typeof stateRecord.status === "string" ? stateRecord.status.trim().toLowerCase() : null;
+  if (rawStatus === "cancelled" || rawStatus === "canceled" || rawStatus === "cancel") {
+    rawPhase = "cancelled";
+  } else if (rawStatus === "failed") {
+    rawPhase = "failed";
+  } else if (rawStatus === "complete" || rawStatus === "completed") {
+    rawPhase = "complete";
+  }
+  const phase = typeof rawPhase === "string" ? rawPhase : defaults?.phase ?? "unknown";
+  const profile = normalizeProfile(state.pipeline_profile);
+  const currentSubphase = asStringArrayIncludes(TEAM_PIPELINE_SUBPHASES, state.current_subphase) ? state.current_subphase : defaultSubphaseForPhase(phase);
+  const maxRewinds = Math.max(1, nonNegativeInteger(state.max_rewinds, DEFAULT_MAX_REWINDS));
+  const rewindCount = Math.min(nonNegativeInteger(state.rewind_count, 0), maxRewinds);
+  const normalized = {
+    schema_version: TEAM_PIPELINE_SCHEMA_VERSION,
+    mode: "team",
+    active: state.active === true,
+    session_id: typeof state.session_id === "string" ? state.session_id : defaults?.session_id ?? "",
+    project_path: typeof state.project_path === "string" ? state.project_path : defaults?.project_path ?? "",
+    phase,
+    phase_history: Array.isArray(state.phase_history) && state.phase_history.length > 0 ? state.phase_history : [{ phase, entered_at: nowIso() }],
+    pipeline_profile: profile,
+    current_subphase: currentSubphase,
+    strategy_iteration: Math.max(1, nonNegativeInteger(state.strategy_iteration, 1)),
+    rewind_count: rewindCount,
+    max_rewinds: maxRewinds,
+    risk_level: normalizeRiskLevel(state.risk_level),
+    confidence: clamp01(state.confidence, 0),
+    research_required: state.research_required === true,
+    compatibility_status: normalizeCompatibilityStatus(state.compatibility_status),
+    provisioning_mode: normalizeProvisioningMode(state.provisioning_mode),
+    last_critic_verdict: normalizeCriticVerdict(state.last_critic_verdict),
+    strategy_metrics: normalizeStrategyMetrics(state.strategy_metrics),
+    iteration: Math.max(1, nonNegativeInteger(state.iteration, 1)),
+    max_iterations: Math.max(1, nonNegativeInteger(state.max_iterations, 25)),
+    artifacts: defaultArtifacts(state),
+    execution: {
+      workers_total: nonNegativeInteger(state.execution?.workers_total, 0),
+      workers_active: nonNegativeInteger(state.execution?.workers_active, 0),
+      tasks_total: nonNegativeInteger(state.execution?.tasks_total, 0),
+      tasks_completed: nonNegativeInteger(state.execution?.tasks_completed, 0),
+      tasks_failed: nonNegativeInteger(state.execution?.tasks_failed, 0)
+    },
+    fix_loop: {
+      attempt: nonNegativeInteger(state.fix_loop?.attempt, 0),
+      max_attempts: Math.max(1, nonNegativeInteger(state.fix_loop?.max_attempts, 3)),
+      last_failure_reason: typeof state.fix_loop?.last_failure_reason === "string" ? state.fix_loop.last_failure_reason : null
+    },
+    cancel: {
+      requested: state.cancel?.requested === true,
+      requested_at: typeof state.cancel?.requested_at === "string" ? state.cancel.requested_at : null,
+      preserve_for_resume: state.cancel?.preserve_for_resume === true
+    },
+    started_at: typeof state.started_at === "string" ? state.started_at : nowIso(),
+    updated_at: typeof state.updated_at === "string" ? state.updated_at : nowIso(),
+    completed_at: typeof state.completed_at === "string" ? state.completed_at : null
+  };
+  return normalized;
+}
 function getTeamStatePath(directory, sessionId) {
   if (!sessionId) {
     return `${directory}/.omc/state/team-state.json`;
@@ -11923,7 +12251,7 @@ function isTerminalTeamPipelineState(state) {
 }
 function synthesizeCanonicalTeamPipelineState(directory, candidate) {
   const now = candidate.updatedAt || candidate.startedAt || (/* @__PURE__ */ new Date()).toISOString();
-  return {
+  return hydrateTeamPipelineState({
     schema_version: TEAM_PIPELINE_SCHEMA_VERSION,
     mode: "team",
     active: candidate.active,
@@ -11936,11 +12264,19 @@ function synthesizeCanonicalTeamPipelineState(directory, candidate) {
     }],
     iteration: 1,
     max_iterations: 25,
-    artifacts: {
-      plan_path: null,
-      prd_path: null,
-      verify_report_path: null
-    },
+    pipeline_profile: "default",
+    current_subphase: defaultSubphaseForPhase(candidate.stage),
+    strategy_iteration: 1,
+    rewind_count: 0,
+    max_rewinds: DEFAULT_MAX_REWINDS,
+    risk_level: "medium",
+    confidence: 0,
+    research_required: false,
+    compatibility_status: "unknown",
+    provisioning_mode: "strict-gate",
+    last_critic_verdict: null,
+    strategy_metrics: normalizeStrategyMetrics(null),
+    artifacts: defaultArtifacts(),
     execution: {
       workers_total: 0,
       workers_active: 0,
@@ -11961,7 +12297,7 @@ function synthesizeCanonicalTeamPipelineState(directory, candidate) {
     started_at: candidate.startedAt || now,
     updated_at: candidate.updatedAt || now,
     completed_at: candidate.active ? null : candidate.updatedAt || now
-  };
+  });
 }
 function readTeamPipelineState(directory, sessionId) {
   if (!sessionId) {
@@ -11972,8 +12308,12 @@ function readTeamPipelineState(directory, sessionId) {
   if ((0, import_fs42.existsSync)(statePath)) {
     try {
       const content = (0, import_fs42.readFileSync)(statePath, "utf-8");
-      const state = JSON.parse(content);
-      if (state && typeof state === "object" && (!state.session_id || state.session_id === sessionId)) {
+      const parsed = JSON.parse(content);
+      if (parsed && typeof parsed === "object" && (!parsed.session_id || parsed.session_id === sessionId)) {
+        const state = hydrateTeamPipelineState(parsed, {
+          session_id: sessionId,
+          project_path: directory
+        });
         coarseState = state;
         if (state.active === true && !isTerminalTeamPipelineState(state)) {
           return state;
@@ -11988,7 +12328,7 @@ function readTeamPipelineState(directory, sessionId) {
   }
   return coarseState;
 }
-var import_fs42;
+var import_fs42, DEFAULT_MAX_REWINDS, TEAM_PIPELINE_SUBPHASES, TEAM_PIPELINE_RISK_LEVELS, TEAM_PIPELINE_COMPAT_STATUSES, TEAM_PIPELINE_PROVISIONING_MODES, TEAM_PIPELINE_PROFILES, TEAM_PIPELINE_CRITIC_VERDICTS;
 var init_state = __esm({
   "src/hooks/team-pipeline/state.ts"() {
     "use strict";
@@ -11997,6 +12337,27 @@ var init_state = __esm({
     init_worktree_paths();
     init_team_canonical_state();
     init_types3();
+    DEFAULT_MAX_REWINDS = 2;
+    TEAM_PIPELINE_SUBPHASES = [
+      "intake",
+      "capability-map",
+      "weighted-ranking",
+      "compatibility-check",
+      "research",
+      "critic-gate",
+      "provision-plan",
+      "provision-verify"
+    ];
+    TEAM_PIPELINE_RISK_LEVELS = ["low", "medium", "high", "critical"];
+    TEAM_PIPELINE_COMPAT_STATUSES = [
+      "compatible",
+      "risky",
+      "blocked",
+      "unknown"
+    ];
+    TEAM_PIPELINE_PROVISIONING_MODES = ["standard", "strict-gate"];
+    TEAM_PIPELINE_PROFILES = ["default", "product-pipeline", "backend-pipeline"];
+    TEAM_PIPELINE_CRITIC_VERDICTS = ["approve", "revise", "rewind"];
   }
 });
 
@@ -25965,7 +26326,7 @@ function shouldCollapseOpenClawBurst(event, signal, context, tmuxSession) {
     if (isObsoleteAfterTerminalState(event, state, tmuxSession, projectPath, nowMs)) {
       return true;
     }
-    const nowIso2 = new Date(nowMs).toISOString();
+    const nowIso3 = new Date(nowMs).toISOString();
     const existing = state.records[descriptor.key];
     const lastSeenMs = existing ? Date.parse(existing.lastSeenAt) : Number.NaN;
     const shouldCollapse = Number.isFinite(lastSeenMs) && nowMs - lastSeenMs < descriptor.windowMs;
@@ -25973,10 +26334,10 @@ function shouldCollapseOpenClawBurst(event, signal, context, tmuxSession) {
       event,
       routeKey: signal.routeKey,
       tmuxSession,
-      lastSeenAt: nowIso2,
+      lastSeenAt: nowIso3,
       count: (existing?.count ?? 0) + 1
     };
-    state.updatedAt = nowIso2;
+    state.updatedAt = nowIso3;
     writeState2(projectPath, state);
     return shouldCollapse;
   });
@@ -29007,7 +29368,7 @@ async function writeDispatchRequestsToFile(teamName, requests, cwd2) {
   ensureDirWithMode(dir);
   atomicWriteJson2(path22, requests);
 }
-function normalizeDispatchRequest(teamName, raw, nowIso2 = (/* @__PURE__ */ new Date()).toISOString()) {
+function normalizeDispatchRequest(teamName, raw, nowIso3 = (/* @__PURE__ */ new Date()).toISOString()) {
   if (!isDispatchKind(raw.kind)) return null;
   if (typeof raw.to_worker !== "string" || raw.to_worker.trim() === "") return null;
   if (typeof raw.trigger_message !== "string" || raw.trigger_message.trim() === "") return null;
@@ -29026,8 +29387,8 @@ function normalizeDispatchRequest(teamName, raw, nowIso2 = (/* @__PURE__ */ new 
     fallback_allowed: raw.fallback_allowed !== false,
     status,
     attempt_count: Number.isFinite(raw.attempt_count) ? Math.max(0, Math.floor(raw.attempt_count)) : 0,
-    created_at: typeof raw.created_at === "string" && raw.created_at !== "" ? raw.created_at : nowIso2,
-    updated_at: typeof raw.updated_at === "string" && raw.updated_at !== "" ? raw.updated_at : nowIso2,
+    created_at: typeof raw.created_at === "string" && raw.created_at !== "" ? raw.created_at : nowIso3,
+    updated_at: typeof raw.updated_at === "string" && raw.updated_at !== "" ? raw.updated_at : nowIso3,
     notified_at: typeof raw.notified_at === "string" && raw.notified_at !== "" ? raw.notified_at : void 0,
     delivered_at: typeof raw.delivered_at === "string" && raw.delivered_at !== "" ? raw.delivered_at : void 0,
     failed_at: typeof raw.failed_at === "string" && raw.failed_at !== "" ? raw.failed_at : void 0,
@@ -29062,7 +29423,7 @@ async function enqueueDispatchRequest(teamName, requestInput, cwd2) {
     const requests = await readDispatchRequestsFromFile(teamName, cwd2);
     const existing = requests.find((req) => equivalentPendingDispatch(req, requestInput));
     if (existing) return { request: existing, deduped: true };
-    const nowIso2 = (/* @__PURE__ */ new Date()).toISOString();
+    const nowIso3 = (/* @__PURE__ */ new Date()).toISOString();
     const request = normalizeDispatchRequest(
       teamName,
       {
@@ -29070,10 +29431,10 @@ async function enqueueDispatchRequest(teamName, requestInput, cwd2) {
         ...requestInput,
         status: "pending",
         attempt_count: 0,
-        created_at: nowIso2,
-        updated_at: nowIso2
+        created_at: nowIso3,
+        updated_at: nowIso3
       },
-      nowIso2
+      nowIso3
     );
     if (!request) throw new Error("failed_to_normalize_dispatch_request");
     requests.push(request);
@@ -29102,7 +29463,7 @@ async function transitionDispatchRequest(teamName, requestId, from, to, patch = 
     const existing = requests[index];
     if (existing.status !== from && existing.status !== to) return null;
     if (!canTransitionDispatchStatus(existing.status, to)) return null;
-    const nowIso2 = (/* @__PURE__ */ new Date()).toISOString();
+    const nowIso3 = (/* @__PURE__ */ new Date()).toISOString();
     const nextAttemptCount = Math.max(
       existing.attempt_count,
       Number.isFinite(patch.attempt_count) ? Math.floor(patch.attempt_count) : existing.status === to ? existing.attempt_count : existing.attempt_count + 1
@@ -29112,11 +29473,11 @@ async function transitionDispatchRequest(teamName, requestId, from, to, patch = 
       ...patch,
       status: to,
       attempt_count: Math.max(0, nextAttemptCount),
-      updated_at: nowIso2
+      updated_at: nowIso3
     };
-    if (to === "notified") next.notified_at = patch.notified_at ?? nowIso2;
-    if (to === "delivered") next.delivered_at = patch.delivered_at ?? nowIso2;
-    if (to === "failed") next.failed_at = patch.failed_at ?? nowIso2;
+    if (to === "notified") next.notified_at = patch.notified_at ?? nowIso3;
+    if (to === "delivered") next.delivered_at = patch.delivered_at ?? nowIso3;
+    if (to === "failed") next.failed_at = patch.failed_at ?? nowIso3;
     requests[index] = next;
     await writeDispatchRequestsToFile(teamName, requests, cwd2);
     return next;
@@ -29582,7 +29943,21 @@ var init_stage_router = __esm({
       writer: "writer",
       "code-simplifier": "codeSimplifier",
       explore: "explore",
-      "document-specialist": "documentSpecialist"
+      "document-specialist": "documentSpecialist",
+      "accessibility-auditor": "accessibilityAuditor",
+      "brand-architect": "brandArchitect",
+      "brand-steward": "brandSteward",
+      "campaign-composer": "campaignComposer",
+      "competitor-scout": "competitorScout",
+      "creative-director": "creativeDirector",
+      "domain-expert-reviewer": "domainExpertReviewer",
+      ideate: "ideate",
+      "performance-guardian": "performanceGuardian",
+      copywriter: "copywriter",
+      "product-strategist": "productStrategist",
+      "technology-strategist": "technologyStrategist",
+      "ux-architect": "uxArchitect",
+      "ux-researcher": "uxResearcher"
     };
     ROLE_DEFAULT_TIER = {
       orchestrator: "HIGH",
@@ -29599,7 +29974,21 @@ var init_stage_router = __esm({
       writer: "LOW",
       "code-simplifier": "HIGH",
       explore: "LOW",
-      "document-specialist": "MEDIUM"
+      "document-specialist": "MEDIUM",
+      "accessibility-auditor": "MEDIUM",
+      "brand-architect": "HIGH",
+      "brand-steward": "HIGH",
+      "campaign-composer": "MEDIUM",
+      "competitor-scout": "MEDIUM",
+      "creative-director": "HIGH",
+      "domain-expert-reviewer": "HIGH",
+      ideate: "HIGH",
+      "performance-guardian": "MEDIUM",
+      copywriter: "MEDIUM",
+      "product-strategist": "MEDIUM",
+      "technology-strategist": "HIGH",
+      "ux-architect": "MEDIUM",
+      "ux-researcher": "MEDIUM"
     };
     TIER_SET = /* @__PURE__ */ new Set(["HIGH", "MEDIUM", "LOW"]);
   }
@@ -29622,6 +30011,12 @@ function routeTaskToRole(taskSubject, taskDescription, fallbackRole) {
   const intent = inferLaneIntent(combined);
   const isSecurityDomain = SECURITY_DOMAIN_RE.test(combined);
   switch (intent) {
+    case "strategy":
+      return { role: "technology-strategist", confidence: "high", reason: "strategy intent detected" };
+    case "research":
+      return { role: "document-specialist", confidence: "high", reason: "research intent detected" };
+    case "critique":
+      return { role: "critic", confidence: "high", reason: "critique intent detected" };
     case "build-fix":
       return { role: "build-fixer", confidence: "high", reason: "build-fix intent detected" };
     case "debug":
@@ -29680,6 +30075,38 @@ var init_role_router = __esm({
   "src/team/role-router.ts"() {
     "use strict";
     INTENT_PATTERNS = [
+      {
+        intent: "strategy",
+        patterns: [
+          /\btechnology\s+strategy\b/i,
+          /\bstrategy\b/i,
+          /\bstack\s+decision\b/i,
+          /\bcapability\s+map\b/i,
+          /\bweighted\s+ranking\b/i,
+          /\bcompatibility\s+matrix\b/i
+        ]
+      },
+      {
+        intent: "research",
+        patterns: [
+          /\bresearch\b/i,
+          /\blook\s+up\b/i,
+          /\binvestigate\s+external\b/i,
+          /\bvalidate\s+sources\b/i,
+          /\bfresh\s+evidence\b/i,
+          /\bdocumentation\s+lookup\b/i
+        ]
+      },
+      {
+        intent: "critique",
+        patterns: [
+          /\bcritic\b/i,
+          /\bred.?team\b/i,
+          /\bchallenge\s+the\s+plan\b/i,
+          /\bcritical\s+review\b/i,
+          /\brewind\b/i
+        ]
+      },
       {
         intent: "build-fix",
         patterns: [
@@ -29777,6 +30204,9 @@ var init_role_router = __esm({
     ];
     SECURITY_DOMAIN_RE = /\b(?:auth(?:entication|orization)?|cve|injection|owasp|security|vulnerability|vuln|xss|csrf|sqli|rce|privilege.?escalat)\b/i;
     ROLE_KEYWORDS = {
+      "technology-strategist": [/\bstrategy\b/i, /\bstack\b/i, /\bcompatibility\b/i, /\bcapability\b/i],
+      "document-specialist": [/\bresearch\b/i, /\bsource\b/i, /\bdocumentation\b/i, /\blookup\b/i],
+      critic: [/\bcritic\b/i, /\bred.?team\b/i, /\brewind\b/i, /\bchallenge\b/i],
       "build-fixer": [/\bbuild\b/i, /\bci\b/i, /\bcompile\b/i, /\btsc\b/i, /\blint\b/i],
       debugger: [/\bdebug\b/i, /\btroubleshoot\b/i, /\binvestigate\b/i, /\bdiagnos/i],
       writer: [/\bdoc(?:ument)?/i, /\breadme\b/i, /\bchangelog\b/i, /\bcomment/i],
@@ -43820,9 +44250,7 @@ init_definitions();
 function createLinkupServer(apiKey) {
   return {
     command: "npx",
-    args: apiKey
-      ? ["-y", "linkup-mcp-server", `apiKey=${apiKey}`]
-      : ["-y", "linkup-mcp-server"]
+    args: apiKey ? ["-y", "linkup-mcp-server", `apiKey=${apiKey}`] : ["-y", "linkup-mcp-server"]
   };
 }
 function createRefServer(apiKey) {
@@ -81626,6 +82054,7 @@ init_definitions();
 init_definitions();
 init_definitions();
 init_definitions();
+init_definitions();
 
 // src/index.ts
 init_document_specialist();
@@ -86812,7 +87241,7 @@ init_mode_state_io();
 var AUTORESEARCH_RESULTS_HEADER = "iteration	commit	pass	score	status	description\n";
 var AUTORESEARCH_WORKTREE_EXCLUDES = ["results.tsv", "run.log", "node_modules", ".omc/"];
 var EXCLUSIVE_MODES2 = ["ralph", "ultrawork", "autopilot", "autoresearch"];
-function nowIso() {
+function nowIso2() {
   return (/* @__PURE__ */ new Date()).toISOString();
 }
 function buildAutoresearchRunTag(date3 = /* @__PURE__ */ new Date()) {
@@ -86971,7 +87400,7 @@ async function activateAutoresearchRun(manifest) {
     repo_root: manifest.repo_root,
     worktree_path: manifest.worktree_path,
     status: manifest.status,
-    updated_at: nowIso()
+    updated_at: nowIso2()
   });
 }
 async function deactivateAutoresearchRun(manifest) {
@@ -86984,8 +87413,8 @@ async function deactivateAutoresearchRun(manifest) {
     repo_root: manifest.repo_root,
     worktree_path: previous?.worktree_path ?? manifest.worktree_path,
     status: manifest.status,
-    updated_at: nowIso(),
-    completed_at: nowIso()
+    updated_at: nowIso2(),
+    completed_at: nowIso2()
   });
 }
 function startAutoresearchMode(taskDescription, projectRoot) {
@@ -86996,7 +87425,7 @@ function startAutoresearchMode(taskDescription, projectRoot) {
     max_iterations: 1,
     current_phase: "starting",
     task_description: taskDescription,
-    started_at: nowIso()
+    started_at: nowIso2()
   }, projectRoot);
 }
 function updateAutoresearchMode(updates, projectRoot) {
@@ -87031,8 +87460,8 @@ async function appendAutoresearchLedgerEntry(ledgerFile, entry) {
   await writeJsonFile(ledgerFile, {
     schema_version: typeof parsed.schema_version === "number" ? parsed.schema_version : 1,
     run_id: parsed.run_id,
-    created_at: parsed.created_at || nowIso(),
-    updated_at: nowIso(),
+    created_at: parsed.created_at || nowIso2(),
+    updated_at: nowIso2(),
     entries
   });
 }
@@ -87072,7 +87501,7 @@ async function buildAutoresearchInstructionContext(manifest) {
   };
 }
 async function runAutoresearchEvaluator(contract, worktreePath, ledgerFile, latestEvaluatorFile) {
-  const ran_at = nowIso();
+  const ran_at = nowIso2();
   const result = (0, import_child_process34.spawnSync)(contract.sandbox.evaluator.command, {
     cwd: worktreePath,
     encoding: "utf-8",
@@ -87131,7 +87560,7 @@ async function runAutoresearchEvaluator(contract, worktreePath, ledgerFile, late
       kept_commit: readGitShortHead(worktreePath),
       keep_policy: contract.sandbox.evaluator.keep_policy ?? "score_improvement",
       evaluator: record2,
-      created_at: nowIso(),
+      created_at: nowIso2(),
       notes: ["raw evaluator invocation"],
       description: "raw evaluator record"
     });
@@ -87311,7 +87740,7 @@ async function loadAutoresearchRunManifest(projectRoot, runId) {
   return readJsonFile2(manifestFile);
 }
 async function writeRunManifest(manifest) {
-  manifest.updated_at = nowIso();
+  manifest.updated_at = nowIso2();
   await writeJsonFile(manifest.manifest_file, manifest);
 }
 async function writeInstructionsFile(contract, manifest) {
@@ -87356,7 +87785,7 @@ async function seedBaseline(contract, manifest) {
     kept_commit: manifest.last_kept_commit,
     keep_policy: manifest.keep_policy,
     evaluator: evaluation,
-    created_at: nowIso(),
+    created_at: nowIso2(),
     notes: ["baseline row is always recorded"],
     description: "initial baseline evaluation"
   });
@@ -87392,7 +87821,7 @@ async function prepareAutoresearchRuntime(contract, projectRoot, worktreePath, o
     base_commit: baselineCommit,
     description: "not-yet-written",
     notes: ["candidate artifact will be overwritten by the launched session"],
-    created_at: nowIso()
+    created_at: nowIso2()
   });
   const manifest = {
     schema_version: 1,
@@ -87420,8 +87849,8 @@ async function prepareAutoresearchRuntime(contract, projectRoot, worktreePath, o
     status: "running",
     stop_reason: null,
     iteration: 0,
-    created_at: nowIso(),
-    updated_at: nowIso(),
+    created_at: nowIso2(),
+    updated_at: nowIso2(),
     completed_at: null
   };
   await writeInstructionsFile(contract, manifest);
@@ -87429,14 +87858,14 @@ async function prepareAutoresearchRuntime(contract, projectRoot, worktreePath, o
   await writeJsonFile(ledgerFile, {
     schema_version: 1,
     run_id: runId,
-    created_at: nowIso(),
-    updated_at: nowIso(),
+    created_at: nowIso2(),
+    updated_at: nowIso2(),
     entries: []
   });
   await writeJsonFile(latestEvaluatorFile, {
     run_id: runId,
     status: "not-yet-run",
-    updated_at: nowIso()
+    updated_at: nowIso2()
   });
   const existingModeState = readModeState("autoresearch", projectRoot);
   if (existingModeState?.active) {
@@ -87591,7 +88020,7 @@ async function readCandidateArtifact(candidateFile) {
 async function finalizeRun(manifest, projectRoot, updates) {
   manifest.status = updates.status;
   manifest.stop_reason = updates.stopReason;
-  manifest.completed_at = nowIso();
+  manifest.completed_at = nowIso2();
   await writeRunManifest(manifest);
   updateAutoresearchMode({
     active: false,
@@ -87675,7 +88104,7 @@ async function failAutoresearchIteration(manifest, projectRoot, reason, candidat
     kept_commit: manifest.last_kept_commit,
     keep_policy: manifest.keep_policy,
     evaluator: null,
-    created_at: nowIso(),
+    created_at: nowIso2(),
     notes: [...candidate?.notes ?? [], `validation_error:${reason}`],
     description: candidate?.description || "candidate validation failed"
   });
@@ -87718,7 +88147,7 @@ async function processAutoresearchCandidate(contract, manifest, projectRoot) {
       kept_commit: manifest.last_kept_commit,
       keep_policy: manifest.keep_policy,
       evaluator: null,
-      created_at: nowIso(),
+      created_at: nowIso2(),
       notes: candidate.notes,
       description: candidate.description
     });
@@ -87749,7 +88178,7 @@ async function processAutoresearchCandidate(contract, manifest, projectRoot) {
       kept_commit: manifest.last_kept_commit,
       keep_policy: manifest.keep_policy,
       evaluator: null,
-      created_at: nowIso(),
+      created_at: nowIso2(),
       notes: candidate.notes,
       description: candidate.description
     });
@@ -87775,7 +88204,7 @@ async function processAutoresearchCandidate(contract, manifest, projectRoot) {
       kept_commit: manifest.last_kept_commit,
       keep_policy: manifest.keep_policy,
       evaluator: null,
-      created_at: nowIso(),
+      created_at: nowIso2(),
       notes: candidate.notes,
       description: candidate.description
     });
@@ -87811,7 +88240,7 @@ async function processAutoresearchCandidate(contract, manifest, projectRoot) {
     kept_commit: manifest.last_kept_commit,
     keep_policy: manifest.keep_policy,
     evaluator: evaluation,
-    created_at: nowIso(),
+    created_at: nowIso2(),
     notes: [...candidate.notes, ...decision.notes],
     description: candidate.description
   });

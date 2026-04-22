@@ -2,31 +2,33 @@
  * MCP Server Configurations
  *
  * Predefined MCP server configurations for common integrations:
- * - Exa: AI-powered web search
- * - Context7: Official documentation lookup
+ * - Linkup: AI-powered web search
+ * - Ref: Official documentation lookup
  * - Playwright: Browser automation
  * - Filesystem: Sandboxed file system access
  * - Memory: Persistent knowledge graph
  */
 /**
- * Exa MCP Server - AI-powered web search
- * Requires: EXA_API_KEY environment variable
+ * Linkup MCP Server - AI-powered web search
+ * Requires: LINKUP_API_KEY (passed as arg)
  */
-export function createExaServer(apiKey) {
+export function createLinkupServer(apiKey) {
     return {
         command: 'npx',
-        args: ['-y', 'exa-mcp-server'],
-        env: apiKey ? { EXA_API_KEY: apiKey } : undefined
+        args: apiKey
+            ? ['-y', 'linkup-mcp-server', `apiKey=${apiKey}`]
+            : ['-y', 'linkup-mcp-server']
     };
 }
 /**
- * Context7 MCP Server - Official documentation lookup
+ * Ref MCP Server - Official documentation lookup
  * Provides access to official docs for popular libraries
  */
-export function createContext7Server() {
+export function createRefServer(apiKey) {
     return {
         command: 'npx',
-        args: ['-y', '@upstash/context7-mcp']
+        args: ['-y', 'ref-tools-mcp@latest'],
+        env: apiKey ? { REF_API_KEY: apiKey } : undefined
     };
 }
 /**
@@ -61,11 +63,11 @@ export function createMemoryServer() {
 }
 export function getDefaultMcpServers(options) {
     const servers = {};
-    if (options?.enableExa !== false) {
-        servers.exa = createExaServer(options?.exaApiKey);
+    if (options?.enableLinkup !== false) {
+        servers.linkup = createLinkupServer(options?.linkupApiKey);
     }
-    if (options?.enableContext7 !== false) {
-        servers.context7 = createContext7Server();
+    if (options?.enableRef !== false) {
+        servers.ref = createRefServer(options?.refApiKey);
     }
     if (options?.enablePlaywright) {
         servers.playwright = createPlaywrightServer();

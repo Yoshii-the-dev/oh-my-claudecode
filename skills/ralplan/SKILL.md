@@ -54,7 +54,7 @@ The consensus workflow:
    d. Return to Critic evaluation
    e. Repeat this loop until Critic returns `APPROVE` or 5 iterations are reached
    f. If 5 iterations are reached without `APPROVE`, present the best version to the user
-6. On Critic approval *(--interactive only)*: If `--interactive` is set, use `AskUserQuestion` to present the plan with approval options (Approve and implement via team (Recommended) / Approve and execute via ralph / Clear context and implement / Request changes / Reject). Final plan must include ADR (Decision, Drivers, Alternatives considered, Why chosen, Consequences, Follow-ups). Otherwise, output the final plan and stop.
+6. On Critic approval *(--interactive only)*: If `--interactive` is set, use `AskUserQuestion` to present the plan with approval options (Approve and implement via team (Recommended) / Approve and execute via ralph / Clear context and implement / Request changes / Reject). Final plan must include ADR (Decision, Drivers, Alternatives considered, Why chosen, Consequences, Follow-ups) and a YAML Handoff Envelope v2 block. Otherwise, output the final plan and stop.
 7. *(--interactive only)* User chooses: Approve (team or ralph), Request changes, or Reject
 8. *(--interactive only)* On approval: invoke `Skill("oh-my-claudecode:team")` for parallel team execution (recommended) or `Skill("oh-my-claudecode:ralph")` for sequential execution -- never implement directly
 

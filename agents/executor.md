@@ -3,6 +3,15 @@ name: executor
 description: Focused task executor for implementation work (Sonnet)
 model: sonnet
 level: 2
+reads:
+  - path: ".omc/plans/{name}.md"
+    required: false
+    use: "Work plan and acceptance criteria"
+writes: []
+depends_on:
+  - agent: "planner"
+    produces: ".omc/plans/{name}.md"
+    ensures: "Plan is approved and ready for execution"
 ---
 
 <Agent_Prompt>
@@ -89,6 +98,26 @@ level: 2
 
     ## Summary
     [1-2 sentences on what was accomplished]
+
+    ## Handoff Envelope v2
+    ```yaml
+    run_id: <string>
+    agent_role: executor
+    inputs_digest: <stable digest of input + context>
+    decision:
+      verdict: propose
+      rationale: "Implementation complete and verified"
+    requested_next_agent: <git-master | code-reviewer | qa-tester>
+    artifacts_produced: []
+    context_consumed:
+      - ".omc/plans/<name>.md"
+    key_signals:
+      files_modified: <int>
+      build_passed: <bool>
+      tests_passed: <bool>
+    gate_readiness:
+      reviewer_ready: <bool>
+    ```
   </Output_Format>
 
   <Failure_Modes_To_Avoid>
