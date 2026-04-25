@@ -156,7 +156,16 @@ export const PRODUCT_ARTIFACT_REGISTRY = {
     owner: 'product-cycle-controller',
     machineContract: 'footer',
     datedPattern: '.omc/cycles/YYYY-MM-DD-<slug>.md',
-    purpose: 'Active product learning loop state.',
+    purpose: 'Active product learning loop state (markdown projection of cycle-document).',
+  },
+  'cycle-document': {
+    name: 'cycle-document',
+    lane: 'cycle',
+    currentPath: '.omc/cycles/current.json',
+    format: 'json',
+    owner: 'product-cycle-controller',
+    machineContract: 'strict',
+    purpose: 'Typed JSON source of truth for the active product cycle (use omc product-cycle migrate-document).',
   },
   learning: {
     name: 'learning',
@@ -166,7 +175,16 @@ export const PRODUCT_ARTIFACT_REGISTRY = {
     owner: 'product-cycle-controller',
     machineContract: 'footer',
     datedPattern: '.omc/learning/YYYY-MM-DD-<slug>.md',
-    purpose: 'Learning capture after verify.',
+    purpose: 'Learning capture after verify (markdown projection of learning-document).',
+  },
+  'learning-document': {
+    name: 'learning-document',
+    lane: 'cycle',
+    currentPath: '.omc/learning/current.json',
+    format: 'json',
+    owner: 'product-cycle-controller',
+    machineContract: 'strict',
+    purpose: 'Typed JSON source of truth for the cycle learning capture (use omc learning migrate).',
   },
 } as const satisfies Record<string, ProductArtifactRegistryEntry>;
 

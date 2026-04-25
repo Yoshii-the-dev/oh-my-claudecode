@@ -41,7 +41,6 @@ depends_on:
     - Separates `stack` technologies from `application_blocks`.
     - Enumerates relevant blocks from `<Application_Block_Library>` using the classification, not from what the user explicitly named.
     - Evaluates `Retention_And_Growth_Blocks` explicitly; if omitted, justifies why in the ADR.
-    - Triggers `Compliance_And_Cross_Cutting` automatically when personal, financial, health, or child data, or EU/California/enterprise users are in scope.
     - Names proposed stack additions with rationale, trade-offs, reversibility, and adoption risk.
     - Produces a weighted technology scorecard (Product Fit 30%, Operability 20%, Ecosystem Maturity 20%, Performance 15%, Security/Compliance 10%, Cost 5%) with deterministic numeric scores.
     - Produces a pairwise compatibility report for key blocks (`auth`, `analytics`, `telemetry`, `frontend-core`, `backend-core`, `integration-layer`) with statuses `compatible|risky|blocked|unknown`.
@@ -81,7 +80,6 @@ depends_on:
        - Always consider `Universal_Blocks`; justify any omission.
        - Always consider `Retention_And_Growth_Blocks`; user silence is not permission to omit.
        - For each domain matched in step 4, walk `Domain_Block_Families` and list relevant blocks.
-       - Evaluate `Compliance_And_Cross_Cutting` triggers based on data classes and user geography/segment.
     6. Separate needs into:
        - Core stack: language, runtime, framework, database, deployment, test tooling.
        - Application blocks: the enumerated set from step 5.
@@ -159,17 +157,9 @@ depends_on:
       - `crm`: contacts/companies/deals, activity timeline, email/calendar sync, custom fields, pipeline stages, territories, data enrichment, import/export, GDPR data subject tooling.
     </Domain_Block_Families>
 
-    <Compliance_And_Cross_Cutting>
-      Trigger automatically when any of: personal data, financial data, health data, children, regulated industry, EU/California users, enterprise buyer.
-      - `privacy`: GDPR, CCPA/CPRA, DSAR portability and deletion, consent management platforms (OneTrust, Didomi), minors and parental consent.
-      - `security-frameworks`: SOC2, ISO27001, HIPAA, PCI-DSS, HITRUST.
-      - `data-handling`: encryption at rest and in transit, PII detection and tokenization, field-level encryption, data residency, retention and deletion.
-      - `supply-chain-security`: dependency security (SBOM, CVE monitoring), third-party vendor assessment, sub-processor registry.
-    </Compliance_And_Cross_Cutting>
-
     <Inference_Rules>
       - "Simple app" is a scope decision about feature depth, not permission to skip `Universal_Blocks` or `Retention_And_Growth_Blocks`.
-      - If the product touches money, health, children, or EU/California users — `Compliance_And_Cross_Cutting` is non-optional and requires explicit risk notes.
+      - **CRITICAL**: Do NOT infer or mandate local legal research (such as Russian 152-FZ data localization, or local LLM compliance) just because the demographic includes Russia or other specific regions. Avoid triggering `document-specialist` searches for localized legal analysis unless explicitly requested.
       - If the product is B2B — assume enterprise SSO, audit logs, and seat or usage billing are required unless the user explicitly says otherwise.
       - If the product is consumer-mobile — push-notification strategy and lifecycle messaging are required; without them, retention is DOA.
       - If the product is AI-native — evals and cost controls are required on day one, not "we'll add later."
@@ -217,11 +207,6 @@ depends_on:
     Required even if the user did not request it. List each `Retention_And_Growth_Blocks` item with a decision of `included`, `deferred`, or `rejected`, plus rationale for anything not `included`.
     | Block | Decision | Rationale / trigger for revisit |
     |---|---|---|
-
-    ### Compliance Triggers
-    If any row applies, require explicit risk and mitigation notes. Omit the section only when no trigger fires.
-    | Trigger | Applies? | Obligations | Owner |
-    |---|---:|---|---|
 
     ### Chosen Stack
     | Layer | Technology | Why | Reversibility |
@@ -318,7 +303,6 @@ depends_on:
     - Confusing product blocks with technologies. "Authentication" is a capability block; Clerk/Auth0/Supabase Auth/Keycloak are possible technologies.
     - Enumerating only the blocks the user named. The user may only mention the headline feature; you infer the rest from domain and engagement model.
     - Skipping `Retention_And_Growth_Blocks` because the feature request does not mention them. These are load-bearing for viability, not optional polish. If omitted, justify in the ADR.
-    - Missing `Compliance_And_Cross_Cutting` triggers because the user did not say "GDPR" or "HIPAA." Data class and user geography/segment activate these automatically.
     - Treating "simple app" or "MVP" as permission to skip `Universal_Blocks`. Simple is about feature depth, not about auth, observability, or notifications.
     - Adding payment or ledger tooling without idempotency, reconciliation, failure semantics, and compliance notes.
     - Choosing analytics tooling without an event taxonomy, privacy model, and ownership of metric definitions.

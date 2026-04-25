@@ -19,23 +19,24 @@ const CLI_SOURCE = join(__dirname, '../index.ts');
 // Static: no duplicate command names in src/cli/index.ts
 // ---------------------------------------------------------------------------
 describe('CLI command registration — no duplicates', () => {
-  it('has no duplicate .command() names in src/cli/index.ts', () => {
+  it('has no duplicate .command() names within the same parent in src/cli/index.ts', () => {
     const source = readFileSync(CLI_SOURCE, 'utf-8');
-    // Match program.command('name') or .command('name') — capture the command name
-    const commandPattern = /\.command\(\s*['"]([^'"[\s]+)/g;
-    const names: string[] = [];
+    // Capture <parent>.command('name'...) so duplicate detection is scoped per parent.
+    // Sub-commands like productCycleCmd.command('status') and portfolioCmd.command('status')
+    // are NOT duplicates because they live under different parents.
+    const commandPattern = /\b([A-Za-z_$][\w$]*)\s*\.command\(\s*['"]([^'"[\s]+)/g;
+    const byParent = new Map<string, Set<string>>();
+    const duplicates: string[] = [];
     let match: RegExpExecArray | null;
     while ((match = commandPattern.exec(source)) !== null) {
-      names.push(match[1]);
-    }
-
-    const seen = new Set<string>();
-    const duplicates: string[] = [];
-    for (const name of names) {
-      if (seen.has(name)) {
-        duplicates.push(name);
+      const parent = match[1];
+      const name = match[2];
+      const scope = byParent.get(parent) ?? new Set<string>();
+      if (scope.has(name)) {
+        duplicates.push(`${parent}.${name}`);
       }
-      seen.add(name);
+      scope.add(name);
+      byParent.set(parent, scope);
     }
 
     expect(duplicates, `Duplicate command names found: ${duplicates.join(', ')}`).toEqual([]);

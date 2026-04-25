@@ -28,7 +28,7 @@ This directory contains all TypeScript source code organized into modules:
 
 | Directory | Purpose |
 |-----------|---------|
-| `agents/` | 36 agent definitions with prompts and tools (see `agents/AGENTS.md`) |
+| `agents/` | Agent definitions with prompts and tools — see `docs/generated/agent-catalog.md` for the canonical list (`npm run docs:generate`) |
 | `tools/` | 15 LSP, AST, and Python REPL tools (see `tools/AGENTS.md`) |
 | `hooks/` | 31 hooks for execution modes (see `hooks/AGENTS.md`) |
 | `features/` | Core features like model routing, state (see `features/AGENTS.md`) |
@@ -73,7 +73,7 @@ This directory contains all TypeScript source code organized into modules:
      return {
        architect: architectAgent,
        executor: executorAgent,
-      // ... all 36 agents
+      // ...full set generated into docs/generated/agent-catalog.md
      };
    }
    ```
