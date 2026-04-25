@@ -44,14 +44,17 @@ describe('Agent Registry Validation', () => {
   test('agent count matches documentation', () => {
     const agentsDir = path.join(__dirname, '../../agents');
     const promptFiles = fs.readdirSync(agentsDir).filter((file) => file.endsWith('.md') && file !== 'AGENTS.md');
-    expect(promptFiles.length).toBe(33);
+    expect(promptFiles.length).toBe(36);
   });
 
-  test('agent count is always 33 (no conditional agents)', () => {
+  test('agent count is always 36 (no conditional agents)', () => {
     const agents = getAgentDefinitions();
-    expect(Object.keys(agents).length).toBe(33);
+    expect(Object.keys(agents).length).toBe(36);
     expect(Object.keys(agents)).toContain('tracer');
     expect(Object.keys(agents)).toContain('technology-strategist');
+    expect(Object.keys(agents)).toContain('product-cycle-controller');
+    expect(Object.keys(agents)).toContain('priority-engine');
+    expect(Object.keys(agents)).toContain('product-ecosystem-architect');
     // Consolidated agents should not be in registry
     expect(Object.keys(agents)).not.toContain('harsh-critic');
     expect(Object.keys(agents)).not.toContain('quality-reviewer');

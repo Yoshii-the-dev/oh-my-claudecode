@@ -200,6 +200,28 @@ describe('permissions', () => {
       expect(perms.deniedPaths).toContain('src/**');
     });
 
+    it('applies product cycle profile for cycle and learning artifacts', () => {
+      const perms = getRoleScopedPermissions('product-cycle-controller-worker');
+      expect(perms.allowedPaths).toContain('.omc/cycles/**');
+      expect(perms.allowedPaths).toContain('.omc/experience/**');
+      expect(perms.allowedPaths).toContain('.omc/learning/**');
+      expect(perms.deniedPaths).toContain('src/**');
+    });
+
+    it('applies product experience profile for pre-build UX gate artifacts', () => {
+      const perms = getRoleScopedPermissions('product-experience-gate-worker');
+      expect(perms.allowedPaths).toContain('.omc/experience/**');
+      expect(perms.deniedPaths).toContain('src/**');
+    });
+
+    it('allows priority-engine to maintain the portfolio ledger and projections', () => {
+      const perms = getRoleScopedPermissions('priority-engine-worker');
+      expect(perms.allowedPaths).toContain('.omc/portfolio/**');
+      expect(perms.allowedPaths).toContain('.omc/opportunities/**');
+      expect(perms.allowedPaths).toContain('.omc/roadmap/**');
+      expect(perms.deniedPaths).toContain('src/**');
+    });
+
     it('applies stack provisioning profile for quarantine/install zones', () => {
       const perms = getRoleScopedPermissions('stack-provision-worker');
       expect(perms.allowedPaths).toContain('.omc/provisioned/**');

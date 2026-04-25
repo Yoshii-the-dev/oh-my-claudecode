@@ -49,7 +49,7 @@ User Input --> Hooks (event detection) --> Skills (behavior injection)
 
 ### Overview
 
-OMC provides 33 specialized agents organized into 4 lanes. Each agent is invoked as `oh-my-claudecode:<agent-name>` and runs on the appropriate model tier.
+OMC provides 36 specialized agents organized into 4 lanes. Each agent is invoked as `oh-my-claudecode:<agent-name>` and runs on the appropriate model tier.
 
 ### Build/Analysis Lane
 
@@ -83,6 +83,9 @@ Domain experts called in when needed.
 |-------|---------------|------|
 | `test-engineer` | sonnet | Test strategy, coverage, flaky-test hardening |
 | `designer` | sonnet | UI/UX architecture, interaction design |
+| `product-cycle-controller` | sonnet | Product learning loop control: discover/rank/select/spec/build/verify/learn |
+| `priority-engine` | sonnet | Product portfolio ranking, cycle selection, rolling roadmap |
+| `product-ecosystem-architect` | opus | App/content/data/distribution loops and deeper feature paths |
 | `technology-strategist` | opus | Technology and application-capability decisions before stack provisioning |
 | `writer` | haiku | Documentation, migration notes |
 | `qa-tester` | sonnet | Interactive CLI/service runtime validation via tmux |
@@ -148,6 +151,9 @@ Task(
 | Simple bug fix | `debugger` | sonnet |
 | Complex debugging | `architect` | opus |
 | UI component | `designer` | sonnet |
+| Product learning cycle | `product-cycle-controller` | sonnet |
+| Product portfolio ranking | `priority-engine` | sonnet |
+| Product ecosystem mapping | `product-ecosystem-architect` | opus |
 | Technology or application-block decision | `technology-strategist` | opus |
 | Documentation | `writer` | haiku |
 | Test strategy | `test-engineer` | sonnet |
@@ -177,7 +183,7 @@ explore --> analyst --> planner --> critic --> executor --> verifier
 
 ### Overview
 
-Skills are **behavior injections** that modify how the orchestrator operates. Instead of swapping agents, skills add capabilities on top of existing agents. OMC provides 31 skills total (28 user-invocable + 3 internal/pipeline).
+Skills are **behavior injections** that modify how the orchestrator operates. Instead of swapping agents, skills add capabilities on top of existing agents. OMC ships a bundled skill catalog plus aliases for backward compatibility.
 
 ### Skill Layers
 
@@ -217,6 +223,8 @@ Active skills: ultrawork + default + git-master
 /oh-my-claudecode:autopilot build me a todo app
 /oh-my-claudecode:ralph refactor the auth module
 /oh-my-claudecode:team 3:executor "implement fullstack app"
+/oh-my-claudecode:product-cycle "ship next product learning cycle"
+/oh-my-claudecode:priority-engine "choose next product cycle"
 ```
 
 **Magic keywords** — include a keyword in natural language and the skill activates automatically:

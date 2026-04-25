@@ -21,6 +21,6 @@ export { documentSpecialistAgent, DOCUMENT_SPECIALIST_PROMPT_METADATA } from './
 export { debuggerAgent, verifierAgent } from './definitions.js';
 export { testEngineerAgent } from './definitions.js';
 export { securityReviewerAgent, codeReviewerAgent, gitMasterAgent, codeSimplifierAgent } from './definitions.js';
-export { brandStewardAgent, accessibilityAuditorAgent, performanceGuardianAgent, copywriterAgent, productStrategistAgent, technologyStrategistAgent, uxArchitectAgent, uxResearcherAgent, competitorScoutAgent, ideateAgent, domainExpertReviewerAgent, brandArchitectAgent, campaignComposerAgent, creativeDirectorAgent } from './definitions.js';
+export { brandStewardAgent, accessibilityAuditorAgent, performanceGuardianAgent, copywriterAgent, productStrategistAgent, productCycleControllerAgent, priorityEngineAgent, productEcosystemArchitectAgent, technologyStrategistAgent, uxArchitectAgent, uxResearcherAgent, competitorScoutAgent, ideateAgent, domainExpertReviewerAgent, brandArchitectAgent, campaignComposerAgent, creativeDirectorAgent } from './definitions.js';
 export { getAgentDefinitions, omcSystemPrompt } from './definitions.js';
 //# sourceMappingURL=index.d.ts.map

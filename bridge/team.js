@@ -2650,6 +2650,9 @@ var init_types = __esm({
       "copywriter",
       "performance-guardian",
       "product-strategist",
+      "product-cycle-controller",
+      "priority-engine",
+      "product-ecosystem-architect",
       "technology-strategist",
       "ux-architect",
       "ux-researcher"
@@ -2686,6 +2689,9 @@ var init_types = __esm({
       "copywriter",
       "performanceGuardian",
       "productStrategist",
+      "productCycleController",
+      "priorityEngine",
+      "productEcosystemArchitect",
       "technologyStrategist",
       "uxArchitect",
       "uxResearcher"
@@ -3124,6 +3130,9 @@ function buildDefaultConfig() {
       performanceGuardian: { model: defaultTierModels.MEDIUM },
       copywriter: { model: defaultTierModels.MEDIUM },
       productStrategist: { model: defaultTierModels.MEDIUM },
+      productCycleController: { model: defaultTierModels.MEDIUM },
+      priorityEngine: { model: defaultTierModels.MEDIUM },
+      productEcosystemArchitect: { model: defaultTierModels.HIGH },
       technologyStrategist: { model: defaultTierModels.HIGH },
       uxArchitect: { model: defaultTierModels.MEDIUM },
       uxResearcher: { model: defaultTierModels.MEDIUM }
@@ -3180,6 +3189,10 @@ function buildDefaultConfig() {
         analyst: {
           tier: "HIGH",
           reason: "Pre-planning analysis requires deep reasoning"
+        },
+        "product-ecosystem-architect": {
+          tier: "HIGH",
+          reason: "Long-horizon ecosystem mapping requires deep reasoning"
         },
         explore: { tier: "LOW", reason: "Exploration is search-focused" },
         writer: { tier: "LOW", reason: "Documentation is straightforward" }
@@ -4094,7 +4107,7 @@ var init_document_specialist = __esm({
 });
 
 // src/agents/definitions.ts
-var debuggerAgent, verifierAgent, testEngineerAgent, securityReviewerAgent, codeReviewerAgent, gitMasterAgent, codeSimplifierAgent, brandStewardAgent, accessibilityAuditorAgent, performanceGuardianAgent, copywriterAgent, productStrategistAgent, technologyStrategistAgent, uxArchitectAgent, uxResearcherAgent, competitorScoutAgent, ideateAgent, domainExpertReviewerAgent, brandArchitectAgent, campaignComposerAgent, creativeDirectorAgent;
+var debuggerAgent, verifierAgent, testEngineerAgent, securityReviewerAgent, codeReviewerAgent, gitMasterAgent, codeSimplifierAgent, brandStewardAgent, accessibilityAuditorAgent, performanceGuardianAgent, copywriterAgent, productStrategistAgent, productCycleControllerAgent, priorityEngineAgent, productEcosystemArchitectAgent, technologyStrategistAgent, uxArchitectAgent, uxResearcherAgent, competitorScoutAgent, ideateAgent, domainExpertReviewerAgent, brandArchitectAgent, campaignComposerAgent, creativeDirectorAgent;
 var init_definitions = __esm({
   "src/agents/definitions.ts"() {
     "use strict";
@@ -4208,6 +4221,27 @@ var init_definitions = __esm({
       prompt: loadAgentPrompt("product-strategist"),
       model: "sonnet",
       defaultModel: "sonnet"
+    };
+    productCycleControllerAgent = {
+      name: "product-cycle-controller",
+      description: "Product learning loop controller (sonnet) \u2014 owns discover/rank/select/spec/build/verify/learn cycle state.",
+      prompt: loadAgentPrompt("product-cycle-controller"),
+      model: "sonnet",
+      defaultModel: "sonnet"
+    };
+    priorityEngineAgent = {
+      name: "priority-engine",
+      description: "Product portfolio prioritization (sonnet) \u2014 ranks candidate moves and emits opportunities plus rolling roadmap.",
+      prompt: loadAgentPrompt("priority-engine"),
+      model: "sonnet",
+      defaultModel: "sonnet"
+    };
+    productEcosystemArchitectAgent = {
+      name: "product-ecosystem-architect",
+      description: "Product ecosystem architecture (opus) \u2014 maps app/content/data/distribution loops and deeper feature paths.",
+      prompt: loadAgentPrompt("product-ecosystem-architect"),
+      model: "opus",
+      defaultModel: "opus"
     };
     technologyStrategistAgent = {
       name: "technology-strategist",
@@ -5615,6 +5649,9 @@ var init_stage_router = __esm({
       "performance-guardian": "performanceGuardian",
       copywriter: "copywriter",
       "product-strategist": "productStrategist",
+      "product-cycle-controller": "productCycleController",
+      "priority-engine": "priorityEngine",
+      "product-ecosystem-architect": "productEcosystemArchitect",
       "technology-strategist": "technologyStrategist",
       "ux-architect": "uxArchitect",
       "ux-researcher": "uxResearcher"
@@ -5646,6 +5683,9 @@ var init_stage_router = __esm({
       "performance-guardian": "MEDIUM",
       copywriter: "MEDIUM",
       "product-strategist": "MEDIUM",
+      "product-cycle-controller": "MEDIUM",
+      "priority-engine": "MEDIUM",
+      "product-ecosystem-architect": "HIGH",
       "technology-strategist": "HIGH",
       "ux-architect": "MEDIUM",
       "ux-researcher": "MEDIUM"

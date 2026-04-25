@@ -22,6 +22,11 @@ import { install as installOmc, isInstalled, getInstallInfo } from '../installer
 import { waitCommand, waitStatusCommand, waitDaemonCommand, waitDetectCommand } from './commands/wait.js';
 import { doctorConflictsCommand } from './commands/doctor-conflicts.js';
 import { doctorTeamRoutingCommand } from './commands/doctor-team-routing.js';
+import { productArtifactsCommand } from './commands/product-artifacts.js';
+import { productContractsCommand } from './commands/product-contracts.js';
+import { productCycleAdvanceCommand, productCycleNextCommand, productCycleStatusCommand, productCycleValidateCommand, } from './commands/product-cycle.js';
+import { portfolioMigrateCommand, portfolioProjectCommand, portfolioValidateCommand, } from './commands/portfolio.js';
+import { runScorecardCommand } from './commands/run-scorecard.js';
 import { sessionSearchCommand } from './commands/session-search.js';
 import { teamCommand } from './commands/team.js';
 import { ralphthonCommand } from './commands/ralphthon.js';
@@ -1069,6 +1074,8 @@ const doctorCmd = program
 Examples:
   $ omc doctor conflicts                        Check for plugin conflicts
   $ omc doctor team-routing                     Probe /team role-routing provider CLIs
+  $ omc doctor product-artifacts                Validate .omc product artifact inventory
+  $ omc doctor product-contracts                Validate product pipeline artifacts
   $ omc doctor --team-routing                   Same as above (flag form)
   $ omc doctor --plugin-dir /path/to/plugin     Run diagnostics against a specific plugin dir`)
     .hook('preAction', (thisCommand) => {
@@ -1107,6 +1114,134 @@ Examples:
     .action(async (options) => {
     applyPluginDirOption(options.pluginDir);
     const exitCode = await doctorConflictsCommand(options);
+    process.exit(exitCode);
+});
+doctorCmd
+    .command('product-artifacts [root]')
+    .description('Validate .omc product artifact inventory against the canonical registry')
+    .option('--json', 'Output as JSON')
+    .addHelpText('after', `
+Examples:
+  $ omc doctor product-artifacts
+  $ omc doctor product-artifacts /path/to/app
+  $ omc doctor product-artifacts --json`)
+    .action(async (root, options) => {
+    const exitCode = await productArtifactsCommand(root, options);
+    process.exit(exitCode);
+});
+doctorCmd
+    .command('product-contracts [root]')
+    .description('Validate product pipeline artifacts before discovery-to-execution handoff')
+    .option('--stage <stage>', 'Contract stage: priority-handoff | foundation-lite | technology-handoff | cycle | all', 'foundation-lite')
+    .option('--json', 'Output as JSON')
+    .addHelpText('after', `
+Examples:
+  $ omc doctor product-contracts
+  $ omc doctor product-contracts /path/to/app --stage foundation-lite
+  $ omc doctor product-contracts --stage priority-handoff --json`)
+    .action(async (root, options) => {
+    const exitCode = await productContractsCommand(root, options);
+    process.exit(exitCode);
+});
+/**
+ * Product cycle command - Runtime FSM for the product learning loop
+ */
+const productCycleCmd = program
+    .command('product-cycle')
+    .description('Runtime FSM for product learning cycles')
+    .addHelpText('after', `
+Examples:
+  $ omc product-cycle status
+  $ omc product-cycle next
+  $ omc product-cycle advance --to discover --goal "ship first usable loop"
+  $ omc product-cycle validate`);
+productCycleCmd
+    .command('status [root]')
+    .description('Show the current product cycle state')
+    .option('--json', 'Output as JSON')
+    .action(async (root, options) => {
+    const exitCode = await productCycleStatusCommand(root, options);
+    process.exit(exitCode);
+});
+productCycleCmd
+    .command('next [root]')
+    .description('Show the next legal product cycle action')
+    .option('--json', 'Output as JSON')
+    .action(async (root, options) => {
+    const exitCode = await productCycleNextCommand(root, options);
+    process.exit(exitCode);
+});
+productCycleCmd
+    .command('validate [root]')
+    .description('Validate the current product cycle contract')
+    .option('--json', 'Output as JSON')
+    .action(async (root, options) => {
+    const exitCode = await productCycleValidateCommand(root, options);
+    process.exit(exitCode);
+});
+productCycleCmd
+    .command('advance [root]')
+    .description('Advance the product cycle to the next legal stage')
+    .requiredOption('--to <stage>', 'Target stage: discover | rank | select | spec | build | verify | learn | complete | blocked')
+    .option('--goal <goal>', 'Cycle goal when creating a new cycle')
+    .option('--force', 'Bypass transition order after an explicit human decision')
+    .option('--json', 'Output as JSON')
+    .action(async (root, options) => {
+    const exitCode = await productCycleAdvanceCommand(root, options);
+    process.exit(exitCode);
+});
+program
+    .command('run-scorecard [root]')
+    .description('Report product/agent pipeline quality metrics from .omc artifacts')
+    .option('--json', 'Output as JSON')
+    .addHelpText('after', `
+Examples:
+  $ omc run-scorecard
+  $ omc run-scorecard /path/to/app
+  $ omc run-scorecard --json`)
+    .action(async (root, options) => {
+    await runScorecardCommand(root, options);
+});
+/**
+ * Portfolio command - Machine-readable product work-item ledger helpers
+ */
+const portfolioCmd = program
+    .command('portfolio')
+    .description('Validate and project the machine-readable product portfolio ledger')
+    .addHelpText('after', `
+Examples:
+  $ omc portfolio validate
+  $ omc portfolio validate /path/to/app --json
+  $ omc portfolio migrate --write
+  $ omc portfolio project
+  $ omc portfolio project --write`);
+portfolioCmd
+    .command('validate [root]')
+    .description('Validate .omc/portfolio/current.json')
+    .option('--json', 'Output as JSON')
+    .action(async (root, options) => {
+    const exitCode = await portfolioValidateCommand(root, options);
+    process.exit(exitCode);
+});
+portfolioCmd
+    .command('migrate [root]')
+    .description('Generate .omc/portfolio/current.json from .omc/opportunities/current.md')
+    .option('--json', 'Output as JSON')
+    .option('--write', 'Write .omc/portfolio/current.json and projection instead of previewing JSON')
+    .option('--force', 'Overwrite an existing .omc/portfolio/current.json')
+    .option('--source <path>', 'Source opportunities markdown path, relative to root unless absolute')
+    .action(async (root, options) => {
+    const exitCode = await portfolioMigrateCommand(root, options);
+    process.exit(exitCode);
+});
+portfolioCmd
+    .command('project [root]')
+    .description('Render .omc/portfolio/current.json as a human-readable markdown projection')
+    .option('--json', 'Output as JSON')
+    .option('--write', 'Write .omc/portfolio/current.md instead of printing it')
+    .option('--output <path>', 'Projection output path, relative to root unless absolute')
+    .action(async (root, options) => {
+    const exitCode = await portfolioProjectCommand(root, options);
     process.exit(exitCode);
 });
 /**

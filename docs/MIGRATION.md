@@ -403,7 +403,7 @@ In Claude Code, just say "setup omc", "omc setup", or any natural language equiv
 This:
 
 - Downloads latest CLAUDE.md
-- Configures 33 agents
+- Configures 36 agents
 - Enables auto-behavior detection
 - Activates continuation enforcement
 - Sets up skill composition

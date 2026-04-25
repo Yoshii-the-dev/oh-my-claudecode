@@ -1,13 +1,13 @@
 ---
 name: product-strategist
-description: Slash-wrapper for the product-strategist agent — evaluates feature proposals against constitution anti-goals OR builds a Product Capability & Launch Map for a product foundation. Use --capability-map when the user needs to know what product features/systems are required beyond the first named MVP features before technology-strategist runs.
+description: Slash-wrapper for the product-strategist agent — evaluates feature proposals against constitution anti-goals OR builds a Product Capability & Launch Map for product foundation. Use --capability-map to structure product systems and first usable loop candidates before priority-engine ranks the portfolio.
 argument-hint: "<feature description or slug> | --capability-map \"<product scope>\""
 level: 4
 ---
 
 # Product Strategist Skill
 
-Thin wrapper that invokes the `product-strategist` agent as a slash command. Useful when you want a standalone strategic gate on a feature idea WITHOUT running the full product-pipeline or backend-pipeline, or when `product-foundation` needs a Product Capability & Launch Map before `technology-strategist`.
+Thin wrapper that invokes the `product-strategist` agent as a slash command. Useful when you want a standalone strategic gate on a feature idea WITHOUT running the full product-pipeline or backend-pipeline, or when `product-foundation` needs a Product Capability & Launch Map before `priority-engine` selects the next cycle.
 
 ## Usage
 
@@ -36,7 +36,7 @@ Invokes `product-strategist` agent to gate a proposed feature against constituti
 - You want to triage a backlog against anti-goals without running the full product-pipeline for each.
 - You need to classify an idea shortlist (from ideate) as core / enabling / context for depth planning.
 - You have brand/competitor/idea artifacts but do not yet know the complete MVP/product-system map.
-- `product-foundation` needs a bridge artifact between `brand-steward` and `technology-strategist`.
+- `product-foundation` needs a bridge artifact between `brand-steward` and `priority-engine`.
 - A design partner requested a feature and you need to check it against constitution.
 </Use_When>
 
@@ -63,7 +63,7 @@ Input can be:
 1. **Inline feature description** — `/product-strategist "add X to Y"` — agent evaluates the description.
 2. **Slug reference** — `/product-strategist <slug>` — look for the feature in compact/index artifacts first: `.omc/features/<slug>/brief.md`, `.omc/ideas/current.md`, `.omc/roadmap/current.md`, or relevant index files. Do not scan whole archives unless the slug is not found.
 3. **Classification batch** — `--classify <path-to-ideas-file>` — agent classifies each idea in the file.
-4. **Capability map** — `--capability-map "<product scope>"` — agent synthesizes MVP feature set, product systems, launch gates, backend/product split, roadmap, deferred systems, and capability blocks for technology-strategist.
+4. **Capability map** — `--capability-map "<product scope>"` — agent synthesizes MVP feature set, first usable loop candidates, product systems, launch gates, backend/product split, roadmap signals, deferred systems, and capability blocks for technology-strategist when foundation-full is later needed.
 
 ## Phase 2 — Invoke Agent
 
@@ -96,18 +96,19 @@ Invoke with directive:
   - retention/growth systems.
   - launch readiness gates.
   - backend/product split.
-  - capability blocks for technology-strategist.
-  - 30/60/90 roadmap.
+  - first usable loop candidates.
+  - capability blocks for technology-strategist when foundation-full is needed.
+  - roadmap signals for priority-engine.
   - deferred systems and revisit triggers.
 - Write one dated map at `.omc/product/capability-map/YYYY-MM-DD-<slug>.md`.
 - Replace compact pointer `.omc/product/capability-map/current.md`.
-- Append a standard `<handoff>` envelope pointing to `technology-strategist`.
+- Append a standard `<handoff>` envelope pointing first to `priority-engine`; technology-strategist is a conditional follow-up after opportunity ranking.
 
 ## Phase 3 — Post-Invocation Summary
 
 Report:
 - Verdict (or classification distribution).
-- Capability-map path and whether it is ready for technology strategy.
+- Capability-map path and whether it is ready for priority-engine.
 - Key risks or anti-goal conflicts flagged.
 - Recommended next steps: `/ideate` if NEEDS CLARIFICATION, `/brand-steward` if BLOCKED by anti-goal and the anti-goal is wrong, pipeline invocation if APPROVED.
 
@@ -137,8 +138,8 @@ Capability-map mode: `.omc/product/capability-map/YYYY-MM-DD-<slug>.md` plus `.o
 <Integration_Notes>
 - Delegates to `oh-my-claudecode:product-strategist` agent.
 - Used standalone OR within `/product-pipeline` Stage 2 / `/backend-pipeline` Stage 2 (those invoke it internally).
-- Used by `/product-foundation` after `brand-steward` and before `technology-strategist`.
-- Consumers: `/priority-engine` reads strategy verdicts; `/pre-launch-sprint` reads classification file.
+- Used by `/product-foundation` after `brand-steward` and before `priority-engine`.
+- Consumers: `/priority-engine` reads strategy verdicts and capability maps; `/pre-launch-sprint` reads classification file.
 - `technology-strategist` reads `.omc/product/capability-map/current.md` to produce ADRs and stack-provision handoffs.
 - Prerequisite: `.omc/constitution.md` with status ≥ partial.
 </Integration_Notes>

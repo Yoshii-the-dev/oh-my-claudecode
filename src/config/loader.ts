@@ -75,6 +75,9 @@ export function buildDefaultConfig(): PluginConfig {
       performanceGuardian: { model: defaultTierModels.MEDIUM },
       copywriter: { model: defaultTierModels.MEDIUM },
       productStrategist: { model: defaultTierModels.MEDIUM },
+      productCycleController: { model: defaultTierModels.MEDIUM },
+      priorityEngine: { model: defaultTierModels.MEDIUM },
+      productEcosystemArchitect: { model: defaultTierModels.HIGH },
       technologyStrategist: { model: defaultTierModels.HIGH },
       uxArchitect: { model: defaultTierModels.MEDIUM },
       uxResearcher: { model: defaultTierModels.MEDIUM },
@@ -129,6 +132,10 @@ export function buildDefaultConfig(): PluginConfig {
         analyst: {
           tier: "HIGH",
           reason: "Pre-planning analysis requires deep reasoning",
+        },
+        "product-ecosystem-architect": {
+          tier: "HIGH",
+          reason: "Long-horizon ecosystem mapping requires deep reasoning",
         },
         explore: { tier: "LOW", reason: "Exploration is search-focused" },
         writer: { tier: "LOW", reason: "Documentation is straightforward" },

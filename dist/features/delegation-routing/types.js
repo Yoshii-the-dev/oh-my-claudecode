@@ -27,6 +27,9 @@ export const ROLE_CATEGORY_DEFAULTS = {
     critic: 'critic',
     analyst: 'analyst',
     'technology-strategist': 'technology-strategist',
+    'product-cycle-controller': 'product-cycle-controller',
+    'priority-engine': 'priority-engine',
+    'product-ecosystem-architect': 'product-ecosystem-architect',
     // Implementation roles
     executor: 'executor',
     // Review roles

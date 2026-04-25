@@ -1,6 +1,6 @@
 {
   "name": "oh-my-claude-sisyphus",
-  "version": "4.19.8",
+  "version": "4.20.0",
   "description": "Multi-agent orchestration system for Claude Code - Inspired by oh-my-opencode",
   "type": "module",
   "main": "dist/index.js",
@@ -38,13 +38,14 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc && node scripts/build-skill-bridge.mjs && node scripts/build-mcp-server.mjs && node scripts/build-bridge-entry.mjs && npm run compose-docs && npm run build:runtime-cli && npm run build:team-server && npm run build:cli",
+    "build": "tsc && npm run generate-product-registry-docs && node scripts/build-skill-bridge.mjs && node scripts/build-mcp-server.mjs && node scripts/build-bridge-entry.mjs && npm run compose-docs && npm run build:runtime-cli && npm run build:team-server && npm run build:cli",
     "build:bridge": "node scripts/build-skill-bridge.mjs",
     "build:bridge-entry": "node scripts/build-bridge-entry.mjs",
     "build:cli": "node scripts/build-cli.mjs",
     "build:runtime-cli": "node scripts/build-runtime-cli.mjs",
     "build:team-server": "node scripts/build-team-server.mjs",
     "compose-docs": "node scripts/compose-docs.mjs",
+    "generate-product-registry-docs": "node scripts/generate-product-registry-docs.mjs",
     "dev": "tsc --watch",
     "dev:full": "concurrently --names \"tsc,cli,mcp,bridge-entry,skill-bridge,runtime,team\" \"tsc --watch\" \"node scripts/build-cli.mjs --watch\" \"node scripts/build-mcp-server.mjs --watch\" \"node scripts/build-bridge-entry.mjs --watch\" \"node scripts/build-skill-bridge.mjs --watch\" \"node scripts/build-runtime-cli.mjs --watch\" \"node scripts/build-team-server.mjs --watch\"",
     "start": "node dist/index.js",

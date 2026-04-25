@@ -11,14 +11,29 @@ This document defines how OMC agents exchange state, write artifacts, limit cont
 
 ## Canonical Artifact Model
 
+The machine-readable source of truth for product artifact paths, owners, and contract levels is `src/product/pipeline-registry.ts`. The generated human-readable projection is `docs/generated/product-pipeline-registry.md`; do not manually duplicate registry tables in new docs.
+
+Run:
+
+```bash
+omc doctor product-artifacts
+```
+
+to detect unregistered current artifacts, markdown product artifacts without the standard footer, invalid registered JSON artifacts, and directories with stale-artifact pressure.
+
 Every long-lived lane should use one dated primary artifact plus a compact current pointer.
 
 | Lane | Dated artifact | Current pointer / index |
 |---|---|---|
 | Ideas/specs | `.omc/ideas/YYYY-MM-DD-<slug>.md`, `.omc/specs/YYYY-MM-DD-<slug>.md` | `.omc/ideas/current.md`, `.omc/specs/current.md`, indexes |
 | Competitors | `.omc/competitors/<slug>.md`, `.omc/competitors/landscape/YYYY-MM-DD-<slug>.md` | `.omc/competitors/index.md`, `.omc/competitors/landscape/current.md` |
-| Brand | `.omc/brand/YYYY-MM-DD-<slug>.md` | `.omc/constitution.md`, `.omc/brand/index.md` |
+| Brand / meaning | `.omc/brand/YYYY-MM-DD-<slug>.md` | `.omc/constitution.md`, `.omc/brand/index.md`, `.omc/meaning/current.md` |
 | Product capability map | `.omc/product/capability-map/YYYY-MM-DD-<slug>.md` | `.omc/product/capability-map/current.md` |
+| Ecosystem map | `.omc/ecosystem/YYYY-MM-DD-<slug>.md` | `.omc/ecosystem/current.md` |
+| Portfolio ledger | `.omc/portfolio/current.json` | `.omc/portfolio/current.md` projection |
+| Opportunity portfolio | `.omc/opportunities/YYYY-MM-DD-<slug>.md` | `.omc/opportunities/current.md` |
+| Rolling roadmap | `.omc/roadmap/YYYY-MM-DD-<slug>.md` | `.omc/roadmap/current.md` |
+| Experience gate | `.omc/experience/YYYY-MM-DD-<slug>.md` | `.omc/experience/current.md` |
 | Technology decisions | `.omc/decisions/YYYY-MM-DD-technology-<slug>.md` | ADR index or explicit handoff path |
 | Provisioning | `.omc/provisioned/runs/<run-id>/**` | `.omc/provisioned/current.json` |
 | Handoffs | `.omc/handoffs/YYYY-MM-DD-<scope>.md` | latest pointer inside upstream artifact |
@@ -29,6 +44,10 @@ Rules:
 
 - Do not create one artifact per minor thought, candidate, or sub-question. Put tables inside the primary artifact.
 - Refresh `current.md` / `current.json` only after the dated artifact is coherent.
+- Use `.omc/portfolio/current.json` as the machine-readable source for candidate work items; markdown opportunity/roadmap artifacts should be readable projections and explanations.
+- For old projects that only have `.omc/opportunities/current.md`, run `omc portfolio migrate --write`; use `--force` only for an intentional ledger refresh.
+- Treat weak evidence as research debt: it must be represented as a learning/research work item and remain visible in the roadmap.
+- User-facing work must pass `.omc/experience/current.md` before build.
 - Archive or mark stale artifacts; do not let downstream agents discover them by broad glob scans.
 - Every primary artifact must end with a compact `<handoff>` block.
 - Stack strategy/provisioning artifacts must include handoff-envelope v2.
@@ -47,6 +66,7 @@ Default limits:
 | Work type | Default context budget |
 |---|---|
 | Product/brand strategy | current/index artifacts first; avoid source code unless product behavior must be verified |
+| Priority/ecosystem strategy | current opportunity, roadmap, capability, meaning, ecosystem, competitor, and research artifacts only |
 | Technology strategy | current capability map, constitution, current decisions/provisioning, manifests/configs |
 | Provisioning | ADR/handoff/provision contract only; no source tree scan |
 | Backend/product execution | accepted plan, scoped files, directly related tests |
@@ -80,9 +100,14 @@ For cross-agent stack/provisioning handoffs, use `handoff-envelope v2` from `doc
 | `product-foundation` | current product/market/brand/provisioning artifacts | foundation summary, reset boundary when requested | source edits |
 | `deep-interview` / `ideate` | user input, compact context | `.omc/specs/**`, `.omc/ideas/**` | technology/vendor decisions |
 | `competitor-scout` | market inputs, public research | `.omc/competitors/**`, `.omc/research/**` | implementation changes |
-| `brand-steward` | vision, competitors, research | `.omc/constitution.md`, `.omc/brand/**` | technology/provisioning |
-| `product-strategist` | compact product/market/brand context | `.omc/strategy/**`, `.omc/product/capability-map/**` | concrete technology/vendor choices |
-| `technology-strategist` | current capability map, code/config read-only | `.omc/decisions/**`, `.omc/handoffs/**` | source/config edits, skill installs |
+| `brand-steward` | vision, competitors, research | `.omc/constitution.md` | technology/provisioning, standalone meaning graph ownership |
+| `brand-architect` | constitution, compact competitor/research/brand context | `.omc/brand/**`, `.omc/meaning/**` | technology/provisioning |
+| `product-cycle-controller` | current product artifacts, portfolio ledger, opportunities, roadmap, handoffs | `.omc/cycles/**`, `.omc/learning/**`, `.omc/handoffs/**` | source edits, ranking candidates itself, skipping learning capture |
+| `product-experience-gate` | current cycle, portfolio ledger, capability map, meaning, ecosystem | `.omc/experience/**` | source edits, implementation planning without user journey |
+| `product-strategist` | compact product/market/brand context | `.omc/strategy/**`, `.omc/product/capability-map/**` | concrete technology/vendor choices, portfolio ranking |
+| `product-ecosystem-architect` | compact product/market/brand/meaning context | `.omc/ecosystem/**` | technology/vendor choices, implementation |
+| `priority-engine` | compact product/market/research/classification/meaning/ecosystem context | `.omc/portfolio/**`, `.omc/opportunities/**`, `.omc/roadmap/**` | source edits, technology/provisioning before opportunity selection |
+| `technology-strategist` | current capability map, opportunity map, roadmap, code/config read-only | `.omc/decisions/**`, `.omc/handoffs/**` | source/config edits, skill installs, roadmap ownership |
 | Researcher | exact research questions and sources | `.omc/artifacts/**`, `.omc/handoffs/**` | product implementation |
 | Critic | upstream artifacts/diff read-only | `.omc/audits/**`, `.omc/handoffs/**` | silent approval without findings |
 | `stack-provision` | ADR/provision contract/review | `.omc/provisioned/**`, approved skill root | install before Strict Gate |
@@ -116,16 +141,19 @@ Targets:
 
 Audit the product-development route in this order:
 
-1. `product-foundation`
-2. `product-strategist`
-3. `technology-strategist`
-4. `stack-provision`
-5. `backend-pipeline`
-6. `product-pipeline`
-7. `brand-steward`
-8. `competitor-scout`
-9. `deep-interview` / `ideate`
-10. `critic`, `reviewer`, `verifier`
+1. `product-cycle-controller`
+2. `product-foundation`
+3. `priority-engine`
+4. `product-ecosystem-architect`
+5. `product-strategist`
+6. `technology-strategist`
+7. `stack-provision`
+8. `backend-pipeline`
+9. `product-pipeline`
+10. `brand-steward` / `brand-architect`
+11. `competitor-scout`
+12. `deep-interview` / `ideate`
+13. `critic`, `reviewer`, `verifier`
 
 Do not tune every agent at once. Finish one lane, run validation, then continue.
 
