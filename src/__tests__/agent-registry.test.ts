@@ -41,15 +41,16 @@ describe('Agent Registry Validation', () => {
       }
     }
   });
-  test('agent count matches documentation', () => {
+  test('agent registry size matches filesystem prompt files', () => {
     const agentsDir = path.join(__dirname, '../../agents');
     const promptFiles = fs.readdirSync(agentsDir).filter((file) => file.endsWith('.md') && file !== 'AGENTS.md');
-    expect(promptFiles.length).toBe(36);
+    const agents = getAgentDefinitions();
+    expect(promptFiles.length).toBeGreaterThan(0);
+    expect(Object.keys(agents).length).toBe(promptFiles.length);
   });
 
-  test('agent count is always 36 (no conditional agents)', () => {
+  test('agent registry contains required named agents and excludes consolidated ones', () => {
     const agents = getAgentDefinitions();
-    expect(Object.keys(agents).length).toBe(36);
     expect(Object.keys(agents)).toContain('tracer');
     expect(Object.keys(agents)).toContain('technology-strategist');
     expect(Object.keys(agents)).toContain('product-cycle-controller');

@@ -1,0 +1,1 @@
+{"version":3,"file":"product-contracts.d.ts","sourceRoot":"","sources":["../../../src/cli/commands/product-contracts.ts"],"names":[],"mappings":"AAAA;;GAEG;AAYH,MAAM,WAAW,8BAA8B;IAC7C,KAAK,CAAC,EAAE,MAAM,CAAC;IACf,IAAI,CAAC,EAAE,OAAO,CAAC;CAChB;AAED,wBAAsB,uBAAuB,CAC3C,IAAI,EAAE,MAAM,GAAG,SAAS,EACxB,OAAO,EAAE,8BAA8B,GACtC,OAAO,CAAC,MAAM,CAAC,CAoBjB"}

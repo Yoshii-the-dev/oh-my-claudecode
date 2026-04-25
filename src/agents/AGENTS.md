@@ -43,7 +43,7 @@ This directory defines all agents available in oh-my-claudecode:
 The main registry is in `definitions.ts`:
 
 ```typescript
-// Get all 36 agents
+// Get every agent (full list lives in docs/generated/agent-catalog.md)
 const agents = getAgentDefinitions();
 
 // Each agent has:

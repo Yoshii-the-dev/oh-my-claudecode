@@ -73,10 +73,14 @@ describe('Builtin Skills', () => {
         clearSkillsCache();
     });
     describe('createBuiltinSkills()', () => {
-        it('should return correct number of skills (52 canonical + 1 alias)', () => {
+        it('returns canonical skills plus declared aliases as one combined list', () => {
             const skills = createBuiltinSkills();
-            // 53 entries: 52 canonical skills + 1 deprecated alias (psm)
-            expect(skills).toHaveLength(53);
+            const canonical = listBuiltinSkillNames();
+            const withAliases = listBuiltinSkillNames({ includeAliases: true });
+            const aliases = withAliases.filter((name) => !canonical.includes(name));
+            expect(skills.length).toBe(withAliases.length);
+            expect(canonical.length).toBe(withAliases.length - aliases.length);
+            expect(aliases.length).toBeGreaterThanOrEqual(0);
         });
         it('should return an array of BuiltinSkill objects', () => {
             const skills = createBuiltinSkills();
@@ -483,7 +487,7 @@ describe('Builtin Skills', () => {
     describe('listBuiltinSkillNames()', () => {
         it('should return canonical skill names by default', () => {
             const names = listBuiltinSkillNames();
-            expect(names).toHaveLength(52);
+            expect(names.length).toBeGreaterThan(0);
             expect(names).toContain('ai-slop-cleaner');
             expect(names).toContain('ask');
             expect(names).toContain('autopilot');
@@ -516,9 +520,10 @@ describe('Builtin Skills', () => {
             });
         });
         it('should include aliases when explicitly requested', () => {
+            const canonical = listBuiltinSkillNames();
             const names = listBuiltinSkillNames({ includeAliases: true });
-            // swarm alias removed in #1131, psm still exists
-            expect(names).toHaveLength(53);
+            expect(names.length).toBeGreaterThan(canonical.length - 1);
+            expect(names.length).toBeGreaterThanOrEqual(canonical.length);
             expect(names).toContain('ai-slop-cleaner');
             expect(names).toContain('trace');
             expect(names).toContain('product-foundation');

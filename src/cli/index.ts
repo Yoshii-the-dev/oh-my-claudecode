@@ -50,9 +50,21 @@ import { productContractsCommand } from './commands/product-contracts.js';
 import {
   productCycleAdvanceCommand,
   productCycleNextCommand,
+  productCycleRunCommand,
   productCycleStatusCommand,
   productCycleValidateCommand,
 } from './commands/product-cycle.js';
+import {
+  cycleDocumentMigrateCommand,
+  cycleDocumentProjectCommand,
+  cycleDocumentValidateCommand,
+} from './commands/cycle-document.js';
+import {
+  learningMigrateCommand,
+  learningProjectCommand,
+  learningValidateCommand,
+} from './commands/learning-document.js';
+import { historicalScorecardCommand } from './commands/historical-scorecard.js';
 import {
   portfolioMigrateCommand,
   portfolioProjectCommand,
@@ -1316,6 +1328,108 @@ productCycleCmd
   .option('--json', 'Output as JSON')
   .action(async (root, options) => {
     const exitCode = await productCycleAdvanceCommand(root, options);
+    process.exit(exitCode);
+  });
+
+productCycleCmd
+  .command('run [root]')
+  .description('Drive the product learning loop: discover -> rank -> select -> spec -> build -> verify -> learn')
+  .option('--goal <goal>', 'Cycle goal (required when there is no active cycle)')
+  .option('--max-stages <count>', 'Maximum stages to advance in one run', (value) => Number.parseInt(value, 10), 10)
+  .option('--stop-at <stage>', 'Stop before processing the given stage')
+  .option('--dry-run', 'Plan the run without writing the cycle file or running verify')
+  .option('--verify-command <cmd>', 'Shell command to execute during the verify stage', 'npm test')
+  .option('--json', 'Output as JSON')
+  .addHelpText('after', `
+Examples:
+  $ omc product-cycle run --goal "ship first usable loop"
+  $ omc product-cycle run --dry-run
+  $ omc product-cycle run --stop-at build
+  $ omc product-cycle run --verify-command "npm run test:cycle"`)
+  .action(async (root, options) => {
+    const exitCode = await productCycleRunCommand(root, options);
+    process.exit(exitCode);
+  });
+
+productCycleCmd
+  .command('migrate-document [root]')
+  .description('Migrate .omc/cycles/current.md to a typed JSON document and project it back')
+  .option('--write', 'Write .omc/cycles/current.json (and refresh the markdown projection)')
+  .option('--force', 'Overwrite existing .omc/cycles/current.json')
+  .option('--json', 'Output as JSON')
+  .action(async (root, options) => {
+    const exitCode = await cycleDocumentMigrateCommand(root, options);
+    process.exit(exitCode);
+  });
+
+productCycleCmd
+  .command('project-document [root]')
+  .description('Re-render .omc/cycles/current.md from the JSON document')
+  .option('--json', 'Output as JSON')
+  .action(async (root, options) => {
+    const exitCode = await cycleDocumentProjectCommand(root, options);
+    process.exit(exitCode);
+  });
+
+productCycleCmd
+  .command('validate-document [root]')
+  .description('Validate .omc/cycles/current.json against the typed schema')
+  .option('--json', 'Output as JSON')
+  .action(async (root, options) => {
+    const exitCode = await cycleDocumentValidateCommand(root, options);
+    process.exit(exitCode);
+  });
+
+const learningCmd = program
+  .command('learning')
+  .description('Validate, migrate, and project the typed learning capture document')
+  .addHelpText('after', `
+Examples:
+  $ omc learning validate
+  $ omc learning migrate --write --cycle-id 2026-04-25-first-loop
+  $ omc learning project --json`);
+
+learningCmd
+  .command('validate [root]')
+  .description('Validate .omc/learning/current.json against the typed schema')
+  .option('--json', 'Output as JSON')
+  .action(async (root, options) => {
+    const exitCode = await learningValidateCommand(root, options);
+    process.exit(exitCode);
+  });
+
+learningCmd
+  .command('migrate [root]')
+  .description('Migrate .omc/learning/current.md to a typed JSON document and project it back')
+  .option('--write', 'Write .omc/learning/current.json (and refresh the markdown projection)')
+  .option('--force', 'Overwrite existing .omc/learning/current.json')
+  .option('--cycle-id <id>', 'Override cycle_id when the markdown source does not include one')
+  .option('--json', 'Output as JSON')
+  .action(async (root, options) => {
+    const exitCode = await learningMigrateCommand(root, options);
+    process.exit(exitCode);
+  });
+
+learningCmd
+  .command('project [root]')
+  .description('Re-render .omc/learning/current.md from the JSON document')
+  .option('--json', 'Output as JSON')
+  .action(async (root, options) => {
+    const exitCode = await learningProjectCommand(root, options);
+    process.exit(exitCode);
+  });
+
+program
+  .command('historical-scorecard [root]')
+  .description('Compare run quality between cycles and report trends')
+  .option('--json', 'Output as JSON')
+  .addHelpText('after', `
+Examples:
+  $ omc historical-scorecard
+  $ omc historical-scorecard /path/to/app
+  $ omc historical-scorecard --json`)
+  .action(async (root, options) => {
+    const exitCode = await historicalScorecardCommand(root, options);
     process.exit(exitCode);
   });
 

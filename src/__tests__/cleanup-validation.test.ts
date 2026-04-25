@@ -25,7 +25,7 @@ describe('Cleanup Validation', () => {
     expect('DEPRECATED_KEYWORD_PATTERNS' in keywordModule).toBe(false);
   });
 
-  it('PluginConfig.agents matches 36-agent registry + omc', async () => {
+  it('PluginConfig.agents covers required core entries plus omc', async () => {
     const { DEFAULT_CONFIG } = await import('../config/loader.js');
     const agentKeys = Object.keys(DEFAULT_CONFIG.agents || {});
     expect(agentKeys).toContain('omc');
@@ -50,10 +50,18 @@ describe('Cleanup Validation', () => {
     expect(agentKeys).not.toContain('buildFixer');
   });
 
-  it('agent registry has 36 agents', async () => {
+  it('agent registry size matches filesystem prompts and includes required agents', async () => {
+    const fs = await import('fs');
+    const path = await import('path');
+    const { fileURLToPath } = await import('url');
+    const here = path.dirname(fileURLToPath(import.meta.url));
+    const agentsDir = path.join(here, '../../agents');
+    const promptFiles = fs.readdirSync(agentsDir).filter((file) => file.endsWith('.md') && file !== 'AGENTS.md');
+
     const { getAgentDefinitions } = await import('../agents/definitions.js');
     const defs = getAgentDefinitions();
-    expect(Object.keys(defs)).toHaveLength(36);
+    expect(promptFiles.length).toBeGreaterThan(0);
+    expect(Object.keys(defs).length).toBe(promptFiles.length);
     expect(defs).toHaveProperty('tracer');
     expect(defs).toHaveProperty('technology-strategist');
     expect(defs).toHaveProperty('brand-architect');

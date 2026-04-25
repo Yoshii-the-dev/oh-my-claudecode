@@ -9,13 +9,23 @@ import {
   isProductCycleStage,
   validateProductCycle,
   type ProductCycleSnapshot,
+  type ProductCycleStage,
 } from '../../product/cycle-fsm.js';
+import {
+  runProductCycle,
+  type CycleRunnerStageResult,
+  type RunProductCycleReport,
+} from '../../product/cycle-runner.js';
 
 export interface ProductCycleCommandOptions {
   json?: boolean;
   to?: string;
   goal?: string;
   force?: boolean;
+  maxStages?: number;
+  stopAt?: string;
+  dryRun?: boolean;
+  verifyCommand?: string;
 }
 
 interface LoggerLike {
@@ -89,6 +99,91 @@ export async function productCycleAdvanceCommand(
   }
 
   return result.ok ? 0 : 1;
+}
+
+export async function productCycleRunCommand(
+  root: string | undefined,
+  options: ProductCycleCommandOptions,
+  logger: LoggerLike = console,
+): Promise<number> {
+  const stopAt = options.stopAt;
+  if (stopAt && !isProductCycleStage(stopAt)) {
+    logger.error(colors.red(`Invalid --stop-at stage: ${stopAt}`));
+    return 2;
+  }
+
+  const report = runProductCycle({
+    root,
+    goal: options.goal,
+    maxStages: options.maxStages,
+    stopAt: stopAt as ProductCycleStage | undefined,
+    dryRun: options.dryRun,
+    verifyCommand: options.verifyCommand,
+  });
+
+  if (options.json) {
+    logger.log(JSON.stringify(report, null, 2));
+  } else {
+    logger.log(renderRunReport(report));
+  }
+
+  return report.ok ? 0 : 1;
+}
+
+function renderRunReport(report: RunProductCycleReport): string {
+  const lines: string[] = [];
+  lines.push(colors.bold(`Product cycle runner — stopped: ${report.stoppedReason}`));
+  if (report.startedFromStage) {
+    lines.push(`Started from: ${report.startedFromStage}`);
+  }
+  if (report.endedAtStage) {
+    lines.push(`Ended at: ${report.endedAtStage}`);
+  }
+
+  if (report.stagesAdvanced.length > 0) {
+    lines.push('');
+    lines.push(colors.bold('Stages advanced:'));
+    for (const advance of report.stagesAdvanced) {
+      lines.push(`  ${advance.from} -> ${advance.to}  (${advance.reason})`);
+    }
+  }
+
+  if (report.stageResults.length > 0) {
+    lines.push('');
+    lines.push(colors.bold('Stage decisions:'));
+    for (const result of report.stageResults) {
+      lines.push(`  ${formatStageOutcome(result)}`);
+      if (result.instruction) {
+        lines.push(`    ${colors.gray('next:')} ${result.instruction}`);
+      }
+    }
+  }
+
+  if (report.pauseInstruction) {
+    lines.push('');
+    lines.push(colors.bold('Pause instruction:'));
+    lines.push(`  ${report.pauseInstruction}`);
+  }
+
+  if (report.issues.length > 0) {
+    lines.push('');
+    lines.push(colors.bold('Issues:'));
+    for (const issue of report.issues) {
+      const marker = issue.severity === 'error' ? colors.red('error') : colors.yellow('warning');
+      lines.push(`  ${marker} ${issue.code}: ${issue.message}`);
+    }
+  }
+
+  return lines.join('\n');
+}
+
+function formatStageOutcome(result: CycleRunnerStageResult): string {
+  const verdictColor = result.outcome === 'advance'
+    ? colors.green
+    : result.outcome === 'verify-failed' || result.outcome === 'contract-failed'
+      ? colors.red
+      : colors.yellow;
+  return `${verdictColor(result.outcome.padEnd(15))} ${result.stage}: ${result.reason}`;
 }
 
 function renderSnapshot(snapshot: ProductCycleSnapshot): string {
