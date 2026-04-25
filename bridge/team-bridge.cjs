@@ -972,9 +972,33 @@ var ROLE_PERMISSION_PROFILES = {
     allowedCommands: [],
     maxFileSize: Infinity
   },
+  "product-cycle": {
+    allowedPaths: [".omc/cycles/**", ".omc/experience/**", ".omc/learning/**", ".omc/state/**", ".omc/handoffs/**"],
+    deniedPaths: ["src/**", "skills/**", "agents/**", "docs/**"],
+    allowedCommands: [],
+    maxFileSize: Infinity
+  },
+  "product-experience": {
+    allowedPaths: [".omc/experience/**", ".omc/state/**", ".omc/handoffs/**"],
+    deniedPaths: ["src/**", "skills/**", "agents/**", "docs/**"],
+    allowedCommands: [],
+    maxFileSize: Infinity
+  },
   "technology-strategist": {
     allowedPaths: [".omc/decisions/**", ".omc/state/**", ".omc/handoffs/**", ".omc/artifacts/**"],
     deniedPaths: ["src/**", "skills/**", "agents/**"],
+    allowedCommands: [],
+    maxFileSize: Infinity
+  },
+  "product-portfolio": {
+    allowedPaths: [".omc/portfolio/**", ".omc/opportunities/**", ".omc/roadmap/**", ".omc/state/**", ".omc/handoffs/**"],
+    deniedPaths: ["src/**", "skills/**", "agents/**", "docs/**"],
+    allowedCommands: [],
+    maxFileSize: Infinity
+  },
+  "product-ecosystem": {
+    allowedPaths: [".omc/ecosystem/**", ".omc/state/**", ".omc/handoffs/**"],
+    deniedPaths: ["src/**", "skills/**", "agents/**", "docs/**"],
     allowedCommands: [],
     maxFileSize: Infinity
   },
@@ -1005,7 +1029,11 @@ var ROLE_PERMISSION_PROFILES = {
 };
 function inferPermissionProfile(workerName) {
   const normalized = workerName.toLowerCase();
+  if (normalized.includes("product-cycle-controller")) return "product-cycle";
+  if (normalized.includes("product-experience-gate") || normalized.includes("experience-gate")) return "product-experience";
   if (normalized.includes("technology-strategist")) return "technology-strategist";
+  if (normalized.includes("priority-engine")) return "product-portfolio";
+  if (normalized.includes("product-ecosystem-architect")) return "product-ecosystem";
   if (normalized.includes("document-specialist") || normalized.includes("research")) return "researcher";
   if (normalized.includes("critic")) return "critic";
   if (normalized.includes("stack-provision") || normalized.includes("provision")) return "stack-provision";

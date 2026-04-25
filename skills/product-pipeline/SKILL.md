@@ -54,16 +54,19 @@ This skill makes every gate non-skippable. Each stage's output becomes the next 
 ## Stage 1 — Foundation Check
 
 **Agent:** brand-steward (invoked if constitution is absent or draft)
-**Input:** `.omc/constitution.md` (read-only check)
+**Input:** `.omc/constitution.md` (read-only check), `.omc/experience/current.md` when the feature came from `/product-cycle`
 **Output:** `.omc/constitution.md` (written by brand-steward if absent/draft)
 
 **Protocol:**
 1. Read `.omc/constitution.md`.
-2. If the file is absent or `status: draft` AND no user has interacted with brand-steward this session → invoke `oh-my-claudecode:brand-steward` to conduct the discovery interview. Pipeline is paused until constitution reaches at least `status: partial`.
-3. If `status: partial` → warn the user: "Constitution is partial — unfilled sections will produce UNVALIDATED findings downstream. Proceeding." Continue.
-4. If `status: complete` → proceed immediately.
+2. For user-facing cycle work, read `.omc/experience/current.md`. If absent or not passed, run `/product-experience-gate "<feature description>"` before implementation stages.
+3. If the file is absent or `status: draft` AND no user has interacted with brand-steward this session → invoke `oh-my-claudecode:brand-steward` to conduct the discovery interview. Pipeline is paused until constitution reaches at least `status: partial`.
+4. If `status: partial` → warn the user: "Constitution is partial — unfilled sections will produce UNVALIDATED findings downstream. Proceeding." Continue.
+5. If `status: complete` → proceed immediately.
 
 **HARD STOP:** Constitution is absent or `status: draft` AND brand-steward has not been run this session. User must complete at least a partial constitution before the pipeline advances.
+
+**HARD STOP:** User-facing cycle work lacks a passing `.omc/experience/current.md` with user journey, empty states, failure states, return session, and perceived value.
 
 ---
 

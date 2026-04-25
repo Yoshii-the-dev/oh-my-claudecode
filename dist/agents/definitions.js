@@ -175,6 +175,36 @@ export const productStrategistAgent = {
     defaultModel: 'sonnet'
 };
 /**
+ * Product-Cycle-Controller Agent - Product Learning Loop Controller (Sonnet)
+ */
+export const productCycleControllerAgent = {
+    name: 'product-cycle-controller',
+    description: 'Product learning loop controller (sonnet) — owns discover/rank/select/spec/build/verify/learn cycle state.',
+    prompt: loadAgentPrompt('product-cycle-controller'),
+    model: 'sonnet',
+    defaultModel: 'sonnet'
+};
+/**
+ * Priority-Engine Agent - Product Portfolio Ranking (Sonnet)
+ */
+export const priorityEngineAgent = {
+    name: 'priority-engine',
+    description: 'Product portfolio prioritization (sonnet) — ranks candidate moves and emits opportunities plus rolling roadmap.',
+    prompt: loadAgentPrompt('priority-engine'),
+    model: 'sonnet',
+    defaultModel: 'sonnet'
+};
+/**
+ * Product-Ecosystem-Architect Agent - Long-Horizon Product Ecosystem Mapping (Opus)
+ */
+export const productEcosystemArchitectAgent = {
+    name: 'product-ecosystem-architect',
+    description: 'Product ecosystem architecture (opus) — maps app/content/data/distribution loops and deeper feature paths.',
+    prompt: loadAgentPrompt('product-ecosystem-architect'),
+    model: 'opus',
+    defaultModel: 'opus'
+};
+/**
  * Technology-Strategist Agent - Stack and application capability decision owner (Opus)
  */
 export const technologyStrategistAgent = {
@@ -284,6 +314,9 @@ const AGENT_CONFIG_KEY_MAP = {
     'performance-guardian': 'performanceGuardian',
     'copywriter': 'copywriter',
     'product-strategist': 'productStrategist',
+    'product-cycle-controller': 'productCycleController',
+    'priority-engine': 'priorityEngine',
+    'product-ecosystem-architect': 'productEcosystemArchitect',
     'technology-strategist': 'technologyStrategist',
     'ux-architect': 'uxArchitect',
     'ux-researcher': 'uxResearcher',
@@ -352,6 +385,9 @@ export function getAgentDefinitions(options) {
         'performance-guardian': performanceGuardianAgent,
         'copywriter': copywriterAgent,
         'product-strategist': productStrategistAgent,
+        'product-cycle-controller': productCycleControllerAgent,
+        'priority-engine': priorityEngineAgent,
+        'product-ecosystem-architect': productEcosystemArchitectAgent,
         'technology-strategist': technologyStrategistAgent,
         'ux-architect': uxArchitectAgent,
         'ux-researcher': uxResearcherAgent,
@@ -400,7 +436,7 @@ export const omcSystemPrompt = `You are the orchestrator of a multi-agent develo
 
 You coordinate specialized subagents to accomplish complex software engineering tasks. Work continues until the completion gate passes or a verified blocker is reported with evidence and the next required action.
 
-## Available Subagents (33 Agents)
+## Available Subagents (36 Agents)
 
 ### Build/Analysis Lane
 - **explore**: Internal codebase discovery (haiku) — fast pattern matching
@@ -432,6 +468,9 @@ You coordinate specialized subagents to accomplish complex software engineering 
 - **performance-guardian**: Performance auditing (sonnet) — Core Web Vitals, bundle size, runtime patterns
 - **copywriter**: UX copy specialist (sonnet) — microcopy, onboarding flows, error messages, i18n-aware copy management
 - **product-strategist**: Product strategy evaluator (sonnet) — feature evaluation, constitution alignment, roadmap prioritization
+- **product-cycle-controller**: Product learning loop controller (sonnet) — discover/rank/select/spec/build/verify/learn state
+- **priority-engine**: Product portfolio prioritization (sonnet) — ranked opportunities, cycle selection, rolling roadmap
+- **product-ecosystem-architect**: Product ecosystem architecture (opus) — app/content/data/distribution loops and deeper feature paths
 - **technology-strategist**: Technology decision owner (opus) — stack selection, app capability blocks, skill provisioning targets
 - **ux-architect**: Macro-level UX (sonnet) — user flows, information architecture, app/screen states, navigation patterns
 - **ux-researcher**: UX research synthesis (sonnet) — user feedback analysis, study plans, usability pattern extraction

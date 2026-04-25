@@ -1241,6 +1241,9 @@ var CANONICAL_TEAM_ROLES = [
   "copywriter",
   "performance-guardian",
   "product-strategist",
+  "product-cycle-controller",
+  "priority-engine",
+  "product-ecosystem-architect",
   "technology-strategist",
   "ux-architect",
   "ux-researcher"
@@ -1277,6 +1280,9 @@ var KNOWN_AGENT_NAMES = [
   "copywriter",
   "performanceGuardian",
   "productStrategist",
+  "productCycleController",
+  "priorityEngine",
+  "productEcosystemArchitect",
   "technologyStrategist",
   "uxArchitect",
   "uxResearcher"
@@ -1666,6 +1672,9 @@ function buildDefaultConfig() {
       performanceGuardian: { model: defaultTierModels.MEDIUM },
       copywriter: { model: defaultTierModels.MEDIUM },
       productStrategist: { model: defaultTierModels.MEDIUM },
+      productCycleController: { model: defaultTierModels.MEDIUM },
+      priorityEngine: { model: defaultTierModels.MEDIUM },
+      productEcosystemArchitect: { model: defaultTierModels.HIGH },
       technologyStrategist: { model: defaultTierModels.HIGH },
       uxArchitect: { model: defaultTierModels.MEDIUM },
       uxResearcher: { model: defaultTierModels.MEDIUM }
@@ -1722,6 +1731,10 @@ function buildDefaultConfig() {
         analyst: {
           tier: "HIGH",
           reason: "Pre-planning analysis requires deep reasoning"
+        },
+        "product-ecosystem-architect": {
+          tier: "HIGH",
+          reason: "Long-horizon ecosystem mapping requires deep reasoning"
         },
         explore: { tier: "LOW", reason: "Exploration is search-focused" },
         writer: { tier: "LOW", reason: "Documentation is straightforward" }
@@ -2624,6 +2637,27 @@ var productStrategistAgent = {
   prompt: loadAgentPrompt("product-strategist"),
   model: "sonnet",
   defaultModel: "sonnet"
+};
+var productCycleControllerAgent = {
+  name: "product-cycle-controller",
+  description: "Product learning loop controller (sonnet) \u2014 owns discover/rank/select/spec/build/verify/learn cycle state.",
+  prompt: loadAgentPrompt("product-cycle-controller"),
+  model: "sonnet",
+  defaultModel: "sonnet"
+};
+var priorityEngineAgent = {
+  name: "priority-engine",
+  description: "Product portfolio prioritization (sonnet) \u2014 ranks candidate moves and emits opportunities plus rolling roadmap.",
+  prompt: loadAgentPrompt("priority-engine"),
+  model: "sonnet",
+  defaultModel: "sonnet"
+};
+var productEcosystemArchitectAgent = {
+  name: "product-ecosystem-architect",
+  description: "Product ecosystem architecture (opus) \u2014 maps app/content/data/distribution loops and deeper feature paths.",
+  prompt: loadAgentPrompt("product-ecosystem-architect"),
+  model: "opus",
+  defaultModel: "opus"
 };
 var technologyStrategistAgent = {
   name: "technology-strategist",
@@ -5602,6 +5636,9 @@ var ROLE_TO_AGENT = {
   "performance-guardian": "performanceGuardian",
   copywriter: "copywriter",
   "product-strategist": "productStrategist",
+  "product-cycle-controller": "productCycleController",
+  "priority-engine": "priorityEngine",
+  "product-ecosystem-architect": "productEcosystemArchitect",
   "technology-strategist": "technologyStrategist",
   "ux-architect": "uxArchitect",
   "ux-researcher": "uxResearcher"
@@ -5633,6 +5670,9 @@ var ROLE_DEFAULT_TIER = {
   "performance-guardian": "MEDIUM",
   copywriter: "MEDIUM",
   "product-strategist": "MEDIUM",
+  "product-cycle-controller": "MEDIUM",
+  "priority-engine": "MEDIUM",
+  "product-ecosystem-architect": "HIGH",
   "technology-strategist": "HIGH",
   "ux-architect": "MEDIUM",
   "ux-researcher": "MEDIUM"

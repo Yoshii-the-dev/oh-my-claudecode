@@ -147,6 +147,9 @@ Product Lane:
 - `/prompts:ux-researcher`: Heuristic audits, usability, accessibility
 - `/prompts:information-architect`: Taxonomy, navigation, findability
 - `/prompts:product-analyst`: Product metrics, funnel analysis, experiments
+- `/prompts:product-cycle-controller`: Product learning loop control from discover to learn
+- `/prompts:priority-engine`: Product opportunity portfolio ranking and rolling roadmap
+- `/prompts:product-ecosystem-architect`: App/content/data/distribution loops and deeper feature paths
 
 Coordination:
 - `/prompts:critic`: Plan/design critical challenge
@@ -172,6 +175,7 @@ Do not ask for confirmation — just read the skill file and follow its instruct
 | "tdd", "test first" | keyword mode | Inject TDD-mode guidance and favor test-first execution with `test-engineer` when appropriate |
 | "cleanup", "deslop", "anti-slop" | `$ai-slop-cleaner` | Read `~/.agents/skills/ai-slop-cleaner/SKILL.md`, plan and clean AI-generated slop with separate writer/reviewer passes |
 | "web-clone", "clone site", "clone website", "copy webpage" | `$web-clone` | Read `~/.agents/skills/web-clone/SKILL.md`, start website cloning pipeline |
+| "product-cycle", "learning cycle", "next product cycle" | `$product-cycle` | Read `~/.agents/skills/product-cycle/SKILL.md`, run discover→rank→select→spec→build→verify→learn loop |
 | "product-foundation", "new product", "start product" | `$product-foundation` | Read `~/.agents/skills/product-foundation/SKILL.md`, run market-to-stack foundation workflow before feature pipelines |
 
 Detection rules:
@@ -204,8 +208,10 @@ Workflow Skills:
 - `deep-interview`: Socratic deep interview with Ouroboros-inspired mathematical ambiguity gating before execution
 - `ralplan`: Iterative consensus planning with RALPLAN-DR structured deliberation (planner + architect + critic); supports `--deliberate` for high-risk work
 - `ai-slop-cleaner`: Regression-safe cleanup workflow for duplicate code, dead code, needless abstractions, and boundary violations; supports `--review` for reviewer-only passes
-- `product-foundation`: Market-to-stack workflow for new products and major pivots; orchestrates product articulation, competitors, brand, product capability mapping, technology strategy, critic, and stack-provision
-- `product-strategist`: Feature strategy gate and Product Capability & Launch Map builder before technology strategy
+- `product-cycle`: Product learning loop controller; runs discover -> rank -> select -> spec -> build -> verify -> learn
+- `product-foundation`: Foundation-lite/full workflow for new products and major pivots; defaults pre-MVP work to first usable loop before stack provisioning
+- `product-strategist`: Feature strategy gate and Product Capability & Launch Map builder before priority-engine
+- `priority-engine`: Product opportunity ranking and rolling 2/6/12-week roadmap; selects one core slice, one enabling task, and one learning task
 - `backend-pipeline`: Backend/engine feature pipeline with conditional technology strategy/provisioning preflight
 - `product-pipeline`: User-facing product/UI pipeline with conditional technology strategy/provisioning preflight
 - `stack-provision`: Strict Gate skill provisioning from approved technology ADRs

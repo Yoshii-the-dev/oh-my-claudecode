@@ -80,8 +80,8 @@ Syncs all files. Output:
 
 Version: 3.5.0
 Package: oh-my-claudecode
-Agents: 33
-Skills: 45
+Agents: 35
+Skills: 46
 
 ✓ README.md
   - npm version badge

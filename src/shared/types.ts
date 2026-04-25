@@ -50,6 +50,9 @@ export interface PluginConfig {
     copywriter?: { model?: string };
     performanceGuardian?: { model?: string };
     productStrategist?: { model?: string };
+    productCycleController?: { model?: string };
+    priorityEngine?: { model?: string };
+    productEcosystemArchitect?: { model?: string };
     technologyStrategist?: { model?: string };
     uxArchitect?: { model?: string };
     uxResearcher?: { model?: string };
@@ -434,6 +437,9 @@ export const CANONICAL_TEAM_ROLES = [
   'copywriter',
   'performance-guardian',
   'product-strategist',
+  'product-cycle-controller',
+  'priority-engine',
+  'product-ecosystem-architect',
   'technology-strategist',
   'ux-architect',
   'ux-researcher',
@@ -480,6 +486,9 @@ export const KNOWN_AGENT_NAMES = [
   'copywriter',
   'performanceGuardian',
   'productStrategist',
+  'productCycleController',
+  'priorityEngine',
+  'productEcosystemArchitect',
   'technologyStrategist',
   'uxArchitect',
   'uxResearcher',

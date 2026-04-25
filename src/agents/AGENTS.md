@@ -3,13 +3,13 @@
 
 # agents
 
-33 specialized AI agent definitions with 3-tier model routing for optimal cost and performance.
+36 specialized AI agent definitions with 3-tier model routing for optimal cost and performance.
 
 ## Purpose
 
 This directory defines all agents available in oh-my-claudecode:
 
-- **33 base agents** with default model assignments
+- **36 base agents** with default model assignments
 - **Tiered variants** (LOW/MEDIUM/HIGH) for smart routing
 - Prompts loaded dynamically from `/agents/*.md` files
 - Tools assigned based on agent specialization
@@ -43,7 +43,7 @@ This directory defines all agents available in oh-my-claudecode:
 The main registry is in `definitions.ts`:
 
 ```typescript
-// Get all 33 agents
+// Get all 36 agents
 const agents = getAgentDefinitions();
 
 // Each agent has:
@@ -87,6 +87,9 @@ const agents = getAgentDefinitions();
 | TDD workflow | `test-engineer` | sonnet | Read, Grep, Glob, Edit, Write, Bash |
 | Test suggestions | `test-engineer` (model=haiku) | haiku | Read, Grep, Glob, Bash |
 | Code review | `code-reviewer` | opus | Read, Grep, Glob, Bash |
+| Product learning cycle | `product-cycle-controller` | sonnet | Read, Glob, Grep, Write |
+| Product portfolio ranking | `priority-engine` | sonnet | Read, Glob, Grep, Write |
+| Product ecosystem mapping | `product-ecosystem-architect` | opus | Read, Glob, Grep, Write |
 | Technology/application-block decision | `technology-strategist` | opus | Read, Glob, Grep, WebSearch, WebFetch |
 
 #### Creating a New Agent
