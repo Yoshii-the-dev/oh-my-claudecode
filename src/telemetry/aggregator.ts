@@ -8,7 +8,7 @@
  * - trigger='on-demand'   → digests/daily/<YYYY-MM-DD>.md + update digests/latest.md
  * - trigger='session-end' → digests/session/<sessionId>.md
  *
- * Metrics computed from Phase 1 streams (plan Section 7):
+ * Metrics computed from Phase 1+2 streams (plan Section 7):
  * - agent_handoff_count_by_type
  * - verdict_distribution
  * - avg_handoff_duration_ms (from verdict.duration_ms)
@@ -18,8 +18,8 @@
  * - plugin_version_distribution
  * - self_improve_tournament_state (read-only panel, skipped if file absent)
  * - top-3 highest-volume agents / skills / hooks
- *
- * LLM metrics are Phase 2 placeholders — not computed here.
+ * - llm_token_burn_by_agent (Phase 2, from llm-interaction.jsonl)
+ * - llm_cache_hit_rate (Phase 2, from llm-interaction.jsonl)
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from 'node:fs';
@@ -58,6 +58,7 @@ export async function aggregate(options: AggregateOptions): Promise<{ digestPath
     const verdicts = readJsonlStream(join(eventsDir, 'verdict.jsonl'));
     const skillEvents = readJsonlStream(join(eventsDir, 'skill-events.jsonl'));
     const hookEvents = readJsonlStream(join(eventsDir, 'hook-events.jsonl'));
+    const llmInteractions = readJsonlStream(join(eventsDir, 'llm-interaction.jsonl'));
 
     // Filter to session scope if session-end
     const isSessionEnd = trigger === 'session-end';
@@ -69,6 +70,7 @@ export async function aggregate(options: AggregateOptions): Promise<{ digestPath
     const filteredVerdicts = verdicts.filter(filterFn);
     const filteredSkills = skillEvents.filter(filterFn);
     const filteredHooks = hookEvents.filter(filterFn);
+    const filteredLlm = llmInteractions.filter(filterFn);
 
     // Combine all events for shared metrics (e.g. plugin_version_distribution)
     const allEvents = [
@@ -76,13 +78,14 @@ export async function aggregate(options: AggregateOptions): Promise<{ digestPath
       ...filteredVerdicts,
       ...filteredSkills,
       ...filteredHooks,
+      ...filteredLlm,
     ];
 
     // Self-improve data (read-only)
     const selfImproveData = readSelfImproveRawData(directory);
 
     // Compute metrics
-    const metrics = computeMetrics(filteredHandoffs, filteredVerdicts, filteredSkills, filteredHooks, allEvents);
+    const metrics = computeMetrics(filteredHandoffs, filteredVerdicts, filteredSkills, filteredHooks, filteredLlm, allEvents);
 
     // Build digest
     const now = new Date();
@@ -150,6 +153,12 @@ function readJsonlStream(filePath: string): Record<string, unknown>[] {
 // Metrics computation
 // ---------------------------------------------------------------------------
 
+interface LlmAgentStats {
+  tokens_in: number;
+  tokens_out: number;
+  total: number;
+}
+
 interface AggregatedMetrics {
   // agent-handoff
   handoffCountByType: Record<string, number>;
@@ -161,6 +170,10 @@ interface AggregatedMetrics {
   skillKeywordHitRate: number | null;
   // hook-events
   hookEventVolume: Record<string, number>;
+  // llm-interaction (Phase 2)
+  llmTokenBurnByAgent: Record<string, LlmAgentStats>;
+  llmCacheHitRate: number | null;   // null means n/a (no cache_read data)
+  totalLlmInteractions: number;
   // cross-stream
   pluginVersionDistribution: Record<string, number>;
   // top-3
@@ -180,6 +193,7 @@ function computeMetrics(
   verdicts: Record<string, unknown>[],
   skills: Record<string, unknown>[],
   hooks: Record<string, unknown>[],
+  llmInteractions: Record<string, unknown>[],
   allEvents: Record<string, unknown>[],
 ): AggregatedMetrics {
   // Skip legacy envelopes (no plugin_version)
@@ -237,6 +251,35 @@ function computeMetrics(
     pluginVersionDistribution[pv] = (pluginVersionDistribution[pv] ?? 0) + 1;
   }
 
+  // --- llm-interaction (Phase 2)
+  const llmTokenBurnByAgent: Record<string, LlmAgentStats> = {};
+  let llmTotalTokensIn = 0;
+  let llmTotalCacheRead = 0;
+  let llmHasCacheData = false;
+  for (const e of llmInteractions) {
+    // agent_id is on the envelope; fall back to 'unknown'
+    const agentKey = String(e['agent_id'] ?? 'unknown');
+    const tokIn = typeof e['tokens_in'] === 'number' ? e['tokens_in'] : 0;
+    const tokOut = typeof e['tokens_out'] === 'number' ? e['tokens_out'] : 0;
+    const cacheRead = typeof e['cache_read'] === 'number' ? e['cache_read'] : 0;
+
+    if (!llmTokenBurnByAgent[agentKey]) {
+      llmTokenBurnByAgent[agentKey] = { tokens_in: 0, tokens_out: 0, total: 0 };
+    }
+    llmTokenBurnByAgent[agentKey].tokens_in += tokIn;
+    llmTokenBurnByAgent[agentKey].tokens_out += tokOut;
+    llmTokenBurnByAgent[agentKey].total += tokIn + tokOut;
+
+    llmTotalTokensIn += tokIn;
+    llmTotalCacheRead += cacheRead;
+    if (cacheRead > 0) llmHasCacheData = true;
+  }
+  // llm_cache_hit_rate = cache_read / tokens_in; null if no cache data or zero tokens
+  const llmCacheHitRate =
+    llmHasCacheData && llmTotalTokensIn > 0
+      ? llmTotalCacheRead / llmTotalTokensIn
+      : null;
+
   // --- top-3
   const top3Agents = top3(handoffCountByType);
   const top3Skills = top3(skillInvocationCount);
@@ -249,6 +292,9 @@ function computeMetrics(
     skillInvocationCount,
     skillKeywordHitRate,
     hookEventVolume,
+    llmTokenBurnByAgent,
+    llmCacheHitRate,
+    totalLlmInteractions: llmInteractions.length,
     pluginVersionDistribution,
     top3Agents,
     top3Skills,
@@ -419,10 +465,36 @@ function renderDigest(
     lines.push('');
   }
 
-  // LLM Metrics placeholder (Phase 2)
-  lines.push('## LLM Metrics');
+  // LLM Interaction (Phase 2)
+  lines.push('## LLM Interaction');
   lines.push('');
-  lines.push('_Phase 2 — llm-interaction.jsonl stream not yet populated._');
+  lines.push(`Total interactions: **${metrics.totalLlmInteractions}**`);
+  lines.push('');
+
+  // llm_token_burn_by_agent
+  lines.push('### Token Burn by Agent');
+  lines.push('');
+  const burnEntries = Object.entries(metrics.llmTokenBurnByAgent)
+    .sort((a, b) => b[1].total - a[1].total);
+  if (burnEntries.length > 0) {
+    lines.push('| Agent | Tokens In | Tokens Out | Total |');
+    lines.push('|---|---|---|---|');
+    for (const [agent, stats] of burnEntries) {
+      lines.push(`| ${agent} | ${stats.tokens_in} | ${stats.tokens_out} | ${stats.total} |`);
+    }
+  } else {
+    lines.push('_No LLM interaction data recorded._');
+  }
+  lines.push('');
+
+  // llm_cache_hit_rate
+  lines.push('### Cache Hit Rate');
+  lines.push('');
+  if (metrics.llmCacheHitRate !== null) {
+    lines.push(`Overall: **${(metrics.llmCacheHitRate * 100).toFixed(1)}%** (cache_read / tokens_in)`);
+  } else {
+    lines.push('Overall: **n/a** (no cache_read data recorded)');
+  }
   lines.push('');
 
   return lines.join('\n');

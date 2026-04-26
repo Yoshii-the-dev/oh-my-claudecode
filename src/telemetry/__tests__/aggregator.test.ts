@@ -117,7 +117,7 @@ describe('telemetry/aggregator', () => {
     expect(content).toMatch(/## Hook Events/);
     expect(content).toMatch(/## Plugin Version Distribution/);
     expect(content).toMatch(/## Top Volume/);
-    expect(content).toMatch(/## LLM Metrics/);
+    expect(content).toMatch(/## LLM Interaction/);
 
     // Agent data
     expect(content).toMatch(/executor/);
@@ -312,5 +312,88 @@ describe('telemetry/aggregator', () => {
     await expect(
       aggregate({ directory: testDir, trigger: 'on-demand' })
     ).resolves.toBeDefined();
+  });
+
+  // ---------------------------------------------------------------------------
+  // Phase 2 — LLM Interaction section
+  // ---------------------------------------------------------------------------
+
+  it('LLM Interaction section appears in digest with token_burn_by_agent and cache_hit_rate', async () => {
+    writeJsonl(join(eventsDir, 'llm-interaction.jsonl'), [
+      makeBaseEnvelope('llm-interaction', {
+        agent_id: 'agent-alpha',
+        provider: 'anthropic',
+        model: 'claude-sonnet-4-6',
+        tokens_in: 1000,
+        tokens_out: 400,
+        cache_read: 200,
+      }),
+      makeBaseEnvelope('llm-interaction', {
+        agent_id: 'agent-beta',
+        provider: 'anthropic',
+        model: 'claude-sonnet-4-6',
+        tokens_in: 500,
+        tokens_out: 200,
+        cache_read: 100,
+      }),
+      makeBaseEnvelope('llm-interaction', {
+        agent_id: 'agent-alpha',
+        provider: 'anthropic',
+        model: 'claude-sonnet-4-6',
+        tokens_in: 800,
+        tokens_out: 300,
+        // no cache_read on this one
+      }),
+    ]);
+
+    const { digestPath } = await aggregate({ directory: testDir, trigger: 'on-demand' });
+    const content = readFileSync(digestPath, 'utf-8');
+
+    // Section heading
+    expect(content).toMatch(/## LLM Interaction/);
+
+    // Token burn table — agent-alpha has 1800 in + 700 out = 2500 total (highest)
+    expect(content).toMatch(/agent-alpha/);
+    expect(content).toMatch(/agent-beta/);
+    expect(content).toMatch(/### Token Burn by Agent/);
+
+    // Cache hit rate: total cache_read = 300, total tokens_in = 2300 → ~13.0%
+    expect(content).toMatch(/### Cache Hit Rate/);
+    expect(content).toMatch(/13\.\d+%/);
+
+    // Total interactions count
+    expect(content).toMatch(/Total interactions: \*\*3\*\*/);
+  });
+
+  it('llm_cache_hit_rate shows n/a when no cache_read data', async () => {
+    writeJsonl(join(eventsDir, 'llm-interaction.jsonl'), [
+      makeBaseEnvelope('llm-interaction', {
+        agent_id: 'agent-no-cache',
+        provider: 'anthropic',
+        model: 'claude-sonnet-4-6',
+        tokens_in: 1000,
+        tokens_out: 400,
+        // cache_read intentionally absent
+      }),
+    ]);
+
+    const { digestPath } = await aggregate({ directory: testDir, trigger: 'on-demand' });
+    const content = readFileSync(digestPath, 'utf-8');
+
+    expect(content).toMatch(/## LLM Interaction/);
+    expect(content).toMatch(/n\/a/);
+    // Must not throw or produce NaN
+    expect(content).not.toMatch(/NaN/);
+  });
+
+  it('LLM Interaction section renders gracefully when llm-interaction.jsonl is absent', async () => {
+    // No llm-interaction.jsonl written — directory may not even exist
+    const { digestPath } = await aggregate({ directory: testDir, trigger: 'on-demand' });
+    const content = readFileSync(digestPath, 'utf-8');
+
+    expect(content).toMatch(/## LLM Interaction/);
+    expect(content).toMatch(/Total interactions: \*\*0\*\*/);
+    expect(content).toMatch(/No LLM interaction data recorded/);
+    expect(content).toMatch(/n\/a/);
   });
 });
