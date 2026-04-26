@@ -40,7 +40,7 @@ node skills/stack-provision/scripts/orchestrate.mjs --plan-only --plan-file=/tmp
 
 Pass the user's positional argument (ADR path or stack list) only if they typed one. Otherwise omit it — the orchestrator auto-detects the latest ADR. Read the JSON-line events on stdout; the final `event: completed status: plan-ready` confirms the plan file is ready.
 
-### Step 2 — Read the plan and present a concise summary
+### Step 2 — Read the plan and present exactly one summary line
 
 Read `/tmp/stack-provision-plan.json`. It contains:
 
@@ -49,23 +49,40 @@ Read `/tmp/stack-provision-plan.json`. It contains:
 - `rejected`: candidate ids the policy already rejected (blocked source, hard fail).
 - `candidates[]`: full candidate detail keyed by `id`.
 
-Tell the user one short summary line:
+Emit **exactly one line** to the user, copied from the template below — substitute counters only, do not add prose, tables, breakdown by surface, or emoji:
 
-> `Found N candidates. Auto-approving K safe ones. R need your decision.`
+> `Found N candidates. Auto-installing K. R need your decision.`
 
-If `needs_decision` is empty and `auto_approve` is non-empty, skip directly to Step 4.
+If both `needs_decision` and `rejected` are empty, the line becomes `Found N candidates. Auto-installing K. Nothing else to decide.` — then skip directly to Step 4.
 
 ### Step 3 — Decision flow for `needs_decision`
 
-For each id in `needs_decision`, find the candidate by id in `candidates[]`. Present the user a single AskUserQuestion with:
+If `needs_decision.length >= policy.max_decisions_per_session` (default `5`), open with **one** batch AskUserQuestion before any per-candidate prompt:
 
-- header line: `<source>: <covered.surface>/<covered.technology>` (e.g. `skills-sh: backend/postgres`).
-- one short context line covering trust, freshness, risk flags, verdict reason from `verdict.reason`.
-- if `content_scan.severity` is `warn` or `critical`, prepend a security note like `⚠ content-scan: <severity> — <first finding rule>`.
-- if `trust_signals` is present, mention boost/penalty briefly (e.g. `trust signals: +0.04 -0.00 (npm-downloads:80k/wk≥50k)`).
-- options: `Approve`, `Skip`, `Reject permanently`, `Show preview` (shows `preview` field), and — if `draft` is non-null (the orchestrator already staged a draft file at `draft.path`) — `Edit and approve`. When the user picks `Edit and approve`, instruct them: `Open <draft.path>, edit the content, remove the line containing 'review-required: remove this line after editing', save, then continue.`
+> `K candidates need approval. Approve all that pass strict gate? (You can still skip or reject specific ones afterwards.)`
+> Options: `Approve all safe`, `Decide one by one`, `Skip all`.
 
-If the list of pending decisions is long (≥ `policy.max_decisions_per_session`, default 25), offer one batch AskUserQuestion first: `Auto-approve the K candidates that pass strict gate but fall just below trust threshold?` with options `Yes / No, ask one by one`.
+Per-candidate prompts are mandatory only when the user picked `Decide one by one`, or when `needs_decision.length < policy.max_decisions_per_session`.
+
+For each per-candidate prompt, render exactly this shape — header on one line, context on one line, then options. Total prompt body must stay **≤ 200 characters** (excluding the option list):
+
+```
+<source>: <covered.surface>/<covered.technology> — <verdict.reason>
+```
+
+Optional context-line additions, in this priority order, only if non-empty and only if the total stays under 200 chars:
+
+1. If `content_scan.severity` is `warn` or `critical`, prepend `⚠ <severity>: <first finding rule>` on its own line.
+2. If `tofu_drift` exists, prepend `⚠ pinned skill changed since first install — review diff before approving.`
+
+Options are always one of these two fixed sets — pick the second only when `draft` is non-null:
+
+- `Approve` / `Skip` / `Reject permanently` / `Show preview`
+- `Approve` / `Skip` / `Reject permanently` / `Show preview` / `Edit and approve`
+
+When the user picks `Edit and approve`, instruct: `Open <draft.path>, edit, remove the line containing 'review-required: remove this line after editing', save, then continue.`
+
+**Forbidden in this step**: A/B/C/D-style enumerated menus, trust-signal numeric breakdowns inside the header, multi-row markdown tables, AI emoji decoration. Trust scores, risk flags, freshness — they belong in `Show preview`, not the headline.
 
 Append each decision as one JSON line to `/tmp/stack-provision-decisions.jsonl`:
 
@@ -83,23 +100,72 @@ Valid `action` values: `approve | skip | reject | edit`.
 node skills/stack-provision/scripts/orchestrate.mjs --apply --plan-file=/tmp/stack-provision-plan.json --decisions-file=/tmp/stack-provision-decisions.jsonl
 ```
 
-Read the JSON-line events. Surface to the user only the human-relevant outcome:
+Read the JSON-line events. Use this **exact lookup table** — copy the message verbatim, substitute `<…>` placeholders, do not paraphrase or add prose around it. Events not listed here are silent (machine-only).
 
-- `event: completed status: success` → `Done. K skills installed. Manifest at <manifest_path>.`
-- `event: completed status: rolled-back` → automatic rollback fired on critical drift; the run was reverted. Surface `Critical hash drift — auto-rolled back. Inspect <run_dir>/state.json before retrying.`
-- `event: completed status: paused-for-edits` → list `edit_paths` (or `edit_failed[].id`) and tell the user: `These drafts were not edited yet (or still contain the review marker). Edit them, then run /stack-provision again.`
-- `event: post_install_verify` → drift counts; the orchestrator now calls rollback automatically when `rollback_recommended` is true.
-- `event: rollback` → emitted only when automatic rollback is triggered. `status: 'completed'` reverts the run; `status: 'failed'` leaves the run in `partial` for manual recovery.
-- `event: revalidation` → Phase 4 maintenance. Fires at most once per `revalidation_interval_days` (default 7) when a current manifest exists. Fields: `total`, `local_drift`, `upstream_drift`, `checked_at`. Persists to `.omc/stack-provision/revalidation.json`. Surface to the user only when `local_drift > 0` or `upstream_drift > 0`: `Revalidation found N drifted skills. Run /stack-provision to refresh.`
-- `event: cleanup_proposal` → Phase 4 maintenance. Lists skills idle past `cleanup_threshold_days` (default 60). Surface as `These N skills have not been used in over 60 days: <slugs>. Review and remove or run /stack-provision defer-cleanup to silence for now.` Never delete silently.
-- `event: cve_scan` → Phase 4 maintenance. Fires after candidates are queried against OSV.dev. Fields: `fetched`, `flagged`. Critical advisories become `cve:critical:<id>` risk_flags on the candidate and surface in the per-candidate decision prompt automatically.
-- `event: telemetry_recorded` → Phase 4 maintenance. Fires after a successful run; backs `.omc/stack-provision/usage.json` and feeds the cleanup proposal on the next session. No user-visible message needed.
-- `event: tofu_check` → Phase 5 trust. Fires when at least one candidate has a TOFU pin. Fields: `pinned`, `drift`. Drifted candidates carry `tofu:drift:warn` (or `tofu:drift:critical` in `tofu_strict` mode) and `c.tofu_drift.diff` carrying the unified diff. In the per-candidate prompt prepend: `⚠ pinned skill changed since first install — review diff before approving.`
-- `event: tofu_pinned` → Phase 5 trust. Emitted after a successful run for skills newly pinned (first install) under `.omc/stack-provision/pins/<slug>.snapshot.md` + `pins.json`. No user-visible message needed.
-- `event: sandbox_dryrun` → Phase 5 trust. Static behavior fingerprint over each candidate's SKILL.md. Fields: `critical`, `warned`. Critical findings become `sandbox:<rule>:critical` risk_flags (e.g. `sandbox:curl-pipe-shell:critical`); warn-class becomes `sandbox:undeclared-tool:<Tool>` etc. The detailed fingerprint lives on `c.sandbox_dryrun`.
-- `event: completed status: partial` → `Skills installed, but verification reported a problem. Review <run_dir>/state.json.`
-- `event: completed status: cancelled` → `Cancelled — no skills were installed.`
-- `event: error` → surface the message and exit.
+| Event | User-facing message |
+| --- | --- |
+| `completed status: success` | `Done. K skills installed. Manifest at <manifest_path>.` (substitute K = `installed.length`) |
+| `completed status: partial` | `Skills installed, but verification reported a problem. Review <run_dir>/state.json.` |
+| `completed status: rolled-back` | `Critical hash drift — auto-rolled back. Inspect <run_dir>/state.json before retrying.` |
+| `completed status: paused-for-edits` | `These drafts still need editing: <edit_paths>. Edit them, then run /stack-provision again.` |
+| `completed status: cancelled` | `Cancelled — no skills were installed.` |
+| `revalidation` (only when `local_drift > 0` or `upstream_drift > 0`) | `Revalidation found N drifted skills. Run /stack-provision to refresh.` |
+| `cleanup_proposal` | `These N skills have not been used in over 60 days: <slugs>. Review and remove or run /stack-provision defer-cleanup to silence for now.` |
+| `rollback status: failed` | `Automatic rollback failed; run is in partial state — recover manually from <run_dir>.` |
+| `error` | Surface `error.message` verbatim and exit. |
+
+**Silent (do not surface)**: `phase`, `detect`, `review_summary`, `request_decision`, `install_plan`, `post_install_verify`, `rollback status: completed`, `cve_scan`, `telemetry_recorded`, `tofu_check`, `tofu_pinned`, `sandbox_dryrun`. Critical findings from these feeds are already attached as `risk_flags` on candidates and will surface in Step 3 prompts automatically — do not echo them again here.
+
+## Network discipline
+
+External discovery — `skills-sh`, `agentskill-sh`, `github`, and any custom registry from `discovery_policy.skill_source_registry` — runs through a single rate-limited HTTP client (`scripts/network-client.mjs`). The client owns rate-limiting, retries, concurrency caps, in-flight dedup, disk caching, and API-key injection so individual discovery adapters cannot accidentally hammer a registry the way they did before.
+
+**Per-host budget** (token bucket, refilled continuously):
+
+| Host | Default RPM | Concurrency | API-key env |
+| --- | --- | --- | --- |
+| `skills.sh` | 25 | 2 | `SKILLS_SH_API_KEY` |
+| `agentskill.sh` | 30 | 2 | `AGENTSKILL_SH_API_KEY` |
+| `api.github.com` / `github.com` / `raw.githubusercontent.com` | 60 | 4 | `GITHUB_TOKEN` (or `gh auth token` fallback) |
+| Other registered marketplaces | 30 | 2 | configured per registry |
+| Unconfigured hosts | 30 | 4 | none |
+
+skills.sh advertises 30 rpm without a key; we default to 25 to leave headroom for a parallel run from a teammate. Set `SKILLS_SH_API_KEY` in the environment to lift the limit per the official API docs.
+
+**Retry behaviour.** A `429` triggers up to 3 retries with the `Retry-After` header honored verbatim (cap 60s). Transient `5xx` use exponential backoff (500ms → 1s → 2s, with jitter, cap 60s). After three failures the run records a discovery warning and continues with whatever was already fetched — provisioning never silently swallows the gap.
+
+**Concurrent dedup.** Identical concurrent fetches share one in-flight Promise so duplicate `discoveryQueries` (e.g. `react`, `react`, `react native`) do not multiply the bucket consumption.
+
+**Disk cache.** Successful responses land in `.omc/stack-provision/discovery-cache.json` keyed by URL with default TTL `21600` seconds (6h). On the next `/stack-provision` invocation, cached payloads short-circuit the network entirely. Override the TTL via `discovery_policy.cache_ttl_seconds` in the project config, the CLI flag `--cache-ttl=<seconds>`, or disable the cache with `--no-cache` (e.g. when intentionally probing live registries during a release).
+
+**API-key injection.** Each registry can declare `api_key_env` plus an optional `auth_header_template` (default `Bearer {token}`). The client reads the env var at request time, never persists it, and never logs it. No secrets live in the repo or in `.omc/`. To use a non-`Bearer` header, point `auth_header_template` at the explicit form, e.g. `"X-API-Key: {token}"`.
+
+**Custom registries.** Any project-level config supplied via `--config=<path>` may extend or override `discovery_policy.skill_source_registry[]` with the same fields:
+
+```json
+{
+  "id": "internal-skills",
+  "type": "marketplace",
+  "search_url_template": "https://skills.acme.internal/api/search?q={query}",
+  "domains": ["skills.acme.internal"],
+  "rate_limit_rpm": 120,
+  "concurrency": 4,
+  "api_key_env": "ACME_SKILLS_TOKEN",
+  "auth_header_template": "X-API-Key: {token}",
+  "cache_ttl_seconds": 1800,
+  "install_policy": "explicit-review"
+}
+```
+
+Configuration validation lives in `schemas/config.schema.json`; unknown fields are still allowed (`additionalProperties: true`) so operators can attach metadata for their own tooling.
+
+## Output discipline
+
+The slash-skill must follow these three rules to keep the chat compact and predictable:
+
+1. **One line per phase update.** Step 2 is a single line; Step 4 is one line per non-silent event. Never produce a multi-paragraph status update or a recap of phase completion. Phase tables, surface breakdowns, and candidate matrices belong in `<run_dir>/review.md` on disk, not in the chat.
+2. **Forbidden patterns.** A/B/C/D enumerated menus, "Your decision: A/B/C/D" prompts, decorative emoji, multi-row markdown tables, restating the plan after the user has approved it. The only legal multi-option prompt is the per-candidate or batch AskUserQuestion shape from Step 3, with options drawn from the fixed sets there.
+3. **Silence is fine.** If no `needs_decision` and no surfaced event triggers, the only chat output the user sees for the entire run is the Step 2 line plus `Done. K skills installed. Manifest at <manifest_path>.` That is the autonomous-default target shape — anything more must be justified by an explicit event or a real user decision.
 
 ### Step 5 — Cleanup
 
@@ -255,7 +321,7 @@ Primary marketplace handling:
 
 | Source | Search | Install/download handling |
 | --- | --- | --- |
-| `skills-sh` | Prefer `--skills-sh-index=<json path or url>` or `--source-index=skills-sh=<json path or url>`. With `--network`, query the configured search endpoint. | If the candidate includes `skill_md_url` and `sha256`/`content_sha256`, `promote` downloads and verifies the content hash. Otherwise the registry emits a pending `npx skills add {ref}` action, matching the skills.sh CLI docs. |
+| `skills-sh` | Prefer `--skills-sh-index=<json path or url>` or `--source-index=skills-sh=<json path or url>`. With `--network`, query the configured search endpoint. | If the candidate includes `skill_md_url` and `sha256`/`content_sha256`, `promote` downloads and verifies the content hash. Otherwise discovery extracts `<org>/<repo>` from the entry's `html_url` (or from any pre-shaped `repo_path`/`repository`/`repo`/`ref` field) and emits a pending `npx skills add <org>/<repo> -p -y`. Slug-only entries with no resolvable repo path fall through to `external-command-unresolved` with the `unresolvable-install-target` risk flag — the orchestrator never issues a known-broken `npx skills add <slug>`. |
 | `agentskill-sh` | Prefer `--source-index=agentskill-sh=<json path or url>` for deterministic discovery. With `--network`, query the configured search endpoint; outside stack-provision, agentskill.sh also supports `/learn <query>` search after installing its learn plugin. | If the candidate includes `skill_md_url` and expected checksum, treat it as a verified download. Otherwise emit a pending `/learn {ref}` action; `/learn` performs the interactive install and security preview. |
 | `plugin-marketplace` | Read `--plugin-marketplace-index=<json path or url>` or `--source-index=plugin-marketplace=<json path or url>`. | Emit a pending `/plugin install ...` action. Local plugin caches are still skipped. |
 | `github` | Read `--github-index=<json path or url>` or `--source-index=github=<json path or url>`. With `--network`, use GitHub repository search and optional `--github-org=<org>`. | Prefer entries with previewable `content_path` or `skill_md_url` plus checksum. Repository-only matches stay as manual review actions. |
@@ -266,7 +332,9 @@ Frontend/UI discovery uses broader query hints, but it still provisions skills, 
 
 Review is non-optional. `promote` refuses to run unless `review-decision.json` confirms approval and its `install_plan_hash` still matches `install-plan.json`.
 
-Strict gate is also mandatory before install: `source_trust >= 0.85`, `freshness <= 180 days`, valid checksum, and no license conflict. Network `download-skill` candidates must carry an expected `sha256`/`checksum_sha256`/`content_sha256`; the downloaded `SKILL.md` is hashed again before copy. Candidates failing strict gate stay in quarantine and require manual follow-up.
+Strict gate is mandatory before install: `source_trust >= 0.85`, `freshness <= 180 days`, valid checksum, and no license conflict. Network `download-skill` candidates must carry an expected `sha256`/`checksum_sha256`/`content_sha256`; the downloaded `SKILL.md` is hashed again before copy.
+
+Checksum-missing candidates from high-trust registries pass the gate under TOFU (trust-on-first-use): when `policy.strict_gate.checksum_tofu_allowed` is `true` (default) and the candidate's `source_trust` is at least `policy.strict_gate.checksum_tofu_min_trust` (default `0.9`), the gate sets `tofu_pending: true` instead of recording `checksum_invalid`. The first install captures the SKILL.md hash to `.omc/stack-provision/pins/<slug>.snapshot.md` and subsequent runs detect drift via the `tofu_check` event. Set `checksum_tofu_allowed: false` in the project policy file to fall back to the strict pre-TOFU behaviour. Candidates that still fail the gate stay in quarantine and require manual follow-up.
 
 Source-level approval is intentionally narrow. `--approve-source` and `--approve-local` may batch-approve only low-risk installed or bundled skill candidates. External, generated, network-download, command-based, or warning/critical risk candidates require explicit `--approve=<candidate-id>` after reading the review bundle.
 

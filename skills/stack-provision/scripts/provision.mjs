@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
   copyFileSync,
@@ -19,6 +18,7 @@ import { gatherTrustSignals } from './trust-signals.mjs';
 import { rankCandidates } from './priority-score.mjs';
 import { loadLicensePolicy, resolveLicense } from './license-gate.mjs';
 import { collectGlobalSkillRoots, scanGlobalSkills, findDuplicateForCandidate } from './cross-project-dedup.mjs';
+import { configureDefaultClient, getDefaultClient } from './network-client.mjs';
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const skillDir = resolve(scriptDir, '..');
@@ -48,15 +48,33 @@ const DEFAULT_STRICT_GATE = Object.freeze({
   freshness_days_max: 180,
   checksum_required: true,
   license_conflict_allowed: false,
+  // TOFU (trust-on-first-use): when true, candidates with missing checksums
+  // from sufficiently trusted sources pass the gate and the SKILL.md hash is
+  // pinned at promote time (see tofu-pinning.mjs). Default ON because most
+  // public skill registries (skills.sh, agentskill-sh) do not publish per-skill
+  // sha256 in search responses.
+  checksum_tofu_allowed: true,
+  checksum_tofu_min_trust: 0.9,
 });
-let cachedGitHubToken;
 
-try {
-  const result = await run(process.argv.slice(2));
-  emit(result);
-} catch (error) {
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exit(1);
+const _invokedAsScript = (() => {
+  const entry = process.argv[1];
+  if (!entry) return false;
+  try {
+    return resolve(entry) === resolve(new URL(import.meta.url).pathname);
+  } catch {
+    return false;
+  }
+})();
+
+if (_invokedAsScript) {
+  try {
+    const result = await run(process.argv.slice(2));
+    emit(result);
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  }
 }
 
 async function run(argv) {
@@ -119,6 +137,10 @@ function parseArgs(argv) {
     approvedBy: process.env.USER || 'unknown',
     skillRoot: '',
     manifestPath: '',
+    // Network discipline (handled by network-client.mjs).
+    cachePath: '',
+    cacheTtlSeconds: null,
+    noCache: false,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -232,6 +254,18 @@ function parseArgs(argv) {
     } else if (arg === '--manifest') {
       index += 1;
       options.manifestPath = resolve(requireValue(argv[index], '--manifest'));
+    } else if (arg === '--no-cache') {
+      options.noCache = true;
+    } else if (arg.startsWith('--cache-ttl=')) {
+      options.cacheTtlSeconds = Number(arg.slice('--cache-ttl='.length));
+    } else if (arg === '--cache-ttl') {
+      index += 1;
+      options.cacheTtlSeconds = Number(requireValue(argv[index], '--cache-ttl'));
+    } else if (arg.startsWith('--cache-path=')) {
+      options.cachePath = resolve(arg.slice('--cache-path='.length));
+    } else if (arg === '--cache-path') {
+      index += 1;
+      options.cachePath = resolve(requireValue(argv[index], '--cache-path'));
     } else {
       throw new Error(`stack-provision: unknown option ${arg}`);
     }
@@ -268,6 +302,7 @@ async function discover(runDir, options) {
   const run = readRun(runDir);
   const config = readJsonValidated(resolve(options.configPath), 'config', options.configPath);
   const registrySources = skillSourceRegistryById(config);
+  configureNetworkClientFromOptions({ runDir, options, config });
   const warnings = [];
   const selectedSources = expandSelectedSources(
     options.sources.length > 0
@@ -590,11 +625,20 @@ function enrichRegistryEntry(entry, source, registry) {
 }
 
 function renderRegistryInstallCommand(template, entry, source, registry) {
+  // Honor explicit install_cmd from the registry entry verbatim — some search
+  // responses (skills.sh) ship a fully-formed CLI string that we must not
+  // re-template.
+  if (typeof entry.install_cmd === 'string' && entry.install_cmd.trim()) {
+    return entry.install_cmd.trim();
+  }
   if (!template) {
     return '';
   }
   const slug = sanitizeSlug(entry.slug || entry.name || entry.title || entry.url || source);
-  const ref = registryInstallReference(entry, slug, registry);
+  // Prefer a github `<org>/<repo>` reference when the entry exposes one — for
+  // skills.sh / agentskill-sh this is the only `add`-installable shape.
+  const githubRepoPath = extractGithubRepoPath(entry);
+  const ref = githubRepoPath || registryInstallReference(entry, slug, registry);
   const values = {
     ref,
     slug,
@@ -850,12 +894,14 @@ function sourceQualityForCandidate(source, entry, config) {
 }
 
 function strictGatePolicy(contract) {
+  const sg = contract?.policy?.strict_gate ?? {};
   return {
-    source_trust_min: Number(contract?.policy?.strict_gate?.source_trust_min ?? DEFAULT_STRICT_GATE.source_trust_min),
-    freshness_days_max: Number(contract?.policy?.strict_gate?.freshness_days_max ?? DEFAULT_STRICT_GATE.freshness_days_max),
-    checksum_required: contract?.policy?.strict_gate?.checksum_required ?? DEFAULT_STRICT_GATE.checksum_required,
-    license_conflict_allowed:
-      contract?.policy?.strict_gate?.license_conflict_allowed ?? DEFAULT_STRICT_GATE.license_conflict_allowed,
+    source_trust_min: Number(sg.source_trust_min ?? DEFAULT_STRICT_GATE.source_trust_min),
+    freshness_days_max: Number(sg.freshness_days_max ?? DEFAULT_STRICT_GATE.freshness_days_max),
+    checksum_required: sg.checksum_required ?? DEFAULT_STRICT_GATE.checksum_required,
+    license_conflict_allowed: sg.license_conflict_allowed ?? DEFAULT_STRICT_GATE.license_conflict_allowed,
+    checksum_tofu_allowed: sg.checksum_tofu_allowed ?? DEFAULT_STRICT_GATE.checksum_tofu_allowed,
+    checksum_tofu_min_trust: Number(sg.checksum_tofu_min_trust ?? DEFAULT_STRICT_GATE.checksum_tofu_min_trust),
   };
 }
 
@@ -951,8 +997,15 @@ function evaluateStrictGateForCandidate(candidate, policy) {
     reasons.push(`freshness>${policy.freshness_days_max}d`);
   }
 
+  let tofuPending = false;
   if (policy.checksum_required && !metrics.checksum_valid) {
-    reasons.push('checksum_invalid');
+    const trustOk = metrics.source_trust >= (policy.checksum_tofu_min_trust ?? 0.9);
+    const licenseOk = metrics.license_status !== 'conflict';
+    if (policy.checksum_tofu_allowed && trustOk && licenseOk && !isLocalCandidate) {
+      tofuPending = true;
+    } else {
+      reasons.push('checksum_invalid');
+    }
   }
   if (!policy.license_conflict_allowed && metrics.license_status === 'conflict') {
     reasons.push('license_conflict');
@@ -962,6 +1015,7 @@ function evaluateStrictGateForCandidate(candidate, policy) {
     install_allowed: reasons.length === 0,
     reasons,
     metrics,
+    tofu_pending: tofuPending,
   };
 }
 
@@ -1132,6 +1186,9 @@ function mergeStrictGateRiskFlags(riskFlags, strictGate) {
     for (const reason of strictGate.reasons) {
       flags.add(`strict-gate:${reason}`);
     }
+  }
+  if (strictGate.tofu_pending) {
+    flags.add('tofu:pending');
   }
   return [...flags];
 }
@@ -1347,12 +1404,46 @@ function normalizeList(values) {
   );
 }
 
+// Parse github.com URLs from skills-sh / agentskill-sh search responses to
+// extract `<org>/<repo>` — the format that `npx skills add` actually requires.
+// skills.sh search returns slug-only IDs (e.g. `supabase-postgres-best-practices`)
+// which are NOT installable directly; the canonical install path is the GitHub
+// repo path embedded in the entry's `html_url` field.
+function extractGithubRepoPath(entry) {
+  if (!entry || typeof entry !== 'object') return null;
+  const candidates = [
+    entry.repo_path,
+    entry.repository,
+    entry.repo,
+    entry.html_url,
+    entry.repo_url,
+    entry.url,
+    entry.source_url,
+  ];
+  // First, accept already-shaped `<org>/<repo>` values that aren't URLs.
+  for (const v of candidates) {
+    const s = typeof v === 'string' ? v.trim() : '';
+    if (!s) continue;
+    if (!/:/.test(s) && /^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/.test(s)) return s;
+  }
+  // Then, parse github URLs.
+  for (const v of candidates) {
+    const s = typeof v === 'string' ? v.trim() : '';
+    if (!s) continue;
+    const m = /^https?:\/\/(?:www\.)?github\.com\/([A-Za-z0-9._-]+)\/([A-Za-z0-9._-]+?)(?:\.git)?(?:[\/?#]|$)/.exec(s);
+    if (m) return `${m[1]}/${m[2]}`;
+  }
+  return null;
+}
+
 function externalInstall(source, entry, slug, expectedSha256 = '') {
   if (entry.content_path) {
     return {
       kind: 'copy-skill',
       source_path: resolve(entry.content_path),
       target_slug: slug,
+      method: 'copy-skill',
+      normalized: true,
     };
   }
   if (entry.skill_md_url) {
@@ -1361,6 +1452,8 @@ function externalInstall(source, entry, slug, expectedSha256 = '') {
       source_url: entry.skill_md_url,
       ...(expectedSha256 ? { expected_sha256: expectedSha256 } : {}),
       target_slug: slug,
+      method: 'download-skill',
+      normalized: true,
     };
   }
   if (source === 'plugin-marketplace') {
@@ -1368,12 +1461,47 @@ function externalInstall(source, entry, slug, expectedSha256 = '') {
       kind: 'plugin-install',
       command: entry.install_cmd || `/plugin install ${entry.ref || entry.slug || slug}`,
       target: entry.ref || slug,
+      method: 'plugin-install',
+      normalized: Boolean(entry.ref || entry.slug),
+    };
+  }
+  if (source === 'skills-sh' || source === 'agentskill-sh') {
+    if (typeof entry.install_cmd === 'string' && entry.install_cmd.trim()) {
+      return {
+        kind: 'external-command',
+        command: entry.install_cmd.trim(),
+        target: extractGithubRepoPath(entry) || slug,
+        method: 'external-command',
+        normalized: true,
+      };
+    }
+    const repoPath = extractGithubRepoPath(entry);
+    if (repoPath) {
+      const cli = source === 'agentskill-sh' ? '/learn' : 'npx skills add';
+      const flags = source === 'skills-sh' ? ' -p -y' : '';
+      return {
+        kind: 'external-command',
+        command: `${cli} ${repoPath}${flags}`,
+        target: repoPath,
+        method: 'external-command',
+        normalized: true,
+      };
+    }
+    return {
+      kind: 'external-command-unresolved',
+      command: `review manually: ${entry.html_url || entry.url || slug}`,
+      target: slug,
+      method: 'external-command-unresolved',
+      normalized: false,
+      reason: 'no github repo path or skill_md_url; CLI install requires <org>/<repo>',
     };
   }
   return {
     kind: 'external-command',
     command: entry.install_cmd || entry.command || `review manually: ${entry.url || slug}`,
     target: slug,
+    method: 'external-command',
+    normalized: Boolean(entry.install_cmd || entry.command),
   };
 }
 
@@ -1643,10 +1771,14 @@ async function promoteCandidate(candidate, runDir, skillRoot, options) {
     writeFileSync(tempSource, content, 'utf8');
     return copySkillCandidate(candidate, tempSource, runDir, skillRoot, options);
   }
-  if (install.kind === 'plugin-install' || install.kind === 'external-command') {
-    return pendingAction(candidate, install.command || `review manually: ${candidate.url || candidate.slug}`);
+  if (
+    install.kind === 'plugin-install'
+    || install.kind === 'external-command'
+    || install.kind === 'external-command-unresolved'
+  ) {
+    return pendingAction(candidate, install.command || `review manually: ${candidate.url || candidate.slug}`, install);
   }
-  return pendingAction(candidate, `unsupported install kind: ${install.kind || 'unknown'}`);
+  return pendingAction(candidate, `unsupported install kind: ${install.kind || 'unknown'}`, install);
 }
 
 function copySkillCandidate(candidate, sourcePath, runDir, skillRoot, options) {
@@ -1692,18 +1824,25 @@ function copySkillCandidate(candidate, sourcePath, runDir, skillRoot, options) {
   };
 }
 
-function pendingAction(candidate, command) {
+function pendingAction(candidate, command, install = candidate.install || {}) {
+  const installAudit = {
+    method: install.method || install.kind || 'external-command',
+    normalized: Boolean(install.normalized),
+    target: install.target || null,
+  };
+  if (install.reason) installAudit.reason = install.reason;
   return {
     pending_user_action: {
       candidate_id: candidate.candidate_id,
       slug: candidate.slug,
       source: candidate.source,
       command,
+      install: installAudit,
       rollback: 'manual',
     },
     rollback: {
       operation: 'manual_plugin_uninstall',
-      target_path: candidate.install?.target || candidate.slug,
+      target_path: install.target || candidate.slug,
       backup_path: null,
     },
   };
@@ -2480,93 +2619,41 @@ async function fetchJson(url, timeoutMs) {
 }
 
 async function fetchText(url, timeoutMs) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const response = await fetch(url, {
-      signal: controller.signal,
-      headers: requestHeadersForUrl(url),
-    });
-    if (!response.ok) {
-      const body = clipHttpError(await response.text().catch(() => ''));
-      throw new Error(formatHttpError(url, response.status, body));
-    }
-    return await response.text();
-  } finally {
-    clearTimeout(timeout);
-  }
+  // Delegate to the centralised network-client which handles per-host
+  // rate-limiting, retry on 429/5xx, in-flight dedup, disk cache, and
+  // API-key injection from registry config (api_key_env). Each discover()
+  // run reconfigures the client; tests that import provision.mjs directly
+  // get HARD_DEFAULTS (30 rpm per host, 4 concurrent, 6h cache).
+  const client = getDefaultClient();
+  return client.fetchText(url, { timeoutMs });
 }
 
-function requestHeadersForUrl(url) {
-  const headers = { accept: 'application/json,text/plain,*/*' };
-  if (!isGitHubHost(url)) {
-    return headers;
+function configureNetworkClientFromOptions({ runDir, options, config }) {
+  const projectRoot = options.projectRoot || defaultProjectRoot;
+  const cachePath = options.noCache
+    ? null
+    : (options.cachePath
+      || join(projectRoot, '.omc', 'stack-provision', 'discovery-cache.json'));
+  const ttlPolicy = config?.discovery_policy?.cache_ttl_seconds;
+  const ttlSeconds = options.cacheTtlSeconds != null
+    ? options.cacheTtlSeconds
+    : (typeof ttlPolicy === 'number' ? ttlPolicy : 6 * 60 * 60);
+  const client = configureDefaultClient({
+    cachePath,
+    cacheTtlMs: Math.max(0, Number(ttlSeconds || 0)) * 1000,
+    disableCache: options.noCache === true,
+    timeoutMs: options.timeoutMs,
+  });
+  // Always seed sensible defaults for GitHub before applying registry config,
+  // so `discoverGithub` (which hits api.github.com directly, not via a
+  // registry entry) still gets a real bucket.
+  client.configureHost('api.github.com', { rate_limit_rpm: 60, concurrency: 4 });
+  client.configureHost('github.com', { rate_limit_rpm: 60, concurrency: 4 });
+  client.configureHost('raw.githubusercontent.com', { rate_limit_rpm: 60, concurrency: 4 });
+  for (const registry of toListOfObjects(config?.discovery_policy?.skill_source_registry)) {
+    client.configureRegistry(registry);
   }
-
-  const token = githubAuthToken();
-  if (token) {
-    headers.authorization = `Bearer ${token}`;
-  }
-  if (isGitHubApiUrl(url)) {
-    headers['x-github-api-version'] = '2022-11-28';
-  }
-  return headers;
-}
-
-function githubAuthToken() {
-  if (cachedGitHubToken !== undefined) {
-    return cachedGitHubToken;
-  }
-
-  cachedGitHubToken = String(process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '').trim();
-  if (cachedGitHubToken || process.env.STACK_PROVISION_DISABLE_GH_AUTH_TOKEN === '1') {
-    return cachedGitHubToken;
-  }
-
-  try {
-    cachedGitHubToken = execFileSync('gh', ['auth', 'token'], {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-      timeout: 2000,
-    }).trim();
-  } catch {
-    cachedGitHubToken = '';
-  }
-  return cachedGitHubToken;
-}
-
-function formatHttpError(url, status, body) {
-  let message = `HTTP ${status}`;
-  if (status === 403 && isGitHubApiUrl(url)) {
-    message += githubAuthToken()
-      ? ' (GitHub API denied the authenticated request; check token scopes or rate limits)'
-      : ' (GitHub API unauthenticated or rate-limited; set GITHUB_TOKEN/GH_TOKEN or run gh auth login)';
-  }
-  return body ? `${message}: ${body}` : message;
-}
-
-function clipHttpError(body) {
-  return String(body || '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 280);
-}
-
-function isGitHubHost(url) {
-  try {
-    const host = new URL(url).hostname.toLowerCase();
-    return host === 'api.github.com' || host === 'raw.githubusercontent.com';
-  } catch {
-    return false;
-  }
-}
-
-function isGitHubApiUrl(url) {
-  try {
-    return new URL(url).hostname.toLowerCase() === 'api.github.com';
-  } catch {
-    return false;
-  }
+  return client;
 }
 
 function localRiskFlags(source, skillFile, projectRoot) {
@@ -2593,6 +2680,10 @@ function externalRiskFlags(source, entry, install) {
   }
   if (install.kind === 'external-command' || install.kind === 'plugin-install') {
     flags.push('manual-command-required');
+  }
+  if (install.kind === 'external-command-unresolved') {
+    flags.push('manual-command-required');
+    flags.push('unresolvable-install-target');
   }
   if (install.kind === 'download-skill') {
     flags.push('network-download-required');
@@ -2743,3 +2834,14 @@ function emit(result) {
   if (Array.isArray(result.errors) && result.errors.length > 0) parts.push(`errors=${result.errors.length}`);
   console.log(parts.join(' '));
 }
+
+export {
+  DEFAULT_STRICT_GATE,
+  extractGithubRepoPath,
+  externalInstall,
+  evaluateStrictGateForCandidate,
+  strictGatePolicy,
+  renderRegistryInstallCommand,
+  mergeStrictGateRiskFlags,
+  externalRiskFlags,
+};

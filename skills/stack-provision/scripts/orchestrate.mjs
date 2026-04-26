@@ -59,10 +59,23 @@ const INIT_SCRIPT = path.join(SCRIPT_DIR, 'init.mjs');
 const PROVISION_SCRIPT = path.join(SCRIPT_DIR, 'provision.mjs');
 
 const DEFAULT_POLICY = Object.freeze({
-  auto_approve_threshold: 0.95,
+  // Lowered from 0.95 → 0.90 as part of the autonomous-default rollout: trust
+  // signals from skills.sh / agentskill-sh top out around 0.92 even for clean
+  // entries, so 0.95 effectively forced manual review on almost everything.
+  auto_approve_threshold: 0.9,
   blocked_sources: [],
   forbid_generated_drafts: true,
-  headless_action: 'bail', // bail | auto_approve_safe | manifest_only
+  // Default to autonomous resolution. Headless `bail` was the historical
+  // default; in practice it forces the slash-skill to spam A/B/C/D prompts at
+  // the user. With `auto_approve_safe` the orchestrator approves candidates
+  // that already passed the strict gate and are not critical/generated, and
+  // only escalates the genuinely ambiguous ones.
+  headless_action: 'auto_approve_safe', // bail | auto_approve_safe | manifest_only
+  // Cap on how many per-candidate decisions the slash-skill should ask for in
+  // a single session before offering a single batch resolve. Lowered from 25
+  // (which the SKILL.md still references for legacy contracts) to 5 so even
+  // small stacks (5–10 candidates) get a single batch question instead of N.
+  max_decisions_per_session: 5,
   approved_by: 'orchestrator',
   critic_verdict: 'approve',
   skill_root: null, // null = default project-scoped

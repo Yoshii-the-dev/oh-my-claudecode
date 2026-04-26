@@ -65,11 +65,18 @@
                 "type": "array",
                 "items": { "type": "string", "minLength": 1 }
               },
-              "install_policy": { "type": "string" }
+              "install_policy": { "type": "string" },
+              "rate_limit_rpm": { "type": "integer", "minimum": 1 },
+              "concurrency": { "type": "integer", "minimum": 1 },
+              "api_key_env": { "type": "string", "minLength": 1 },
+              "auth_header_template": { "type": "string", "minLength": 1 },
+              "cache_ttl_seconds": { "type": "integer", "minimum": 0 },
+              "rate_limit_notes": { "type": "string" }
             },
             "additionalProperties": true
           }
-        }
+        },
+        "cache_ttl_seconds": { "type": "integer", "minimum": 0 }
       },
       "additionalProperties": true
     },

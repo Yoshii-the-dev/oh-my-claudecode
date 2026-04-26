@@ -8,6 +8,7 @@
       "installed",
       "bundled"
     ],
+    "cache_ttl_seconds": 21600,
     "selection_policy": {
       "max_candidates_per_run": 40,
       "max_candidates_per_cell": 3,
@@ -37,7 +38,12 @@
         "install_reference_fields": ["ref", "package", "repository", "slug", "name"],
         "domains": ["skills.sh"],
         "tags": ["claude-code", "codex", "skill.md"],
-        "install_policy": "explicit-review"
+        "install_policy": "explicit-review",
+        "rate_limit_rpm": 25,
+        "concurrency": 2,
+        "api_key_env": "SKILLS_SH_API_KEY",
+        "auth_header_template": "Bearer {token}",
+        "rate_limit_notes": "skills.sh advertises 30 rpm without an API key; we default to 25 to leave headroom for other concurrent stack-provision runs in the same network. Set SKILLS_SH_API_KEY to lift the limit per the official API docs."
       },
       {
         "id": "agentskill-sh",
@@ -50,7 +56,11 @@
         "domains": ["agentskill.sh"],
         "tags": ["claude-code", "codex", "cursor", "gemini", "skill.md"],
         "quality_signals": ["quality_score", "security_score", "downloads", "updated_at"],
-        "install_policy": "explicit-review"
+        "install_policy": "explicit-review",
+        "rate_limit_rpm": 30,
+        "concurrency": 2,
+        "api_key_env": "AGENTSKILL_SH_API_KEY",
+        "auth_header_template": "Bearer {token}"
       },
       {
         "id": "agent-skills-cc",
@@ -59,7 +69,9 @@
         "search_url_template": "https://agent-skills.cc/api/search?q={query}",
         "domains": ["agent-skills.cc"],
         "tags": ["claude-code", "codex", "chatgpt", "skill.md"],
-        "install_policy": "explicit-review"
+        "install_policy": "explicit-review",
+        "rate_limit_rpm": 30,
+        "concurrency": 2
       },
       {
         "id": "findskills",
@@ -68,7 +80,9 @@
         "search_url_template": "https://findskills.co/api/search?q={query}",
         "domains": ["findskills.co"],
         "tags": ["claude-code", "codex", "gemini", "cursor", "skill.md"],
-        "install_policy": "explicit-review"
+        "install_policy": "explicit-review",
+        "rate_limit_rpm": 30,
+        "concurrency": 2
       },
       {
         "id": "llmskills",
@@ -77,7 +91,9 @@
         "search_url_template": "https://llmskills.org/api/search?q={query}",
         "domains": ["llmskills.org"],
         "tags": ["claude", "codex", "skill.md"],
-        "install_policy": "explicit-review"
+        "install_policy": "explicit-review",
+        "rate_limit_rpm": 30,
+        "concurrency": 2
       },
       {
         "id": "aiagentbase",
@@ -86,7 +102,9 @@
         "search_url_template": "https://aiagentbase.app/api/skills/search?q={query}",
         "domains": ["aiagentbase.app"],
         "tags": ["claude-code", "skill.md"],
-        "install_policy": "explicit-review"
+        "install_policy": "explicit-review",
+        "rate_limit_rpm": 30,
+        "concurrency": 2
       },
       {
         "id": "skillsmd",
@@ -95,7 +113,9 @@
         "search_url_template": "https://skillsmd.dev/api/search?q={query}",
         "domains": ["skillsmd.dev", "skillsmd.co"],
         "tags": ["skill.md"],
-        "install_policy": "explicit-review"
+        "install_policy": "explicit-review",
+        "rate_limit_rpm": 30,
+        "concurrency": 2
       },
       {
         "id": "skillhq",
@@ -104,7 +124,9 @@
         "search_url_template": "https://skillhq.dev/api/search?q={query}",
         "domains": ["skillhq.dev"],
         "tags": ["skill.md"],
-        "install_policy": "explicit-review"
+        "install_policy": "explicit-review",
+        "rate_limit_rpm": 30,
+        "concurrency": 2
       },
       {
         "id": "cskills-sh",
