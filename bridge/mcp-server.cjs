@@ -6799,12 +6799,12 @@ var require_dist = __commonJS({
         throw new Error(`Unknown format "${name}"`);
       return f;
     };
-    function addFormats(ajv, list, fs8, exportName) {
+    function addFormats(ajv, list, fs9, exportName) {
       var _a;
       var _b;
       (_a = (_b = ajv.opts.code).formats) !== null && _a !== void 0 ? _a : _b.formats = (0, codegen_1._)`require("ajv-formats/dist/formats").${exportName}`;
       for (const f of list)
-        ajv.addFormat(f, fs8[f]);
+        ajv.addFormat(f, fs9[f]);
     }
     module2.exports = exports2 = formatsPlugin;
     Object.defineProperty(exports2, "__esModule", { value: true });
@@ -24412,6 +24412,7 @@ var notepadTools = [
 
 // src/hooks/project-memory/index.ts
 var import_path24 = __toESM(require("path"), 1);
+var import_promises4 = __toESM(require("fs/promises"), 1);
 
 // src/features/context-injector/collector.ts
 var PRIORITY_ORDER = {
@@ -24573,10 +24574,14 @@ async function withProjectMemoryLock(projectRoot, fn) {
 // src/hooks/project-memory/detector.ts
 var import_promises3 = __toESM(require("fs/promises"), 1);
 var import_path21 = __toESM(require("path"), 1);
+var import_crypto3 = require("crypto");
 
 // src/hooks/project-memory/directory-mapper.ts
 var import_promises2 = __toESM(require("fs/promises"), 1);
 var import_path20 = __toESM(require("path"), 1);
+
+// src/hooks/project-memory/detector.ts
+var MAX_FINGERPRINT_FILE_BYTES = 256 * 1024;
 
 // src/hooks/project-memory/formatter.ts
 var import_path23 = __toESM(require("path"), 1);
@@ -25450,7 +25455,7 @@ async function collectMatchesFromFile(target, options) {
   const fileMtime = (0, import_fs19.existsSync)(target.filePath) ? (0, import_fs19.statSync)(target.filePath).mtimeMs : 0;
   if (target.sourceType === "omc-session-summary" && target.filePath.endsWith(".json")) {
     try {
-      const payload = JSON.parse(await import("fs/promises").then((fs8) => fs8.readFile(target.filePath, "utf-8")));
+      const payload = JSON.parse(await import("fs/promises").then((fs9) => fs9.readFile(target.filePath, "utf-8")));
       const entry = buildSearchableEntry(payload, target.sourceType);
       if (!entry) return [];
       if (options.sessionId && entry.sessionId !== options.sessionId) return [];
@@ -27604,7 +27609,7 @@ var import_os6 = require("os");
 
 // src/hooks/learner/loader.ts
 var import_fs24 = require("fs");
-var import_crypto3 = require("crypto");
+var import_crypto4 = require("crypto");
 var import_path32 = require("path");
 
 // src/hooks/learner/finder.ts
@@ -27850,7 +27855,7 @@ function parseArrayValue(rawValue, lines, currentIndex) {
 
 // src/hooks/learner/loader.ts
 function createContentHash(content) {
-  return (0, import_crypto3.createHash)("sha256").update(content).digest("hex").slice(0, 16);
+  return (0, import_crypto4.createHash)("sha256").update(content).digest("hex").slice(0, 16);
 }
 function loadAllSkills(projectRoot) {
   const candidates = findSkillFiles(projectRoot);

@@ -1,4 +1,5 @@
 export const PRODUCT_PIPELINE_CONTRACT_STAGES = [
+    'discovery-handoff',
     'priority-handoff',
     'foundation-lite',
     'technology-handoff',

@@ -3,7 +3,7 @@ import { resolve } from 'path';
 import { spawnSync } from 'child_process';
 import { advanceProductCycle, readProductCycle, } from './cycle-fsm.js';
 import { validateProductPipelineContracts } from './pipeline-contract-validator.js';
-import { readPortfolioLedger, validatePortfolioLedger } from './portfolio-ledger.js';
+import { readPortfolioLedger } from './portfolio-ledger.js';
 const DEFAULT_VERIFY_COMMAND = 'npm test';
 const DEFAULT_MAX_STAGES = 10;
 const STAGE_ORDER = ['discover', 'rank', 'select', 'spec', 'build', 'verify', 'learn', 'complete'];
@@ -269,17 +269,26 @@ function evaluateRank(root) {
     };
 }
 function evaluateSelect(root, cycleId) {
-    const ledgerReport = validatePortfolioLedger(root);
-    if (!ledgerReport.ok || !ledgerReport.ledger) {
+    let ledger;
+    try {
+        ledger = readPortfolioLedger(root);
+    }
+    catch {
         return {
             stage: 'select',
             outcome: 'contract-failed',
-            reason: ledgerReport.issues[0]?.message ?? 'portfolio ledger invalid',
+            reason: 'portfolio ledger could not be read',
             instruction: 'omc portfolio validate',
-            evidence: { issues: ledgerReport.issues },
         };
     }
-    const ledger = ledgerReport.ledger;
+    if (!ledger) {
+        return {
+            stage: 'select',
+            outcome: 'contract-failed',
+            reason: 'portfolio ledger missing',
+            instruction: 'omc portfolio validate',
+        };
+    }
     const cycleItems = cycleId
         ? ledger.items.filter((item) => item.selected_cycle === cycleId)
         : ledger.items.filter((item) => item.status === 'selected');

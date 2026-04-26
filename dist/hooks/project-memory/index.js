@@ -3,10 +3,11 @@
  * Main orchestrator for auto-detecting and injecting project context
  */
 import path from "path";
+import fs from "fs/promises";
 import { contextCollector } from "../../features/context-injector/collector.js";
 import { findProjectRoot } from "../rules-injector/finder.js";
 import { loadProjectMemory, saveProjectMemory, shouldRescan, } from "./storage.js";
-import { detectProjectEnvironment } from "./detector.js";
+import { computeProjectFingerprint, detectProjectEnvironment, } from "./detector.js";
 import { formatContextSummary } from "./formatter.js";
 /**
  * Session caches to prevent duplicate injection.
@@ -37,10 +38,13 @@ export async function registerProjectMemoryContext(sessionId, workingDirectory) 
     }
     try {
         let memory = await loadProjectMemory(projectRoot);
-        if (!memory || shouldRescan(memory)) {
+        const needsRegrounding = memory
+            ? await shouldRegroundProjectMemory(memory, projectRoot)
+            : false;
+        if (!memory || shouldRescan(memory) || needsRegrounding) {
             const existing = memory;
             memory = await detectProjectEnvironment(projectRoot);
-            if (existing) {
+            if (existing && (await shouldPreserveLearnedMemory(existing, memory, projectRoot))) {
                 memory.customNotes = existing.customNotes;
                 memory.userDirectives = existing.userDirectives;
                 memory.hotPaths = existing.hotPaths;
@@ -80,7 +84,7 @@ export function clearProjectMemorySession(sessionId) {
 export async function rescanProjectEnvironment(projectRoot) {
     const existing = await loadProjectMemory(projectRoot);
     const memory = await detectProjectEnvironment(projectRoot);
-    if (existing) {
+    if (existing && (await shouldPreserveLearnedMemory(existing, memory, projectRoot))) {
         memory.customNotes = existing.customNotes;
         memory.userDirectives = existing.userDirectives;
         memory.hotPaths = existing.hotPaths;
@@ -97,6 +101,53 @@ function getScopeKey(projectRoot, workingDirectory) {
         return ".";
     }
     return normalized;
+}
+async function shouldRegroundProjectMemory(memory, projectRoot) {
+    const currentFingerprint = await computeProjectFingerprint(projectRoot);
+    if (!memory.projectFingerprint) {
+        return true;
+    }
+    return memory.projectFingerprint.hash !== currentFingerprint.hash;
+}
+async function shouldPreserveLearnedMemory(existing, detected, projectRoot) {
+    if (!hasLearnedMemory(existing)) {
+        return true;
+    }
+    if (existing.projectFingerprint?.hash &&
+        detected.projectFingerprint?.hash &&
+        existing.projectFingerprint.hash === detected.projectFingerprint.hash) {
+        return true;
+    }
+    if (!existing.projectFingerprint) {
+        return hasLiveDetectionMarkers(existing, projectRoot);
+    }
+    return false;
+}
+function hasLearnedMemory(memory) {
+    return (memory.customNotes.length > 0 ||
+        memory.userDirectives.length > 0 ||
+        memory.hotPaths.length > 0);
+}
+async function hasLiveDetectionMarkers(memory, projectRoot) {
+    const markers = new Set();
+    for (const language of memory.techStack.languages) {
+        for (const marker of language.markers) {
+            markers.add(marker);
+        }
+    }
+    if (markers.size === 0) {
+        return false;
+    }
+    for (const marker of markers) {
+        try {
+            await fs.access(path.join(projectRoot, marker));
+            return true;
+        }
+        catch {
+            // Continue checking remaining markers.
+        }
+    }
+    return false;
 }
 export { loadProjectMemory, saveProjectMemory, withProjectMemoryLock, } from "./storage.js";
 export { detectProjectEnvironment } from "./detector.js";

@@ -106,6 +106,9 @@ describe("Project Memory Formatter", () => {
         now: NOW,
       });
 
+      expect(summary.indexOf("[Memory Grounding]")).toBeLessThan(
+        summary.indexOf("[Project Environment]"),
+      );
       expect(summary.indexOf("[Project Environment]")).toBeLessThan(
         summary.indexOf("[Hot Paths]"),
       );
@@ -167,6 +170,7 @@ describe("Project Memory Formatter", () => {
       const summary = formatContextSummary(memory, { now: NOW });
 
       expect(summary.length).toBeLessThanOrEqual(650);
+      expect(summary).toContain("[Memory Grounding]");
       expect(summary).toContain("[Project Environment]");
     });
 
@@ -278,6 +282,7 @@ describe("Project Memory Formatter", () => {
 
       const summary = formatContextSummary(memory, { now: NOW });
 
+      expect(summary).toContain("[Memory Grounding]");
       expect(summary).toContain("[Project Environment]");
       expect(summary).not.toContain("[Hot Paths]");
       expect(summary).not.toContain("[Directives]");

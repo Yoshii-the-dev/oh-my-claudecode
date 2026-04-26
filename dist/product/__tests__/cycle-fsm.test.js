@@ -3,6 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { advanceProductCycle, readProductCycle, validateProductCycle, } from '../cycle-fsm.js';
+import { migrateCycleMarkdownToJson } from '../cycle-document.js';
 let rootsToClean = [];
 afterEach(() => {
     for (const root of rootsToClean) {
@@ -40,6 +41,7 @@ describe('product cycle FSM', () => {
     it('allows the next legal transition and updates stage checklist', () => {
         const root = createRoot();
         advanceProductCycle({ root, to: 'discover', goal: 'ship first usable loop' });
+        writeDiscoveryArtifacts(root);
         const result = advanceProductCycle({ root, to: 'rank' });
         const content = readFileSync(join(root, '.omc/cycles/current.md'), 'utf-8');
         expect(result.ok).toBe(true);
@@ -47,6 +49,13 @@ describe('product cycle FSM', () => {
         expect(result.snapshot.stage).toBe('rank');
         expect(content).toContain('- [x] discover');
         expect(content).toContain('- [x] rank');
+    });
+    it('blocks rank until discovery-handoff contract passes', () => {
+        const root = createRoot();
+        advanceProductCycle({ root, to: 'discover', goal: 'ship first usable loop' });
+        const result = advanceProductCycle({ root, to: 'rank' });
+        expect(result.ok).toBe(false);
+        expect(result.issues.map((issue) => issue.code)).toContain('discovery-contract-failed');
     });
     it('blocks select until priority-handoff contract passes', () => {
         const root = createRoot();
@@ -78,6 +87,32 @@ describe('product cycle FSM', () => {
         const validated = validateProductCycle(root);
         expect(result.ok).toBe(true);
         expect(result.snapshot.stage).toBe('complete');
+        expect(validated.issues.filter((issue) => issue.severity === 'error')).toEqual([]);
+    });
+    it('prefers the typed cycle document and regenerates the markdown projection on advance', () => {
+        const root = createRoot();
+        advanceProductCycle({ root, to: 'discover', goal: 'ship first usable loop' });
+        writeDiscoveryArtifacts(root);
+        writeArtifact(root, '.omc/cycles/current.md', cycleArtifact('blocked'));
+        const before = readProductCycle(root);
+        const result = advanceProductCycle({ root, to: 'rank' });
+        const projection = readFileSync(join(root, '.omc/cycles/current.md'), 'utf-8');
+        const document = readFileSync(join(root, '.omc/cycles/current.json'), 'utf-8');
+        expect(before.path).toBe(join(root, '.omc/cycles/current.json'));
+        expect(result.ok).toBe(true);
+        expect(result.snapshot.stage).toBe('rank');
+        expect(document).toContain('"cycle_stage": "rank"');
+        expect(projection).toContain('cycle_stage: rank');
+    });
+    it('reports projection drift without validating against stale markdown', () => {
+        const root = createRoot();
+        writeCycle(root, cycleArtifact('spec'));
+        writePriorityArtifacts(root);
+        const migration = migrateCycleMarkdownToJson(root, { write: true, now: '2026-04-26T00:00:00.000Z' });
+        expect(migration.ok).toBe(true);
+        writeCycle(root, cycleArtifact('spec').replace('build_route: product-pipeline', 'build_route: blocked'));
+        const validated = validateProductCycle(root);
+        expect(validated.issues.map((issue) => issue.code)).toContain('cycle-projection-drift');
         expect(validated.issues.filter((issue) => issue.severity === 'error')).toEqual([]);
     });
 });
@@ -168,6 +203,67 @@ function writePriorityArtifacts(root) {
     writeArtifact(root, '.omc/opportunities/current.md', opportunitiesArtifact());
     writeArtifact(root, '.omc/roadmap/current.md', roadmapArtifact());
     writeArtifact(root, '.omc/experience/current.md', experienceGateArtifact());
+}
+function writeDiscoveryArtifacts(root) {
+    writeArtifact(root, '.omc/product/capability-map/current.md', `# Capability Map
+
+## MVP Feature Set
+- Reader shell
+
+## First Usable Loop
+Import/open sample pattern -> row track -> persist progress -> resume next session.
+
+## Required Product Systems
+- Pattern reader
+
+## Retention
+Return to the next row without setup.
+
+## Launch Readiness
+Private beta after first loop.
+
+## Backend/Product Split
+Product pipeline owns the reader, backend pipeline owns persistence.
+
+run_id: test
+agent_role: product-strategist
+requested_next_agent: priority-engine
+artifacts_produced:
+  - .omc/product/capability-map/current.md
+`);
+    writeArtifact(root, '.omc/ecosystem/current.md', `# Ecosystem Map
+
+## App Surfaces
+Reader and library.
+
+## Content Loops
+Sample patterns.
+
+## Data Loops
+Progress history.
+
+## Distribution Loops
+Referral prompts.
+
+## Integrations
+PDF imports.
+
+## Research Loop
+Design partner sessions.
+
+## Depth Path
+- v0: first usable loop
+- v1: richer reader
+- v2: creator layer
+- research gate: observed repeat use
+
+status: ready
+evidence: fixture
+confidence: medium
+blocking_issues: none
+next_action: run priority-engine
+artifacts_written: .omc/ecosystem/current.md
+`);
 }
 function portfolioLedgerArtifact() {
     const lanes = ['product', 'ux', 'research', 'backend', 'quality', 'brand-content', 'distribution'];

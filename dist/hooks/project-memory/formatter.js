@@ -8,6 +8,10 @@ const SUMMARY_CHAR_BUDGET = 650;
 const MAX_HOT_PATH_ITEMS = 3;
 const MAX_DIRECTIVE_ITEMS = 3;
 const MAX_LEARNING_ITEMS = 3;
+const GROUNDING_TIER = [
+    "[Memory Grounding]",
+    "- Historical hints only; verify current files before claiming implemented features.",
+];
 /**
  * Format project memory as a concise summary
  * Used for context injection (includes directives for compaction resilience)
@@ -15,11 +19,26 @@ const MAX_LEARNING_ITEMS = 3;
 export function formatContextSummary(memory, context = {}) {
     const lines = [];
     const pushTier = createBoundedTierWriter(lines);
+    if (hasInjectableMemory(memory)) {
+        pushTier(GROUNDING_TIER);
+    }
     pushTier(formatEnvironmentTier(memory));
     pushTier(formatHotPathsTier(memory, context));
     pushTier(formatDirectivesTier(memory));
     pushTier(formatLearningsTier(memory, context));
     return trimToBudget(lines.join("\n"), SUMMARY_CHAR_BUDGET);
+}
+function hasInjectableMemory(memory) {
+    return (memory.techStack.languages.length > 0 ||
+        memory.techStack.frameworks.length > 0 ||
+        Boolean(memory.techStack.packageManager) ||
+        Boolean(memory.techStack.runtime) ||
+        Boolean(memory.build.buildCommand) ||
+        Boolean(memory.build.testCommand) ||
+        Boolean(memory.build.lintCommand) ||
+        memory.hotPaths.length > 0 ||
+        memory.userDirectives.length > 0 ||
+        memory.customNotes.length > 0);
 }
 /**
  * Format project memory as full details (for debugging)

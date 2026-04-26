@@ -32,6 +32,7 @@ describe('runProductCycle', () => {
         const root = createRoot();
         advanceProductCycle({ root, to: 'discover', goal: 'ship first usable loop' });
         writeArtifact(root, '.omc/product/capability-map/current.md', '# capability map');
+        writeArtifact(root, '.omc/ecosystem/current.md', '# ecosystem');
         const report = runProductCycle({ root });
         expect(report.stagesAdvanced.map((entry) => `${entry.from}->${entry.to}`)).toContain('discover->rank');
         expect(report.stoppedReason).toBe('pause-for-llm');

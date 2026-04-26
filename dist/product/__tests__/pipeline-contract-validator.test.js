@@ -72,6 +72,15 @@ describe('validateProductPipelineContracts', () => {
         expect(foundationLite.issues.find((issue) => issue.artifact === 'meaning')?.severity).toBe('warning');
         expect(all.issues.find((issue) => issue.artifact === 'meaning')?.severity).toBe('error');
     });
+    it('passes discovery-handoff with discovery artifacts before priority outputs exist', () => {
+        const root = createRoot();
+        writeArtifact(root, '.omc/product/capability-map/current.md', capabilityMapArtifact());
+        writeArtifact(root, '.omc/ecosystem/current.md', ecosystemArtifact());
+        const report = validateProductPipelineContracts({ root, stage: 'discovery-handoff' });
+        expect(report.ok).toBe(true);
+        expect(report.issues.find((issue) => issue.artifact === 'meaning')?.severity).toBe('warning');
+        expect(report.issues.map((issue) => issue.artifact)).not.toContain('portfolio-ledger');
+    });
     it('validates the product cycle controller spec before build', () => {
         const root = createRoot();
         writeFoundationLiteArtifacts(root);
@@ -89,6 +98,45 @@ describe('validateProductPipelineContracts', () => {
         const report = validateProductPipelineContracts({ root, stage: 'cycle' });
         expect(report.ok).toBe(false);
         expect(codes(report)).toContain('missing-experience-gate');
+    });
+    it('blocks cycle build when the cycle spec still contains placeholders', () => {
+        const root = createRoot();
+        writeFoundationLiteArtifacts(root);
+        writeArtifact(root, '.omc/cycles/current.md', cycleArtifact('spec').replace('user can resume the next row after reopening the app', 'TBD'));
+        writeArtifact(root, '.omc/experience/current.md', experienceGateArtifact());
+        const report = validateProductPipelineContracts({ root, stage: 'cycle' });
+        expect(report.ok).toBe(false);
+        expect(codes(report)).toContain('placeholder-cycle-spec');
+    });
+    it('blocks cycle build when build_route is blocked', () => {
+        const root = createRoot();
+        writeFoundationLiteArtifacts(root);
+        writeArtifact(root, '.omc/cycles/current.md', cycleArtifact('spec').replace('build_route: product-pipeline', 'build_route: blocked'));
+        writeArtifact(root, '.omc/experience/current.md', experienceGateArtifact());
+        const report = validateProductPipelineContracts({ root, stage: 'cycle' });
+        expect(report.ok).toBe(false);
+        expect(codes(report)).toContain('invalid-build-route');
+    });
+    it('requires UX Verdict to be exactly pass', () => {
+        const root = createRoot();
+        writeFoundationLiteArtifacts(root);
+        writeArtifact(root, '.omc/cycles/current.md', cycleArtifact('spec'));
+        writeArtifact(root, '.omc/experience/current.md', experienceGateArtifact().replace('pass: ready-for-build', 'does not pass yet'));
+        const report = validateProductPipelineContracts({ root, stage: 'cycle' });
+        expect(report.ok).toBe(false);
+        expect(codes(report)).toContain('experience-gate-not-passed');
+        expect(metric(report, 'experience-gate', 'uxVerdict')).toBe('unknown');
+    });
+    it('enforces the selected portfolio trio shape', () => {
+        const root = createRoot();
+        const broken = JSON.parse(portfolioLedgerArtifact());
+        broken.items[2].type = 'quality';
+        writeFoundationLiteArtifacts(root, {
+            portfolio: JSON.stringify(broken, null, 2),
+        });
+        const report = validateProductPipelineContracts({ root, stage: 'priority-handoff' });
+        expect(report.ok).toBe(false);
+        expect(codes(report)).toContain('invalid-selected-cycle-trio');
     });
     it('blocks a completed cycle that does not reference learning capture', () => {
         const root = createRoot();

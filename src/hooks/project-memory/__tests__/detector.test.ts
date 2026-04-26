@@ -73,6 +73,10 @@ describe('Project Environment Detector', () => {
       expect(memory.build.testCommand).toBe('pnpm test');
       expect(memory.build.lintCommand).toBe('pnpm lint');
       expect(memory.build.devCommand).toBe('pnpm dev');
+      expect(memory.projectFingerprint?.hash).toMatch(/^[a-f0-9]{64}$/);
+      expect(memory.projectFingerprint?.markers).toEqual(
+        expect.arrayContaining(['package.json', 'tsconfig.json', 'pnpm-lock.yaml']),
+      );
     });
   });
 
@@ -194,6 +198,8 @@ pytest = "^7.4.0"
       expect(memory.techStack.frameworks).toHaveLength(0);
       expect(memory.techStack.packageManager).toBeNull();
       expect(memory.build.buildCommand).toBeNull();
+      expect(memory.projectFingerprint?.hash).toMatch(/^[a-f0-9]{64}$/);
+      expect(memory.projectFingerprint?.markers).toHaveLength(0);
     });
   });
 });

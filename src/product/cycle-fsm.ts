@@ -1,6 +1,14 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { validateProductPipelineContracts } from './pipeline-contract-validator.js';
+import {
+  CYCLE_DOCUMENT_RELATIVE_PATH,
+  CYCLE_PROJECTION_RELATIVE_PATH,
+  readCycleDocument,
+  renderCycleProjection,
+  writeCycleDocument,
+  type CycleDocument,
+} from './cycle-document.js';
 
 export type ProductCycleStage =
   | 'discover'
@@ -48,7 +56,6 @@ export interface AdvanceProductCycleOptions {
   force?: boolean;
 }
 
-const CYCLE_RELATIVE_PATH = '.omc/cycles/current.md';
 const LEARNING_RELATIVE_PATH = '.omc/learning/current.md';
 const STAGES: ProductCycleStage[] = ['discover', 'rank', 'select', 'spec', 'build', 'verify', 'learn', 'complete'];
 const STAGE_SET = new Set<ProductCycleStage>([...STAGES, 'blocked']);
@@ -68,32 +75,57 @@ export function isProductCycleStage(value: string): value is ProductCycleStage {
 }
 
 export function getProductCyclePath(root = process.cwd()): string {
-  return resolve(root, CYCLE_RELATIVE_PATH);
+  return resolve(root, CYCLE_PROJECTION_RELATIVE_PATH);
 }
 
 export function readProductCycle(root = process.cwd()): ProductCycleSnapshot {
   const resolvedRoot = resolve(root);
-  const path = getProductCyclePath(resolvedRoot);
-  if (!existsSync(path)) {
+  const jsonPath = resolve(resolvedRoot, CYCLE_DOCUMENT_RELATIVE_PATH);
+  const projectionPath = getProductCyclePath(resolvedRoot);
+
+  if (existsSync(jsonPath)) {
+    try {
+      const document = readCycleDocument(resolvedRoot);
+      if (!document) throw new Error(`Missing ${CYCLE_DOCUMENT_RELATIVE_PATH}`);
+      const snapshot = snapshotFromDocument(resolvedRoot, jsonPath, document);
+      const driftIssue = projectionDriftIssue(resolvedRoot, document);
+      if (driftIssue) snapshot.issues.push(driftIssue);
+      return snapshot;
+    } catch (error) {
+      return {
+        exists: true,
+        root: resolvedRoot,
+        path: jsonPath,
+        nextAction: 'Fix .omc/cycles/current.json or regenerate it from markdown with omc product-cycle migrate-document --write --force',
+        issues: [{
+          severity: 'error',
+          code: 'invalid-cycle-document',
+          message: error instanceof Error ? error.message : String(error),
+        }],
+      };
+    }
+  }
+
+  if (!existsSync(projectionPath)) {
     return {
       exists: false,
       root: resolvedRoot,
-      path,
+      path: projectionPath,
       nextAction: 'Start a cycle: omc product-cycle advance --to discover --goal "<cycle goal>"',
       issues: [{
         severity: 'warning',
         code: 'missing-cycle',
-        message: `Missing ${CYCLE_RELATIVE_PATH}`,
+        message: `Missing ${CYCLE_PROJECTION_RELATIVE_PATH}`,
       }],
     };
   }
 
-  const content = readFileSync(path, 'utf-8');
+  const content = readFileSync(projectionPath, 'utf-8');
   const stage = parseStage(readField(content, 'cycle_stage'));
   const snapshot: ProductCycleSnapshot = {
     exists: true,
     root: resolvedRoot,
-    path,
+    path: projectionPath,
     cycleId: readField(content, 'cycle_id'),
     cycleGoal: readHeadingGoal(content) ?? readField(content, 'cycle_goal'),
     stage,
@@ -155,7 +187,7 @@ export function advanceProductCycle(options: AdvanceProductCycleOptions): Produc
       return { ok: false, to, snapshot: before, issues };
     }
 
-    writeCycle(root, createCycleTemplate(options.goal ?? 'product learning cycle'));
+    writeCycleDocument(root, createCycleDocumentTemplate(options.goal ?? 'product learning cycle'));
     const created = readProductCycle(root);
     return { ok: true, to, snapshot: created, issues: [] };
   }
@@ -182,8 +214,21 @@ export function advanceProductCycle(options: AdvanceProductCycleOptions): Produc
     return { ok: false, from: before.stage, to, snapshot: before, issues };
   }
 
-  const content = readFileSync(before.path, 'utf-8');
-  writeCycle(root, updateCycleStage(content, to));
+  if (before.path.endsWith(CYCLE_DOCUMENT_RELATIVE_PATH)) {
+    const document = readCycleDocument(root);
+    if (!document) {
+      issues.push({
+        severity: 'error',
+        code: 'missing-cycle-document',
+        message: `Cannot advance because ${CYCLE_DOCUMENT_RELATIVE_PATH} could not be read`,
+      });
+      return { ok: false, from: before.stage, to, snapshot: before, issues };
+    }
+    writeCycleDocument(root, updateCycleDocumentStage(document, to));
+  } else {
+    const content = readFileSync(before.path, 'utf-8');
+    writeCycle(root, updateCycleStage(content, to));
+  }
   const after = readProductCycle(root);
   return { ok: true, from: before.stage, to, snapshot: after, issues };
 }
@@ -194,6 +239,17 @@ export function getNextProductCycleAction(root = process.cwd()): ProductCycleSna
 
 function transitionGuardIssues(root: string, from: ProductCycleStage, to: ProductCycleStage): ProductCycleIssue[] {
   const issues: ProductCycleIssue[] = [];
+
+  if (from === 'discover' && to === 'rank') {
+    const report = validateProductPipelineContracts({ root, stage: 'discovery-handoff' });
+    if (!report.ok) {
+      issues.push({
+        severity: 'error',
+        code: 'discovery-contract-failed',
+        message: 'Cannot rank before discovery-handoff contract passes',
+      });
+    }
+  }
 
   if (from === 'rank' && to === 'select') {
     const report = validateProductPipelineContracts({ root, stage: 'priority-handoff' });
@@ -239,50 +295,47 @@ function writeCycle(root: string, content: string): void {
   writeFileSync(path, content, 'utf-8');
 }
 
-function createCycleTemplate(goal: string): string {
+function createCycleDocumentTemplate(goal: string): CycleDocument {
   const date = new Date().toISOString().slice(0, 10);
   const slug = slugify(goal);
-  return `# Product Cycle: ${goal}
-
-cycle_id: ${date}-${slug}
-cycle_goal: ${goal}
-cycle_stage: discover
-product_stage: pre-mvp
-
-## Stage Checklist
-- [ ] discover
-- [ ] rank
-- [ ] select
-- [ ] spec
-- [ ] build
-- [ ] verify
-- [ ] learn
-
-## Selected Cycle Portfolio
-core_product_slice: TBD
-enabling_task: TBD
-learning_task: TBD
-
-## Cycle Spec
-acceptance_criteria:
-  - TBD
-build_route: blocked
-verification_plan:
-  - TBD
-learning_plan:
-  - TBD
-experience_gate: .omc/experience/current.md
-
-status: needs-research
-evidence:
-  - ${CYCLE_RELATIVE_PATH}
-confidence: 0.2
-blocking_issues:
-  - discovery not complete
-next_action: /product-foundation "${goal}" --foundation-lite
-artifacts_written:
-  - "${CYCLE_RELATIVE_PATH}"
-`;
+  return {
+    schema_version: 1,
+    cycle_id: `${date}-${slug}`,
+    cycle_goal: goal,
+    cycle_stage: 'discover',
+    product_stage: 'pre-mvp',
+    stage_checklist: {
+      discover: false,
+      rank: false,
+      select: false,
+      spec: false,
+      build: false,
+      verify: false,
+      learn: false,
+    },
+    selected_portfolio: {
+      core_product_slice: 'TBD',
+      enabling_task: 'TBD',
+      learning_task: 'TBD',
+    },
+    spec: {
+      acceptance_criteria: ['TBD'],
+      build_route: 'blocked',
+      verification_plan: ['TBD'],
+      learning_plan: ['TBD'],
+      experience_gate: '.omc/experience/current.md',
+    },
+    footer: {
+      status: 'needs-research',
+      evidence: [CYCLE_DOCUMENT_RELATIVE_PATH],
+      confidence: 0.2,
+      blocking_issues: ['discovery not complete'],
+      next_action: `/product-foundation "${goal}" --foundation-lite`,
+      artifacts_written: [CYCLE_DOCUMENT_RELATIVE_PATH, CYCLE_PROJECTION_RELATIVE_PATH],
+    },
+    history: [],
+    updated_at: new Date().toISOString(),
+  };
 }
 
 function updateCycleStage(content: string, stage: ProductCycleStage): string {
@@ -314,6 +367,87 @@ function updateCycleStage(content: string, stage: ProductCycleStage): string {
   }
 
   return updated.endsWith('\n') ? updated : `${updated}\n`;
+}
+
+function snapshotFromDocument(root: string, path: string, document: CycleDocument): ProductCycleSnapshot {
+  const stage = parseStage(document.cycle_stage);
+  return {
+    exists: true,
+    root,
+    path,
+    cycleId: document.cycle_id,
+    cycleGoal: document.cycle_goal,
+    stage,
+    productStage: document.product_stage,
+    buildRoute: document.spec.build_route,
+    nextStage: stage ? NEXT_STAGE[stage] : undefined,
+    nextAction: getNextAction(stage, renderCycleProjection(document)),
+    issues: [],
+  };
+}
+
+function projectionDriftIssue(root: string, document: CycleDocument): ProductCycleIssue | undefined {
+  const projectionPath = resolve(root, CYCLE_PROJECTION_RELATIVE_PATH);
+  if (!existsSync(projectionPath)) {
+    return {
+      severity: 'warning',
+      code: 'missing-cycle-projection',
+      message: `Missing ${CYCLE_PROJECTION_RELATIVE_PATH}; run omc product-cycle project-document`,
+    };
+  }
+  const expected = normalizeProjection(renderCycleProjection(document));
+  const actual = normalizeProjection(readFileSync(projectionPath, 'utf-8'));
+  if (expected === actual) return undefined;
+  return {
+    severity: 'warning',
+    code: 'cycle-projection-drift',
+    message: `${CYCLE_PROJECTION_RELATIVE_PATH} differs from ${CYCLE_DOCUMENT_RELATIVE_PATH}; run omc product-cycle project-document`,
+  };
+}
+
+function normalizeProjection(content: string): string {
+  return content.trim().replace(/\r\n/g, '\n');
+}
+
+function updateCycleDocumentStage(document: CycleDocument, stage: ProductCycleStage): CycleDocument {
+  const updated: CycleDocument = {
+    ...document,
+    cycle_stage: stage,
+    stage_checklist: { ...document.stage_checklist },
+    footer: {
+      ...document.footer,
+      next_action: getNextAction(stage, renderCycleProjection(document)),
+      artifacts_written: Array.from(new Set([
+        ...document.footer.artifacts_written,
+        CYCLE_DOCUMENT_RELATIVE_PATH,
+        CYCLE_PROJECTION_RELATIVE_PATH,
+      ])),
+    },
+    history: [
+      ...document.history,
+      {
+        stage,
+        at: new Date().toISOString(),
+        note: 'omc product-cycle advance',
+      },
+    ],
+    updated_at: new Date().toISOString(),
+  };
+
+  const checklistStages = STAGES.filter((item): item is Exclude<ProductCycleStage, 'complete' | 'blocked'> => (
+    item !== 'complete' && item !== 'blocked'
+  ));
+  for (const loopStage of checklistStages) {
+    updated.stage_checklist[loopStage] = shouldCheckStage(loopStage, stage);
+  }
+
+  if (stage === 'blocked') {
+    updated.footer.status = 'blocked';
+  } else if (stage === 'complete') {
+    updated.footer.status = 'ok';
+  }
+
+  return updated;
 }
 
 function shouldCheckStage(loopStage: ProductCycleStage, currentStage: ProductCycleStage): boolean {

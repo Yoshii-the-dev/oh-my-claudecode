@@ -97,6 +97,7 @@ describe("Project Memory Formatter", () => {
                 workingDirectory: "src/hooks/project-memory",
                 now: NOW,
             });
+            expect(summary.indexOf("[Memory Grounding]")).toBeLessThan(summary.indexOf("[Project Environment]"));
             expect(summary.indexOf("[Project Environment]")).toBeLessThan(summary.indexOf("[Hot Paths]"));
             expect(summary.indexOf("[Hot Paths]")).toBeLessThan(summary.indexOf("[Directives]"));
             expect(summary.indexOf("[Directives]")).toBeLessThan(summary.indexOf("[Recent Learnings]"));
@@ -148,6 +149,7 @@ describe("Project Memory Formatter", () => {
             });
             const summary = formatContextSummary(memory, { now: NOW });
             expect(summary.length).toBeLessThanOrEqual(650);
+            expect(summary).toContain("[Memory Grounding]");
             expect(summary).toContain("[Project Environment]");
         });
         it("prefers hot paths near the current working directory", () => {
@@ -243,6 +245,7 @@ describe("Project Memory Formatter", () => {
                 },
             });
             const summary = formatContextSummary(memory, { now: NOW });
+            expect(summary).toContain("[Memory Grounding]");
             expect(summary).toContain("[Project Environment]");
             expect(summary).not.toContain("[Hot Paths]");
             expect(summary).not.toContain("[Directives]");
