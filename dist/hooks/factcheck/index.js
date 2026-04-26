@@ -10,6 +10,7 @@
  *   - manual:   Same as declared
  *   - quick:    Skips cwd parity check by default
  */
+import { emitVerdict } from '../../telemetry/emit.js';
 import { checkMissingFields, checkMissingGates, getFalseGates, sourceFileCount, checkPaths, checkCommands, checkCwdParity, } from './checks.js';
 import { loadGuardsConfig } from './config.js';
 export { loadGuardsConfig, shouldUseStrictMode } from './config.js';
@@ -115,6 +116,10 @@ export function runChecks(claims, mode, policy, runtimeCwd) {
 export function runFactcheck(claims, options) {
     const config = loadGuardsConfig(options?.workspace);
     const mode = options?.mode ?? config.factcheck.mode;
-    return runChecks(claims, mode, config.factcheck, options?.runtimeCwd);
+    const result = runChecks(claims, mode, config.factcheck, options?.runtimeCwd);
+    // Telemetry: emit verdict event (fire-and-forget, non-blocking)
+    const directory = options?.workspace ?? options?.runtimeCwd ?? process.cwd();
+    void emitVerdict({ directory, agent_type: String(claims['agent_type'] ?? 'unknown'), verdict: result.verdict });
+    return result;
 }
 //# sourceMappingURL=index.js.map

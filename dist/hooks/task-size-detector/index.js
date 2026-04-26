@@ -6,6 +6,7 @@
  * Issue #790: OMC orchestration modes (ralph, autopilot, team) are overkill for small tasks.
  * This module provides a pre-execution gate that routes small tasks to lightweight paths.
  */
+import { emit } from '../../telemetry/writer.js';
 export const DEFAULT_THRESHOLDS = {
     smallWordLimit: 50,
     largeWordLimit: 200,
@@ -115,6 +116,7 @@ export function hasLargeTaskSignals(text) {
  * 6. Everything else → medium
  */
 export function classifyTaskSize(text, thresholds = DEFAULT_THRESHOLDS) {
+    void emit({ directory: process.cwd(), stream: 'hook-events', payload: { hook_name: 'task-size-detector', event: 'fired' } });
     const wordCount = countWords(text);
     const escapePrefix = detectEscapeHatch(text);
     // Rule 1: Explicit escape hatch → always small

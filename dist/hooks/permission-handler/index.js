@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { getOmcRoot, getWorktreeRoot } from '../../lib/worktree-paths.js';
 import { getClaudeConfigDir } from '../../utils/config-dir.js';
+import { emitHookEvent } from '../../telemetry/emit.js';
 const SAFE_PATTERNS = [
     /^git (status|diff|log|branch|show|fetch)/,
     /^npm run (lint|build|check|typecheck)/,
@@ -494,6 +495,8 @@ export function processPermissionRequest(input) {
         const reason = isHeredocWithSafeBase(command)
             ? 'Safe command with heredoc content'
             : 'Safe read-only or test command';
+        // Telemetry: emit hook event for auto-allow (fire-and-forget, non-blocking)
+        void emitHookEvent({ directory: input.cwd, session_id: input.session_id, hook_name: 'permission-handler', event: 'auto-allow', tool_name: input.tool_name });
         return {
             continue: true,
             hookSpecificOutput: {

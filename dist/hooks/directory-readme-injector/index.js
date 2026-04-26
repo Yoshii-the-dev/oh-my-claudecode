@@ -11,6 +11,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { loadInjectedPaths, saveInjectedPaths, clearInjectedPaths, } from './storage.js';
 import { CONTEXT_FILENAMES, TRACKED_TOOLS } from './constants.js';
+import { emit } from '../../telemetry/writer.js';
 // Re-export submodules
 export * from './types.js';
 export * from './constants.js';
@@ -42,6 +43,7 @@ function truncateContent(content, maxTokens = DEFAULT_MAX_README_TOKENS) {
  * @returns Hook handlers for tool execution
  */
 export function createDirectoryReadmeInjectorHook(workingDirectory) {
+    void emit({ directory: workingDirectory, stream: 'hook-events', payload: { hook_name: 'directory-readme-injector', event: 'fired' } });
     const sessionCaches = new Map();
     function getSessionCache(sessionID) {
         if (!sessionCaches.has(sessionID)) {

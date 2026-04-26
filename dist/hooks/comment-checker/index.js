@@ -11,6 +11,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { tmpdir } from 'os';
+import { emit } from '../../telemetry/writer.js';
 import { HOOK_MESSAGE_HEADER, LINE_COMMENT_PATTERNS, EXTENSION_TO_LANGUAGE, } from './constants.js';
 import { applyFilters } from './filters.js';
 const DEBUG = process.env.COMMENT_CHECKER_DEBUG === '1';
@@ -174,6 +175,7 @@ export function createCommentCheckerHook(config) {
          */
         preToolUse: (input) => {
             const toolLower = input.tool_name.toLowerCase();
+            void emit({ directory: process.cwd(), stream: 'hook-events', payload: { hook_name: 'comment-checker', event: 'pre_tool_use', tool: toolLower } });
             if (toolLower !== 'write' &&
                 toolLower !== 'edit' &&
                 toolLower !== 'multiedit') {

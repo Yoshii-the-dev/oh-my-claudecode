@@ -21,6 +21,7 @@ export { readMessages, readParts, findEmptyMessages, findMessagesWithThinkingBlo
 export { handleContextWindowRecovery, detectContextLimitError, parseTokenLimitError, containsTokenLimitError, } from './context-window.js';
 export { handleEditErrorRecovery, detectEditError, processEditOutput, } from './edit-error.js';
 export { handleSessionRecovery, detectErrorType as detectSessionErrorType, isRecoverableError, } from './session-recovery.js';
+import { emit } from '../../telemetry/writer.js';
 /**
  * Unified recovery handler
  *
@@ -33,6 +34,7 @@ export { handleSessionRecovery, detectErrorType as detectSessionErrorType, isRec
  * @returns Recovery result
  */
 export async function handleRecovery(input) {
+    void emit({ directory: process.cwd(), stream: 'hook-events', payload: { hook_name: 'recovery', event: 'fired' } });
     const { sessionId, error, toolName, toolOutput, message, config } = input;
     // Priority 1: Context Window Limit
     if (error) {

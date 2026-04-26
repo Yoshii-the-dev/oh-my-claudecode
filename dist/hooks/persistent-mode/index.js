@@ -12,6 +12,7 @@
 import { existsSync, readFileSync, unlinkSync, statSync, openSync, readSync, closeSync, mkdirSync } from 'fs';
 import { atomicWriteJsonSync } from '../../lib/atomic-write.js';
 import { join } from 'path';
+import { emit } from '../../telemetry/writer.js';
 import { getHardMaxIterations } from '../../lib/security-config.js';
 import { getClaudeConfigDir } from '../../utils/config-dir.js';
 import { getGlobalOmcConfigCandidates } from '../../utils/paths.js';
@@ -1472,6 +1473,7 @@ export async function checkPersistentModes(sessionId, directory, stopContext // 
  * Returns `continue: true` for terminal states, escape hatches, and errors.
  */
 export function createHookOutput(result) {
+    void emit({ directory: process.cwd(), stream: 'hook-events', payload: { hook_name: 'persistent-mode', event: result.shouldBlock ? 'stop_blocked' : 'stop_allowed', mode: result.mode } });
     return {
         continue: !result.shouldBlock,
         message: result.message || undefined

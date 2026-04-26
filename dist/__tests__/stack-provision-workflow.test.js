@@ -364,7 +364,7 @@ describe('stack-provision executable workflow', () => {
         const candidate = candidates.candidates.find((item) => item.source === 'agentskill-sh');
         expect(candidate.install.command).toBe('/learn @omc/product-visual-system');
     });
-    it('shortlists marketplace discovery and blocks download candidates without content checksums', () => {
+    it('shortlists marketplace discovery and tags download candidates without content checksums as TOFU-pending', () => {
         const tempDir = makeTempDir();
         const runRoot = join(tempDir, 'runs');
         const skillsShIndex = join(tempDir, 'skills-sh.json');
@@ -399,8 +399,15 @@ describe('stack-provision executable workflow', () => {
         expect(candidates.selection_summary.discovered_candidates).toBe(5);
         expect(candidates.candidates).toHaveLength(3);
         expect(candidates.candidates[0].install.kind).toBe('download-skill');
-        expect(candidates.candidates[0].risk_flags).toEqual(expect.arrayContaining(['missing-content-checksum', 'strict-gate:checksum_invalid']));
-        expect(candidates.candidates[0].strict_gate.install_allowed).toBe(false);
+        // Under the TOFU default (DEFAULT_STRICT_GATE.checksum_tofu_allowed = true),
+        // high-trust download candidates without sha256 are NO LONGER blocked at the
+        // strict gate. They pass with `tofu:pending` so the orchestrator can pin
+        // their hash on first install. The `missing-content-checksum` flag still
+        // surfaces the pre-install state.
+        expect(candidates.candidates[0].risk_flags).toEqual(expect.arrayContaining(['missing-content-checksum', 'tofu:pending']));
+        expect(candidates.candidates[0].risk_flags).not.toContain('strict-gate:checksum_invalid');
+        expect(candidates.candidates[0].strict_gate.install_allowed).toBe(true);
+        expect(candidates.candidates[0].strict_gate.tofu_pending).toBe(true);
     });
     it('promotes download-skill candidates only when fetched content matches expected sha256', () => {
         const tempDir = makeTempDir();

@@ -12,6 +12,7 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync, unlinkSync, } from 
 import { join } from "path";
 import { getOmcRoot } from '../../lib/worktree-paths.js';
 import { recordAgentStart, recordAgentStop } from './session-replay.js';
+import { emitAgentHandoff, emitLlmInteraction } from '../../telemetry/emit.js';
 import { recordMissionAgentStart, recordMissionAgentStop } from '../../hud/mission-board.js';
 import { isProcessAlive } from '../../platform/index.js';
 export const COST_LIMIT_USD = 1.0;
@@ -451,6 +452,8 @@ export function processSubagentStart(input) {
         // Write updated state
         writeTrackingState(input.cwd, state);
         if (!isDuplicateRunningStart) {
+            // Telemetry: emit agent handoff start (fire-and-forget, non-blocking)
+            void emitAgentHandoff({ directory: input.cwd, session_id: input.session_id, agent_id: input.agent_id, kind: 'start', agent_type: input.agent_type, model: input.model });
             // Record to session replay JSONL for /trace
             try {
                 recordAgentStart(input.cwd, input.session_id, input.agent_id, input.agent_type, input.prompt, parentMode, input.model);
@@ -531,6 +534,25 @@ export function processSubagentStop(input) {
         }
         // Write updated state
         writeTrackingState(input.cwd, state);
+        // Telemetry: emit agent handoff stop (fire-and-forget, non-blocking)
+        void emitAgentHandoff({ directory: input.cwd, session_id: input.session_id, agent_id: input.agent_id, kind: 'end', agent_type: agentIndex !== -1 ? (state.agents[agentIndex]?.agent_type || input.agent_type || 'unknown') : (input.agent_type || 'unknown') });
+        // Telemetry: emit LLM interaction from existing token data (Phase 2, fire-and-forget, non-blocking)
+        // Only emits when token data was recorded — skips silently if absent (no new SDK instrumentation)
+        if (agentIndex !== -1) {
+            const trackedTokens = state.agents[agentIndex]?.token_usage;
+            if (trackedTokens && (trackedTokens.input_tokens > 0 || trackedTokens.output_tokens > 0)) {
+                void emitLlmInteraction({
+                    directory: input.cwd,
+                    session_id: input.session_id,
+                    agent_id: input.agent_id,
+                    provider: 'anthropic',
+                    model: state.agents[agentIndex]?.model ?? 'unknown',
+                    tokens_in: trackedTokens.input_tokens,
+                    tokens_out: trackedTokens.output_tokens,
+                    cache_read: trackedTokens.cache_read_tokens > 0 ? trackedTokens.cache_read_tokens : undefined,
+                });
+            }
+        }
         // Record to session replay JSONL for /trace
         // Fix: SDK doesn't populate agent_type in SubagentStop, so use tracked state
         try {

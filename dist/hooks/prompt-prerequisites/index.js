@@ -1,5 +1,6 @@
 import { isAbsolute, relative } from "node:path";
 import { clearModeStateFile, readModeState, writeModeState } from "../../lib/mode-state-io.js";
+import { emit } from "../../telemetry/writer.js";
 const STATE_MODE = "prompt-prerequisites";
 const DEFAULT_SECTION_NAMES = {
     memory: ["MÉMOIRE", "MEMOIRE", "MEMORY"],
@@ -136,6 +137,7 @@ export function clearPromptPrerequisiteState(directory, sessionId) {
     return clearModeStateFile(STATE_MODE, directory, sessionId);
 }
 export function activatePromptPrerequisiteState(directory, sessionId, executionKeywords, parseResult) {
+    void emit({ directory, stream: 'hook-events', payload: { hook_name: 'prompt-prerequisites', event: 'fired' } });
     if (parseResult.requiredToolCalls.length === 0 && parseResult.requiredFilePaths.length === 0) {
         clearPromptPrerequisiteState(directory, sessionId);
         return null;

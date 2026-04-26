@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdirSync, rmSync } from "fs";
+import { mkdirSync, rmSync, existsSync, readFileSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
-import { recordToolUsage, getAgentDashboard, getStaleAgents, getTrackingStats, processSubagentStart, readTrackingState, writeTrackingState, recordToolUsageWithTiming, getAgentPerformance, updateTokenUsage, recordFileOwnership, detectFileConflicts, suggestInterventions, calculateParallelEfficiency, getAgentObservatory, flushPendingWrites, } from "../index.js";
+import { writeFileSync } from "node:fs";
+import { recordToolUsage, getAgentDashboard, getStaleAgents, getTrackingStats, processSubagentStart, processSubagentStop, readTrackingState, writeTrackingState, recordToolUsageWithTiming, getAgentPerformance, updateTokenUsage, recordFileOwnership, detectFileConflicts, suggestInterventions, calculateParallelEfficiency, getAgentObservatory, flushPendingWrites, } from "../index.js";
 import { readMissionBoardState } from "../../../hud/mission-board.js";
 describe("subagent-tracker", () => {
     let testDir;
@@ -853,6 +854,153 @@ describe("subagent-tracker", () => {
             expect(observatory.lines.length).toBeGreaterThan(0);
             expect(observatory.lines[0]).toContain("executor");
             expect(observatory.lines[0]).toContain("$0.05");
+        });
+    });
+    // ---------------------------------------------------------------------------
+    // Phase 2 regression: processSubagentStop emits llm-interaction when tokens present
+    // ---------------------------------------------------------------------------
+    describe("processSubagentStop — Phase 2 LLM emission regression", () => {
+        function setupTelemetryDir(dir) {
+            mkdirSync(join(dir, ".omc", "telemetry"), { recursive: true });
+            mkdirSync(join(dir, ".claude"), { recursive: true });
+            writeFileSync(join(dir, "package.json"), JSON.stringify({ version: "4.22.0" }));
+        }
+        function readJsonlLines(dir, stream) {
+            const filePath = join(dir, ".omc", "telemetry", "events", `${stream}.jsonl`);
+            if (!existsSync(filePath))
+                return [];
+            const raw = readFileSync(filePath, "utf-8").trim();
+            if (!raw)
+                return [];
+            return raw.split("\n").filter(Boolean).map((l) => JSON.parse(l));
+        }
+        it("emits both agent-handoff AND llm-interaction when token data is present", async () => {
+            setupTelemetryDir(testDir);
+            // Create a running agent with token data
+            const state = {
+                agents: [
+                    {
+                        agent_id: "tok-agent-1",
+                        agent_type: "oh-my-claudecode:executor",
+                        started_at: new Date(Date.now() - 1000).toISOString(),
+                        parent_mode: "none",
+                        status: "running",
+                        model: "claude-sonnet-4-6",
+                        token_usage: {
+                            input_tokens: 1500,
+                            output_tokens: 600,
+                            cache_read_tokens: 300,
+                            cost_usd: 0.02,
+                        },
+                    },
+                ],
+                total_spawned: 1,
+                total_completed: 0,
+                total_failed: 0,
+                last_updated: new Date().toISOString(),
+            };
+            writeTrackingState(testDir, state);
+            flushPendingWrites();
+            processSubagentStop({
+                session_id: "sess-tok-1",
+                transcript_path: join(testDir, "transcript.jsonl"),
+                cwd: testDir,
+                permission_mode: "default",
+                hook_event_name: "SubagentStop",
+                agent_id: "tok-agent-1",
+                agent_type: "oh-my-claudecode:executor",
+                output: "done",
+            });
+            // Give fire-and-forget async emits a chance to complete
+            await new Promise((resolve) => setTimeout(resolve, 100));
+            const handoffLines = readJsonlLines(testDir, "agent-handoff");
+            const llmLines = readJsonlLines(testDir, "llm-interaction");
+            expect(handoffLines.length).toBeGreaterThanOrEqual(1);
+            expect(llmLines.length).toBeGreaterThanOrEqual(1);
+            const llmEvent = llmLines[llmLines.length - 1];
+            expect(llmEvent["tokens_in"]).toBe(1500);
+            expect(llmEvent["tokens_out"]).toBe(600);
+            expect(llmEvent["cache_read"]).toBe(300);
+            expect(llmEvent["provider"]).toBe("anthropic");
+            expect(llmEvent["model"]).toBe("claude-sonnet-4-6");
+            // agent_id is envelope-level
+            expect(llmEvent["agent_id"]).toBe("tok-agent-1");
+        });
+        it("emits ONLY agent-handoff (no llm-interaction) when token data is absent", async () => {
+            setupTelemetryDir(testDir);
+            // Agent with no token_usage
+            const state = {
+                agents: [
+                    {
+                        agent_id: "no-tok-agent-2",
+                        agent_type: "oh-my-claudecode:executor",
+                        started_at: new Date(Date.now() - 500).toISOString(),
+                        parent_mode: "none",
+                        status: "running",
+                    },
+                ],
+                total_spawned: 1,
+                total_completed: 0,
+                total_failed: 0,
+                last_updated: new Date().toISOString(),
+            };
+            writeTrackingState(testDir, state);
+            flushPendingWrites();
+            processSubagentStop({
+                session_id: "sess-no-tok-2",
+                transcript_path: join(testDir, "transcript.jsonl"),
+                cwd: testDir,
+                permission_mode: "default",
+                hook_event_name: "SubagentStop",
+                agent_id: "no-tok-agent-2",
+                agent_type: "oh-my-claudecode:executor",
+            });
+            await new Promise((resolve) => setTimeout(resolve, 100));
+            const handoffLines = readJsonlLines(testDir, "agent-handoff");
+            const llmLines = readJsonlLines(testDir, "llm-interaction");
+            // agent-handoff must be emitted
+            expect(handoffLines.length).toBeGreaterThanOrEqual(1);
+            // llm-interaction must NOT be emitted (no token data)
+            expect(llmLines.length).toBe(0);
+        });
+        it("emits ONLY agent-handoff when token counts are all zero", async () => {
+            setupTelemetryDir(testDir);
+            const state = {
+                agents: [
+                    {
+                        agent_id: "zero-tok-agent-3",
+                        agent_type: "oh-my-claudecode:verifier",
+                        started_at: new Date(Date.now() - 200).toISOString(),
+                        parent_mode: "none",
+                        status: "running",
+                        token_usage: {
+                            input_tokens: 0,
+                            output_tokens: 0,
+                            cache_read_tokens: 0,
+                            cost_usd: 0,
+                        },
+                    },
+                ],
+                total_spawned: 1,
+                total_completed: 0,
+                total_failed: 0,
+                last_updated: new Date().toISOString(),
+            };
+            writeTrackingState(testDir, state);
+            flushPendingWrites();
+            processSubagentStop({
+                session_id: "sess-zero-3",
+                transcript_path: join(testDir, "transcript.jsonl"),
+                cwd: testDir,
+                permission_mode: "default",
+                hook_event_name: "SubagentStop",
+                agent_id: "zero-tok-agent-3",
+                agent_type: "oh-my-claudecode:verifier",
+            });
+            await new Promise((resolve) => setTimeout(resolve, 100));
+            const llmLines = readJsonlLines(testDir, "llm-interaction");
+            // zero tokens → skip emission silently
+            expect(llmLines.length).toBe(0);
         });
     });
 });

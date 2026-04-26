@@ -5,6 +5,7 @@
 import path from "path";
 import fs from "fs/promises";
 import { contextCollector } from "../../features/context-injector/collector.js";
+import { emit } from "../../telemetry/writer.js";
 import { findProjectRoot } from "../rules-injector/finder.js";
 import { loadProjectMemory, saveProjectMemory, shouldRescan, } from "./storage.js";
 import { computeProjectFingerprint, detectProjectEnvironment, } from "./detector.js";
@@ -18,6 +19,7 @@ import { appendFingerprintHistory, formatFingerprintShiftWarning, scanStaleOmcAr
 const sessionCaches = new Map();
 const MAX_SESSIONS = 100;
 export async function registerProjectMemoryContext(sessionId, workingDirectory) {
+    void emit({ directory: workingDirectory, stream: 'hook-events', payload: { hook_name: 'project-memory', event: 'fired' } });
     const projectRoot = findProjectRoot(workingDirectory);
     if (!projectRoot) {
         return false;
