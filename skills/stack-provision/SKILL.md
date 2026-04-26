@@ -7,28 +7,103 @@ level: 4
 
 # Stack Provision
 
-Turn a chosen stack into a reviewed capability system: agents, skills, context files, discovery targets, generated drafts, install decisions, manifests, and rollback records. This skill is not only for backend packages. It covers backend, frontend engineering, product UX, visual creativity, mobile, infra/devops, data/AI, and application capability blocks such as authentication, product analytics, and financial transactions.
+Turn a chosen stack into a reviewed capability system: agents, skills, context files, discovery targets, generated drafts, install decisions, manifests, and rollback records.
+
+For day-to-day use the slash command needs **no flags, no run-ids, no manual file edits**. The orchestrator (`scripts/orchestrate.mjs`) auto-detects the latest technology ADR under `.omc/decisions/`, runs discovery + classification, and presents only the candidates that need a real decision. Everything that passes the strict gate with high trust and clean risk flags is auto-approved without prompting. Generated LLM drafts are never auto-approved; they require explicit user edit.
 
 If the stack itself is not yet chosen, use the `technology-strategist` agent first. For a new product or major pivot, use `/product-foundation` before this skill so market, brand, competitor, technology ADR, critic verdict, and provisioning context are created in the right order. Technology Strategist owns the decision of which technologies and application blocks belong in the stack ADR; `stack-provision` consumes that ADR or its handoff command and provisions the matching skills/guidelines.
 
-The core contract is deterministic. Always initialize a run with the bundled helper before discovery or installation.
+## Usage (one command)
 
 ```bash
-node skills/stack-provision/scripts/init.mjs "<stack or ADR path>" --json
-node skills/stack-provision/scripts/provision.mjs discover .omc/provisioned/runs/<run-id> --json
+/stack-provision
 ```
 
-## Usage
+That is the entire user-visible interface. The orchestrator finds the latest `.omc/decisions/*technology*.md` and walks the rest of the pipeline interactively. If the user wants to override the detected ADR or pin an explicit stack list, an optional positional argument is honored:
 
 ```bash
 /stack-provision .omc/decisions/2026-04-20-stack.md
-/stack-provision "next.js, react, tailwind, supabase, postgres, playwright"
-/stack-provision "next.js, react, tailwind, framer-motion, three.js, supabase" --surfaces=frontend-engineering,frontend-product,visual-creative --creative-intent="distinct visual identity, generated assets, motion system"
-/stack-provision "flutter, supabase, sentry" --surfaces=mobile,backend --aspects=testing,security,performance
-/stack-provision "dart, shelf, postgres, stripe, posthog, clerk" --blocks=auth,product-analytics,finance-transactions
-/stack-provision "airflow, dbt, postgres" --surfaces=data-ai,backend --no-generate
-/stack-provision "next.js, supabase" --dry-run --json
+/stack-provision "next.js, react, tailwind, supabase, postgres"
 ```
+
+Surface, aspect, block, and creative-intent flags exist for advanced scripting and live in the **Advanced** section at the end of this file. Do not reach for them in normal usage.
+
+## Slash skill execution (for the assistant running this skill)
+
+When the user invokes `/stack-provision`, follow this exact flow. **Do not** invoke `init.mjs` / `provision.mjs` directly; the orchestrator owns that. Do not show run-ids or candidate ids to the user.
+
+### Step 1 — Run plan-only
+
+```bash
+node skills/stack-provision/scripts/orchestrate.mjs --plan-only --plan-file=/tmp/stack-provision-plan.json [optional-stack-or-adr]
+```
+
+Pass the user's positional argument (ADR path or stack list) only if they typed one. Otherwise omit it — the orchestrator auto-detects the latest ADR. Read the JSON-line events on stdout; the final `event: completed status: plan-ready` confirms the plan file is ready.
+
+### Step 2 — Read the plan and present a concise summary
+
+Read `/tmp/stack-provision-plan.json`. It contains:
+
+- `auto_approve`: candidate ids that already pass policy and will be installed silently.
+- `needs_decision`: candidate ids that require a user decision.
+- `rejected`: candidate ids the policy already rejected (blocked source, hard fail).
+- `candidates[]`: full candidate detail keyed by `id`.
+
+Tell the user one short summary line:
+
+> `Found N candidates. Auto-approving K safe ones. R need your decision.`
+
+If `needs_decision` is empty and `auto_approve` is non-empty, skip directly to Step 4.
+
+### Step 3 — Decision flow for `needs_decision`
+
+For each id in `needs_decision`, find the candidate by id in `candidates[]`. Present the user a single AskUserQuestion with:
+
+- header line: `<source>: <covered.surface>/<covered.technology>` (e.g. `skills-sh: backend/postgres`).
+- one short context line covering trust, freshness, risk flags, verdict reason from `verdict.reason`.
+- if `content_scan.severity` is `warn` or `critical`, prepend a security note like `⚠ content-scan: <severity> — <first finding rule>`.
+- if `trust_signals` is present, mention boost/penalty briefly (e.g. `trust signals: +0.04 -0.00 (npm-downloads:80k/wk≥50k)`).
+- options: `Approve`, `Skip`, `Reject permanently`, `Show preview` (shows `preview` field), and — if `draft` is non-null (the orchestrator already staged a draft file at `draft.path`) — `Edit and approve`. When the user picks `Edit and approve`, instruct them: `Open <draft.path>, edit the content, remove the line containing 'review-required: remove this line after editing', save, then continue.`
+
+If the list of pending decisions is long (≥ `policy.max_decisions_per_session`, default 25), offer one batch AskUserQuestion first: `Auto-approve the K candidates that pass strict gate but fall just below trust threshold?` with options `Yes / No, ask one by one`.
+
+Append each decision as one JSON line to `/tmp/stack-provision-decisions.jsonl`:
+
+```jsonl
+{"type":"decision","candidate_id":"...","action":"approve"}
+{"type":"decision","candidate_id":"...","action":"skip"}
+{"type":"batch_resolve","remaining":"approve_safe"}
+```
+
+Valid `action` values: `approve | skip | reject | edit`.
+
+### Step 4 — Apply the plan
+
+```bash
+node skills/stack-provision/scripts/orchestrate.mjs --apply --plan-file=/tmp/stack-provision-plan.json --decisions-file=/tmp/stack-provision-decisions.jsonl
+```
+
+Read the JSON-line events. Surface to the user only the human-relevant outcome:
+
+- `event: completed status: success` → `Done. K skills installed. Manifest at <manifest_path>.`
+- `event: completed status: rolled-back` → automatic rollback fired on critical drift; the run was reverted. Surface `Critical hash drift — auto-rolled back. Inspect <run_dir>/state.json before retrying.`
+- `event: completed status: paused-for-edits` → list `edit_paths` (or `edit_failed[].id`) and tell the user: `These drafts were not edited yet (or still contain the review marker). Edit them, then run /stack-provision again.`
+- `event: post_install_verify` → drift counts; the orchestrator now calls rollback automatically when `rollback_recommended` is true.
+- `event: rollback` → emitted only when automatic rollback is triggered. `status: 'completed'` reverts the run; `status: 'failed'` leaves the run in `partial` for manual recovery.
+- `event: revalidation` → Phase 4 maintenance. Fires at most once per `revalidation_interval_days` (default 7) when a current manifest exists. Fields: `total`, `local_drift`, `upstream_drift`, `checked_at`. Persists to `.omc/stack-provision/revalidation.json`. Surface to the user only when `local_drift > 0` or `upstream_drift > 0`: `Revalidation found N drifted skills. Run /stack-provision to refresh.`
+- `event: cleanup_proposal` → Phase 4 maintenance. Lists skills idle past `cleanup_threshold_days` (default 60). Surface as `These N skills have not been used in over 60 days: <slugs>. Review and remove or run /stack-provision defer-cleanup to silence for now.` Never delete silently.
+- `event: cve_scan` → Phase 4 maintenance. Fires after candidates are queried against OSV.dev. Fields: `fetched`, `flagged`. Critical advisories become `cve:critical:<id>` risk_flags on the candidate and surface in the per-candidate decision prompt automatically.
+- `event: telemetry_recorded` → Phase 4 maintenance. Fires after a successful run; backs `.omc/stack-provision/usage.json` and feeds the cleanup proposal on the next session. No user-visible message needed.
+- `event: tofu_check` → Phase 5 trust. Fires when at least one candidate has a TOFU pin. Fields: `pinned`, `drift`. Drifted candidates carry `tofu:drift:warn` (or `tofu:drift:critical` in `tofu_strict` mode) and `c.tofu_drift.diff` carrying the unified diff. In the per-candidate prompt prepend: `⚠ pinned skill changed since first install — review diff before approving.`
+- `event: tofu_pinned` → Phase 5 trust. Emitted after a successful run for skills newly pinned (first install) under `.omc/stack-provision/pins/<slug>.snapshot.md` + `pins.json`. No user-visible message needed.
+- `event: sandbox_dryrun` → Phase 5 trust. Static behavior fingerprint over each candidate's SKILL.md. Fields: `critical`, `warned`. Critical findings become `sandbox:<rule>:critical` risk_flags (e.g. `sandbox:curl-pipe-shell:critical`); warn-class becomes `sandbox:undeclared-tool:<Tool>` etc. The detailed fingerprint lives on `c.sandbox_dryrun`.
+- `event: completed status: partial` → `Skills installed, but verification reported a problem. Review <run_dir>/state.json.`
+- `event: completed status: cancelled` → `Cancelled — no skills were installed.`
+- `event: error` → surface the message and exit.
+
+### Step 5 — Cleanup
+
+Delete `/tmp/stack-provision-plan.json` and `/tmp/stack-provision-decisions.jsonl` after a successful or cancelled run.
 
 ## Flags
 
@@ -134,7 +209,9 @@ The provisioner has six bounded phases.
 
 State transitions must be recorded in `state.json`. Terminal statuses are `success`, `partial`, `failed`, `rejected`, and `dry_run`.
 
-## Executable Commands
+## Advanced — Executable Commands (scripting / debugging only)
+
+> **Default users do not need this section.** The slash skill flow above (orchestrator + plan/apply) is the supported path. Reach for raw scripts only when scripting CI, debugging a failed run, or extending the toolchain.
 
 Use `scripts/init.mjs` for Phase 0 and `scripts/provision.mjs` for the remaining executable phases.
 

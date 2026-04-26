@@ -85,6 +85,7 @@ import { resolvePluginDirArg } from '../lib/plugin-dir.js';
 import { launchCommand } from './launch.js';
 import { interopCommand } from './interop.js';
 import { askCommand, ASK_USAGE } from './ask.js';
+import { stackCommand, STACK_USAGE } from './stack.js';
 import { warnIfWin32 } from './win32-warning.js';
 import { autoresearchCommand } from './autoresearch.js';
 import { runHudWatchLoop } from './hud-watch.js';
@@ -200,6 +201,18 @@ program
   .addHelpText('after', `\n${ASK_USAGE}`)
   .action(async (args: string[]) => {
     await askCommand(args || []);
+  });
+
+/**
+ * Stack command — orchestrates stack-provision (single-entry facade)
+ */
+program
+  .command('stack [args...]')
+  .description('Provision skills/agents/context for a chosen stack via the stack-provision orchestrator')
+  .allowUnknownOption()
+  .addHelpText('after', `\n${STACK_USAGE}`)
+  .action(async (args: string[]) => {
+    await stackCommand(args || []);
   });
 
 

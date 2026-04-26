@@ -14,6 +14,11 @@ import {
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readJson, readJsonValidated, validateData, writeJson, writeJsonValidated } from './validation.mjs';
+import { scanCandidatePayload } from './content-scanner.mjs';
+import { gatherTrustSignals } from './trust-signals.mjs';
+import { rankCandidates } from './priority-score.mjs';
+import { loadLicensePolicy, resolveLicense } from './license-gate.mjs';
+import { collectGlobalSkillRoots, scanGlobalSkills, findDuplicateForCandidate } from './cross-project-dedup.mjs';
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const skillDir = resolve(scriptDir, '..');
@@ -22,7 +27,17 @@ const defaultConfigPath = join(skillDir, 'config', 'default-capability-packs.jso
 const maxSkillFiles = 1500;
 const defaultTimeoutMs = 5000;
 const batchApprovalSources = new Set(['installed-skill', 'bundled-skill']);
-const infoRiskFlags = new Set(['already-installed-local-copy']);
+const infoRiskFlags = new Set([
+  'already-installed-local-copy',
+  // Phase 3: license-gate emits this when the candidate has no SPDX metadata
+  // we can normalise. For local installed/bundled skills that almost always
+  // happens, so treating it as warning would block --approve-local. Genuine
+  // license problems surface as `license:not-allowed:*` or `license:denied:*`.
+  'license:unknown',
+  // Phase 3: cross-project dedup signal — by itself it is informational. The
+  // sha-drift variant `duplicate-sha-mismatch` keeps default warning severity.
+  'duplicate-already-installed',
+]);
 const criticalRiskFlags = new Set([
   'prompt-authority-override',
   'hidden-network-behavior',
@@ -337,6 +352,23 @@ async function discover(runDir, options) {
 
   const dedupedCandidates = dedupeCandidates(allCandidates)
     .sort((a, b) => b.score - a.score || a.candidate_id.localeCompare(b.candidate_id))
+  await enhanceCandidatesWithSecuritySignals(dedupedCandidates, {
+    network: options.network,
+    timeoutMs: options.timeoutMs,
+    contract: run.contract,
+    warnings,
+    projectRoot: options.projectRoot,
+  });
+  rankCandidates(dedupedCandidates, {
+    weights: run.contract?.policy?.priority_weights,
+  });
+  dedupedCandidates.sort((a, b) => {
+    const pa = Number(a.priority_score ?? 0);
+    const pb = Number(b.priority_score ?? 0);
+    if (pb !== pa) return pb - pa;
+    if (b.score !== a.score) return b.score - a.score;
+    return a.candidate_id.localeCompare(b.candidate_id);
+  });
   const selection = shortlistCandidates(
     dedupedCandidates,
     run.matrix,
@@ -931,6 +963,166 @@ function evaluateStrictGateForCandidate(candidate, policy) {
     reasons,
     metrics,
   };
+}
+
+async function enhanceCandidatesWithSecuritySignals(candidates, opts) {
+  if (!Array.isArray(candidates) || candidates.length === 0) return;
+  const policy = strictGatePolicy(opts.contract);
+  const trustCache = new Map();
+  const projectRoot = opts.projectRoot ?? process.cwd();
+  const licensePolicy = await loadLicensePolicy(projectRoot);
+  // Phase 3: scan_global_skill_roots is opt-in (matches policy.schema.json
+  // default of `false`). Operators turn it on explicitly when they want
+  // cross-project dedup signals.
+  const scanGlobal = opts.contract?.policy?.scan_global_skill_roots === true;
+  const globalIndex = scanGlobal
+    ? await scanGlobalSkills(collectGlobalSkillRoots(projectRoot), { maxFiles: 200 })
+    : new Map();
+  for (const candidate of candidates) {
+    let updated = false;
+
+    // SPDX license gate: replace the binary normalised value with a richer
+    // decision when policy data is available.
+    const license = resolveLicense(candidate, licensePolicy);
+    candidate.license_resolution = license;
+    candidate.risk_flags = uniqueStrings([...(candidate.risk_flags || []), ...license.flags]);
+    if (license.spdx) candidate.license_spdx = license.spdx;
+    if (license.decision === 'deny') {
+      candidate.license_status = 'conflict';
+      candidate.source_trust = Math.min(candidate.source_trust ?? 0, 0.2);
+      updated = true;
+    } else if (license.decision === 'warn' && candidate.license_status !== 'conflict') {
+      candidate.license_status = candidate.license_status ?? 'unknown';
+    } else if (license.decision === 'allow') {
+      candidate.license_status = 'no-conflict';
+    }
+
+    // Cross-project dedup signal. Self-references (candidate's own on-disk
+    // path appearing in the global scan) are filtered out so a local
+    // installed-skill is never reported as a duplicate of itself.
+    const dup = findDuplicateForCandidate(candidate, globalIndex);
+    if (dup.duplicate) {
+      const ownPath = candidate.install?.source_path ?? candidate.path ?? null;
+      const externalHits = ownPath
+        ? dup.hits.filter((h) => h.path !== ownPath)
+        : dup.hits;
+      if (externalHits.length > 0) {
+        candidate.duplicate_hits = externalHits.map((h) => ({
+          path: h.path,
+          sha256: h.sha256,
+        }));
+        candidate.risk_flags = uniqueStrings([
+          ...(candidate.risk_flags || []),
+          ...dup.flags,
+        ]);
+        // A duplicate is rarely a strict-gate failure on its own, but we lower
+        // priority so non-duplicate alternatives outrank it.
+        candidate.source_trust = Math.max(0, (candidate.source_trust ?? 0) - 0.05);
+        updated = true;
+      }
+    }
+
+    // Static content scan — runs for every candidate, regardless of network.
+    let scan = null;
+    try {
+      scan = await scanCandidatePayload(candidate);
+    } catch (err) {
+      opts.warnings?.push(`content-scan failed for ${candidate.candidate_id}: ${err.message ?? err}`);
+    }
+    if (scan && scan.flags.length > 0) {
+      candidate.risk_flags = uniqueStrings([...(candidate.risk_flags || []), ...scan.flags]);
+      candidate.content_scan = {
+        severity: scan.severity,
+        scanned: scan.scanned,
+        findings: scan.findings.slice(0, 8),
+        errors: scan.errors,
+      };
+      if (scan.severity === 'critical') {
+        // Force the candidate below the strict-gate trust floor; reviewer must intervene.
+        candidate.source_trust = Math.min(candidate.source_trust ?? 0, 0.3);
+        if (!candidate.risk_flags.includes('prompt-authority-override')) {
+          candidate.risk_flags.push('prompt-authority-override');
+        }
+      } else if (scan.severity === 'warn') {
+        candidate.source_trust = Math.max(0, (candidate.source_trust ?? 0) - 0.05);
+      }
+      updated = true;
+    } else if (scan) {
+      candidate.content_scan = {
+        severity: scan.severity,
+        scanned: scan.scanned,
+        findings: [],
+        errors: scan.errors,
+      };
+    }
+
+    // Independent trust signals — only when network is allowed.
+    if (opts.network && isExternalCandidate(candidate)) {
+      let trust = null;
+      try {
+        trust = await gatherTrustSignals(candidate, {
+          network: true,
+          timeoutMs: opts.timeoutMs,
+          fetchImpl: globalThis.fetch,
+          cache: trustCache,
+        });
+      } catch (err) {
+        opts.warnings?.push(`trust-signals failed for ${candidate.candidate_id}: ${err.message ?? err}`);
+      }
+      if (trust) {
+        candidate.trust_signals = {
+          boost: trust.boost,
+          penalty: trust.penalty,
+          signals: trust.signals,
+          penalties: trust.penalties,
+          degraded: trust.degraded,
+          fetched: trust.fetched,
+          errors: trust.errors,
+        };
+        const adjusted = clamp01((candidate.source_trust ?? 0) + trust.boost - trust.penalty);
+        if (Number.isFinite(adjusted) && adjusted !== candidate.source_trust) {
+          candidate.source_trust = Number(adjusted.toFixed(3));
+          updated = true;
+        }
+      }
+    }
+
+    if (updated) {
+      const baseFlags = (candidate.risk_flags || []).filter((f) => !String(f).startsWith('strict-gate'));
+      const strictGate = evaluateStrictGateForCandidate(
+        {
+          source_trust: candidate.source_trust ?? 0,
+          freshness_days: candidate.freshness_days ?? null,
+          checksum_valid: candidate.checksum_valid !== false,
+          license_status: candidate.license_status || 'unknown',
+          source: candidate.source,
+          risk_flags: baseFlags,
+        },
+        policy,
+      );
+      candidate.strict_gate = strictGate;
+      candidate.source_trust = strictGate.metrics.source_trust;
+      candidate.risk_flags = mergeStrictGateRiskFlags(baseFlags, strictGate);
+    }
+  }
+}
+
+function isExternalCandidate(candidate) {
+  if (!candidate?.source) return false;
+  const localSources = ['bundled-skill', 'installed-skill', 'plugin-skill'];
+  return !localSources.includes(candidate.source);
+}
+
+function uniqueStrings(values) {
+  const seen = new Set();
+  const out = [];
+  for (const v of values) {
+    if (!seen.has(v)) {
+      seen.add(v);
+      out.push(v);
+    }
+  }
+  return out;
 }
 
 function mergeStrictGateRiskFlags(riskFlags, strictGate) {
