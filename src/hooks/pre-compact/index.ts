@@ -21,6 +21,7 @@ import { promises as fsPromises } from "fs";
 import { join } from "path";
 import { getOmcRoot } from '../../lib/worktree-paths.js';
 import { initJobDb, getActiveJobs, getRecentJobs, getJobStats } from '../../lib/job-state-db.js';
+import { emit } from '../../telemetry/writer.js';
 
 // ============================================================================
 // Types
@@ -455,6 +456,7 @@ async function doProcessPreCompact(
   input: PreCompactInput,
 ): Promise<HookOutput> {
   const directory = input.cwd;
+  void emit({ directory, stream: 'hook-events', payload: { hook_name: 'pre-compact', event: 'fired', trigger: input.trigger } });
 
   // Create checkpoint
   const checkpoint = await createCompactCheckpoint(directory, input.trigger);

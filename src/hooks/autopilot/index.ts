@@ -5,6 +5,8 @@
  * from idea to working code.
  */
 
+// telemetry-skip: pure re-export aggregator — all runtime handlers live in state.js, enforcement.js, pipeline.js; no hook entry point here
+
 // Types
 export type {
   AutopilotPhase,

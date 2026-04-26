@@ -9,6 +9,7 @@
  */
 
 import { getBackgroundManager } from '../../features/background-agent/index.js';
+import { emit } from '../../telemetry/writer.js';
 import type { BackgroundManager, BackgroundTask } from '../../features/background-agent/index.js';
 import type {
   BackgroundNotificationHookConfig,
@@ -132,6 +133,8 @@ export function processBackgroundNotification(
   config?: BackgroundNotificationHookConfig
 ): BackgroundNotificationHookOutput {
   const sessionId = input.sessionId;
+
+  void emit({ directory: process.cwd(), stream: 'hook-events', payload: { hook_name: 'background-notification', event: 'fired' } });
 
   if (!sessionId) {
     return { continue: true };

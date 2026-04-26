@@ -26,6 +26,7 @@ import {
   HOOK_NAME,
   DEBUG_PREFIX,
 } from './constants.js';
+import { emit } from '../../telemetry/writer.js';
 import type {
   MessagePart,
   MessageWithParts,
@@ -163,6 +164,7 @@ export function sanitizeMessages(
   const { messages } = input;
   const placeholderText = config?.placeholderText ?? PLACEHOLDER_TEXT;
 
+  void emit({ directory: process.cwd(), stream: 'hook-events', payload: { hook_name: 'empty-message-sanitizer', event: 'fired', message_count: messages.length } });
   debugLog('sanitizing messages', { count: messages.length });
 
   let sanitizedCount = 0;

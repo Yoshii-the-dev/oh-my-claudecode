@@ -28,6 +28,7 @@ import { join } from "path";
 import { getOmcRoot } from "../../lib/worktree-paths.js";
 import { atomicWriteFileSync } from "../../lib/atomic-write.js";
 import { lockPathFor, withFileLockSync } from "../../lib/file-lock.js";
+import { emit } from "../../telemetry/writer.js";
 
 // ============================================================================
 // Types
@@ -335,6 +336,7 @@ export function addWorkingMemoryEntry(
       );
 
       atomicWriteFileSync(notepadPath, notepadContent);
+      void emit({ directory, stream: 'hook-events', payload: { hook_name: 'notepad', event: 'working_memory_written' } });
       return true;
     }, { timeoutMs: 5000 });
   } catch {

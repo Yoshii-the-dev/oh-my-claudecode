@@ -19,6 +19,7 @@ import {
 import { join } from "path";
 import { getOmcRoot } from '../../lib/worktree-paths.js';
 import { recordAgentStart, recordAgentStop } from './session-replay.js';
+import { emitAgentHandoff } from '../../telemetry/emit.js';
 import { recordMissionAgentStart, recordMissionAgentStop } from '../../hud/mission-board.js';
 import { isProcessAlive } from '../../platform/index.js';
 
@@ -620,6 +621,8 @@ export function processSubagentStart(input: SubagentStartInput): HookOutput {
     writeTrackingState(input.cwd, state);
 
     if (!isDuplicateRunningStart) {
+      // Telemetry: emit agent handoff start (fire-and-forget, non-blocking)
+      void emitAgentHandoff({ directory: input.cwd, session_id: input.session_id, agent_id: input.agent_id, kind: 'start', agent_type: input.agent_type, model: input.model });
       // Record to session replay JSONL for /trace
       try {
         recordAgentStart(input.cwd, input.session_id, input.agent_id, input.agent_type, input.prompt, parentMode, input.model);
@@ -717,6 +720,8 @@ export function processSubagentStop(input: SubagentStopInput): HookOutput {
     // Write updated state
     writeTrackingState(input.cwd, state);
 
+    // Telemetry: emit agent handoff stop (fire-and-forget, non-blocking)
+    void emitAgentHandoff({ directory: input.cwd, session_id: input.session_id, agent_id: input.agent_id, kind: 'end', agent_type: agentIndex !== -1 ? (state.agents[agentIndex]?.agent_type || input.agent_type || 'unknown') : (input.agent_type || 'unknown') });
     // Record to session replay JSONL for /trace
     // Fix: SDK doesn't populate agent_type in SubagentStop, so use tracked state
     try {

@@ -12,6 +12,7 @@ import { join } from 'path';
 
 import { registerBeadsContext } from '../beads-context/index.js';
 import { getClaudeConfigDir } from '../../utils/config-dir.js';
+import { emit } from '../../telemetry/writer.js';
 
 // ============================================================================
 // Types
@@ -501,6 +502,7 @@ export async function processSetupMaintenance(input: SetupInput): Promise<HookOu
  * Process setup hook based on trigger type
  */
 export async function processSetup(input: SetupInput): Promise<HookOutput> {
+  void emit({ directory: input.cwd, stream: 'hook-events', payload: { hook_name: 'setup', event: 'fired', trigger: input.trigger } });
   if (input.trigger === 'init') {
     return processSetupInit(input);
   } else if (input.trigger === 'maintenance') {

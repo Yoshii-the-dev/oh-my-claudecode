@@ -74,6 +74,7 @@ import { runScorecardCommand } from './commands/run-scorecard.js';
 import { sessionSearchCommand } from './commands/session-search.js';
 import { teamCommand } from './commands/team.js';
 import { ralphthonCommand } from './commands/ralphthon.js';
+import { telemetryDigestCommand } from './commands/telemetry.js';
 import {
   teleportCommand,
   teleportListCommand,
@@ -1734,6 +1735,26 @@ program
   .argument('[args...]', 'ralphthon arguments')
   .action(async (args: string[]) => {
     await ralphthonCommand(args);
+  });
+
+/**
+ * Telemetry commands
+ */
+const telemetryCommand = program
+  .command('telemetry')
+  .description('OMC telemetry utilities');
+
+telemetryCommand
+  .command('digest')
+  .description('Generate a daily telemetry digest on demand')
+  .option('--dir <path>', 'Project root directory (default: cwd)')
+  .addHelpText('after', `
+Examples:
+  $ omc telemetry digest              Generate digest for current directory
+  $ omc telemetry digest --dir /path  Generate digest for specified project
+`)
+  .action(async (options) => {
+    await telemetryDigestCommand({ directory: options.dir });
   });
 
 /**

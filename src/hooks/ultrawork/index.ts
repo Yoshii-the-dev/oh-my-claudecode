@@ -8,6 +8,7 @@
 
 import { readFileSync, unlinkSync } from "fs";
 import { writeModeState, readModeState } from "../../lib/mode-state-io.js";
+import { emit } from "../../telemetry/writer.js";
 import {
   resolveStatePath,
   resolveSessionStatePath,
@@ -106,6 +107,7 @@ export function activateUltrawork(
   directory?: string,
   linkedToRalph?: boolean,
 ): boolean {
+  void emit({ directory: directory ?? process.cwd(), stream: 'hook-events', payload: { hook_name: 'ultrawork', event: 'fired' } });
   const state: UltraworkState = {
     active: true,
     started_at: new Date().toISOString(),

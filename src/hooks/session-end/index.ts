@@ -10,6 +10,8 @@ import { cleanupBridgeSessions } from '../../tools/python-repl/bridge-manager.js
 import { resolveToWorktreeRoot, getOmcRoot, validateSessionId, isValidTranscriptPath, resolveSessionStatePath } from '../../lib/worktree-paths.js';
 import { SESSION_END_MODE_STATE_FILES, SESSION_METRICS_MODE_FILES } from '../../lib/mode-names.js';
 import { clearModeStateFile, readModeState } from '../../lib/mode-state-io.js';
+import { flush as flushTelemetry } from '../../telemetry/emit.js';
+import { aggregate } from '../../telemetry/aggregator.js';
 
 export interface SessionEndInput {
   session_id: string;
@@ -703,6 +705,10 @@ export async function processSessionEnd(input: SessionEndInput): Promise<HookOut
   // Record and export session metrics to disk
   const metrics = recordSessionMetrics(directory, input);
   exportSessionSummary(directory, metrics);
+  // Telemetry: flush pending buffer before session ends
+  await flushTelemetry().catch(() => {});
+  // Telemetry: generate session digest (must not block session end)
+  await aggregate({ directory, trigger: 'session-end', sessionId: input.session_id }).catch(() => {});
 
   // Best-effort cleanup for tmux-backed team workers owned by this Claude Code
   // session. This does not fix upstream signal-forwarding behavior, but it

@@ -1,5 +1,6 @@
 import { isAbsolute, relative } from "node:path";
 import { clearModeStateFile, readModeState, writeModeState } from "../../lib/mode-state-io.js";
+import { emit } from "../../telemetry/writer.js";
 import type { PluginConfig } from "../../shared/types.js";
 
 export type PromptPrerequisiteSectionKind =
@@ -230,6 +231,7 @@ export function activatePromptPrerequisiteState(
   executionKeywords: string[],
   parseResult: PromptPrerequisiteParseResult,
 ): PromptPrerequisiteState | null {
+  void emit({ directory, stream: 'hook-events', payload: { hook_name: 'prompt-prerequisites', event: 'fired' } });
   if (parseResult.requiredToolCalls.length === 0 && parseResult.requiredFilePaths.length === 0) {
     clearPromptPrerequisiteState(directory, sessionId);
     return null;

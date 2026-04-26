@@ -5,6 +5,8 @@
  * that compounds project and session knowledge across sessions.
  */
 
+// telemetry-skip: type and storage re-export module — no hook entry point; wiki MCP tools emit their own telemetry via the tool-call bridge
+
 // Types
 export type {
   WikiPage,

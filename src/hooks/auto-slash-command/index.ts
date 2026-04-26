@@ -28,6 +28,7 @@ import type {
   AutoSlashCommandHookInput,
   AutoSlashCommandResult,
 } from './types.js';
+import { emit } from '../../telemetry/writer.js';
 
 // Re-export all submodules
 export * from './types.js';
@@ -66,6 +67,7 @@ export function createAutoSlashCommandHook() {
       input: AutoSlashCommandHookInput,
       parts: Array<{ type: string; text?: string }>
     ): AutoSlashCommandResult => {
+      void emit({ directory: process.cwd(), stream: 'hook-events', payload: { hook_name: 'auto-slash-command', event: 'fired' } });
       const promptText = extractPromptText(parts);
 
       // Skip if already processed (contains our tags)

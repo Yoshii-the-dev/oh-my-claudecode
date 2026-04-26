@@ -28,6 +28,8 @@ import { readModeState, writeModeState } from "../lib/mode-state-io.js";
 import { formatOmcCliInvocation } from "../utils/omc-cli-rendering.js";
 import { createSwallowedErrorLogger } from "../lib/swallowed-error.js";
 import { readCanonicalTeamStateCandidate } from "./team-canonical-state.js";
+import { emitUserCorrection } from "../telemetry/emit.js";
+import { hashFilePath } from "../telemetry/redact.js";
 
 // Hot-path imports: needed on every/most hook invocations (keyword-detector, pre/post-tool-use)
 import {
@@ -1091,6 +1093,18 @@ async function processKeywordDetector(input: HookInput): Promise<HookOutput> {
 
   const sessionId = input.sessionId;
   const directory = resolveToWorktreeRoot(input.directory);
+
+  // Telemetry: detect user-correction patterns (fire-and-forget, non-blocking)
+  const CORRECTION_PATTERN = /\b(no, |actually,|undo|revert|don't|do this differently|that's wrong|stop doing)\b/i;
+  const correctionMatch = CORRECTION_PATTERN.exec(promptText);
+  if (correctionMatch) {
+    void emitUserCorrection({
+      directory,
+      session_id: sessionId,
+      matched_pattern: correctionMatch[1] || correctionMatch[0],
+      prompt_hash: hashFilePath(directory, promptText),
+    });
+  }
   const messages: string[] = [];
 
   // Unified explicit slash invocation handler — covers all 8 canonical

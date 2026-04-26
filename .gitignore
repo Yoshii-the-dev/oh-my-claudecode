@@ -3,6 +3,10 @@ node_modules/
 .DS_Store
 .omc/
 .omc/
+# Telemetry events/archives are gitignored; only digests are committed
+.omc/telemetry/
+!.omc/telemetry/digests/
+!.omc/telemetry/digests/**
 .idea/
 .claude/
 

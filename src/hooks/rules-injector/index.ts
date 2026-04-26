@@ -25,6 +25,7 @@ import {
 } from './storage.js';
 import { TRACKED_TOOLS } from './constants.js';
 import type { RuleToInject } from './types.js';
+import { emit } from '../../telemetry/writer.js';
 
 // Re-export all submodules
 export * from './types.js';
@@ -49,6 +50,7 @@ interface SessionCache {
  * @returns Hook handlers for tool execution
  */
 export function createRulesInjectorHook(workingDirectory: string) {
+  void emit({ directory: workingDirectory, stream: 'hook-events', payload: { hook_name: 'rules-injector', event: 'fired' } });
   const sessionCaches = new Map<string, SessionCache>();
 
   function getSessionCache(sessionId: string): SessionCache {

@@ -7,6 +7,8 @@
  * This module provides a pre-execution gate that routes small tasks to lightweight paths.
  */
 
+import { emit } from '../../telemetry/writer.js';
+
 export type TaskSize = 'small' | 'medium' | 'large';
 
 export interface TaskSizeResult {
@@ -147,6 +149,7 @@ export function classifyTaskSize(
   text: string,
   thresholds: TaskSizeThresholds = DEFAULT_THRESHOLDS,
 ): TaskSizeResult {
+  void emit({ directory: process.cwd(), stream: 'hook-events', payload: { hook_name: 'task-size-detector', event: 'fired' } });
   const wordCount = countWords(text);
   const escapePrefix = detectEscapeHatch(text);
 
