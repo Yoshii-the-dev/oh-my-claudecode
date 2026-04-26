@@ -74,6 +74,7 @@ import { runScorecardCommand } from './commands/run-scorecard.js';
 import { sessionSearchCommand } from './commands/session-search.js';
 import { teamCommand } from './commands/team.js';
 import { ralphthonCommand } from './commands/ralphthon.js';
+import { telemetryDigestCommand } from './commands/telemetry.js';
 import {
   teleportCommand,
   teleportListCommand,
@@ -85,6 +86,7 @@ import { resolvePluginDirArg } from '../lib/plugin-dir.js';
 import { launchCommand } from './launch.js';
 import { interopCommand } from './interop.js';
 import { askCommand, ASK_USAGE } from './ask.js';
+import { stackCommand, STACK_USAGE } from './stack.js';
 import { warnIfWin32 } from './win32-warning.js';
 import { autoresearchCommand } from './autoresearch.js';
 import { runHudWatchLoop } from './hud-watch.js';
@@ -200,6 +202,18 @@ program
   .addHelpText('after', `\n${ASK_USAGE}`)
   .action(async (args: string[]) => {
     await askCommand(args || []);
+  });
+
+/**
+ * Stack command — orchestrates stack-provision (single-entry facade)
+ */
+program
+  .command('stack [args...]')
+  .description('Provision skills/agents/context for a chosen stack via the stack-provision orchestrator')
+  .allowUnknownOption()
+  .addHelpText('after', `\n${STACK_USAGE}`)
+  .action(async (args: string[]) => {
+    await stackCommand(args || []);
   });
 
 
@@ -1721,6 +1735,26 @@ program
   .argument('[args...]', 'ralphthon arguments')
   .action(async (args: string[]) => {
     await ralphthonCommand(args);
+  });
+
+/**
+ * Telemetry commands
+ */
+const telemetryCommand = program
+  .command('telemetry')
+  .description('OMC telemetry utilities');
+
+telemetryCommand
+  .command('digest')
+  .description('Generate a daily telemetry digest on demand')
+  .option('--dir <path>', 'Project root directory (default: cwd)')
+  .addHelpText('after', `
+Examples:
+  $ omc telemetry digest              Generate digest for current directory
+  $ omc telemetry digest --dir /path  Generate digest for specified project
+`)
+  .action(async (options) => {
+    await telemetryDigestCommand({ directory: options.dir });
   });
 
 /**

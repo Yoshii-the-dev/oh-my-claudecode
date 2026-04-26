@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
   copyFileSync,
@@ -14,6 +13,12 @@ import {
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readJson, readJsonValidated, validateData, writeJson, writeJsonValidated } from './validation.mjs';
+import { scanCandidatePayload } from './content-scanner.mjs';
+import { gatherTrustSignals } from './trust-signals.mjs';
+import { rankCandidates } from './priority-score.mjs';
+import { loadLicensePolicy, resolveLicense } from './license-gate.mjs';
+import { collectGlobalSkillRoots, scanGlobalSkills, findDuplicateForCandidate } from './cross-project-dedup.mjs';
+import { configureDefaultClient, getDefaultClient } from './network-client.mjs';
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const skillDir = resolve(scriptDir, '..');
@@ -22,7 +27,17 @@ const defaultConfigPath = join(skillDir, 'config', 'default-capability-packs.jso
 const maxSkillFiles = 1500;
 const defaultTimeoutMs = 5000;
 const batchApprovalSources = new Set(['installed-skill', 'bundled-skill']);
-const infoRiskFlags = new Set(['already-installed-local-copy']);
+const infoRiskFlags = new Set([
+  'already-installed-local-copy',
+  // Phase 3: license-gate emits this when the candidate has no SPDX metadata
+  // we can normalise. For local installed/bundled skills that almost always
+  // happens, so treating it as warning would block --approve-local. Genuine
+  // license problems surface as `license:not-allowed:*` or `license:denied:*`.
+  'license:unknown',
+  // Phase 3: cross-project dedup signal — by itself it is informational. The
+  // sha-drift variant `duplicate-sha-mismatch` keeps default warning severity.
+  'duplicate-already-installed',
+]);
 const criticalRiskFlags = new Set([
   'prompt-authority-override',
   'hidden-network-behavior',
@@ -33,15 +48,33 @@ const DEFAULT_STRICT_GATE = Object.freeze({
   freshness_days_max: 180,
   checksum_required: true,
   license_conflict_allowed: false,
+  // TOFU (trust-on-first-use): when true, candidates with missing checksums
+  // from sufficiently trusted sources pass the gate and the SKILL.md hash is
+  // pinned at promote time (see tofu-pinning.mjs). Default ON because most
+  // public skill registries (skills.sh, agentskill-sh) do not publish per-skill
+  // sha256 in search responses.
+  checksum_tofu_allowed: true,
+  checksum_tofu_min_trust: 0.9,
 });
-let cachedGitHubToken;
 
-try {
-  const result = await run(process.argv.slice(2));
-  emit(result);
-} catch (error) {
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exit(1);
+const _invokedAsScript = (() => {
+  const entry = process.argv[1];
+  if (!entry) return false;
+  try {
+    return resolve(entry) === resolve(new URL(import.meta.url).pathname);
+  } catch {
+    return false;
+  }
+})();
+
+if (_invokedAsScript) {
+  try {
+    const result = await run(process.argv.slice(2));
+    emit(result);
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  }
 }
 
 async function run(argv) {
@@ -104,6 +137,10 @@ function parseArgs(argv) {
     approvedBy: process.env.USER || 'unknown',
     skillRoot: '',
     manifestPath: '',
+    // Network discipline (handled by network-client.mjs).
+    cachePath: '',
+    cacheTtlSeconds: null,
+    noCache: false,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -217,6 +254,18 @@ function parseArgs(argv) {
     } else if (arg === '--manifest') {
       index += 1;
       options.manifestPath = resolve(requireValue(argv[index], '--manifest'));
+    } else if (arg === '--no-cache') {
+      options.noCache = true;
+    } else if (arg.startsWith('--cache-ttl=')) {
+      options.cacheTtlSeconds = Number(arg.slice('--cache-ttl='.length));
+    } else if (arg === '--cache-ttl') {
+      index += 1;
+      options.cacheTtlSeconds = Number(requireValue(argv[index], '--cache-ttl'));
+    } else if (arg.startsWith('--cache-path=')) {
+      options.cachePath = resolve(arg.slice('--cache-path='.length));
+    } else if (arg === '--cache-path') {
+      index += 1;
+      options.cachePath = resolve(requireValue(argv[index], '--cache-path'));
     } else {
       throw new Error(`stack-provision: unknown option ${arg}`);
     }
@@ -253,6 +302,7 @@ async function discover(runDir, options) {
   const run = readRun(runDir);
   const config = readJsonValidated(resolve(options.configPath), 'config', options.configPath);
   const registrySources = skillSourceRegistryById(config);
+  configureNetworkClientFromOptions({ runDir, options, config });
   const warnings = [];
   const selectedSources = expandSelectedSources(
     options.sources.length > 0
@@ -337,6 +387,23 @@ async function discover(runDir, options) {
 
   const dedupedCandidates = dedupeCandidates(allCandidates)
     .sort((a, b) => b.score - a.score || a.candidate_id.localeCompare(b.candidate_id))
+  await enhanceCandidatesWithSecuritySignals(dedupedCandidates, {
+    network: options.network,
+    timeoutMs: options.timeoutMs,
+    contract: run.contract,
+    warnings,
+    projectRoot: options.projectRoot,
+  });
+  rankCandidates(dedupedCandidates, {
+    weights: run.contract?.policy?.priority_weights,
+  });
+  dedupedCandidates.sort((a, b) => {
+    const pa = Number(a.priority_score ?? 0);
+    const pb = Number(b.priority_score ?? 0);
+    if (pb !== pa) return pb - pa;
+    if (b.score !== a.score) return b.score - a.score;
+    return a.candidate_id.localeCompare(b.candidate_id);
+  });
   const selection = shortlistCandidates(
     dedupedCandidates,
     run.matrix,
@@ -558,11 +625,20 @@ function enrichRegistryEntry(entry, source, registry) {
 }
 
 function renderRegistryInstallCommand(template, entry, source, registry) {
+  // Honor explicit install_cmd from the registry entry verbatim — some search
+  // responses (skills.sh) ship a fully-formed CLI string that we must not
+  // re-template.
+  if (typeof entry.install_cmd === 'string' && entry.install_cmd.trim()) {
+    return entry.install_cmd.trim();
+  }
   if (!template) {
     return '';
   }
   const slug = sanitizeSlug(entry.slug || entry.name || entry.title || entry.url || source);
-  const ref = registryInstallReference(entry, slug, registry);
+  // Prefer a github `<org>/<repo>` reference when the entry exposes one — for
+  // skills.sh / agentskill-sh this is the only `add`-installable shape.
+  const githubRepoPath = extractGithubRepoPath(entry);
+  const ref = githubRepoPath || registryInstallReference(entry, slug, registry);
   const values = {
     ref,
     slug,
@@ -818,12 +894,14 @@ function sourceQualityForCandidate(source, entry, config) {
 }
 
 function strictGatePolicy(contract) {
+  const sg = contract?.policy?.strict_gate ?? {};
   return {
-    source_trust_min: Number(contract?.policy?.strict_gate?.source_trust_min ?? DEFAULT_STRICT_GATE.source_trust_min),
-    freshness_days_max: Number(contract?.policy?.strict_gate?.freshness_days_max ?? DEFAULT_STRICT_GATE.freshness_days_max),
-    checksum_required: contract?.policy?.strict_gate?.checksum_required ?? DEFAULT_STRICT_GATE.checksum_required,
-    license_conflict_allowed:
-      contract?.policy?.strict_gate?.license_conflict_allowed ?? DEFAULT_STRICT_GATE.license_conflict_allowed,
+    source_trust_min: Number(sg.source_trust_min ?? DEFAULT_STRICT_GATE.source_trust_min),
+    freshness_days_max: Number(sg.freshness_days_max ?? DEFAULT_STRICT_GATE.freshness_days_max),
+    checksum_required: sg.checksum_required ?? DEFAULT_STRICT_GATE.checksum_required,
+    license_conflict_allowed: sg.license_conflict_allowed ?? DEFAULT_STRICT_GATE.license_conflict_allowed,
+    checksum_tofu_allowed: sg.checksum_tofu_allowed ?? DEFAULT_STRICT_GATE.checksum_tofu_allowed,
+    checksum_tofu_min_trust: Number(sg.checksum_tofu_min_trust ?? DEFAULT_STRICT_GATE.checksum_tofu_min_trust),
   };
 }
 
@@ -919,8 +997,15 @@ function evaluateStrictGateForCandidate(candidate, policy) {
     reasons.push(`freshness>${policy.freshness_days_max}d`);
   }
 
+  let tofuPending = false;
   if (policy.checksum_required && !metrics.checksum_valid) {
-    reasons.push('checksum_invalid');
+    const trustOk = metrics.source_trust >= (policy.checksum_tofu_min_trust ?? 0.9);
+    const licenseOk = metrics.license_status !== 'conflict';
+    if (policy.checksum_tofu_allowed && trustOk && licenseOk && !isLocalCandidate) {
+      tofuPending = true;
+    } else {
+      reasons.push('checksum_invalid');
+    }
   }
   if (!policy.license_conflict_allowed && metrics.license_status === 'conflict') {
     reasons.push('license_conflict');
@@ -930,7 +1015,168 @@ function evaluateStrictGateForCandidate(candidate, policy) {
     install_allowed: reasons.length === 0,
     reasons,
     metrics,
+    tofu_pending: tofuPending,
   };
+}
+
+async function enhanceCandidatesWithSecuritySignals(candidates, opts) {
+  if (!Array.isArray(candidates) || candidates.length === 0) return;
+  const policy = strictGatePolicy(opts.contract);
+  const trustCache = new Map();
+  const projectRoot = opts.projectRoot ?? process.cwd();
+  const licensePolicy = await loadLicensePolicy(projectRoot);
+  // Phase 3: scan_global_skill_roots is opt-in (matches policy.schema.json
+  // default of `false`). Operators turn it on explicitly when they want
+  // cross-project dedup signals.
+  const scanGlobal = opts.contract?.policy?.scan_global_skill_roots === true;
+  const globalIndex = scanGlobal
+    ? await scanGlobalSkills(collectGlobalSkillRoots(projectRoot), { maxFiles: 200 })
+    : new Map();
+  for (const candidate of candidates) {
+    let updated = false;
+
+    // SPDX license gate: replace the binary normalised value with a richer
+    // decision when policy data is available.
+    const license = resolveLicense(candidate, licensePolicy);
+    candidate.license_resolution = license;
+    candidate.risk_flags = uniqueStrings([...(candidate.risk_flags || []), ...license.flags]);
+    if (license.spdx) candidate.license_spdx = license.spdx;
+    if (license.decision === 'deny') {
+      candidate.license_status = 'conflict';
+      candidate.source_trust = Math.min(candidate.source_trust ?? 0, 0.2);
+      updated = true;
+    } else if (license.decision === 'warn' && candidate.license_status !== 'conflict') {
+      candidate.license_status = candidate.license_status ?? 'unknown';
+    } else if (license.decision === 'allow') {
+      candidate.license_status = 'no-conflict';
+    }
+
+    // Cross-project dedup signal. Self-references (candidate's own on-disk
+    // path appearing in the global scan) are filtered out so a local
+    // installed-skill is never reported as a duplicate of itself.
+    const dup = findDuplicateForCandidate(candidate, globalIndex);
+    if (dup.duplicate) {
+      const ownPath = candidate.install?.source_path ?? candidate.path ?? null;
+      const externalHits = ownPath
+        ? dup.hits.filter((h) => h.path !== ownPath)
+        : dup.hits;
+      if (externalHits.length > 0) {
+        candidate.duplicate_hits = externalHits.map((h) => ({
+          path: h.path,
+          sha256: h.sha256,
+        }));
+        candidate.risk_flags = uniqueStrings([
+          ...(candidate.risk_flags || []),
+          ...dup.flags,
+        ]);
+        // A duplicate is rarely a strict-gate failure on its own, but we lower
+        // priority so non-duplicate alternatives outrank it.
+        candidate.source_trust = Math.max(0, (candidate.source_trust ?? 0) - 0.05);
+        updated = true;
+      }
+    }
+
+    // Static content scan — runs for every candidate, regardless of network.
+    let scan = null;
+    try {
+      scan = await scanCandidatePayload(candidate);
+    } catch (err) {
+      opts.warnings?.push(`content-scan failed for ${candidate.candidate_id}: ${err.message ?? err}`);
+    }
+    if (scan && scan.flags.length > 0) {
+      candidate.risk_flags = uniqueStrings([...(candidate.risk_flags || []), ...scan.flags]);
+      candidate.content_scan = {
+        severity: scan.severity,
+        scanned: scan.scanned,
+        findings: scan.findings.slice(0, 8),
+        errors: scan.errors,
+      };
+      if (scan.severity === 'critical') {
+        // Force the candidate below the strict-gate trust floor; reviewer must intervene.
+        candidate.source_trust = Math.min(candidate.source_trust ?? 0, 0.3);
+        if (!candidate.risk_flags.includes('prompt-authority-override')) {
+          candidate.risk_flags.push('prompt-authority-override');
+        }
+      } else if (scan.severity === 'warn') {
+        candidate.source_trust = Math.max(0, (candidate.source_trust ?? 0) - 0.05);
+      }
+      updated = true;
+    } else if (scan) {
+      candidate.content_scan = {
+        severity: scan.severity,
+        scanned: scan.scanned,
+        findings: [],
+        errors: scan.errors,
+      };
+    }
+
+    // Independent trust signals — only when network is allowed.
+    if (opts.network && isExternalCandidate(candidate)) {
+      let trust = null;
+      try {
+        trust = await gatherTrustSignals(candidate, {
+          network: true,
+          timeoutMs: opts.timeoutMs,
+          fetchImpl: globalThis.fetch,
+          cache: trustCache,
+        });
+      } catch (err) {
+        opts.warnings?.push(`trust-signals failed for ${candidate.candidate_id}: ${err.message ?? err}`);
+      }
+      if (trust) {
+        candidate.trust_signals = {
+          boost: trust.boost,
+          penalty: trust.penalty,
+          signals: trust.signals,
+          penalties: trust.penalties,
+          degraded: trust.degraded,
+          fetched: trust.fetched,
+          errors: trust.errors,
+        };
+        const adjusted = clamp01((candidate.source_trust ?? 0) + trust.boost - trust.penalty);
+        if (Number.isFinite(adjusted) && adjusted !== candidate.source_trust) {
+          candidate.source_trust = Number(adjusted.toFixed(3));
+          updated = true;
+        }
+      }
+    }
+
+    if (updated) {
+      const baseFlags = (candidate.risk_flags || []).filter((f) => !String(f).startsWith('strict-gate'));
+      const strictGate = evaluateStrictGateForCandidate(
+        {
+          source_trust: candidate.source_trust ?? 0,
+          freshness_days: candidate.freshness_days ?? null,
+          checksum_valid: candidate.checksum_valid !== false,
+          license_status: candidate.license_status || 'unknown',
+          source: candidate.source,
+          risk_flags: baseFlags,
+        },
+        policy,
+      );
+      candidate.strict_gate = strictGate;
+      candidate.source_trust = strictGate.metrics.source_trust;
+      candidate.risk_flags = mergeStrictGateRiskFlags(baseFlags, strictGate);
+    }
+  }
+}
+
+function isExternalCandidate(candidate) {
+  if (!candidate?.source) return false;
+  const localSources = ['bundled-skill', 'installed-skill', 'plugin-skill'];
+  return !localSources.includes(candidate.source);
+}
+
+function uniqueStrings(values) {
+  const seen = new Set();
+  const out = [];
+  for (const v of values) {
+    if (!seen.has(v)) {
+      seen.add(v);
+      out.push(v);
+    }
+  }
+  return out;
 }
 
 function mergeStrictGateRiskFlags(riskFlags, strictGate) {
@@ -940,6 +1186,9 @@ function mergeStrictGateRiskFlags(riskFlags, strictGate) {
     for (const reason of strictGate.reasons) {
       flags.add(`strict-gate:${reason}`);
     }
+  }
+  if (strictGate.tofu_pending) {
+    flags.add('tofu:pending');
   }
   return [...flags];
 }
@@ -1155,12 +1404,46 @@ function normalizeList(values) {
   );
 }
 
+// Parse github.com URLs from skills-sh / agentskill-sh search responses to
+// extract `<org>/<repo>` — the format that `npx skills add` actually requires.
+// skills.sh search returns slug-only IDs (e.g. `supabase-postgres-best-practices`)
+// which are NOT installable directly; the canonical install path is the GitHub
+// repo path embedded in the entry's `html_url` field.
+function extractGithubRepoPath(entry) {
+  if (!entry || typeof entry !== 'object') return null;
+  const candidates = [
+    entry.repo_path,
+    entry.repository,
+    entry.repo,
+    entry.html_url,
+    entry.repo_url,
+    entry.url,
+    entry.source_url,
+  ];
+  // First, accept already-shaped `<org>/<repo>` values that aren't URLs.
+  for (const v of candidates) {
+    const s = typeof v === 'string' ? v.trim() : '';
+    if (!s) continue;
+    if (!/:/.test(s) && /^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/.test(s)) return s;
+  }
+  // Then, parse github URLs.
+  for (const v of candidates) {
+    const s = typeof v === 'string' ? v.trim() : '';
+    if (!s) continue;
+    const m = /^https?:\/\/(?:www\.)?github\.com\/([A-Za-z0-9._-]+)\/([A-Za-z0-9._-]+?)(?:\.git)?(?:[\/?#]|$)/.exec(s);
+    if (m) return `${m[1]}/${m[2]}`;
+  }
+  return null;
+}
+
 function externalInstall(source, entry, slug, expectedSha256 = '') {
   if (entry.content_path) {
     return {
       kind: 'copy-skill',
       source_path: resolve(entry.content_path),
       target_slug: slug,
+      method: 'copy-skill',
+      normalized: true,
     };
   }
   if (entry.skill_md_url) {
@@ -1169,6 +1452,8 @@ function externalInstall(source, entry, slug, expectedSha256 = '') {
       source_url: entry.skill_md_url,
       ...(expectedSha256 ? { expected_sha256: expectedSha256 } : {}),
       target_slug: slug,
+      method: 'download-skill',
+      normalized: true,
     };
   }
   if (source === 'plugin-marketplace') {
@@ -1176,12 +1461,47 @@ function externalInstall(source, entry, slug, expectedSha256 = '') {
       kind: 'plugin-install',
       command: entry.install_cmd || `/plugin install ${entry.ref || entry.slug || slug}`,
       target: entry.ref || slug,
+      method: 'plugin-install',
+      normalized: Boolean(entry.ref || entry.slug),
+    };
+  }
+  if (source === 'skills-sh' || source === 'agentskill-sh') {
+    if (typeof entry.install_cmd === 'string' && entry.install_cmd.trim()) {
+      return {
+        kind: 'external-command',
+        command: entry.install_cmd.trim(),
+        target: extractGithubRepoPath(entry) || slug,
+        method: 'external-command',
+        normalized: true,
+      };
+    }
+    const repoPath = extractGithubRepoPath(entry);
+    if (repoPath) {
+      const cli = source === 'agentskill-sh' ? '/learn' : 'npx skills add';
+      const flags = source === 'skills-sh' ? ' -p -y' : '';
+      return {
+        kind: 'external-command',
+        command: `${cli} ${repoPath}${flags}`,
+        target: repoPath,
+        method: 'external-command',
+        normalized: true,
+      };
+    }
+    return {
+      kind: 'external-command-unresolved',
+      command: `review manually: ${entry.html_url || entry.url || slug}`,
+      target: slug,
+      method: 'external-command-unresolved',
+      normalized: false,
+      reason: 'no github repo path or skill_md_url; CLI install requires <org>/<repo>',
     };
   }
   return {
     kind: 'external-command',
     command: entry.install_cmd || entry.command || `review manually: ${entry.url || slug}`,
     target: slug,
+    method: 'external-command',
+    normalized: Boolean(entry.install_cmd || entry.command),
   };
 }
 
@@ -1451,10 +1771,14 @@ async function promoteCandidate(candidate, runDir, skillRoot, options) {
     writeFileSync(tempSource, content, 'utf8');
     return copySkillCandidate(candidate, tempSource, runDir, skillRoot, options);
   }
-  if (install.kind === 'plugin-install' || install.kind === 'external-command') {
-    return pendingAction(candidate, install.command || `review manually: ${candidate.url || candidate.slug}`);
+  if (
+    install.kind === 'plugin-install'
+    || install.kind === 'external-command'
+    || install.kind === 'external-command-unresolved'
+  ) {
+    return pendingAction(candidate, install.command || `review manually: ${candidate.url || candidate.slug}`, install);
   }
-  return pendingAction(candidate, `unsupported install kind: ${install.kind || 'unknown'}`);
+  return pendingAction(candidate, `unsupported install kind: ${install.kind || 'unknown'}`, install);
 }
 
 function copySkillCandidate(candidate, sourcePath, runDir, skillRoot, options) {
@@ -1500,18 +1824,25 @@ function copySkillCandidate(candidate, sourcePath, runDir, skillRoot, options) {
   };
 }
 
-function pendingAction(candidate, command) {
+function pendingAction(candidate, command, install = candidate.install || {}) {
+  const installAudit = {
+    method: install.method || install.kind || 'external-command',
+    normalized: Boolean(install.normalized),
+    target: install.target || null,
+  };
+  if (install.reason) installAudit.reason = install.reason;
   return {
     pending_user_action: {
       candidate_id: candidate.candidate_id,
       slug: candidate.slug,
       source: candidate.source,
       command,
+      install: installAudit,
       rollback: 'manual',
     },
     rollback: {
       operation: 'manual_plugin_uninstall',
-      target_path: candidate.install?.target || candidate.slug,
+      target_path: install.target || candidate.slug,
       backup_path: null,
     },
   };
@@ -2288,93 +2619,41 @@ async function fetchJson(url, timeoutMs) {
 }
 
 async function fetchText(url, timeoutMs) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const response = await fetch(url, {
-      signal: controller.signal,
-      headers: requestHeadersForUrl(url),
-    });
-    if (!response.ok) {
-      const body = clipHttpError(await response.text().catch(() => ''));
-      throw new Error(formatHttpError(url, response.status, body));
-    }
-    return await response.text();
-  } finally {
-    clearTimeout(timeout);
-  }
+  // Delegate to the centralised network-client which handles per-host
+  // rate-limiting, retry on 429/5xx, in-flight dedup, disk cache, and
+  // API-key injection from registry config (api_key_env). Each discover()
+  // run reconfigures the client; tests that import provision.mjs directly
+  // get HARD_DEFAULTS (30 rpm per host, 4 concurrent, 6h cache).
+  const client = getDefaultClient();
+  return client.fetchText(url, { timeoutMs });
 }
 
-function requestHeadersForUrl(url) {
-  const headers = { accept: 'application/json,text/plain,*/*' };
-  if (!isGitHubHost(url)) {
-    return headers;
+function configureNetworkClientFromOptions({ runDir, options, config }) {
+  const projectRoot = options.projectRoot || defaultProjectRoot;
+  const cachePath = options.noCache
+    ? null
+    : (options.cachePath
+      || join(projectRoot, '.omc', 'stack-provision', 'discovery-cache.json'));
+  const ttlPolicy = config?.discovery_policy?.cache_ttl_seconds;
+  const ttlSeconds = options.cacheTtlSeconds != null
+    ? options.cacheTtlSeconds
+    : (typeof ttlPolicy === 'number' ? ttlPolicy : 6 * 60 * 60);
+  const client = configureDefaultClient({
+    cachePath,
+    cacheTtlMs: Math.max(0, Number(ttlSeconds || 0)) * 1000,
+    disableCache: options.noCache === true,
+    timeoutMs: options.timeoutMs,
+  });
+  // Always seed sensible defaults for GitHub before applying registry config,
+  // so `discoverGithub` (which hits api.github.com directly, not via a
+  // registry entry) still gets a real bucket.
+  client.configureHost('api.github.com', { rate_limit_rpm: 60, concurrency: 4 });
+  client.configureHost('github.com', { rate_limit_rpm: 60, concurrency: 4 });
+  client.configureHost('raw.githubusercontent.com', { rate_limit_rpm: 60, concurrency: 4 });
+  for (const registry of toListOfObjects(config?.discovery_policy?.skill_source_registry)) {
+    client.configureRegistry(registry);
   }
-
-  const token = githubAuthToken();
-  if (token) {
-    headers.authorization = `Bearer ${token}`;
-  }
-  if (isGitHubApiUrl(url)) {
-    headers['x-github-api-version'] = '2022-11-28';
-  }
-  return headers;
-}
-
-function githubAuthToken() {
-  if (cachedGitHubToken !== undefined) {
-    return cachedGitHubToken;
-  }
-
-  cachedGitHubToken = String(process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '').trim();
-  if (cachedGitHubToken || process.env.STACK_PROVISION_DISABLE_GH_AUTH_TOKEN === '1') {
-    return cachedGitHubToken;
-  }
-
-  try {
-    cachedGitHubToken = execFileSync('gh', ['auth', 'token'], {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-      timeout: 2000,
-    }).trim();
-  } catch {
-    cachedGitHubToken = '';
-  }
-  return cachedGitHubToken;
-}
-
-function formatHttpError(url, status, body) {
-  let message = `HTTP ${status}`;
-  if (status === 403 && isGitHubApiUrl(url)) {
-    message += githubAuthToken()
-      ? ' (GitHub API denied the authenticated request; check token scopes or rate limits)'
-      : ' (GitHub API unauthenticated or rate-limited; set GITHUB_TOKEN/GH_TOKEN or run gh auth login)';
-  }
-  return body ? `${message}: ${body}` : message;
-}
-
-function clipHttpError(body) {
-  return String(body || '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 280);
-}
-
-function isGitHubHost(url) {
-  try {
-    const host = new URL(url).hostname.toLowerCase();
-    return host === 'api.github.com' || host === 'raw.githubusercontent.com';
-  } catch {
-    return false;
-  }
-}
-
-function isGitHubApiUrl(url) {
-  try {
-    return new URL(url).hostname.toLowerCase() === 'api.github.com';
-  } catch {
-    return false;
-  }
+  return client;
 }
 
 function localRiskFlags(source, skillFile, projectRoot) {
@@ -2401,6 +2680,10 @@ function externalRiskFlags(source, entry, install) {
   }
   if (install.kind === 'external-command' || install.kind === 'plugin-install') {
     flags.push('manual-command-required');
+  }
+  if (install.kind === 'external-command-unresolved') {
+    flags.push('manual-command-required');
+    flags.push('unresolvable-install-target');
   }
   if (install.kind === 'download-skill') {
     flags.push('network-download-required');
@@ -2551,3 +2834,14 @@ function emit(result) {
   if (Array.isArray(result.errors) && result.errors.length > 0) parts.push(`errors=${result.errors.length}`);
   console.log(parts.join(' '));
 }
+
+export {
+  DEFAULT_STRICT_GATE,
+  extractGithubRepoPath,
+  externalInstall,
+  evaluateStrictGateForCandidate,
+  strictGatePolicy,
+  renderRegistryInstallCommand,
+  mergeStrictGateRiskFlags,
+  externalRiskFlags,
+};

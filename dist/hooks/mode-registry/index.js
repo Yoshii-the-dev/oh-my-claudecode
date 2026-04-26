@@ -11,6 +11,7 @@
 import { existsSync, readFileSync, unlinkSync, mkdirSync, readdirSync, statSync, rmdirSync, rmSync, } from "fs";
 import { atomicWriteJsonSync } from "../../lib/atomic-write.js";
 import { join, dirname } from "path";
+import { emit } from "../../telemetry/writer.js";
 import { listSessionIds, resolveSessionStatePath, getSessionStateDir, getOmcRoot, } from "../../lib/worktree-paths.js";
 import { MODE_STATE_FILE_MAP, MODE_NAMES } from "../../lib/mode-names.js";
 /**
@@ -235,6 +236,9 @@ export function getActiveModes(cwd, sessionId) {
         if (isModeActive(mode, cwd, sessionId)) {
             modes.push(mode);
         }
+    }
+    if (modes.length > 0) {
+        void emit({ directory: cwd, stream: 'hook-events', payload: { hook_name: 'mode-registry', event: 'modes_detected', active_modes: modes.join(',') } });
     }
     return modes;
 }

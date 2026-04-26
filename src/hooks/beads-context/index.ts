@@ -1,3 +1,4 @@
+// telemetry-skip: library helper module called from setup hook; no hook entry point, telemetry emitted by setup hook directly
 import { contextCollector } from '../../features/context-injector/index.js';
 import { getOMCConfig } from '../../features/auto-update.js';
 import { BEADS_INSTRUCTIONS, BEADS_RUST_INSTRUCTIONS } from './constants.js';

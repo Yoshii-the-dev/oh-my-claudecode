@@ -10,6 +10,7 @@ import { loadAllSkills, findMatchingSkills } from "./loader.js";
 import { MAX_SKILLS_PER_SESSION } from "./constants.js";
 import { loadConfig } from "./config.js";
 import type { LearnedSkill } from "./types.js";
+import { emit } from '../../telemetry/writer.js';
 
 // Re-export submodules
 export * from "./types.js";
@@ -90,6 +91,7 @@ export function processMessageForSkills(
   sessionId: string,
   projectRoot: string | null,
 ): { injected: number; skills: LearnedSkill[] } {
+  void emit({ directory: projectRoot ?? process.cwd(), stream: 'hook-events', payload: { hook_name: 'learner', event: 'fired' } });
   if (!isLearnerEnabled()) {
     return { injected: 0, skills: [] };
   }

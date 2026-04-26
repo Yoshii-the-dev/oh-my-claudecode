@@ -5,6 +5,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { OmcPaths } from '../../lib/worktree-paths.js';
+import { emitToolCall } from '../../telemetry/emit.js';
 const LOG_DIR = OmcPaths.LOGS;
 const LOG_FILE = 'delegation-audit.jsonl';
 /**
@@ -22,6 +23,8 @@ export function logAuditEntry(entry) {
         fs.mkdirSync(logDir, { recursive: true });
         // Append entry as JSONL
         fs.appendFileSync(logPath, JSON.stringify(fullEntry) + '\n');
+        // Telemetry: emit tool call event (fire-and-forget, non-blocking)
+        void emitToolCall({ directory: process.cwd(), hook_name: 'omc-orchestrator', tool_name: entry.tool, event: entry.decision });
     }
     catch {
         // Silently fail - audit logging should not break main functionality

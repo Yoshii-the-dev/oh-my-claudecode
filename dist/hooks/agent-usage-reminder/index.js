@@ -11,6 +11,7 @@
  * Adapted for Claude Code's shell-based hook system.
  */
 import { loadAgentUsageState, saveAgentUsageState, clearAgentUsageState, } from './storage.js';
+import { emit } from '../../telemetry/writer.js';
 import { TARGET_TOOLS, AGENT_TOOLS, REMINDER_MESSAGE } from './constants.js';
 // Re-export types and utilities
 export { loadAgentUsageState, saveAgentUsageState, clearAgentUsageState } from './storage.js';
@@ -58,6 +59,7 @@ export function createAgentUsageReminderHook() {
             return;
         }
         // Append reminder message to output
+        void emit({ directory: process.cwd(), stream: 'hook-events', payload: { hook_name: 'agent-usage-reminder', event: 'reminder_appended', tool } });
         output.output += REMINDER_MESSAGE;
         state.reminderCount++;
         state.updatedAt = Date.now();

@@ -20,6 +20,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { tmpdir } from 'os';
 import { PLACEHOLDER_TEXT, TOOL_PART_TYPES, HOOK_NAME, DEBUG_PREFIX, } from './constants.js';
+import { emit } from '../../telemetry/writer.js';
 const DEBUG = process.env.EMPTY_MESSAGE_SANITIZER_DEBUG === '1';
 const DEBUG_FILE = path.join(tmpdir(), 'empty-message-sanitizer-debug.log');
 function debugLog(...args) {
@@ -126,6 +127,7 @@ export function sanitizeMessage(message, isLastMessage, placeholderText = PLACEH
 export function sanitizeMessages(input, config) {
     const { messages } = input;
     const placeholderText = config?.placeholderText ?? PLACEHOLDER_TEXT;
+    void emit({ directory: process.cwd(), stream: 'hook-events', payload: { hook_name: 'empty-message-sanitizer', event: 'fired', message_count: messages.length } });
     debugLog('sanitizing messages', { count: messages.length });
     let sanitizedCount = 0;
     for (let i = 0; i < messages.length; i++) {

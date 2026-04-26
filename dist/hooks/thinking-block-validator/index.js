@@ -16,6 +16,7 @@
  * Ported from oh-my-opencode's thinking-block-validator hook.
  */
 import { CONTENT_PART_TYPES, THINKING_PART_TYPES, SYNTHETIC_THINKING_ID_PREFIX, HOOK_NAME, } from "./constants.js";
+import { emit } from "../../telemetry/writer.js";
 export * from "./types.js";
 export * from "./constants.js";
 const SYNTHETIC_THINKING_CONTENT = "[Synthetic thinking block inserted to preserve message structure]";
@@ -107,6 +108,7 @@ export function validateMessage(message, messages, index, modelID) {
 export function createThinkingBlockValidatorHook() {
     return {
         "experimental.chat.messages.transform": async (_input, output) => {
+            void emit({ directory: process.cwd(), stream: 'hook-events', payload: { hook_name: 'thinking-block-validator', event: 'fired' } });
             const { messages } = output;
             if (!messages || messages.length === 0) {
                 return;

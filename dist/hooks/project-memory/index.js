@@ -5,10 +5,12 @@
 import path from "path";
 import fs from "fs/promises";
 import { contextCollector } from "../../features/context-injector/collector.js";
+import { emit } from "../../telemetry/writer.js";
 import { findProjectRoot } from "../rules-injector/finder.js";
 import { loadProjectMemory, saveProjectMemory, shouldRescan, } from "./storage.js";
 import { computeProjectFingerprint, detectProjectEnvironment, } from "./detector.js";
 import { formatContextSummary } from "./formatter.js";
+import { appendFingerprintHistory, formatFingerprintShiftWarning, scanStaleOmcArtefacts, shortenHash, } from "./fingerprint-shift.js";
 /**
  * Session caches to prevent duplicate injection.
  * Map<sessionId, Set<projectRoot:scopeKey>>
@@ -17,6 +19,7 @@ import { formatContextSummary } from "./formatter.js";
 const sessionCaches = new Map();
 const MAX_SESSIONS = 100;
 export async function registerProjectMemoryContext(sessionId, workingDirectory) {
+    void emit({ directory: workingDirectory, stream: 'hook-events', payload: { hook_name: 'project-memory', event: 'fired' } });
     const projectRoot = findProjectRoot(workingDirectory);
     if (!projectRoot) {
         return false;
@@ -38,10 +41,10 @@ export async function registerProjectMemoryContext(sessionId, workingDirectory) 
     }
     try {
         let memory = await loadProjectMemory(projectRoot);
-        const needsRegrounding = memory
-            ? await shouldRegroundProjectMemory(memory, projectRoot)
-            : false;
-        if (!memory || shouldRescan(memory) || needsRegrounding) {
+        const assessment = memory
+            ? await assessProjectFingerprint(memory, projectRoot)
+            : null;
+        if (!memory || shouldRescan(memory) || assessment?.shouldReground) {
             const existing = memory;
             memory = await detectProjectEnvironment(projectRoot);
             if (existing && (await shouldPreserveLearnedMemory(existing, memory, projectRoot))) {
@@ -50,6 +53,9 @@ export async function registerProjectMemoryContext(sessionId, workingDirectory) 
                 memory.hotPaths = existing.hotPaths;
             }
             await saveProjectMemory(projectRoot, memory);
+        }
+        if (assessment?.status === "mismatch" && memory.projectFingerprint) {
+            await registerFingerprintShiftWarning(sessionId, projectRoot, assessment.previousHash ?? null, memory.projectFingerprint.hash);
         }
         const content = formatContextSummary(memory, {
             workingDirectory: path.relative(projectRoot, workingDirectory),
@@ -102,12 +108,47 @@ function getScopeKey(projectRoot, workingDirectory) {
     }
     return normalized;
 }
-async function shouldRegroundProjectMemory(memory, projectRoot) {
-    const currentFingerprint = await computeProjectFingerprint(projectRoot);
+async function assessProjectFingerprint(memory, projectRoot) {
     if (!memory.projectFingerprint) {
-        return true;
+        return {
+            shouldReground: true,
+            status: "legacy-no-fingerprint",
+        };
     }
-    return memory.projectFingerprint.hash !== currentFingerprint.hash;
+    const current = await computeProjectFingerprint(projectRoot);
+    if (memory.projectFingerprint.hash === current.hash) {
+        return {
+            shouldReground: false,
+            status: "unchanged",
+        };
+    }
+    return {
+        shouldReground: true,
+        status: "mismatch",
+        previousHash: memory.projectFingerprint.hash,
+    };
+}
+async function registerFingerprintShiftWarning(sessionId, projectRoot, previousHash, currentHash) {
+    const report = await scanStaleOmcArtefacts(projectRoot);
+    const content = formatFingerprintShiftWarning(report, shortenHash(previousHash), shortenHash(currentHash));
+    contextCollector.register(sessionId, {
+        id: "project-fingerprint-shift",
+        source: "project-memory",
+        content,
+        priority: "critical",
+        metadata: {
+            projectRoot,
+            previousHash,
+            currentHash,
+            staleArtefactCount: report.totalCount,
+        },
+    });
+    await appendFingerprintHistory(projectRoot, {
+        previousHash,
+        currentHash,
+        recordedAt: Date.now(),
+        staleArtefacts: [...report.files, ...report.directories],
+    });
 }
 async function shouldPreserveLearnedMemory(existing, detected, projectRoot) {
     if (!hasLearnedMemory(existing)) {

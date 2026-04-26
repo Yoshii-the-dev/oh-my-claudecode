@@ -11,6 +11,7 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync, unlinkSync } from '
 import { join } from 'path';
 import { execSync } from 'child_process';
 import { getGlobalOmcConfigCandidates } from '../../utils/paths.js';
+import { emit } from '../../telemetry/writer.js';
 const DEFAULT_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.py', '.go', '.rs'];
 const DEFAULT_MAX_FILES = 10;
 /** Marker filename used to prevent re-triggering within the same turn cycle */
@@ -124,6 +125,7 @@ Use: Task(subagent_type="oh-my-claudecode:code-simplifier", prompt="Simplify the
  * 5. Write trigger marker and inject the simplifier delegation message
  */
 export function processCodeSimplifier(cwd, stateDir) {
+    void emit({ directory: cwd, stream: 'hook-events', payload: { hook_name: 'code-simplifier', event: 'fired' } });
     if (!isCodeSimplifierEnabled()) {
         return { shouldBlock: false, message: '' };
     }

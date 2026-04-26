@@ -5,6 +5,8 @@
  * All ralph-related functionality is now consolidated in this single module.
  */
 
+// telemetry-skip: pure re-export aggregator — runtime handlers are in loop.js, prd.js, progress.js, verifier.js; persistent-mode hook emits on ralph stop events
+
 // ============================================================================
 // Ralph Loop
 // ============================================================================

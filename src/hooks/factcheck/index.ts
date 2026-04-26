@@ -18,6 +18,7 @@ import type {
   Mismatch,
   Severity,
 } from './types.js';
+import { emitVerdict } from '../../telemetry/emit.js';
 import {
   checkMissingFields,
   checkMissingGates,
@@ -170,5 +171,9 @@ export function runFactcheck(
 ): FactcheckResult {
   const config = loadGuardsConfig(options?.workspace);
   const mode = options?.mode ?? (config.factcheck.mode as FactcheckMode);
-  return runChecks(claims, mode, config.factcheck, options?.runtimeCwd);
+  const result = runChecks(claims, mode, config.factcheck, options?.runtimeCwd);
+  // Telemetry: emit verdict event (fire-and-forget, non-blocking)
+  const directory = options?.workspace ?? options?.runtimeCwd ?? process.cwd();
+  void emitVerdict({ directory, agent_type: String(claims['agent_type'] ?? 'unknown'), verdict: result.verdict });
+  return result;
 }

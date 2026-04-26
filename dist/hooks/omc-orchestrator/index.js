@@ -17,6 +17,7 @@ import { HOOK_NAME, ALLOWED_PATH_PATTERNS, WARNED_EXTENSIONS, WRITE_EDIT_TOOLS, 
 import { readBoulderState, getPlanProgress, } from '../../features/boulder-state/index.js';
 import { addWorkingMemoryEntry, setPriorityContext, } from '../notepad/index.js';
 import { logAuditEntry } from './audit.js';
+import { emit } from '../../telemetry/writer.js';
 // Re-export constants
 export * from './constants.js';
 // Config caching (30s TTL)
@@ -327,6 +328,7 @@ export function processOrchestratorPreTool(input) {
         enforcementLevel,
         sessionId,
     });
+    void emit({ directory, stream: 'hook-events', payload: { hook_name: 'omc-orchestrator', event: enforcementLevel === 'strict' ? 'blocked' : 'warned' } });
     // Build warning with agent suggestion
     const agentSuggestion = suggestAgentForFile(filePath);
     const warning = ORCHESTRATOR_DELEGATION_REQUIRED.replace('$FILE_PATH', filePath) +

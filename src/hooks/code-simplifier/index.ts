@@ -12,6 +12,7 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync, unlinkSync } from '
 import { join } from 'path';
 import { execSync } from 'child_process';
 import { getGlobalOmcConfigCandidates } from '../../utils/paths.js';
+import { emit } from '../../telemetry/writer.js';
 
 /** Config shape for the code-simplifier feature */
 export interface CodeSimplifierConfig {
@@ -162,6 +163,7 @@ export function processCodeSimplifier(
   cwd: string,
   stateDir: string,
 ): CodeSimplifierHookResult {
+  void emit({ directory: cwd, stream: 'hook-events', payload: { hook_name: 'code-simplifier', event: 'fired' } });
   if (!isCodeSimplifierEnabled()) {
     return { shouldBlock: false, message: '' };
   }

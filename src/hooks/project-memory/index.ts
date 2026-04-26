@@ -6,6 +6,7 @@
 import path from "path";
 import fs from "fs/promises";
 import { contextCollector } from "../../features/context-injector/collector.js";
+import { emit } from "../../telemetry/writer.js";
 import { findProjectRoot } from "../rules-injector/finder.js";
 import {
   loadProjectMemory,
@@ -17,7 +18,19 @@ import {
   detectProjectEnvironment,
 } from "./detector.js";
 import { formatContextSummary } from "./formatter.js";
+import {
+  appendFingerprintHistory,
+  formatFingerprintShiftWarning,
+  scanStaleOmcArtefacts,
+  shortenHash,
+} from "./fingerprint-shift.js";
 import type { ProjectMemory } from "./types.js";
+
+interface FingerprintAssessment {
+  shouldReground: boolean;
+  status: "unchanged" | "legacy-no-fingerprint" | "mismatch";
+  previousHash?: string;
+}
 
 /**
  * Session caches to prevent duplicate injection.
@@ -31,6 +44,7 @@ export async function registerProjectMemoryContext(
   sessionId: string,
   workingDirectory: string,
 ): Promise<boolean> {
+  void emit({ directory: workingDirectory, stream: 'hook-events', payload: { hook_name: 'project-memory', event: 'fired' } });
   const projectRoot = findProjectRoot(workingDirectory);
   if (!projectRoot) {
     return false;
@@ -56,11 +70,11 @@ export async function registerProjectMemoryContext(
 
   try {
     let memory = await loadProjectMemory(projectRoot);
-    const needsRegrounding = memory
-      ? await shouldRegroundProjectMemory(memory, projectRoot)
-      : false;
+    const assessment: FingerprintAssessment | null = memory
+      ? await assessProjectFingerprint(memory, projectRoot)
+      : null;
 
-    if (!memory || shouldRescan(memory) || needsRegrounding) {
+    if (!memory || shouldRescan(memory) || assessment?.shouldReground) {
       const existing = memory;
       memory = await detectProjectEnvironment(projectRoot);
       if (existing && (await shouldPreserveLearnedMemory(existing, memory, projectRoot))) {
@@ -69,6 +83,15 @@ export async function registerProjectMemoryContext(
         memory.hotPaths = existing.hotPaths;
       }
       await saveProjectMemory(projectRoot, memory);
+    }
+
+    if (assessment?.status === "mismatch" && memory.projectFingerprint) {
+      await registerFingerprintShiftWarning(
+        sessionId,
+        projectRoot,
+        assessment.previousHash ?? null,
+        memory.projectFingerprint.hash,
+      );
     }
 
     const content = formatContextSummary(memory, {
@@ -132,17 +155,64 @@ function getScopeKey(projectRoot: string, workingDirectory: string): string {
   return normalized;
 }
 
-async function shouldRegroundProjectMemory(
+async function assessProjectFingerprint(
   memory: ProjectMemory,
   projectRoot: string,
-): Promise<boolean> {
-  const currentFingerprint = await computeProjectFingerprint(projectRoot);
-
+): Promise<FingerprintAssessment> {
   if (!memory.projectFingerprint) {
-    return true;
+    return {
+      shouldReground: true,
+      status: "legacy-no-fingerprint",
+    };
   }
 
-  return memory.projectFingerprint.hash !== currentFingerprint.hash;
+  const current = await computeProjectFingerprint(projectRoot);
+  if (memory.projectFingerprint.hash === current.hash) {
+    return {
+      shouldReground: false,
+      status: "unchanged",
+    };
+  }
+
+  return {
+    shouldReground: true,
+    status: "mismatch",
+    previousHash: memory.projectFingerprint.hash,
+  };
+}
+
+async function registerFingerprintShiftWarning(
+  sessionId: string,
+  projectRoot: string,
+  previousHash: string | null,
+  currentHash: string,
+): Promise<void> {
+  const report = await scanStaleOmcArtefacts(projectRoot);
+  const content = formatFingerprintShiftWarning(
+    report,
+    shortenHash(previousHash),
+    shortenHash(currentHash),
+  );
+
+  contextCollector.register(sessionId, {
+    id: "project-fingerprint-shift",
+    source: "project-memory",
+    content,
+    priority: "critical",
+    metadata: {
+      projectRoot,
+      previousHash,
+      currentHash,
+      staleArtefactCount: report.totalCount,
+    },
+  });
+
+  await appendFingerprintHistory(projectRoot, {
+    previousHash,
+    currentHash,
+    recordedAt: Date.now(),
+    staleArtefacts: [...report.files, ...report.directories],
+  });
 }
 
 async function shouldPreserveLearnedMemory(

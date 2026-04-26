@@ -11,6 +11,7 @@
 import { existsSync, readFileSync } from 'fs';
 import { join, extname, normalize } from 'path';
 import { execFileSync, spawnSync } from 'child_process';
+import { emit } from '../../telemetry/writer.js';
 // =============================================================================
 // SECURITY UTILITIES
 // =============================================================================
@@ -301,6 +302,7 @@ export function runPreCommitChecks(directory, commitMessage) {
     }
     // All checks must pass
     const canCommit = checks.every(c => c.passed);
+    void emit({ directory, stream: 'hook-events', payload: { hook_name: 'plugin-patterns', event: 'pre_commit_checked', can_commit: String(canCommit) } });
     return { canCommit, checks };
 }
 // =============================================================================

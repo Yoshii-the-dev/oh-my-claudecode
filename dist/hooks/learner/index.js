@@ -8,6 +8,7 @@ import { contextCollector } from "../../features/context-injector/index.js";
 import { loadAllSkills, findMatchingSkills } from "./loader.js";
 import { MAX_SKILLS_PER_SESSION } from "./constants.js";
 import { loadConfig } from "./config.js";
+import { emit } from '../../telemetry/writer.js';
 // Re-export submodules
 export * from "./types.js";
 export * from "./constants.js";
@@ -68,6 +69,7 @@ function formatSkillsForContext(skills) {
  * Process a user message and inject matching skills.
  */
 export function processMessageForSkills(message, sessionId, projectRoot) {
+    void emit({ directory: projectRoot ?? process.cwd(), stream: 'hook-events', payload: { hook_name: 'learner', event: 'fired' } });
     if (!isLearnerEnabled()) {
         return { injected: 0, skills: [] };
     }

@@ -7,6 +7,7 @@
 
 import { readRalphState } from '../ralph/index.js';
 import { writeModeState, readModeState, clearModeStateFile } from '../../lib/mode-state-io.js';
+import { emit } from '../../telemetry/writer.js';
 
 export type UltraQAGoalType = 'tests' | 'build' | 'lint' | 'typecheck' | 'custom';
 
@@ -92,6 +93,7 @@ export function startUltraQA(
   sessionId: string,
   options?: UltraQAOptions
 ): { success: boolean; error?: string } {
+  void emit({ directory, stream: 'hook-events', payload: { hook_name: 'ultraqa', event: 'fired', goal_type: goalType } });
   // Mutual exclusion check: cannot start UltraQA if Ralph Loop is active
   if (isRalphLoopActive(directory, sessionId)) {
     return {

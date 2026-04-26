@@ -46,7 +46,26 @@
           "slug": { "type": "string" },
           "source": { "type": "string" },
           "command": { "type": "string" },
-          "rollback": { "type": "string" }
+          "rollback": { "type": "string" },
+          "install": {
+            "type": "object",
+            "description": "Audit trail for the install path the orchestrator chose. `method` is the resolved install kind, `normalized` flags candidates whose install_target was successfully derived (e.g. <org>/<repo> from a github URL); `false` means the orchestrator could not resolve the target and emitted a manual-review action.",
+            "properties": {
+              "method": {
+                "enum": [
+                  "copy-skill",
+                  "download-skill",
+                  "plugin-install",
+                  "external-command",
+                  "external-command-unresolved"
+                ]
+              },
+              "normalized": { "type": "boolean" },
+              "target": { "type": ["string", "null"] },
+              "reason": { "type": "string" }
+            },
+            "additionalProperties": true
+          }
         },
         "additionalProperties": true
       }

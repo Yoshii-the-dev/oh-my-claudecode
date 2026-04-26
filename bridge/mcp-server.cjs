@@ -3236,8 +3236,8 @@ var require_utils = __commonJS({
       }
       return ind;
     }
-    function removeDotSegments(path13) {
-      let input = path13;
+    function removeDotSegments(path14) {
+      let input = path14;
       const output = [];
       let nextSlash = -1;
       let len = 0;
@@ -3436,8 +3436,8 @@ var require_schemes = __commonJS({
         wsComponent.secure = void 0;
       }
       if (wsComponent.resourceName) {
-        const [path13, query] = wsComponent.resourceName.split("?");
-        wsComponent.path = path13 && path13 !== "/" ? path13 : void 0;
+        const [path14, query] = wsComponent.resourceName.split("?");
+        wsComponent.path = path14 && path14 !== "/" ? path14 : void 0;
         wsComponent.query = query;
         wsComponent.resourceName = void 0;
       }
@@ -6799,12 +6799,12 @@ var require_dist = __commonJS({
         throw new Error(`Unknown format "${name}"`);
       return f;
     };
-    function addFormats(ajv, list, fs9, exportName) {
+    function addFormats(ajv, list, fs10, exportName) {
       var _a;
       var _b;
       (_a = (_b = ajv.opts.code).formats) !== null && _a !== void 0 ? _a : _b.formats = (0, codegen_1._)`require("ajv-formats/dist/formats").${exportName}`;
       for (const f of list)
-        ajv.addFormat(f, fs9[f]);
+        ajv.addFormat(f, fs10[f]);
     }
     module2.exports = exports2 = formatsPlugin;
     Object.defineProperty(exports2, "__esModule", { value: true });
@@ -7290,8 +7290,8 @@ function getErrorMap() {
 
 // node_modules/zod/v3/helpers/parseUtil.js
 var makeIssue = (params) => {
-  const { data, path: path13, errorMaps, issueData } = params;
-  const fullPath = [...path13, ...issueData.path || []];
+  const { data, path: path14, errorMaps, issueData } = params;
+  const fullPath = [...path14, ...issueData.path || []];
   const fullIssue = {
     ...issueData,
     path: fullPath
@@ -7407,11 +7407,11 @@ var errorUtil;
 
 // node_modules/zod/v3/types.js
 var ParseInputLazyPath = class {
-  constructor(parent, value, path13, key) {
+  constructor(parent, value, path14, key) {
     this._cachedPath = [];
     this.parent = parent;
     this.data = value;
-    this._path = path13;
+    this._path = path14;
     this._key = key;
   }
   get path() {
@@ -11048,10 +11048,10 @@ function assignProp(target, prop, value) {
     configurable: true
   });
 }
-function getElementAtPath(obj, path13) {
-  if (!path13)
+function getElementAtPath(obj, path14) {
+  if (!path14)
     return obj;
-  return path13.reduce((acc, key) => acc?.[key], obj);
+  return path14.reduce((acc, key) => acc?.[key], obj);
 }
 function promiseAllObject(promisesObj) {
   const keys = Object.keys(promisesObj);
@@ -11371,11 +11371,11 @@ function aborted(x, startIndex = 0) {
   }
   return false;
 }
-function prefixIssues(path13, issues) {
+function prefixIssues(path14, issues) {
   return issues.map((iss) => {
     var _a;
     (_a = iss).path ?? (_a.path = []);
-    iss.path.unshift(path13);
+    iss.path.unshift(path14);
     return iss;
   });
 }
@@ -20091,11 +20091,11 @@ function formatRange(range) {
 function formatLocation(location) {
   const uri = location.uri || location.targetUri;
   if (!uri) return "Unknown location";
-  const path13 = uriToPath(uri);
+  const path14 = uriToPath(uri);
   const locationRange = location.range || location.targetRange || location.targetSelectionRange;
-  if (!locationRange) return path13;
+  if (!locationRange) return path14;
   const range = formatRange(locationRange);
-  return `${path13}:${range}`;
+  return `${path14}:${range}`;
 }
 function formatHover(hover) {
   if (!hover) return "No hover information available";
@@ -20181,8 +20181,8 @@ function formatWorkspaceEdit(edit) {
   const lines = [];
   if (edit.changes) {
     for (const [uri, changes] of Object.entries(edit.changes)) {
-      const path13 = uriToPath(uri);
-      lines.push(`File: ${path13}`);
+      const path14 = uriToPath(uri);
+      lines.push(`File: ${path14}`);
       for (const change of changes) {
         const range = formatRange(change.range);
         const preview = change.newText.length > 50 ? change.newText.slice(0, 50) + "..." : change.newText;
@@ -20192,8 +20192,8 @@ function formatWorkspaceEdit(edit) {
   }
   if (edit.documentChanges) {
     for (const docChange of edit.documentChanges) {
-      const path13 = uriToPath(docChange.textDocument.uri);
-      lines.push(`File: ${path13}`);
+      const path14 = uriToPath(docChange.textDocument.uri);
+      lines.push(`File: ${path14}`);
       for (const change of docChange.edits) {
         const range = formatRange(change.range);
         const preview = change.newText.length > 50 ? change.newText.slice(0, 50) + "..." : change.newText;
@@ -21258,12 +21258,12 @@ Note: Patterns must be valid AST nodes for the language.`,
     const {
       pattern,
       language,
-      path: path13 = ".",
+      path: path14 = ".",
       context = 2,
       maxResults = 20
     } = args;
     try {
-      const validatedPath = validateToolPath(path13);
+      const validatedPath = validateToolPath(path14);
       const sg = await getSgModule();
       if (!sg) {
         return {
@@ -21282,7 +21282,7 @@ Error: ${sgLoadError}`
           content: [
             {
               type: "text",
-              text: `No ${language} files found in ${path13}`
+              text: `No ${language} files found in ${path14}`
             }
           ]
         };
@@ -21322,7 +21322,7 @@ Error: ${sgLoadError}`
               type: "text",
               text: `No matches found for pattern: ${pattern}
 
-Searched ${files.length} ${language} file(s) in ${path13}
+Searched ${files.length} ${language} file(s) in ${path14}
 
 Tip: Ensure the pattern is a valid AST node. For example:
 - Use "function $NAME" not just "$NAME"
@@ -21382,9 +21382,9 @@ IMPORTANT: dryRun=true (default) only previews changes. Set dryRun=false to appl
     dryRun: external_exports.boolean().optional().describe("Preview only, don't apply changes (default: true)")
   },
   handler: async (args) => {
-    const { pattern, replacement, language, path: path13 = ".", dryRun = true } = args;
+    const { pattern, replacement, language, path: path14 = ".", dryRun = true } = args;
     try {
-      const validatedPath = validateToolPath(path13);
+      const validatedPath = validateToolPath(path14);
       const sg = await getSgModule();
       if (!sg) {
         return {
@@ -21403,7 +21403,7 @@ Error: ${sgLoadError}`
           content: [
             {
               type: "text",
-              text: `No ${language} files found in ${path13}`
+              text: `No ${language} files found in ${path14}`
             }
           ]
         };
@@ -21472,7 +21472,7 @@ Error: ${sgLoadError}`
               type: "text",
               text: `No matches found for pattern: ${pattern}
 
-Searched ${files.length} ${language} file(s) in ${path13}`
+Searched ${files.length} ${language} file(s) in ${path14}`
             }
           ]
         };
@@ -24411,8 +24411,8 @@ var notepadTools = [
 ];
 
 // src/hooks/project-memory/index.ts
-var import_path24 = __toESM(require("path"), 1);
-var import_promises4 = __toESM(require("fs/promises"), 1);
+var import_path25 = __toESM(require("path"), 1);
+var import_promises5 = __toESM(require("fs/promises"), 1);
 
 // src/features/context-injector/collector.ts
 var PRIORITY_ORDER = {
@@ -24588,6 +24588,10 @@ var import_path23 = __toESM(require("path"), 1);
 
 // src/hooks/project-memory/hot-path-tracker.ts
 var import_path22 = __toESM(require("path"), 1);
+
+// src/hooks/project-memory/fingerprint-shift.ts
+var import_promises4 = __toESM(require("fs/promises"), 1);
+var import_path24 = __toESM(require("path"), 1);
 
 // src/hooks/project-memory/directive-detector.ts
 function addDirective(directives, newDirective) {
@@ -24969,20 +24973,20 @@ var memoryTools = [
 
 // src/tools/trace-tools.ts
 var import_fs20 = require("fs");
-var import_path27 = require("path");
+var import_path28 = require("path");
 
 // src/hooks/subagent-tracker/session-replay.ts
 var import_fs18 = require("fs");
-var import_path25 = require("path");
+var import_path26 = require("path");
 var REPLAY_PREFIX = "agent-replay-";
 var MAX_REPLAY_SIZE_BYTES = 5 * 1024 * 1024;
 function getReplayFilePath(directory, sessionId) {
-  const stateDir = (0, import_path25.join)(getOmcRoot(directory), "state");
+  const stateDir = (0, import_path26.join)(getOmcRoot(directory), "state");
   if (!(0, import_fs18.existsSync)(stateDir)) {
     (0, import_fs18.mkdirSync)(stateDir, { recursive: true });
   }
   const safeId = sessionId.replace(/[^a-zA-Z0-9_-]/g, "_");
-  return (0, import_path25.join)(stateDir, `${REPLAY_PREFIX}${safeId}.jsonl`);
+  return (0, import_path26.join)(stateDir, `${REPLAY_PREFIX}${safeId}.jsonl`);
 }
 function readReplayEvents(directory, sessionId) {
   const filePath = getReplayFilePath(directory, sessionId);
@@ -25161,7 +25165,7 @@ function getReplaySummary(directory, sessionId) {
 // src/features/session-history-search/index.ts
 var import_child_process10 = require("child_process");
 var import_fs19 = require("fs");
-var import_path26 = require("path");
+var import_path27 = require("path");
 var import_readline = require("readline");
 var DEFAULT_LIMIT = 10;
 var DEFAULT_CONTEXT_CHARS = 120;
@@ -25202,16 +25206,16 @@ function getMainRepoRoot(projectRoot) {
       encoding: "utf-8",
       stdio: ["pipe", "pipe", "pipe"]
     }).trim();
-    const absoluteCommonDir = (0, import_path26.resolve)(projectRoot, gitCommonDir);
-    const mainRepoRoot = (0, import_path26.dirname)(absoluteCommonDir);
+    const absoluteCommonDir = (0, import_path27.resolve)(projectRoot, gitCommonDir);
+    const mainRepoRoot = (0, import_path27.dirname)(absoluteCommonDir);
     return mainRepoRoot === projectRoot ? null : mainRepoRoot;
   } catch {
     return null;
   }
 }
 function getClaudeWorktreeParent(projectRoot) {
-  const marker = `${(0, import_path26.normalize)("/.claude/worktrees/")}`;
-  const normalizedRoot = (0, import_path26.normalize)(projectRoot);
+  const marker = `${(0, import_path27.normalize)("/.claude/worktrees/")}`;
+  const normalizedRoot = (0, import_path27.normalize)(projectRoot);
   const idx = normalizedRoot.indexOf(marker);
   if (idx === -1) return null;
   return normalizedRoot.slice(0, idx) || null;
@@ -25231,7 +25235,7 @@ function listJsonlFiles(rootDir) {
       continue;
     }
     for (const entry of entries) {
-      const fullPath = (0, import_path26.join)(current, entry.name);
+      const fullPath = (0, import_path27.join)(current, entry.name);
       if (entry.isDirectory()) {
         stack.push(fullPath);
         continue;
@@ -25265,21 +25269,21 @@ function buildCurrentProjectTargets(projectRoot) {
   if (claudeWorktreeParent) projectRoots.add(claudeWorktreeParent);
   const targets = [];
   for (const root of projectRoots) {
-    const encodedDir = (0, import_path26.join)(claudeDir, "projects", encodeProjectPath(root));
+    const encodedDir = (0, import_path27.join)(claudeDir, "projects", encodeProjectPath(root));
     for (const filePath of listJsonlFiles(encodedDir)) {
       targets.push({ filePath, sourceType: "project-transcript" });
     }
   }
-  const legacyTranscriptsDir = (0, import_path26.join)(claudeDir, "transcripts");
+  const legacyTranscriptsDir = (0, import_path27.join)(claudeDir, "transcripts");
   for (const filePath of listJsonlFiles(legacyTranscriptsDir)) {
     targets.push({ filePath, sourceType: "legacy-transcript" });
   }
   const omcRoot = getOmcRoot(projectRoot);
-  const sessionSummariesDir = (0, import_path26.join)(omcRoot, "sessions");
+  const sessionSummariesDir = (0, import_path27.join)(omcRoot, "sessions");
   for (const filePath of listJsonlFiles(sessionSummariesDir)) {
     targets.push({ filePath, sourceType: "omc-session-summary" });
   }
-  const replayDir = (0, import_path26.join)(omcRoot, "state");
+  const replayDir = (0, import_path27.join)(omcRoot, "state");
   if ((0, import_fs19.existsSync)(replayDir)) {
     for (const filePath of listJsonlFiles(replayDir)) {
       if (filePath.includes("agent-replay-") && filePath.endsWith(".jsonl")) {
@@ -25292,10 +25296,10 @@ function buildCurrentProjectTargets(projectRoot) {
 function buildAllProjectTargets() {
   const claudeDir = getClaudeConfigDir();
   const targets = [];
-  for (const filePath of listJsonlFiles((0, import_path26.join)(claudeDir, "projects"))) {
+  for (const filePath of listJsonlFiles((0, import_path27.join)(claudeDir, "projects"))) {
     targets.push({ filePath, sourceType: "project-transcript" });
   }
-  for (const filePath of listJsonlFiles((0, import_path26.join)(claudeDir, "transcripts"))) {
+  for (const filePath of listJsonlFiles((0, import_path27.join)(claudeDir, "transcripts"))) {
     targets.push({ filePath, sourceType: "legacy-transcript" });
   }
   return uniqueSortedTargets(targets);
@@ -25304,9 +25308,9 @@ function isWithinProject(projectPath, projectRoots) {
   if (!projectPath) {
     return false;
   }
-  const normalizedProjectPath = (0, import_path26.normalize)((0, import_path26.resolve)(projectPath));
+  const normalizedProjectPath = (0, import_path27.normalize)((0, import_path27.resolve)(projectPath));
   return projectRoots.some((root) => {
-    const normalizedRoot = (0, import_path26.normalize)((0, import_path26.resolve)(root));
+    const normalizedRoot = (0, import_path27.normalize)((0, import_path27.resolve)(root));
     return normalizedProjectPath === normalizedRoot || normalizedProjectPath.startsWith(`${normalizedRoot}/`);
   });
 }
@@ -25455,7 +25459,7 @@ async function collectMatchesFromFile(target, options) {
   const fileMtime = (0, import_fs19.existsSync)(target.filePath) ? (0, import_fs19.statSync)(target.filePath).mtimeMs : 0;
   if (target.sourceType === "omc-session-summary" && target.filePath.endsWith(".json")) {
     try {
-      const payload = JSON.parse(await import("fs/promises").then((fs9) => fs9.readFile(target.filePath, "utf-8")));
+      const payload = JSON.parse(await import("fs/promises").then((fs10) => fs10.readFile(target.filePath, "utf-8")));
       const entry = buildSearchableEntry(payload, target.sourceType);
       if (!entry) return [];
       if (options.sessionId && entry.sessionId !== options.sessionId) return [];
@@ -25621,12 +25625,12 @@ var sessionSearchTool = {
 // src/tools/trace-tools.ts
 var REPLAY_PREFIX2 = "agent-replay-";
 function findLatestSessionId(directory) {
-  const stateDir = (0, import_path27.join)(directory, ".omc", "state");
+  const stateDir = (0, import_path28.join)(directory, ".omc", "state");
   try {
     const files = (0, import_fs20.readdirSync)(stateDir).filter((f) => f.startsWith(REPLAY_PREFIX2) && f.endsWith(".jsonl")).map((f) => ({
       name: f,
       sessionId: f.slice(REPLAY_PREFIX2.length, -".jsonl".length),
-      mtime: (0, import_fs20.statSync)((0, import_path27.join)(stateDir, f)).mtimeMs
+      mtime: (0, import_fs20.statSync)((0, import_path28.join)(stateDir, f)).mtimeMs
     })).sort((a, b) => b.mtime - a.mtime);
     return files.length > 0 ? files[0].sessionId : null;
   } catch {
@@ -25971,11 +25975,11 @@ var traceTools = [traceTimelineTool, traceSummaryTool, sessionSearchTool];
 
 // src/lib/shared-memory.ts
 var import_fs21 = require("fs");
-var import_path28 = require("path");
+var import_path29 = require("path");
 var CONFIG_FILE_NAME = ".omc-config.json";
 function isSharedMemoryEnabled() {
   try {
-    const configPath = (0, import_path28.join)(getClaudeConfigDir(), CONFIG_FILE_NAME);
+    const configPath = (0, import_path29.join)(getClaudeConfigDir(), CONFIG_FILE_NAME);
     if (!(0, import_fs21.existsSync)(configPath)) return true;
     const raw = JSON.parse((0, import_fs21.readFileSync)(configPath, "utf-8"));
     const enabled = raw?.agents?.sharedMemory?.enabled;
@@ -26011,11 +26015,11 @@ function validateKey(key) {
 function getNamespaceDir(namespace, worktreeRoot) {
   validateNamespace(namespace);
   const omcRoot = getOmcRoot(worktreeRoot);
-  return (0, import_path28.join)(omcRoot, SHARED_MEMORY_DIR, namespace);
+  return (0, import_path29.join)(omcRoot, SHARED_MEMORY_DIR, namespace);
 }
 function getEntryPath(namespace, key, worktreeRoot) {
   validateKey(key);
-  return (0, import_path28.join)(getNamespaceDir(namespace, worktreeRoot), `${key}.json`);
+  return (0, import_path29.join)(getNamespaceDir(namespace, worktreeRoot), `${key}.json`);
 }
 function ensureNamespaceDir(namespace, worktreeRoot) {
   const dir = getNamespaceDir(namespace, worktreeRoot);
@@ -26097,7 +26101,7 @@ function listEntries(namespace, worktreeRoot) {
     const files = (0, import_fs21.readdirSync)(dir).filter((f) => f.endsWith(".json"));
     for (const file of files) {
       try {
-        const filePath = (0, import_path28.join)(dir, file);
+        const filePath = (0, import_path29.join)(dir, file);
         const entry = JSON.parse((0, import_fs21.readFileSync)(filePath, "utf-8"));
         if (!isExpired(entry)) {
           items.push({
@@ -26127,7 +26131,7 @@ function deleteEntry(namespace, key, worktreeRoot) {
 }
 function cleanupExpired(namespace, worktreeRoot) {
   const omcRoot = getOmcRoot(worktreeRoot);
-  const sharedMemDir = (0, import_path28.join)(omcRoot, SHARED_MEMORY_DIR);
+  const sharedMemDir = (0, import_path29.join)(omcRoot, SHARED_MEMORY_DIR);
   if (!(0, import_fs21.existsSync)(sharedMemDir)) return { removed: 0, namespaces: [] };
   const namespacesToClean = [];
   if (namespace) {
@@ -26148,14 +26152,14 @@ function cleanupExpired(namespace, worktreeRoot) {
   let removed = 0;
   const cleanedNamespaces = [];
   for (const ns of namespacesToClean) {
-    const nsDir = (0, import_path28.join)(sharedMemDir, ns);
+    const nsDir = (0, import_path29.join)(sharedMemDir, ns);
     if (!(0, import_fs21.existsSync)(nsDir)) continue;
     let nsRemoved = 0;
     try {
       const files = (0, import_fs21.readdirSync)(nsDir).filter((f) => f.endsWith(".json"));
       for (const file of files) {
         try {
-          const filePath = (0, import_path28.join)(nsDir, file);
+          const filePath = (0, import_path29.join)(nsDir, file);
           const entry = JSON.parse((0, import_fs21.readFileSync)(filePath, "utf-8"));
           if (isExpired(entry)) {
             (0, import_fs21.unlinkSync)(filePath);
@@ -26175,7 +26179,7 @@ function cleanupExpired(namespace, worktreeRoot) {
 }
 function listNamespaces(worktreeRoot) {
   const omcRoot = getOmcRoot(worktreeRoot);
-  const sharedMemDir = (0, import_path28.join)(omcRoot, SHARED_MEMORY_DIR);
+  const sharedMemDir = (0, import_path29.join)(omcRoot, SHARED_MEMORY_DIR);
   if (!(0, import_fs21.existsSync)(sharedMemDir)) return [];
   try {
     const entries = (0, import_fs21.readdirSync)(sharedMemDir, { withFileTypes: true });
@@ -26531,14 +26535,14 @@ function loadManifest(manifestPath) {
 function computeDiff(previous, current) {
   const entries = /* @__PURE__ */ new Map();
   if (previous === null) {
-    for (const path13 of Object.keys(current)) {
-      entries.set(path13, { path: path13, status: "added", reason: "first run (no manifest)" });
+    for (const path14 of Object.keys(current)) {
+      entries.set(path14, { path: path14, status: "added", reason: "first run (no manifest)" });
     }
   } else {
-    for (const [path13, entry] of Object.entries(current)) {
-      const prev = previous[path13];
+    for (const [path14, entry] of Object.entries(current)) {
+      const prev = previous[path14];
       if (!prev) {
-        entries.set(path13, { path: path13, status: "added", reason: "new directory" });
+        entries.set(path14, { path: path14, status: "added", reason: "new directory" });
       } else {
         const prevFiles = [...prev.files].sort();
         const currFiles = [...entry.files].sort();
@@ -26550,15 +26554,15 @@ function computeDiff(previous, current) {
           const parts = [];
           if (added.length > 0) parts.push(`files added: ${added.join(", ")}`);
           if (removed.length > 0) parts.push(`files removed: ${removed.join(", ")}`);
-          entries.set(path13, { path: path13, status: "modified", reason: parts.join("; ") });
+          entries.set(path14, { path: path14, status: "modified", reason: parts.join("; ") });
         } else {
-          entries.set(path13, { path: path13, status: "unchanged" });
+          entries.set(path14, { path: path14, status: "unchanged" });
         }
       }
     }
-    for (const path13 of Object.keys(previous)) {
-      if (!(path13 in current)) {
-        entries.set(path13, { path: path13, status: "deleted", reason: "directory no longer exists" });
+    for (const path14 of Object.keys(previous)) {
+      if (!(path14 in current)) {
+        entries.set(path14, { path: path14, status: "deleted", reason: "directory no longer exists" });
       }
     }
   }
@@ -26730,14 +26734,14 @@ var DEFAULT_WIKI_CONFIG = {
 
 // src/hooks/wiki/storage.ts
 var import_fs22 = require("fs");
-var import_path29 = require("path");
+var import_path30 = require("path");
 var WIKI_DIR = "wiki";
 var INDEX_FILE = "index.md";
 var LOG_FILE = "log.md";
 var ENVIRONMENT_FILE = "environment.md";
 var RESERVED_FILES = /* @__PURE__ */ new Set([INDEX_FILE, LOG_FILE, ENVIRONMENT_FILE]);
 function getWikiDir(root) {
-  return (0, import_path29.join)(getOmcRoot(root), WIKI_DIR);
+  return (0, import_path30.join)(getOmcRoot(root), WIKI_DIR);
 }
 function ensureWikiDir(root) {
   const wikiDir = getWikiDir(root);
@@ -26745,7 +26749,7 @@ function ensureWikiDir(root) {
     (0, import_fs22.mkdirSync)(wikiDir, { recursive: true });
   }
   const omcRoot = getOmcRoot(root);
-  const gitignorePath = (0, import_path29.join)(omcRoot, ".gitignore");
+  const gitignorePath = (0, import_path30.join)(omcRoot, ".gitignore");
   if ((0, import_fs22.existsSync)(gitignorePath)) {
     const content = (0, import_fs22.readFileSync)(gitignorePath, "utf-8");
     if (!content.includes("wiki/")) {
@@ -26758,7 +26762,7 @@ function ensureWikiDir(root) {
 }
 function withWikiLock(root, fn) {
   const wikiDir = ensureWikiDir(root);
-  const lockPath = lockPathFor((0, import_path29.join)(wikiDir, ".wiki-lock"));
+  const lockPath = lockPathFor((0, import_path30.join)(wikiDir, ".wiki-lock"));
   return withFileLockSync(lockPath, fn, { timeoutMs: 5e3, retryDelayMs: 50 });
 }
 function parseFrontmatter(raw) {
@@ -26840,9 +26844,9 @@ function safeWikiPath(wikiDir, filename) {
   if (filename.includes("/") || filename.includes("\\") || filename.includes("..")) {
     return null;
   }
-  const filePath = (0, import_path29.join)(wikiDir, filename);
-  const resolved = (0, import_path29.resolve)(filePath);
-  if (!resolved.startsWith((0, import_path29.resolve)(wikiDir) + import_path29.sep)) {
+  const filePath = (0, import_path30.join)(wikiDir, filename);
+  const resolved = (0, import_path30.resolve)(filePath);
+  if (!resolved.startsWith((0, import_path30.resolve)(wikiDir) + import_path30.sep)) {
     return null;
   }
   return filePath;
@@ -26874,7 +26878,7 @@ function readAllPages(root) {
   return listPages(root).map((f) => readPage(root, f)).filter((p) => p !== null);
 }
 function readIndex(root) {
-  const indexPath = (0, import_path29.join)(getWikiDir(root), INDEX_FILE);
+  const indexPath = (0, import_path30.join)(getWikiDir(root), INDEX_FILE);
   if (!(0, import_fs22.existsSync)(indexPath)) return null;
   return (0, import_fs22.readFileSync)(indexPath, "utf-8");
 }
@@ -26921,11 +26925,11 @@ function updateIndexUnsafe(root) {
     lines.push("");
   }
   const wikiDir = ensureWikiDir(root);
-  atomicWriteFileSync((0, import_path29.join)(wikiDir, INDEX_FILE), lines.join("\n"));
+  atomicWriteFileSync((0, import_path30.join)(wikiDir, INDEX_FILE), lines.join("\n"));
 }
 function appendLogUnsafe(root, entry) {
   const wikiDir = ensureWikiDir(root);
-  const logPath = (0, import_path29.join)(wikiDir, LOG_FILE);
+  const logPath = (0, import_path30.join)(wikiDir, LOG_FILE);
   const logLine = `## [${entry.timestamp}] ${entry.operation}
 - **Pages:** ${entry.pagesAffected.join(", ") || "none"}
 - **Summary:** ${entry.summary}
@@ -27604,25 +27608,25 @@ var wikiTools = [
 ];
 
 // src/tools/skills-tools.ts
-var import_path33 = require("path");
+var import_path34 = require("path");
 var import_os6 = require("os");
 
 // src/hooks/learner/loader.ts
 var import_fs24 = require("fs");
 var import_crypto4 = require("crypto");
-var import_path32 = require("path");
+var import_path33 = require("path");
 
 // src/hooks/learner/finder.ts
 var import_fs23 = require("fs");
-var import_path31 = require("path");
+var import_path32 = require("path");
 
 // src/hooks/learner/constants.ts
-var import_path30 = require("path");
+var import_path31 = require("path");
 var import_os5 = require("os");
-var USER_SKILLS_DIR = (0, import_path30.join)(getClaudeConfigDir(), "skills", "omc-learned");
-var GLOBAL_SKILLS_DIR = (0, import_path30.join)((0, import_os5.homedir)(), ".omc", "skills");
+var USER_SKILLS_DIR = (0, import_path31.join)(getClaudeConfigDir(), "skills", "omc-learned");
+var GLOBAL_SKILLS_DIR = (0, import_path31.join)((0, import_os5.homedir)(), ".omc", "skills");
 var PROJECT_SKILLS_SUBDIR = OmcPaths.SKILLS;
-var PROJECT_AGENT_SKILLS_SUBDIR = (0, import_path30.join)(".agents", "skills");
+var PROJECT_AGENT_SKILLS_SUBDIR = (0, import_path31.join)(".agents", "skills");
 var MAX_RECURSION_DEPTH = 10;
 var SKILL_EXTENSION = ".md";
 var DEBUG_ENABLED = process.env.OMC_DEBUG === "1";
@@ -27634,7 +27638,7 @@ function findSkillFilesRecursive(dir, results, depth = 0) {
   try {
     const entries = (0, import_fs23.readdirSync)(dir, { withFileTypes: true });
     for (const entry of entries) {
-      const fullPath = (0, import_path31.join)(dir, entry.name);
+      const fullPath = (0, import_path32.join)(dir, entry.name);
       if (entry.isDirectory()) {
         findSkillFilesRecursive(fullPath, results, depth + 1);
       } else if (entry.isFile() && entry.name.endsWith(SKILL_EXTENSION)) {
@@ -27655,9 +27659,9 @@ function safeRealpathSync(filePath) {
   }
 }
 function isWithinBoundary(realPath, boundary) {
-  const normalizedReal = (0, import_path31.normalize)(realPath);
-  const normalizedBoundary = (0, import_path31.normalize)(safeRealpathSync(boundary));
-  return normalizedReal === normalizedBoundary || normalizedReal.startsWith(normalizedBoundary + import_path31.sep);
+  const normalizedReal = (0, import_path32.normalize)(realPath);
+  const normalizedBoundary = (0, import_path32.normalize)(safeRealpathSync(boundary));
+  return normalizedReal === normalizedBoundary || normalizedReal.startsWith(normalizedBoundary + import_path32.sep);
 }
 function findSkillFiles(projectRoot, options) {
   const candidates = [];
@@ -27665,8 +27669,8 @@ function findSkillFiles(projectRoot, options) {
   const scope = options?.scope ?? "all";
   if (projectRoot && (scope === "project" || scope === "all")) {
     const projectSkillDirs = [
-      (0, import_path31.join)(projectRoot, PROJECT_SKILLS_SUBDIR),
-      (0, import_path31.join)(projectRoot, PROJECT_AGENT_SKILLS_SUBDIR)
+      (0, import_path32.join)(projectRoot, PROJECT_SKILLS_SUBDIR),
+      (0, import_path32.join)(projectRoot, PROJECT_AGENT_SKILLS_SUBDIR)
     ];
     for (const projectSkillsDir of projectSkillDirs) {
       const projectFiles = [];
@@ -27871,7 +27875,7 @@ function loadAllSkills(projectRoot) {
         continue;
       }
       const skillId = metadata.id;
-      const relativePath = (0, import_path32.normalize)((0, import_path32.relative)(candidate.sourceDir, candidate.path));
+      const relativePath = (0, import_path33.normalize)((0, import_path33.relative)(candidate.sourceDir, candidate.path));
       const skill = {
         path: candidate.path,
         relativePath,
@@ -27897,13 +27901,13 @@ function loadAllSkills(projectRoot) {
 // src/tools/skills-tools.ts
 var ALLOWED_BOUNDARIES = [process.cwd(), (0, import_os6.homedir)()];
 function validateProjectRoot(input) {
-  const normalized = (0, import_path33.normalize)((0, import_path33.resolve)(input));
+  const normalized = (0, import_path34.normalize)((0, import_path34.resolve)(input));
   if (input.includes("..")) {
     throw new Error("Invalid project root: path traversal not allowed");
   }
   const isWithinAllowed = ALLOWED_BOUNDARIES.some((boundary) => {
-    const normalizedBoundary = (0, import_path33.normalize)(boundary);
-    return normalized === normalizedBoundary || normalized.startsWith(normalizedBoundary + import_path33.sep);
+    const normalizedBoundary = (0, import_path34.normalize)(boundary);
+    return normalized === normalizedBoundary || normalized.startsWith(normalizedBoundary + import_path34.sep);
   });
   if (!isWithinAllowed) {
     throw new Error("Invalid project root: path is outside allowed directories");

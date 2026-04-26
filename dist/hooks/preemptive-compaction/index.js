@@ -14,6 +14,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { tmpdir } from 'os';
 import { DEFAULT_THRESHOLD, CRITICAL_THRESHOLD, COMPACTION_COOLDOWN_MS, MAX_WARNINGS, CLAUDE_DEFAULT_CONTEXT_LIMIT, CHARS_PER_TOKEN, CONTEXT_WARNING_MESSAGE, CONTEXT_CRITICAL_MESSAGE, } from './constants.js';
+import { emit } from '../../telemetry/writer.js';
 const DEBUG = process.env.PREEMPTIVE_COMPACTION_DEBUG === '1';
 const DEBUG_FILE = path.join(tmpdir(), 'preemptive-compaction-debug.log');
 /**
@@ -171,6 +172,7 @@ export function createPreemptiveCompactionHook(config) {
          * PostToolUse - Check context usage after large tool outputs
          */
         postToolUse: (input) => {
+            void emit({ directory: process.cwd(), stream: 'hook-events', payload: { hook_name: 'preemptive-compaction', event: 'fired' } });
             if (!input.tool_response) {
                 return null;
             }

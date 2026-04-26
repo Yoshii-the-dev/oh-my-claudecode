@@ -6,6 +6,7 @@
  */
 import { readRalphState } from '../ralph/index.js';
 import { writeModeState, readModeState, clearModeStateFile } from '../../lib/mode-state-io.js';
+import { emit } from '../../telemetry/writer.js';
 const DEFAULT_MAX_CYCLES = 5;
 const SAME_FAILURE_THRESHOLD = 3;
 /**
@@ -38,6 +39,7 @@ export function isRalphLoopActive(directory, sessionId) {
  * Returns false if Ralph Loop is already active (mutual exclusion)
  */
 export function startUltraQA(directory, goalType, sessionId, options) {
+    void emit({ directory, stream: 'hook-events', payload: { hook_name: 'ultraqa', event: 'fired', goal_type: goalType } });
     // Mutual exclusion check: cannot start UltraQA if Ralph Loop is active
     if (isRalphLoopActive(directory, sessionId)) {
         return {

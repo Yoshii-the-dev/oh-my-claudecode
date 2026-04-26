@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oh-my-claudecode.dev/schemas/stack-provision-policy.schema.json",
+  "title": "stack-provision policy",
+  "description": "Policy file consumed by skills/stack-provision/scripts/orchestrate.mjs to drive the single-entry stack-provision UX. Lives at .omc/stack-provision-policy.json by default. Hand-edited rarely; the orchestrator and the omc-stack CLI maintain reasonable defaults so most users never see this file.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "auto_approve_threshold": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.95,
+      "description": "Source-trust score at or above which a candidate is auto-approved when no warning/critical risk flags are present and the strict gate passes. Independent of the strict gate floor (0.85)."
+    },
+    "blocked_sources": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string" },
+      "default": [],
+      "description": "Sources whose candidates are auto-rejected even if they would otherwise pass. Use to opt out of a registry the project does not trust."
+    },
+    "forbid_generated_drafts": {
+      "type": "boolean",
+      "default": true,
+      "description": "When true (default), LLM-generated draft skills can never be auto-approved. They must be explicitly edited before approval (Phase 2 wires the editor flow)."
+    },
+    "headless_action": {
+      "type": "string",
+      "enum": ["bail", "auto_approve_safe", "manifest_only"],
+      "default": "bail",
+      "description": "What the orchestrator does when manual decisions are needed but no TTY/stdin is available. bail: emit completed:cancelled and exit. auto_approve_safe: approve every candidate that passes the strict gate AND has no warning/critical flags AND is not generated. manifest_only: write the install plan but skip promote/verify."
+    },
+    "approved_by": {
+      "type": "string",
+      "default": "orchestrator",
+      "description": "Identity recorded in review-decision.json when the orchestrator drives review. Override per-CI-job for audit clarity."
+    },
+    "critic_verdict": {
+      "type": "string",
+      "enum": ["approve", "revise", "rewind"],
+      "default": "approve",
+      "description": "Critic verdict forwarded to provision.mjs review. Only approve permits promote. Revise/rewind are accepted to model a CI gate that explicitly rejects."
+    },
+    "skill_root": {
+      "type": ["string", "null"],
+      "default": null,
+      "description": "Absolute or project-relative path where promoted skills are installed. null defaults to .claude/skills/omc-provisioned under the project root."
+    },
+    "scan_global_skill_roots": {
+      "type": "boolean",
+      "default": false,
+      "description": "When true, the orchestrator scans well-known global skill roots (~/.claude/skills, ~/.config/claude/skills, ~/Library/Application Support/Claude/skills, plus the project .claude/skills) during classify and flags candidates whose slug already exists elsewhere. Duplicates are routed to manual review with a duplicate-already-installed flag; sha-mismatch lifts severity. Default false because global scans cross project boundaries — opt in per project."
+    },
+    "max_decisions_per_session": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 25,
+      "description": "Soft ceiling on the number of manual decisions the interactive flow asks in one run. Beyond this the orchestrator emits a batch_resolve summary and asks the user to approve a remaining batch in one go."
+    },
+    "cve_check": {
+      "type": "boolean",
+      "default": true,
+      "description": "Phase 4: query OSV.dev for known advisories on each candidate's declared npm/cargo/PyPI package and add cve:<severity>:<id> risk_flags. Network failures degrade silently — offline runs behave as before."
+    },
+    "revalidation_enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Phase 4: opportunistic weekly revalidation of installed skills (re-hash on disk + best-effort upstream check). Runs at most once per `revalidation_interval_days` per project. Disable for headless CI runs that should never touch the network."
+    },
+    "revalidation_interval_days": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 7,
+      "description": "Phase 4: minimum days between opportunistic revalidations. State persists in .omc/stack-provision/revalidation.json."
+    },
+    "cleanup_enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Phase 4: emit a cleanup_proposal event listing skills idle for more than `cleanup_threshold_days`. The orchestrator never deletes silently — the operator must confirm."
+    },
+    "cleanup_threshold_days": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 60,
+      "description": "Phase 4: skills not used for at least this many days are surfaced as deprecation candidates. State persists in .omc/stack-provision/usage.json."
+    },
+    "offline": {
+      "type": "boolean",
+      "default": false,
+      "description": "Phase 4: when true, every network-touching feature (CVE feed, upstream revalidation) is bypassed and reports degraded results. Useful for air-gapped CI."
+    },
+    "tofu_enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Phase 5: trust-on-first-use pinning. The first successful install snapshots the SKILL.md content under .omc/stack-provision/pins/<slug>.snapshot.md and records its sha256 in pins.json. Subsequent revisits with a different sha256 are routed to manual review with a unified diff."
+    },
+    "tofu_strict": {
+      "type": "boolean",
+      "default": false,
+      "description": "Phase 5: when true, any TOFU drift (pinned sha != current sha) becomes a critical risk_flag (rejected). When false (default), drift is a warn-class flag that requires manual approval."
+    },
+    "sandbox_dryrun_enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Phase 5: static behavior fingerprint of each candidate's SKILL.md — detects undeclared tool callouts, dangerous shell commands (curl|sh, rm -rf /, --dangerously-skip-permissions), sensitive env reads. critical-severity findings force manual review."
+    },
+    "sandbox_max_tools": {
+      "type": ["integer", "null"],
+      "minimum": 1,
+      "default": null,
+      "description": "Phase 5: optional per-skill maximum on the number of distinct tools the sandbox fingerprint may detect. Skills exceeding the limit get a warn-class risk_flag. null disables the count gate."
+    }
+  },
+  "examples": [
+    {
+      "auto_approve_threshold": 0.95,
+      "headless_action": "bail"
+    },
+    {
+      "auto_approve_threshold": 0.97,
+      "blocked_sources": ["cskills-sh"],
+      "forbid_generated_drafts": true,
+      "headless_action": "auto_approve_safe",
+      "approved_by": "ci@oh-my-claudecode",
+      "critic_verdict": "approve"
+    }
+  ]
+}

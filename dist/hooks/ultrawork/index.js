@@ -7,6 +7,7 @@
  */
 import { readFileSync, unlinkSync } from "fs";
 import { writeModeState, readModeState } from "../../lib/mode-state-io.js";
+import { emit } from "../../telemetry/writer.js";
 import { resolveStatePath, resolveSessionStatePath, } from "../../lib/worktree-paths.js";
 import { truncatePromptForEcho } from "../../lib/truncate-prompt.js";
 const _DEFAULT_STATE = {
@@ -53,6 +54,7 @@ export function writeUltraworkState(state, directory, sessionId) {
  * Activate ultrawork mode
  */
 export function activateUltrawork(prompt, sessionId, directory, linkedToRalph) {
+    void emit({ directory: directory ?? process.cwd(), stream: 'hook-events', payload: { hook_name: 'ultrawork', event: 'fired' } });
     const state = {
         active: true,
         started_at: new Date().toISOString(),

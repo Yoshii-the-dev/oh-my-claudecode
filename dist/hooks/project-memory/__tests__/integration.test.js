@@ -245,6 +245,54 @@ describe("Project Memory Integration", () => {
             expect(updated?.hotPaths).toHaveLength(0);
             contextCollector.clear(sessionId);
         });
+        it("should register a fingerprint-shift warning and history when markers change", async () => {
+            await fs.writeFile(path.join(tempDir, "package.json"), JSON.stringify({ name: "old-project", scripts: { build: "tsc" } }));
+            await fs.writeFile(path.join(tempDir, "tsconfig.json"), "{}");
+            await fs.mkdir(path.join(tempDir, ".omc", "specs"), { recursive: true });
+            await fs.writeFile(path.join(tempDir, ".omc", "constitution.md"), "# Old constitution");
+            await fs.writeFile(path.join(tempDir, ".omc", "specs", "old.md"), "# Old spec");
+            const sessionId = "test-session-shift-warning";
+            await registerProjectMemoryContext(sessionId, tempDir);
+            contextCollector.clear(sessionId);
+            await fs.writeFile(path.join(tempDir, "package.json"), JSON.stringify({ name: "new-project", scripts: {} }));
+            await fs.rm(path.join(tempDir, "tsconfig.json"), { force: true });
+            clearProjectMemorySession(sessionId);
+            await registerProjectMemoryContext(sessionId, tempDir);
+            const pending = contextCollector.getPending(sessionId);
+            expect(pending.merged).toContain("[Project Fingerprint Shift Detected]");
+            expect(pending.merged).toContain(".omc/constitution.md");
+            expect(pending.merged).toContain(".omc/specs/");
+            expect(pending.merged).toContain("POTENTIALLY STALE");
+            const shiftEntry = pending.entries.find((e) => e.id === "project-fingerprint-shift");
+            const envEntry = pending.entries.find((e) => e.id === "project-environment");
+            expect(shiftEntry).toBeDefined();
+            expect(shiftEntry?.priority).toBe("critical");
+            expect(envEntry).toBeDefined();
+            expect(pending.entries.indexOf(shiftEntry)).toBeLessThan(pending.entries.indexOf(envEntry));
+            const historyPath = path.join(tempDir, ".omc", ".fingerprint-history.json");
+            const historyContent = await fs.readFile(historyPath, "utf-8");
+            const history = JSON.parse(historyContent);
+            expect(Array.isArray(history)).toBe(true);
+            expect(history).toHaveLength(1);
+            expect(history[0].previousHash).toBeTruthy();
+            expect(history[0].currentHash).toBeTruthy();
+            expect(history[0].previousHash).not.toBe(history[0].currentHash);
+            expect(history[0].staleArtefacts).toContain(".omc/constitution.md");
+            expect(history[0].staleArtefacts).toContain(".omc/specs/");
+            contextCollector.clear(sessionId);
+        });
+        it("should not register a fingerprint-shift warning on first scan", async () => {
+            await fs.writeFile(path.join(tempDir, "package.json"), JSON.stringify({ name: "fresh-project" }));
+            const sessionId = "test-session-no-shift";
+            await registerProjectMemoryContext(sessionId, tempDir);
+            const pending = contextCollector.getPending(sessionId);
+            expect(pending.merged).not.toContain("[Project Fingerprint Shift Detected]");
+            const shiftEntry = pending.entries.find((e) => e.id === "project-fingerprint-shift");
+            expect(shiftEntry).toBeUndefined();
+            const historyPath = path.join(tempDir, ".omc", ".fingerprint-history.json");
+            await expect(fs.access(historyPath)).rejects.toThrow();
+            contextCollector.clear(sessionId);
+        });
         it("should not preserve legacy learned data when old detection markers disappeared", async () => {
             await fs.mkdir(path.join(tempDir, ".git"));
             await saveProjectMemory(tempDir, {

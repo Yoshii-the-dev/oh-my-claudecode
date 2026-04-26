@@ -29,6 +29,7 @@ import type {
   ContextUsageResult,
   PreemptiveCompactionConfig,
 } from './types.js';
+import { emit } from '../../telemetry/writer.js';
 
 const DEBUG = process.env.PREEMPTIVE_COMPACTION_DEBUG === '1';
 const DEBUG_FILE = path.join(tmpdir(), 'preemptive-compaction-debug.log');
@@ -233,6 +234,7 @@ export function createPreemptiveCompactionHook(
       tool_input: Record<string, unknown>;
       tool_response?: string;
     }): string | null => {
+      void emit({ directory: process.cwd(), stream: 'hook-events', payload: { hook_name: 'preemptive-compaction', event: 'fired' } });
       if (!input.tool_response) {
         return null;
       }

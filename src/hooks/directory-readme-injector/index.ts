@@ -16,6 +16,7 @@ import {
   clearInjectedPaths,
 } from './storage.js';
 import { CONTEXT_FILENAMES, TRACKED_TOOLS } from './constants.js';
+import { emit } from '../../telemetry/writer.js';
 
 // Re-export submodules
 export * from './types.js';
@@ -65,6 +66,7 @@ function truncateContent(
  * @returns Hook handlers for tool execution
  */
 export function createDirectoryReadmeInjectorHook(workingDirectory: string) {
+  void emit({ directory: workingDirectory, stream: 'hook-events', payload: { hook_name: 'directory-readme-injector', event: 'fired' } });
   const sessionCaches = new Map<string, Set<string>>();
 
   function getSessionCache(sessionID: string): Set<string> {

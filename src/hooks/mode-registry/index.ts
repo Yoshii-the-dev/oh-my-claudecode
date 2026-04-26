@@ -21,6 +21,7 @@ import {
 } from "fs";
 import { atomicWriteJsonSync } from "../../lib/atomic-write.js";
 import { join, dirname } from "path";
+import { emit } from "../../telemetry/writer.js";
 import type {
   ExecutionMode,
   ModeConfig,
@@ -311,6 +312,10 @@ export function getActiveModes(
     if (isModeActive(mode, cwd, sessionId)) {
       modes.push(mode);
     }
+  }
+
+  if (modes.length > 0) {
+    void emit({ directory: cwd, stream: 'hook-events', payload: { hook_name: 'mode-registry', event: 'modes_detected', active_modes: modes.join(',') } });
   }
 
   return modes;

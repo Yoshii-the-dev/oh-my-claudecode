@@ -10,6 +10,7 @@
 import { detectThinkKeyword, extractPromptText, detectUltrathinkKeyword } from './detector.js';
 import { getHighVariant, isAlreadyHighVariant, getThinkingConfig, getClaudeThinkingConfig } from './switcher.js';
 import type { ThinkModeState, ThinkModeInput } from './types.js';
+import { emit } from '../../telemetry/writer.js';
 
 // Re-export all submodules
 export * from './detector.js';
@@ -77,6 +78,7 @@ export function createThinkModeHook() {
       sessionId: string,
       input: ThinkModeInput
     ): ThinkModeState => {
+      void emit({ directory: process.cwd(), stream: 'hook-events', payload: { hook_name: 'think-mode', event: 'fired' } });
       const promptText = extractPromptText(input.parts);
 
       const state: ThinkModeState = {
