@@ -369,6 +369,39 @@ describe('stack-provision executable workflow', () => {
     );
   });
 
+  it('emits preflight: warning before post-fetch warning when skills-sh has no index or network', () => {
+    const tempDir = makeTempDir();
+    const runRoot = join(tempDir, 'runs');
+
+    run(initScript, [
+      'visual qa',
+      '--surfaces=visual-creative',
+      '--aspects=visual-qa',
+      '--run-id=skills-sh-preflight-regression',
+      '--out',
+      runRoot,
+      '--json',
+    ]);
+    const runDir = join(runRoot, 'skills-sh-preflight-regression');
+
+    run(provisionScript, [
+      'discover',
+      runDir,
+      '--sources=skills-sh',
+      '--json',
+    ]);
+
+    const candidates = JSON.parse(readFileSync(join(runDir, 'candidates.json'), 'utf8'));
+    // New preflight warning must be present
+    expect(candidates.warnings.some((w: string) => w.includes('skills-sh') && w.includes('preflight:'))).toBe(true);
+    // Existing post-fetch warning still present (no regression)
+    expect(candidates.warnings).toEqual(
+      expect.arrayContaining([
+        'skills-sh skipped: provide --skills-sh-index or --network',
+      ]),
+    );
+  });
+
   it('discovers configured marketplace registry sources from source indexes', () => {
     const tempDir = makeTempDir();
     const runRoot = join(tempDir, 'runs');

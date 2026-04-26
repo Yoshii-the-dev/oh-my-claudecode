@@ -159,6 +159,22 @@ skills.sh advertises 30 rpm without a key; we default to 25 to leave headroom fo
 
 Configuration validation lives in `schemas/config.schema.json`; unknown fields are still allowed (`additionalProperties: true`) so operators can attach metadata for their own tooling.
 
+### Source preflight
+
+Before any network fetch, `provision.mjs discover` emits a `preflight:` warning for every source that will silently no-op given the current options. These warnings appear at the top of `candidates.json` `warnings[]` so the cause of "0 candidates" is visible before the loop completes.
+
+What each source needs to avoid a preflight warning:
+
+| Source | Required |
+| --- | --- |
+| `skills-sh` | `--skills-sh-index=<path>` OR `--network` |
+| `plugin-marketplace` | `--plugin-marketplace-index=<path>` OR `--network` |
+| `github` | `--github-index=<path>` OR `--network` |
+| Any registry source (e.g. `agentskill-sh`) | `--source-index=<id>=<path>`, OR `--network` + a configured `search_url_template`/`index_url`, OR the registry has static `entries`/`github_repositories` |
+| `installed`, `bundled` | Always available — no preflight warning |
+
+If you see a warning like `skills-sh preflight: provide --skills-sh-index or --network`, the fix is to pass the flag shown or supply `--network` to allow live lookup.
+
 ## Output discipline
 
 The slash-skill must follow these three rules to keep the chat compact and predictable:
@@ -178,6 +194,7 @@ Delete `/tmp/stack-provision-plan.json` and `/tmp/stack-provision-decisions.json
 - `--surfaces-only`: Use only the explicit `--surfaces` list instead of unioning it with inferred surfaces.
 - `--creative-intent=<brief>`: Adds the `visual-creative` surface and preserves its full creative aspect set.
 - `--aspects=<list>`: Narrow aspects for non-creative surfaces. With `--creative-intent`, visual aspects still include art direction, generated imagery, typography, illustration, motion, brand assets, and visual QA.
+- `--network`: Allow live network access for external discovery sources. Handled by `orchestrate.mjs` and forwarded only to `provision.mjs discover` — never passed to `init.mjs`. Without this flag, sources that require network access (skills-sh, github, registry sources without a cached index) will silently no-op and emit a `preflight:` warning. See "Source preflight" below.
 - `--no-generate`: Discovery and review only. Do not generate draft skills for gaps.
 - `--dry-run`: Build the run contract and review plan without writing files or installing anything.
 - `--json`: Emit machine-readable output from the helper.
@@ -377,6 +394,55 @@ Discovery must not install anything. It writes candidate records under the curre
 Discovery scoring uses structured metadata only: slug, frontmatter fields, index fields, tags, keywords, declared surfaces, technologies, aspects, and capability packs. Do not award coverage from arbitrary `SKILL.md` body text. A candidate covers a cell only when it has a meaningful technology+aspect/pack, surface+aspect, or configured skill-to-pack match. Negative matching rules block known broad skills from unrelated cells.
 
 For external discovery, expand literal technologies into adjacent professional practices and methodology terms from `config/default-capability-packs.json`. For example, `dart` + `backend` searches can include Effective Dart, Dart package design, clean/hexagonal architecture, domain-driven design, API design, contract testing, OWASP API security, OpenTelemetry, and twelve-factor app guidance. Frontend and visual discovery expands into design systems, accessible primitives, shadcn/Radix/Storybook, Tailwind, Figma, Motion, Three.js, visual QA, and brand-system terms. Candidates from configured professional domains, specialized platforms, and trusted GitHub organizations receive source-quality scoring and are surfaced in `review.md`.
+
+### Query Generation
+
+Queries for network search backends are generated from `run.matrix.cells` **only** — never from raw ADR prose in `run.contract.stack`. This is intentional: raw ADR text contains parentheticals, file paths, semicolons, and sentence fragments that produce zero-relevance search results.
+
+The pipeline per cell:
+
+1. **Tokenize** `cell.surface`, `cell.technology`, and `cell.aspect` through `normalizeToken()`:
+   - Lowercase, strip parentheticals, URLs, and file-path segments
+   - Replace non-alphanumeric characters with spaces
+   - Drop tokens shorter than 2 chars, longer than 40 chars, or matching the stop-word list
+   - Cap at 3 tokens per value to avoid sentence noise
+2. **Expand aliases** — each token is looked up in the technology alias map (built-ins + project overrides). Example: `expo` → `["expo", "react native", "eas"]`; `trpc` → `["trpc", "rpc", "typesafe api"]`.
+3. **Build phrase queries** — single tokens, `surface + aspect`, `technology + aspect`, `alias + aspect`.
+4. **Deduplicate, length-cap** — each query ≤ 40 chars; total list ≤ 80 entries.
+
+Stop words (filtered from tokens): `and or the for under with via per by of to in on at a an only side files file runnable reversible paired`.
+
+Built-in technology aliases (in `config/default-capability-packs.json` → `discovery_policy.technology_aliases`):
+
+| Canonical key | Aliases |
+| --- | --- |
+| `expo` | `expo`, `react native`, `eas` |
+| `trpc` | `trpc`, `rpc`, `typesafe api` |
+| `supabase` | `supabase`, `postgres`, `realtime`, `storage` |
+| `sentry-rn` | `sentry react native`, `sentry expo`, `sentry` |
+| `posthog` | `posthog`, `product analytics`, `feature flags` |
+| (+ 10 more) | tailwind, next, vitest, drizzle, prisma, react-native, supabase-auth, sentry, tailwindcss, nextjs |
+
+### Project alias overrides
+
+To add or narrow aliases for your project, create `.omc/stack-provision/aliases.json`:
+
+```json
+{
+  "supabase": ["supabase", "postgres"],
+  "internal-rpc": ["rpc", "internal api"]
+}
+```
+
+**Replace-per-key semantics**: a project entry for `"supabase"` fully replaces the built-in entry — it does not concatenate. To extend a built-in, include the built-in values explicitly:
+
+```json
+{
+  "supabase": ["supabase", "postgres", "realtime", "storage", "pgvector"]
+}
+```
+
+Keys not present in the project override fall through to built-ins. If the file is malformed JSON, discovery logs a `preflight:` warning and falls back to built-ins.
 
 Selection is intentionally bounded. Discovery shortlists at most the configured candidates per matrix cell and per run, then `review` requires explicit candidate ids for external, network, command-based, warning, or critical candidates. This keeps provisioning focused on missing capability cells instead of installing a marketplace dump.
 

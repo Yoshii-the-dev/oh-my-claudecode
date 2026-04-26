@@ -118,6 +118,7 @@ function parseArgs(argv) {
     mode: 'full', // full | plan-only | apply
     planFile: null, // for plan-only output / apply input
     decisionsFile: null, // for apply: pre-collected decisions JSONL
+    network: false, // passed only to provision.mjs discover, NOT forwarded to init.mjs
   };
   const positional = [];
   for (let i = 0; i < argv.length; i += 1) {
@@ -141,6 +142,11 @@ function parseArgs(argv) {
     else if (a.startsWith('--plan-file=')) opts.planFile = a.slice('--plan-file='.length);
     else if (a === '--decisions-file') opts.decisionsFile = argv[++i];
     else if (a.startsWith('--decisions-file=')) opts.decisionsFile = a.slice('--decisions-file='.length);
+    else if (a === '--network') {
+      // --network is only meaningful for provision.mjs discover. init.mjs rejects
+      // unknown flags (init.mjs:205), so we MUST NOT forward it.
+      opts.network = true;
+    }
     else if (a.startsWith('--')) {
       // Forward unknown long flags to init.mjs (e.g. --surfaces, --blocks)
       opts[`__forward__${a}`] = argv[++i] && !argv[i].startsWith('--') ? argv[i] : true;
@@ -754,7 +760,9 @@ async function runOrchestration(opts) {
   emit({ event: 'phase', name: 'discovery', status: 'started' });
   let discoverRes;
   try {
-    discoverRes = await spawnJson(PROVISION_SCRIPT, ['discover', runDir, '--json'], {
+    const discoverArgs = ['discover', runDir, '--json'];
+    if (opts.network) discoverArgs.push('--network');
+    discoverRes = await spawnJson(PROVISION_SCRIPT, discoverArgs, {
       cwd: opts.projectRoot,
     });
   } catch (err) {

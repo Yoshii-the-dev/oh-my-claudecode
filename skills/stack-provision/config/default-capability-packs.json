@@ -478,6 +478,32 @@
       "registered_marketplace": 4,
       "external_index": 3,
       "installed_local": 1
+    },
+    "query_max_chars": 40,
+    "query_max_count": 80,
+    "query_max_token_chars": 40,
+    "query_max_tokens_per_value": 3,
+    "query_stop_words": [
+      "and", "or", "the", "for", "under", "with", "via", "per", "by", "of",
+      "to", "in", "on", "at", "a", "an", "only", "side", "files", "file",
+      "runnable", "reversible", "paired"
+    ],
+    "technology_aliases": {
+      "expo":          ["expo", "react native", "eas"],
+      "react-native":  ["react native", "expo"],
+      "trpc":          ["trpc", "rpc", "typesafe api"],
+      "supabase":      ["supabase", "postgres", "realtime", "storage"],
+      "supabase-auth": ["supabase auth", "supabase", "auth"],
+      "sentry":        ["sentry", "error monitoring"],
+      "sentry-rn":     ["sentry react native", "sentry expo", "sentry"],
+      "posthog":       ["posthog", "product analytics", "feature flags"],
+      "tailwind":      ["tailwindcss", "tailwind"],
+      "tailwindcss":   ["tailwindcss", "tailwind"],
+      "next":          ["nextjs", "next.js"],
+      "nextjs":        ["nextjs", "next", "next.js"],
+      "vitest":        ["vitest", "vite test"],
+      "drizzle":       ["drizzle orm", "drizzle"],
+      "prisma":        ["prisma", "orm"]
     }
   },
   "application_blocks": {
