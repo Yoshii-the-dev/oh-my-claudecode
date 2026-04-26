@@ -85,15 +85,15 @@ describe('telemetry: applyUsageRecord', () => {
     expect(usage.skills.foo.last_used_at).toBe('2026-04-26T00:00:00.000Z');
   });
   it('caps events list at MAX_EVENTS_PER_SKILL', () => {
-    let usage = { schema_version: 1, updated_at: '1970-01-01T00:00:00Z', skills: {} };
+    let usage: ReturnType<typeof applyUsageRecord> = { schema_version: 1, updated_at: '1970-01-01T00:00:00Z', skills: {} };
     for (let i = 0; i < TELEMETRY_DEFAULTS.MAX_EVENTS_PER_SKILL + 10; i += 1) {
       usage = applyUsageRecord(usage, {
         slug: 'foo',
         now: new Date(Date.parse('2026-01-01T00:00:00Z') + i * 60_000).toISOString(),
       });
     }
-    expect(usage.skills.foo.events).toHaveLength(TELEMETRY_DEFAULTS.MAX_EVENTS_PER_SKILL);
-    expect(usage.skills.foo.use_count).toBe(TELEMETRY_DEFAULTS.MAX_EVENTS_PER_SKILL + 10);
+    expect(usage.skills.foo!.events).toHaveLength(TELEMETRY_DEFAULTS.MAX_EVENTS_PER_SKILL);
+    expect(usage.skills.foo!.use_count).toBe(TELEMETRY_DEFAULTS.MAX_EVENTS_PER_SKILL + 10);
   });
   it('ignores invalid kind values', () => {
     const usage = applyUsageRecord(
@@ -156,8 +156,8 @@ describe('telemetry: findUnusedSkills + summarizeUsage', () => {
       thresholdDays: 60,
       now: '2026-04-26T00:00:00Z',
     });
-    expect(unused.map((u) => u.slug)).toEqual(['ancient', 'idle']);
-    expect(unused[0].idle_days).toBeGreaterThan(unused[1].idle_days);
+    expect(unused.map((u: { slug: string }) => u.slug)).toEqual(['ancient', 'idle']);
+    expect(unused[0].idle_days!).toBeGreaterThan(unused[1].idle_days!);
   });
   it('summary captures total uses and most_recent', () => {
     const summary = summarizeUsage({

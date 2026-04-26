@@ -364,7 +364,7 @@ describe('priority-score: rankCandidates', () => {
       },
     ];
     const ranked = rankCandidates(cs);
-    expect(ranked.map((c) => c.candidate_id)).toEqual(['high', 'mid', 'low']);
+    expect(ranked.map((c: { candidate_id: string }) => c.candidate_id)).toEqual(['high', 'mid', 'low']);
     expect(typeof ranked[0].priority_score).toBe('number');
     expect(ranked[0].priority_breakdown.axes.coverage).toBe(1);
   });
