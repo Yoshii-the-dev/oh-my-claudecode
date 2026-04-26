@@ -10,7 +10,7 @@
     {
       "name": "oh-my-claudecode",
       "description": "Claude Code native multi-agent orchestration with intelligent model routing, product learning loops, portfolio ledgers, runtime gates, and generated registries.",
-      "version": "4.21.1",
+      "version": "4.22.0",
       "author": {
         "name": "Yoshii-the-dev",
         "email": "egorkitov30@gmail.com"
@@ -27,5 +27,5 @@
       ]
     }
   ],
-  "version": "4.21.1"
+  "version": "4.22.0"
 }
