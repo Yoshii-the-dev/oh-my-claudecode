@@ -312,6 +312,8 @@ async function discover(runDir, options) {
     registrySources,
     warnings,
   );
+  const aliasResolver = createAliasResolver(config, options.projectRoot, warnings);
+  emitSourcePreflightWarnings({ selectedSources, options, registrySources, warnings });
   const allCandidates = [];
 
   for (const source of selectedSources) {
@@ -343,6 +345,7 @@ async function discover(runDir, options) {
         index: options.skillsShIndex || options.sourceIndexes['skills-sh'] || '',
         run,
         config,
+        aliasResolver,
         warnings,
         network: options.network,
         timeoutMs: options.timeoutMs,
@@ -354,6 +357,7 @@ async function discover(runDir, options) {
         index: options.pluginMarketplaceIndex || options.sourceIndexes['plugin-marketplace'] || '',
         run,
         config,
+        aliasResolver,
         warnings,
         network: options.network,
         timeoutMs: options.timeoutMs,
@@ -365,6 +369,7 @@ async function discover(runDir, options) {
         orgs: options.githubOrgs,
         run,
         config,
+        aliasResolver,
         warnings,
         network: options.network,
         timeoutMs: options.timeoutMs,
@@ -376,6 +381,7 @@ async function discover(runDir, options) {
         index: options.sourceIndexes[source] || '',
         run,
         config,
+        aliasResolver,
         warnings,
         network: options.network,
         timeoutMs: options.timeoutMs,
@@ -542,7 +548,40 @@ function localSkillCandidate(source, root, skillFile, projectRoot, run, config) 
   };
 }
 
-async function discoverIndexSource({ source, index, run, config, warnings, network, timeoutMs, fallbackSearch }) {
+/**
+ * Pre-scan the selected source list and push a preflight: warning for every
+ * source that will silently no-op given current options. Fires BEFORE any
+ * fetch attempt so warnings[] explains the "0 candidates" outcome up-front.
+ */
+function emitSourcePreflightWarnings({ selectedSources, options, registrySources, warnings }) {
+  for (const source of selectedSources) {
+    if (source === 'skills-sh') {
+      if (!options.skillsShIndex && !options.sourceIndexes['skills-sh'] && !options.network) {
+        warnings.push('skills-sh preflight: provide --skills-sh-index or --network');
+      }
+    } else if (source === 'plugin-marketplace') {
+      if (!options.pluginMarketplaceIndex && !options.sourceIndexes['plugin-marketplace'] && !options.network) {
+        warnings.push('plugin-marketplace preflight: provide --plugin-marketplace-index or --network');
+      }
+    } else if (source === 'github') {
+      if (!options.githubIndex && !options.sourceIndexes.github && !options.network) {
+        warnings.push('github preflight: provide --github-index or --network');
+      }
+    } else if (registrySources && registrySources.has(source)) {
+      const registry = registrySources.get(source);
+      const hasIndex = options.sourceIndexes[source];
+      const hasStaticEntries = (registry.entries && registry.entries.length > 0) ||
+        (registry.github_repositories && registry.github_repositories.length > 0);
+      const canNetwork = options.network && (registry.index_url || registry.search_url_template);
+      if (!hasIndex && !hasStaticEntries && !canNetwork) {
+        warnings.push(`${source} preflight: provide --source-index=${source}=<path> or --network`);
+      }
+    }
+    // 'installed', 'bundled': always available locally — no preflight warning needed.
+  }
+}
+
+async function discoverIndexSource({ source, index, run, config, aliasResolver, warnings, network, timeoutMs, fallbackSearch }) {
   if (index) {
     const entries = await readIndexEntries(index, timeoutMs);
     return normalizeExternalEntries(source, entries, run, config);
@@ -554,7 +593,7 @@ async function discoverIndexSource({ source, index, run, config, warnings, netwo
   }
 
   const entries = [];
-  for (const query of discoveryQueries(run, config)) {
+  for (const query of discoveryQueries(run, config, aliasResolver)) {
     try {
       entries.push(...await fetchJsonEntries(fallbackSearch(query), timeoutMs));
     } catch (error) {
@@ -564,7 +603,7 @@ async function discoverIndexSource({ source, index, run, config, warnings, netwo
   return normalizeExternalEntries(source, entries, run, config);
 }
 
-async function discoverRegistrySource({ source, registry, index, run, config, warnings, network, timeoutMs }) {
+async function discoverRegistrySource({ source, registry, index, run, config, aliasResolver, warnings, network, timeoutMs }) {
   const entries = [];
   if (index) {
     entries.push(...await readIndexEntries(index, timeoutMs));
@@ -579,7 +618,7 @@ async function discoverRegistrySource({ source, registry, index, run, config, wa
   }
 
   if (registry.search_url_template && network) {
-    for (const query of discoveryQueries(run, config)) {
+    for (const query of discoveryQueries(run, config, aliasResolver)) {
       try {
         entries.push(...await fetchJsonEntries(renderSearchUrl(registry.search_url_template, query), timeoutMs));
       } catch (error) {
@@ -688,7 +727,7 @@ function renderSearchUrl(template, query) {
     .replace(/\{q\}/g, encodeURIComponent(query));
 }
 
-async function discoverGithub({ index, orgs, run, config, warnings, network, timeoutMs }) {
+async function discoverGithub({ index, orgs, run, config, aliasResolver, warnings, network, timeoutMs }) {
   if (index) {
     const entries = await readIndexEntries(index, timeoutMs);
     return normalizeExternalEntries('github', entries, run, config);
@@ -700,7 +739,7 @@ async function discoverGithub({ index, orgs, run, config, warnings, network, tim
   }
 
   const entries = [];
-  for (const queryTerm of discoveryQueries(run, config)) {
+  for (const queryTerm of discoveryQueries(run, config, aliasResolver)) {
     const orgQuery = orgs.map((org) => `org:${org}`).join(' ');
     const query = `${queryTerm} claude skill SKILL.md ${orgQuery}`.trim();
     const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&per_page=5`;
@@ -1193,79 +1232,87 @@ function mergeStrictGateRiskFlags(riskFlags, strictGate) {
   return [...flags];
 }
 
-function discoveryQueries(run, config) {
-  const queries = [];
-  const policy = config.discovery_policy || {};
+function discoveryQueries(run, config, aliasResolver) {
+  const policy = config?.discovery_policy || {};
+  const maxQueryChars = policy.query_max_chars ?? 40;
+  const maxQueryCount = policy.query_max_count ?? 80;
+  const stopWords = new Set((policy.query_stop_words || []).map((w) => String(w).toLowerCase()));
   const cells = run.matrix?.cells || [];
 
-  queries.push(...toList(run.contract?.stack));
+  // SOURCE: run.matrix.cells ONLY. NEVER run.contract.stack.
+  const seen = new Set();
+  const queries = [];
+
+  function addQuery(phrase) {
+    const q = String(phrase || '').replace(/\s+/g, ' ').trim();
+    if (!q) return;
+    if (q.length > maxQueryChars) return;
+    const tokens = q.toLowerCase().split(' ');
+    if (tokens.every((t) => stopWords.has(t))) return;
+    const key = q.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    queries.push(q);
+  }
+
   for (const cell of cells) {
-    queries.push(cell.surface, cell.technology, cell.aspect);
-    queries.push(`${cell.surface} ${cell.aspect}`);
-    if (cell.technology !== cell.surface) {
-      queries.push(`${cell.technology} ${cell.aspect}`);
-      queries.push(`${cell.technology} ${cell.surface}`);
-      queries.push(`${cell.technology} ${cell.surface} ${cell.aspect}`);
+    const surfaceTokens = normalizeToken(cell.surface, config);
+    const techTokens = normalizeToken(cell.technology, config);
+    const aspectTokens = normalizeToken(cell.aspect, config);
+
+    // Unique base tokens across all three fields
+    const baseTokens = [...new Set([...surfaceTokens, ...techTokens, ...aspectTokens])];
+
+    // Expand each base token through aliasResolver
+    const expandedMap = new Map();
+    for (const token of baseTokens) {
+      expandedMap.set(token, aliasResolver ? aliasResolver.expand(token) : [token]);
     }
-    for (const alias of aspectAliases(cell, config)) {
-      queries.push(alias);
-      queries.push(`${cell.surface} ${alias}`);
-      if (cell.technology !== cell.surface) {
-        queries.push(`${cell.technology} ${alias}`);
+
+    // Single tokens
+    for (const token of baseTokens) {
+      addQuery(token);
+      for (const alias of expandedMap.get(token) || []) {
+        addQuery(alias);
+      }
+    }
+
+    // surface + aspect
+    if (surfaceTokens[0] && aspectTokens[0]) {
+      addQuery(`${surfaceTokens[0]} ${aspectTokens[0]}`);
+    }
+
+    // tech + aspect
+    if (techTokens[0] && aspectTokens[0]) {
+      addQuery(`${techTokens[0]} ${aspectTokens[0]}`);
+      // alias + aspect
+      for (const alias of expandedMap.get(techTokens[0]) || []) {
+        if (alias !== techTokens[0]) {
+          addQuery(`${alias} ${aspectTokens[0]}`);
+        }
+      }
+    }
+
+    // expanded tech singles (already added above via single tokens, but iterate aliases explicitly)
+    for (const token of techTokens) {
+      for (const alias of expandedMap.get(token) || []) {
+        addQuery(alias);
+        if (aspectTokens[0]) {
+          addQuery(`${alias} ${aspectTokens[0]}`);
+        }
       }
     }
   }
 
-  const expanded = [];
-  for (const query of queries) {
-    expanded.push(query);
-    expanded.push(...queryExpansions(query, policy));
+  // Fallback: if empty, return one baseline query
+  if (queries.length === 0) {
+    const fallback = aliasResolver
+      ? aliasResolver.canonical(cells[0]?.technology || '')
+      : cells[0]?.technology || '';
+    return [fallback || 'claude skill'];
   }
 
-  return uniqueQueries(expanded).slice(0, 80);
-}
-
-function queryExpansions(query, policy) {
-  const text = String(query || '').trim();
-  if (!text) {
-    return [];
-  }
-  const expanded = [];
-  const spaced = text.replace(/[-_]+/g, ' ');
-  if (spaced !== text) {
-    expanded.push(spaced);
-  }
-
-  const expansionMap = policy.query_expansions || {};
-  const compacted = compact(text);
-  for (const [key, values] of Object.entries(expansionMap)) {
-    const normalizedKey = compact(key);
-    if (
-      normalizedKey &&
-      (compacted === normalizedKey ||
-        containsToken(text, key) ||
-        containsToken(spaced, key))
-    ) {
-      expanded.push(...toList(values));
-    }
-  }
-
-  return expanded;
-}
-
-function uniqueQueries(values) {
-  const seen = new Set();
-  const result = [];
-  for (const value of values) {
-    const query = String(value || '').replace(/\s+/g, ' ').trim();
-    const key = query.toLowerCase();
-    if (!query || seen.has(key)) {
-      continue;
-    }
-    seen.add(key);
-    result.push(query);
-  }
-  return result;
+  return queries.slice(0, maxQueryCount);
 }
 
 function domainFromUrl(url) {
@@ -2835,6 +2882,144 @@ function emit(result) {
   console.log(parts.join(' '));
 }
 
+// ---------------------------------------------------------------------------
+// @public-for-tests
+// Token normalization and alias resolution for structured query generation.
+// ---------------------------------------------------------------------------
+
+/**
+ * Normalize a raw cell value into a canonical search token list.
+ *
+ * @param {string|null|undefined} raw - Source string (e.g. cell.surface, .technology, .aspect).
+ * @param {object} config - Loaded capability-packs config.
+ * @returns {string[]} 0..N normalized tokens.
+ */
+function normalizeToken(raw, config) {
+  if (raw == null) return [];
+  const str = String(raw);
+  if (!str.trim()) return [];
+
+  const policy = config?.discovery_policy || {};
+  const maxTokenLen = policy.query_max_token_chars ?? 40;
+  const maxTokensPerValue = policy.query_max_tokens_per_value ?? 3;
+  const stopWords = new Set((policy.query_stop_words || []).map((w) => String(w).toLowerCase()));
+
+  let s = str.toLowerCase();
+
+  // Strip parentheticals
+  s = s.replace(/\([^)]*\)/g, ' ');
+
+  // Strip URLs
+  s = s.replace(/https?:\/\/\S+/g, ' ');
+
+  // Strip file paths: segments containing '/', '\', or a dot followed by 2+ chars
+  // We remove tokens that look like paths (contain '/' or '\') or file extensions (.sql, .md, etc.)
+  s = s.replace(/\S*[/\\]\S*/g, ' ');
+  s = s.replace(/\S+\.[a-z]{2,}\S*/g, ' ');
+
+  // Replace any non [a-z0-9-_ ] character with space
+  s = s.replace(/[^a-z0-9\-_ ]/g, ' ');
+
+  // Replace hyphens and underscores with spaces for splitting
+  s = s.replace(/[-_]+/g, ' ');
+
+  // Collapse whitespace and split
+  const parts = s.replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
+
+  // Filter by length and stop-words; deduplicate; cap at maxTokensPerValue
+  const seen = new Set();
+  const result = [];
+  for (const token of parts) {
+    if (token.length < 2 || token.length > maxTokenLen) continue;
+    if (stopWords.has(token)) continue;
+    if (seen.has(token)) continue;
+    seen.add(token);
+    result.push(token);
+    if (result.length >= maxTokensPerValue) break;
+  }
+  return result;
+}
+
+/**
+ * Load built-in + project alias maps and return a resolver.
+ *
+ * @param {object} config - Loaded default-capability-packs.json.
+ * @param {string} projectRoot - For locating .omc/stack-provision/aliases.json.
+ * @param {string[]} [warnings] - Mutated in place for non-fatal errors.
+ * @returns {{ expand: (token: string) => string[], canonical: (token: string) => string, _merged: Record<string,string[]> }}
+ */
+function createAliasResolver(config, projectRoot, warnings) {
+  const w = Array.isArray(warnings) ? warnings : [];
+  const policy = config?.discovery_policy || {};
+  const builtins = policy.technology_aliases || {};
+
+  // Load project overrides
+  let overrides = {};
+  if (projectRoot) {
+    const overridePath = join(projectRoot, '.omc', 'stack-provision', 'aliases.json');
+    try {
+      if (existsSync(overridePath)) {
+        const raw = readFileSync(overridePath, 'utf8');
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          overrides = parsed;
+        } else {
+          w.push(`aliases.json preflight: malformed shape (expected object) at ${overridePath}`);
+        }
+      }
+    } catch (err) {
+      w.push(`aliases.json preflight: failed to parse ${overridePath}: ${err.message}`);
+    }
+  }
+
+  // Merge: project overrides REPLACE the array for that key (not concat)
+  const merged = {};
+  for (const [key, values] of Object.entries(builtins)) {
+    merged[key.toLowerCase()] = Array.isArray(values) ? values : [values];
+  }
+  for (const [key, values] of Object.entries(overrides)) {
+    merged[key.toLowerCase()] = Array.isArray(values) ? values : [values];
+  }
+
+  // Build reverse index: value → canonical key. First one wins (alphabetical key order).
+  const reverse = {};
+  for (const key of Object.keys(merged).sort()) {
+    for (const val of merged[key]) {
+      const normalizedVal = String(val).toLowerCase();
+      if (!(normalizedVal in reverse)) {
+        reverse[normalizedVal] = key;
+      }
+    }
+  }
+
+  function canonicalize(token) {
+    const t = String(token || '').toLowerCase();
+    return reverse[t] ?? t;
+  }
+
+  function expand(token) {
+    const t = String(token || '').toLowerCase();
+    const canonical = canonicalize(t);
+    const aliases = merged[canonical];
+    if (!aliases) {
+      return [t];
+    }
+    const seen = new Set();
+    const result = [];
+    // Always include the input token first (lowercased/canonicalized)
+    for (const v of [t, ...aliases]) {
+      const lowered = String(v).toLowerCase();
+      if (!seen.has(lowered)) {
+        seen.add(lowered);
+        result.push(lowered);
+      }
+    }
+    return result;
+  }
+
+  return { expand, canonical: canonicalize, _merged: merged };
+}
+
 export {
   DEFAULT_STRICT_GATE,
   extractGithubRepoPath,
@@ -2844,4 +3029,7 @@ export {
   renderRegistryInstallCommand,
   mergeStrictGateRiskFlags,
   externalRiskFlags,
+  normalizeToken,
+  createAliasResolver,
+  discoveryQueries,
 };
