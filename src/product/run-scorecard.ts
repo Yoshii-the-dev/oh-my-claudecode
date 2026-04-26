@@ -141,9 +141,11 @@ function readArtifacts(artifactRoot: string, root: string): Artifact[] {
 
   const files: string[] = [];
   collectFiles(artifactRoot, files);
+  const fileSet = new Set(files);
 
   return files
     .filter((path) => /\.(md|json|jsonc)$/i.test(path))
+    .filter((path) => !isShadowedProjection(path, fileSet))
     .slice(0, MAX_ARTIFACTS)
     .map((path) => {
       const content = safeRead(path);
@@ -155,6 +157,22 @@ function readArtifacts(artifactRoot: string, root: string): Artifact[] {
         date: extractDate(path, content),
       };
     });
+}
+
+function isShadowedProjection(path: string, fileSet: ReadonlySet<string>): boolean {
+  const pairs = [
+    ['.omc/cycles/current.md', '.omc/cycles/current.json'],
+    ['.omc/learning/current.md', '.omc/learning/current.json'],
+    ['.omc/portfolio/current.md', '.omc/portfolio/current.json'],
+  ] as const;
+
+  return pairs.some(([projection, source]) => (
+    normalizePath(path).endsWith(projection) && fileSet.has(path.replace(projection, source))
+  ));
+}
+
+function normalizePath(path: string): string {
+  return path.replace(/\\/g, '/');
 }
 
 function collectFiles(dir: string, out: string[]): void {
@@ -206,28 +224,113 @@ function hasReworkSignal(artifact: Artifact): boolean {
 }
 
 function hasFirstUsableLoopSignal(artifact: Artifact): boolean {
+  const typed = typedArtifact(artifact);
+  if (typed?.kind === 'cycle') return typed.value.cycle_stage === 'complete';
+  if (typed?.kind === 'learning') return Boolean(typed.value.shipped_outcome);
   return /first usable loop|usable loop|ready-for-first-loop|cycle_stage:\s*complete|shipped outcome/i.test(artifact.content);
 }
 
 function hasUserVisibleWorkSignal(artifact: Artifact): boolean {
+  const typed = typedArtifact(artifact);
+  if (typed?.kind === 'portfolio') {
+    return typed.value.items.some((item) => (
+      item.user_visible === true
+      || item.type === 'core-product-slice'
+      || ['product', 'ux', 'brand-content', 'distribution'].includes(String(item.lane))
+    ));
+  }
+  if (typed?.kind === 'cycle') return typed.value.spec?.build_route === 'product-pipeline' || typed.value.spec?.build_route === 'both';
   return /\b(user[-_ ]visible|core_product_slice|core product slice|product-pipeline|ux|ui|onboarding|reader|editor|screen|flow|activation|retention|content|distribution)\b/i.test(artifact.content);
 }
 
 function hasInfrastructureWorkSignal(artifact: Artifact): boolean {
+  const typed = typedArtifact(artifact);
+  if (typed?.kind === 'portfolio') {
+    return typed.value.items.some((item) => (
+      item.type === 'enabling'
+      || ['backend', 'quality'].includes(String(item.lane))
+    ));
+  }
+  if (typed?.kind === 'cycle') return typed.value.spec?.build_route === 'backend-pipeline' || typed.value.spec?.build_route === 'both';
   return /\b(infrastructure|backend|schema|package|provision|stack|adr|technology-strategist|database|migration|api|worker|queue|auth|telemetry)\b/i.test(artifact.content);
 }
 
 function hasEvidenceAndConfidence(artifact: Artifact): boolean {
+  const typed = typedArtifact(artifact);
+  if (typed?.kind === 'portfolio') {
+    return typed.value.items.every((item) => Array.isArray(item.evidence) && item.evidence.length > 0 && item.confidence !== undefined);
+  }
+  if (typed?.kind === 'cycle' || typed?.kind === 'learning') {
+    const footer = typed.value.footer;
+    return Array.isArray(footer?.evidence) && footer.evidence.length > 0 && footer.confidence !== undefined;
+  }
   return /^\s*"?evidence"?\s*:/im.test(artifact.content) && /^\s*"?confidence"?\s*:/im.test(artifact.content);
 }
 
 function hasResearchRoutedSignal(artifact: Artifact): boolean {
+  const typed = typedArtifact(artifact);
+  if (typed?.kind === 'portfolio') {
+    return typed.value.items.some((item) => item.lane === 'research' || item.type === 'learning' || item.type === 'research');
+  }
   return /\b(research task|learning_task|learning\/research task|document-specialist|ux-researcher|competitor-scout|design partner|study plan|needs-research|research gate)\b/i.test(artifact.content);
 }
 
 function hasInventionRiskSignal(artifact: Artifact): boolean {
+  const typed = typedArtifact(artifact);
+  if (typed?.kind === 'portfolio') {
+    return typed.value.items.some((item) => isLowConfidence(item.confidence) && !(item.lane === 'research' || item.type === 'learning' || item.type === 'research'));
+  }
   return /\b(assume|assuming|invented|guess|no evidence|proxy-only|unknown critical|low confidence|unsupported)\b/i.test(artifact.content)
     && !hasResearchRoutedSignal(artifact);
+}
+
+type TypedArtifact =
+  | { kind: 'portfolio'; value: PortfolioScorecardJson }
+  | { kind: 'cycle'; value: CycleScorecardJson }
+  | { kind: 'learning'; value: LearningScorecardJson };
+
+interface PortfolioScorecardJson {
+  items: Array<Record<string, unknown>>;
+}
+
+interface CycleScorecardJson {
+  cycle_stage?: unknown;
+  spec?: { build_route?: unknown };
+  footer?: { evidence?: unknown; confidence?: unknown };
+}
+
+interface LearningScorecardJson {
+  shipped_outcome?: unknown;
+  footer?: { evidence?: unknown; confidence?: unknown };
+}
+
+function typedArtifact(artifact: Artifact): TypedArtifact | undefined {
+  if (!artifact.relativePath.endsWith('.json')) return undefined;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(artifact.content);
+  } catch {
+    return undefined;
+  }
+  if (!parsed || typeof parsed !== 'object') return undefined;
+  const value = parsed as Record<string, unknown>;
+  const path = normalizePath(artifact.relativePath);
+  if (path.endsWith('.omc/portfolio/current.json') && Array.isArray(value.items)) {
+    return { kind: 'portfolio', value: { items: value.items as Array<Record<string, unknown>> } };
+  }
+  if (path.endsWith('.omc/cycles/current.json')) {
+    return { kind: 'cycle', value: value as CycleScorecardJson };
+  }
+  if (path.endsWith('.omc/learning/current.json')) {
+    return { kind: 'learning', value: value as LearningScorecardJson };
+  }
+  return undefined;
+}
+
+function isLowConfidence(value: unknown): boolean {
+  if (typeof value === 'number') return value < 0.5;
+  if (typeof value !== 'string') return false;
+  return value.toLowerCase() === 'low';
 }
 
 function percentMetric(

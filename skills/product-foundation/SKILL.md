@@ -77,6 +77,13 @@ Use only when `--foundation-full` is explicit, the product already has traction,
 
 Read the invocation, existing `.omc/constitution.md`, `.omc/ideas/current.md`, `.omc/specs/current.md`, `.omc/competitors/index.md`, `.omc/competitors/landscape/current.md`, `.omc/research/current.md`, `.omc/brand/index.md`, and `.omc/provisioned/current.json` when present.
 
+First calibrate current-state truth from the filesystem:
+
+- Check whether a usable app shell/source project exists (`package.json`, `pubspec.yaml`, `pyproject.toml`, `Cargo.toml`, `go.mod`, `src/`, `app/`, `lib/`, or equivalent).
+- If no usable source/app shell exists, declare implementation state as `greenfield: nothing implemented` regardless of old `.omc/**` artifacts, memories, or scouting contracts.
+- Treat existing `.omc/**` artifacts as intent/research/reference until they are explicitly accepted for this run. Do not infer implemented features, current phase, selected stack, or roadmap status from old artifacts without matching current filesystem evidence.
+- If an artifact cites old project memory, but `.omc/project-memory.json` is absent, regenerated, or has a different project fingerprint, mark that citation stale and do not use it as baseline truth.
+
 If `--fresh-start` is present, create a reset/context-boundary note before reading legacy project details:
 
 - Write `.omc/reset/YYYY-MM-DD-<slug>.md` with the reason for the reset, allowed carry-over artifacts, and explicitly ignored legacy areas.

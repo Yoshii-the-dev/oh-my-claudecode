@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, relative, resolve } from 'path';
+import { CYCLE_DOCUMENT_RELATIVE_PATH, CYCLE_PROJECTION_RELATIVE_PATH } from './cycle-document.js';
 
 export type PortfolioLane =
   | 'product'
@@ -140,7 +141,7 @@ export function validatePortfolioLedger(root = process.cwd()): PortfolioLedgerVa
     return report(path, ledger, issues);
   }
 
-  validateLedgerShape(path, ledger, issues);
+  validateLedgerShape(path, ledger, issues, readActiveCycleId(root));
   return report(path, ledger, issues);
 }
 
@@ -542,7 +543,12 @@ function compactText(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, '');
 }
 
-function validateLedgerShape(path: string, ledger: PortfolioLedger, issues: PortfolioLedgerIssue[]): void {
+function validateLedgerShape(
+  path: string,
+  ledger: PortfolioLedger,
+  issues: PortfolioLedgerIssue[],
+  activeCycleId?: string,
+): void {
   if (ledger.schema_version !== 1) {
     issues.push(issue(path, 'error', 'invalid-schema-version', 'schema_version must be 1'));
   }
@@ -558,7 +564,7 @@ function validateLedgerShape(path: string, ledger: PortfolioLedger, issues: Port
   }
 
   const ids = new Set<string>();
-  const selectedCycleCount = new Map<string, number>();
+  const selectedByCycle = new Map<string, PortfolioWorkItem[]>();
   for (const [index, item] of ledger.items.entries()) {
     const itemPath = `${path}#/items/${index}`;
     validateItem(itemPath, item, issues);
@@ -569,13 +575,47 @@ function validateLedgerShape(path: string, ledger: PortfolioLedger, issues: Port
       ids.add(item.id);
     }
     if (item.selected_cycle) {
-      selectedCycleCount.set(item.selected_cycle, (selectedCycleCount.get(item.selected_cycle) ?? 0) + 1);
+      const current = selectedByCycle.get(item.selected_cycle) ?? [];
+      current.push(item);
+      selectedByCycle.set(item.selected_cycle, current);
     }
   }
 
-  for (const [cycle, count] of selectedCycleCount.entries()) {
-    if (count > 3) {
-      issues.push(issue(path, 'warning', 'large-selected-cycle', `Cycle ${cycle} has ${count} selected items; expected core/enabling/learning trio`));
+  for (const [cycle, items] of selectedByCycle.entries()) {
+    if (activeCycleId && cycle !== activeCycleId) {
+      issues.push(issue(path, 'error', 'selected-cycle-mismatch', `Selected item cycle ${cycle} does not match active cycle_id ${activeCycleId}`));
+    }
+
+    if (items.length !== 3) {
+      issues.push(issue(path, 'error', 'invalid-selected-cycle-size', `Cycle ${cycle} has ${items.length} selected items; expected exactly 3`));
+    }
+
+    const core = items.filter((item) => item.type === 'core-product-slice');
+    const enabling = items.filter((item) => item.type === 'enabling');
+    const learning = items.filter((item) => item.type === 'learning' || item.type === 'research');
+    if (core.length !== 1 || enabling.length !== 1 || learning.length !== 1) {
+      issues.push(
+        issue(
+          path,
+          'error',
+          'invalid-selected-cycle-trio',
+          `Cycle ${cycle} must select exactly one core-product-slice, one enabling, and one learning/research item`,
+        ),
+      );
+    }
+
+    const weakImplementationItems = items.filter((item) => (
+      item.type === 'core-product-slice' || item.type === 'enabling'
+    ) && isWeakConfidence(item.confidence));
+    if (weakImplementationItems.length > 0 && learning.length === 0) {
+      issues.push(
+        issue(
+          path,
+          'error',
+          'missing-research-debt-task',
+          `Cycle ${cycle} has weak-confidence selected product/enabling work but no selected learning/research debt task`,
+        ),
+      );
     }
   }
 }
@@ -614,6 +654,28 @@ function validateItem(path: string, item: PortfolioWorkItem, issues: PortfolioLe
 function isValidConfidence(value: PortfolioWorkItem['confidence']): boolean {
   if (typeof value === 'number') return Number.isFinite(value) && value >= 0 && value <= 1;
   return ['HIGH', 'MEDIUM', 'LOW', 'high', 'medium', 'low'].includes(value);
+}
+
+function isWeakConfidence(value: PortfolioWorkItem['confidence']): boolean {
+  if (typeof value === 'number') return value < 0.5;
+  return value.toLowerCase() === 'low';
+}
+
+function readActiveCycleId(root: string): string | undefined {
+  const jsonPath = resolve(root, CYCLE_DOCUMENT_RELATIVE_PATH);
+  if (existsSync(jsonPath)) {
+    try {
+      const parsed = JSON.parse(readFileSync(jsonPath, 'utf-8')) as { cycle_id?: unknown };
+      return typeof parsed.cycle_id === 'string' ? parsed.cycle_id : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  const projectionPath = resolve(root, CYCLE_PROJECTION_RELATIVE_PATH);
+  if (!existsSync(projectionPath)) return undefined;
+  const match = readFileSync(projectionPath, 'utf-8').match(/^\s*cycle_id:\s*([a-z0-9][a-z0-9-]*)\s*$/im);
+  return match?.[1];
 }
 
 function report(

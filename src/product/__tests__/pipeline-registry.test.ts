@@ -8,6 +8,7 @@ import {
 describe('product pipeline registry', () => {
   it('is the canonical source for product contract stages and artifacts', () => {
     expect(PRODUCT_PIPELINE_CONTRACT_STAGES).toEqual([
+      'discovery-handoff',
       'priority-handoff',
       'foundation-lite',
       'technology-handoff',

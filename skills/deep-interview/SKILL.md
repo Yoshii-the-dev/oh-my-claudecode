@@ -69,8 +69,10 @@ When arguments include `--autoresearch`, Deep Interview becomes the zero-learnin
    - Run `explore` agent (haiku): check if cwd has existing source code, package files, or git history
    - If source files exist AND the user's idea references modifying/extending something: **brownfield**
    - Otherwise: **greenfield**
+   - Old `.omc/**` artifacts, project memory summaries, scouting contracts, or prior interview state do not make a project brownfield. They are historical context only unless current source/config files corroborate them.
 3. **For brownfield**: Run `explore` agent to map relevant codebase areas, store as `codebase_context`
-4. **Initialize state** via `state_write(mode="deep-interview")`:
+4. **For greenfield**: Set implementation state to `nothing implemented` unless current filesystem evidence proves otherwise. If historical artifacts mention phases, completed work, selected stack, or "already implemented" features, treat those claims as stale intent and ask for confirmation before using them as baseline.
+5. **Initialize state** via `state_write(mode="deep-interview")`:
 
 ```json
 {

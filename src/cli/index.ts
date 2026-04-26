@@ -1267,7 +1267,7 @@ Examples:
 doctorCmd
   .command('product-contracts [root]')
   .description('Validate product pipeline artifacts before discovery-to-execution handoff')
-  .option('--stage <stage>', 'Contract stage: priority-handoff | foundation-lite | technology-handoff | cycle | all', 'foundation-lite')
+  .option('--stage <stage>', 'Contract stage: discovery-handoff | priority-handoff | foundation-lite | technology-handoff | cycle | all', 'foundation-lite')
   .option('--json', 'Output as JSON')
   .addHelpText('after', `
 Examples:

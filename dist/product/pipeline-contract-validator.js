@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import { PRODUCT_ARTIFACT_PATHS, PRODUCT_STANDARD_FOOTER_FIELDS, } from './pipeline-registry.js';
+import { CYCLE_DOCUMENT_RELATIVE_PATH, readCycleDocument, renderCycleProjection, validateCycleDocument, } from './cycle-document.js';
 export function validateProductPipelineContracts(options = {}) {
     const root = resolve(options.root ?? process.cwd());
     const stage = options.stage ?? 'foundation-lite';
@@ -74,6 +75,9 @@ function buildContracts(stage) {
         required,
         validate: validateLearning,
     });
+    if (stage === 'discovery-handoff') {
+        return [capability(true), meaning(false), ecosystem(true)];
+    }
     if (stage === 'priority-handoff') {
         return [portfolioLedger(), opportunities(), roadmap()];
     }
@@ -89,7 +93,9 @@ function buildContracts(stage) {
     return [capability(true), meaning(true), ecosystem(true), portfolioLedger(), opportunities(), roadmap(), cycle(), experienceGate(true), learning(true)];
 }
 function validateArtifact(root, contract) {
-    const path = resolve(root, contract.relativePath);
+    const cycleDocumentPath = resolve(root, CYCLE_DOCUMENT_RELATIVE_PATH);
+    const useCycleDocument = contract.artifact === 'cycle' && existsSync(cycleDocumentPath);
+    const path = useCycleDocument ? cycleDocumentPath : resolve(root, contract.relativePath);
     const result = {
         artifact: contract.artifact,
         path,
@@ -103,7 +109,21 @@ function validateArtifact(root, contract) {
     }
     let content = '';
     try {
-        content = readFileSync(path, 'utf-8');
+        if (useCycleDocument) {
+            const documentReport = validateCycleDocument(root);
+            for (const issue of documentReport.issues) {
+                addIssue(result, issue.severity, issue.code, issue.message);
+            }
+            const document = readCycleDocument(root);
+            if (!document) {
+                addIssue(result, 'error', 'missing-cycle-document', `Cannot read ${CYCLE_DOCUMENT_RELATIVE_PATH}`);
+                return result;
+            }
+            content = renderCycleProjection(document);
+        }
+        else {
+            content = readFileSync(path, 'utf-8');
+        }
     }
     catch (error) {
         addIssue(result, 'error', 'unreadable-artifact', `Cannot read ${contract.relativePath}: ${error instanceof Error ? error.message : String(error)}`);
@@ -119,8 +139,7 @@ function validateArtifact(root, contract) {
 function applyCrossArtifactContracts(root, stage, artifacts) {
     if (stage !== 'cycle' && stage !== 'all')
         return;
-    const cyclePath = resolve(root, PRODUCT_ARTIFACT_PATHS.cycle);
-    const cycleContent = existsSync(cyclePath) ? safeRead(cyclePath) : '';
+    const cycleContent = readCycleContractContent(root);
     const userFacing = isUserFacingCycle(cycleContent);
     let experience = artifacts.find((artifact) => artifact.artifact === 'experience-gate');
     if (userFacing && (!experience || !experience.exists)) {
@@ -134,6 +153,15 @@ function applyCrossArtifactContracts(root, stage, artifacts) {
     const roadmapPath = resolve(root, PRODUCT_ARTIFACT_PATHS.roadmap);
     if (!existsSync(portfolioPath) || !existsSync(roadmapPath))
         return;
+    const portfolio = artifacts.find((artifact) => artifact.artifact === 'portfolio-ledger');
+    const activeCycleId = readField(cycleContent, 'cycle_id');
+    if (portfolio && activeCycleId) {
+        for (const selectedCycle of selectedCycleIds(portfolioPath)) {
+            if (selectedCycle !== activeCycleId) {
+                addIssue(portfolio, 'error', 'selected-cycle-mismatch', `Selected item cycle ${selectedCycle} does not match active cycle_id ${activeCycleId}`);
+            }
+        }
+    }
     const researchDebt = portfolioHasSelectedResearchDebt(portfolioPath);
     const roadmapContent = safeRead(roadmapPath);
     const roadmap = artifacts.find((artifact) => artifact.artifact === 'roadmap');
@@ -157,6 +185,20 @@ function safeRead(path) {
     catch {
         return '';
     }
+}
+function readCycleContractContent(root) {
+    const cycleDocumentPath = resolve(root, CYCLE_DOCUMENT_RELATIVE_PATH);
+    if (existsSync(cycleDocumentPath)) {
+        try {
+            const document = readCycleDocument(root);
+            return document ? renderCycleProjection(document) : '';
+        }
+        catch {
+            return '';
+        }
+    }
+    const cyclePath = resolve(root, PRODUCT_ARTIFACT_PATHS.cycle);
+    return existsSync(cyclePath) ? safeRead(cyclePath) : '';
 }
 function isUserFacingCycle(content) {
     const route = extractBuildRoute(content);
@@ -187,6 +229,18 @@ function portfolioHasSelectedResearchDebt(path) {
     }
     catch {
         return false;
+    }
+}
+function selectedCycleIds(path) {
+    try {
+        const ledger = JSON.parse(readFileSync(path, 'utf-8'));
+        const items = Array.isArray(ledger.items) ? ledger.items : [];
+        return Array.from(new Set(items
+            .map((item) => item.selected_cycle)
+            .filter((value) => typeof value === 'string' && value.length > 0)));
+    }
+    catch {
+        return [];
     }
 }
 function validateCapabilityMap(content, result) {
@@ -291,6 +345,7 @@ function validatePortfolioLedgerArtifact(content, result) {
     const items = ledger.items;
     const lanes = new Set();
     const selectedCycles = new Map();
+    const selectedByCycle = new Map();
     const ids = new Set();
     let evidenceBacked = 0;
     const selectedResearchByCycle = new Map();
@@ -325,6 +380,9 @@ function validatePortfolioLedgerArtifact(content, result) {
         }
         if (typeof selectedCycle === 'string' && selectedCycle.length > 0) {
             selectedCycles.set(selectedCycle, (selectedCycles.get(selectedCycle) ?? 0) + 1);
+            const selectedItems = selectedByCycle.get(selectedCycle) ?? [];
+            selectedItems.push(item);
+            selectedByCycle.set(selectedCycle, selectedItems);
             if (lane === 'research' || type === 'learning' || type === 'research') {
                 selectedResearchByCycle.set(selectedCycle, (selectedResearchByCycle.get(selectedCycle) ?? 0) + 1);
             }
@@ -349,12 +407,18 @@ function validatePortfolioLedgerArtifact(content, result) {
     if (lanes.size < 5) {
         addIssue(result, 'error', 'portfolio-too-few-lanes', `Expected portfolio items across at least 5 lanes, found ${lanes.size}`);
     }
-    if (![...selectedCycles.values()].some((count) => count === 3)) {
+    if (selectedByCycle.size === 0) {
         addIssue(result, 'error', 'missing-selected-cycle-trio', 'Portfolio ledger must select exactly three items for the next cycle');
     }
-    for (const [cycle, count] of selectedCycles.entries()) {
-        if (count > 3) {
-            addIssue(result, 'warning', 'large-selected-cycle', `Cycle ${cycle} has ${count} selected items; expected core/enabling/learning trio`);
+    for (const [cycle, selectedItems] of selectedByCycle.entries()) {
+        if (selectedItems.length !== 3) {
+            addIssue(result, 'error', 'invalid-selected-cycle-size', `Cycle ${cycle} has ${selectedItems.length} selected items; expected exactly 3`);
+        }
+        const core = selectedItems.filter((item) => item.type === 'core-product-slice');
+        const enabling = selectedItems.filter((item) => item.type === 'enabling');
+        const learning = selectedItems.filter((item) => item.type === 'learning' || item.type === 'research');
+        if (core.length !== 1 || enabling.length !== 1 || learning.length !== 1) {
+            addIssue(result, 'error', 'invalid-selected-cycle-trio', `Cycle ${cycle} must select exactly one core-product-slice, one enabling, and one learning/research item`);
         }
     }
     for (const [cycle, count] of weakSelectedByCycle.entries()) {
@@ -387,8 +451,10 @@ function validateExperienceGate(content, result) {
         'Perceived Value',
         'UX Verdict',
     ]);
-    if (!/\b(pass|passed|ok|ready-for-build)\b/i.test(content)) {
-        addIssue(result, 'error', 'experience-gate-not-passed', 'Experience gate must explicitly pass before user-facing build');
+    const verdict = extractUxVerdict(content);
+    result.metrics.uxVerdict = verdict ?? 'unknown';
+    if (verdict !== 'pass') {
+        addIssue(result, 'error', 'experience-gate-not-passed', 'Experience gate UX Verdict must be exactly pass before user-facing build');
     }
     validateStandardFooter(content, result);
 }
@@ -415,9 +481,16 @@ function validateCycle(content, result) {
         'experience_gate',
     ]);
     const stage = extractCycleStage(content);
+    const buildRoute = extractBuildRoute(content);
     result.metrics.cycleStage = stage ?? 'unknown';
+    result.metrics.buildRoute = buildRoute ?? 'unknown';
     if (!stage) {
         addIssue(result, 'error', 'missing-cycle-stage', 'Cycle artifact must include cycle_stage');
+    }
+    validateCyclePortfolioValues(content, result);
+    validateCycleSpecValues(content, result);
+    if (!buildRoute || !['product-pipeline', 'backend-pipeline', 'both'].includes(buildRoute)) {
+        addIssue(result, 'error', 'invalid-build-route', 'build_route must be one of product-pipeline, backend-pipeline, or both before build');
     }
     if (stage === 'complete' && !containsTerm(content, '.omc/learning/current.md')) {
         addIssue(result, 'error', 'complete-without-learning', 'Completed cycle must reference .omc/learning/current.md');
@@ -435,9 +508,29 @@ function validateLearning(content, result) {
     validateStandardFooter(content, result);
 }
 function validateStandardFooter(content, result) {
-    const missing = PRODUCT_STANDARD_FOOTER_FIELDS.filter((field) => !content.includes(field));
+    const missing = PRODUCT_STANDARD_FOOTER_FIELDS.filter((field) => !hasFooterField(content, field));
     if (missing.length > 0) {
         addIssue(result, 'error', 'missing-standard-footer', `Missing standard footer fields: ${missing.join(', ')}`);
+    }
+    const status = readField(content, 'status');
+    const confidence = readField(content, 'confidence');
+    const nextAction = readField(content, 'next_action');
+    const evidence = readListOrInline(content, 'evidence');
+    const artifacts = readListOrInline(content, 'artifacts_written');
+    if (status !== undefined && isPlaceholderValue(status)) {
+        addIssue(result, 'error', 'placeholder-footer-status', 'status must not be empty or placeholder');
+    }
+    if (confidence !== undefined && isPlaceholderValue(confidence)) {
+        addIssue(result, 'error', 'placeholder-footer-confidence', 'confidence must not be empty or placeholder');
+    }
+    if (nextAction !== undefined && isPlaceholderValue(nextAction)) {
+        addIssue(result, 'error', 'placeholder-footer-next-action', 'next_action must not be empty or placeholder');
+    }
+    if (hasFooterField(content, 'evidence:') && evidence.length === 0) {
+        addIssue(result, 'error', 'empty-footer-evidence', 'evidence must include at least one entry');
+    }
+    if (hasFooterField(content, 'artifacts_written:') && artifacts.length === 0) {
+        addIssue(result, 'error', 'empty-footer-artifacts-written', 'artifacts_written must include at least one entry');
     }
 }
 function validateHandoffBasics(content, result, required) {
@@ -484,6 +577,97 @@ function extractCycleStage(content) {
 function extractBuildRoute(content) {
     const match = content.match(/^\s*build_route:\s*([a-z-]+)/im);
     return match?.[1]?.toLowerCase();
+}
+function extractUxVerdict(content) {
+    const section = content.match(/(?:^|\n)#{1,6}\s*UX Verdict\s*\n([\s\S]*?)(?=\n#{1,6}\s|$)/i)?.[1];
+    const source = section ?? readField(content, 'ux_verdict') ?? '';
+    const firstLine = source
+        .split('\n')
+        .map((line) => line.replace(/^[-*]\s*/, '').trim())
+        .find((line) => line.length > 0);
+    const match = firstLine?.match(/^(pass|blocked|needs-research)\b/i);
+    return match?.[1]?.toLowerCase();
+}
+function validateCyclePortfolioValues(content, result) {
+    const fields = ['core_product_slice', 'enabling_task', 'learning_task'];
+    for (const field of fields) {
+        const value = readField(content, field);
+        if (!value || isPlaceholderValue(value)) {
+            addIssue(result, 'error', 'placeholder-cycle-portfolio', `${field} must be selected before build`);
+        }
+    }
+}
+function validateCycleSpecValues(content, result) {
+    const acceptanceCriteria = readListOrInline(content, 'acceptance_criteria');
+    const verificationPlan = readListOrInline(content, 'verification_plan');
+    const learningPlan = readListOrInline(content, 'learning_plan');
+    result.metrics.acceptanceCriteriaCount = acceptanceCriteria.length;
+    result.metrics.verificationPlanCount = verificationPlan.length;
+    result.metrics.learningPlanCount = learningPlan.length;
+    if (acceptanceCriteria.length === 0) {
+        addIssue(result, 'error', 'missing-acceptance-criteria', 'acceptance_criteria must include at least one testable criterion');
+    }
+    if (verificationPlan.length === 0) {
+        addIssue(result, 'error', 'missing-verification-plan', 'verification_plan must include at least one concrete verification step');
+    }
+    if (learningPlan.length === 0) {
+        addIssue(result, 'error', 'missing-learning-plan', 'learning_plan must include at least one learning capture step');
+    }
+    for (const value of [...acceptanceCriteria, ...verificationPlan, ...learningPlan]) {
+        if (isPlaceholderValue(value)) {
+            addIssue(result, 'error', 'placeholder-cycle-spec', 'cycle spec lists must not contain TBD/todo/placeholder values');
+            break;
+        }
+    }
+}
+function hasFooterField(content, field) {
+    const key = field.replace(/:$/, '');
+    return new RegExp(`^\\s*${escapeRegExp(key)}\\s*:`, 'im').test(content);
+}
+function readField(content, field) {
+    const match = content.match(new RegExp(`^\\s*${escapeRegExp(field)}\\s*:\\s*(.*?)\\s*$`, 'im'));
+    return match?.[1]?.replace(/^['"]|['"]$/g, '').trim();
+}
+function readListOrInline(content, field) {
+    const inline = readField(content, field);
+    const values = [];
+    if (inline && !isListIntroducer(inline)) {
+        const normalized = inline.replace(/^['"]|['"]$/g, '').trim();
+        if (normalized && normalized !== '[]' && normalized.toLowerCase() !== 'none')
+            values.push(normalized);
+    }
+    const blockMatch = content.match(new RegExp(`^\\s*${escapeRegExp(field)}\\s*:\\s*\\n((?:^\\s+[-*].*\\n?)+)`, 'im'));
+    if (blockMatch) {
+        for (const line of blockMatch[1].split('\n')) {
+            const item = line.match(/^\s*[-*]\s+(.*)$/);
+            if (!item)
+                continue;
+            const value = item[1].trim();
+            if (!value || value === '[]' || value.toLowerCase() === 'none')
+                continue;
+            values.push(value);
+        }
+    }
+    return Array.from(new Set(values));
+}
+function isListIntroducer(value) {
+    const trimmed = value.trim();
+    return trimmed === '' || trimmed === '|' || trimmed.endsWith(':');
+}
+function isPlaceholderValue(value) {
+    const normalized = value.trim().toLowerCase();
+    return normalized.length === 0
+        || normalized === '[]'
+        || normalized === '-'
+        || normalized === 'tbd'
+        || normalized === 'todo'
+        || normalized === 'pending'
+        || normalized === 'placeholder'
+        || normalized === '<todo>'
+        || normalized === '<tbd>'
+        || normalized.includes('tbd')
+        || normalized.includes('todo')
+        || normalized.includes('placeholder');
 }
 function isWeakConfidence(value) {
     if (typeof value === 'number')

@@ -4,6 +4,7 @@
  */
 
 import path from "path";
+import fs from "fs/promises";
 import { contextCollector } from "../../features/context-injector/collector.js";
 import { findProjectRoot } from "../rules-injector/finder.js";
 import {
@@ -11,8 +12,12 @@ import {
   saveProjectMemory,
   shouldRescan,
 } from "./storage.js";
-import { detectProjectEnvironment } from "./detector.js";
+import {
+  computeProjectFingerprint,
+  detectProjectEnvironment,
+} from "./detector.js";
 import { formatContextSummary } from "./formatter.js";
+import type { ProjectMemory } from "./types.js";
 
 /**
  * Session caches to prevent duplicate injection.
@@ -51,11 +56,14 @@ export async function registerProjectMemoryContext(
 
   try {
     let memory = await loadProjectMemory(projectRoot);
+    const needsRegrounding = memory
+      ? await shouldRegroundProjectMemory(memory, projectRoot)
+      : false;
 
-    if (!memory || shouldRescan(memory)) {
+    if (!memory || shouldRescan(memory) || needsRegrounding) {
       const existing = memory;
       memory = await detectProjectEnvironment(projectRoot);
-      if (existing) {
+      if (existing && (await shouldPreserveLearnedMemory(existing, memory, projectRoot))) {
         memory.customNotes = existing.customNotes;
         memory.userDirectives = existing.userDirectives;
         memory.hotPaths = existing.hotPaths;
@@ -102,7 +110,7 @@ export async function rescanProjectEnvironment(
 ): Promise<void> {
   const existing = await loadProjectMemory(projectRoot);
   const memory = await detectProjectEnvironment(projectRoot);
-  if (existing) {
+  if (existing && (await shouldPreserveLearnedMemory(existing, memory, projectRoot))) {
     memory.customNotes = existing.customNotes;
     memory.userDirectives = existing.userDirectives;
     memory.hotPaths = existing.hotPaths;
@@ -122,6 +130,78 @@ function getScopeKey(projectRoot: string, workingDirectory: string): string {
   }
 
   return normalized;
+}
+
+async function shouldRegroundProjectMemory(
+  memory: ProjectMemory,
+  projectRoot: string,
+): Promise<boolean> {
+  const currentFingerprint = await computeProjectFingerprint(projectRoot);
+
+  if (!memory.projectFingerprint) {
+    return true;
+  }
+
+  return memory.projectFingerprint.hash !== currentFingerprint.hash;
+}
+
+async function shouldPreserveLearnedMemory(
+  existing: ProjectMemory,
+  detected: ProjectMemory,
+  projectRoot: string,
+): Promise<boolean> {
+  if (!hasLearnedMemory(existing)) {
+    return true;
+  }
+
+  if (
+    existing.projectFingerprint?.hash &&
+    detected.projectFingerprint?.hash &&
+    existing.projectFingerprint.hash === detected.projectFingerprint.hash
+  ) {
+    return true;
+  }
+
+  if (!existing.projectFingerprint) {
+    return hasLiveDetectionMarkers(existing, projectRoot);
+  }
+
+  return false;
+}
+
+function hasLearnedMemory(memory: ProjectMemory): boolean {
+  return (
+    memory.customNotes.length > 0 ||
+    memory.userDirectives.length > 0 ||
+    memory.hotPaths.length > 0
+  );
+}
+
+async function hasLiveDetectionMarkers(
+  memory: ProjectMemory,
+  projectRoot: string,
+): Promise<boolean> {
+  const markers = new Set<string>();
+  for (const language of memory.techStack.languages) {
+    for (const marker of language.markers) {
+      markers.add(marker);
+    }
+  }
+
+  if (markers.size === 0) {
+    return false;
+  }
+
+  for (const marker of markers) {
+    try {
+      await fs.access(path.join(projectRoot, marker));
+      return true;
+    } catch {
+      // Continue checking remaining markers.
+    }
+  }
+
+  return false;
 }
 
 export {

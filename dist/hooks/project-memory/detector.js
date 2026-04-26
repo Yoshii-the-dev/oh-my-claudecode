@@ -4,23 +4,26 @@
  */
 import fs from 'fs/promises';
 import path from 'path';
+import { createHash } from 'crypto';
 import { SCHEMA_VERSION, CONFIG_PATTERNS, FRAMEWORK_PATTERNS, MAIN_DIRECTORIES, } from './constants.js';
 import { mapDirectoryStructure } from './directory-mapper.js';
 /**
  * Main entry point: detect all project environment details
  */
 export async function detectProjectEnvironment(projectRoot) {
-    const [techStack, build, conventions, structure, directoryMap] = await Promise.all([
+    const [techStack, build, conventions, structure, directoryMap, projectFingerprint] = await Promise.all([
         detectTechStack(projectRoot),
         detectBuildInfo(projectRoot),
         detectConventions(projectRoot),
         detectStructure(projectRoot),
         mapDirectoryStructure(projectRoot),
+        computeProjectFingerprint(projectRoot),
     ]);
     return {
         version: SCHEMA_VERSION,
         lastScanned: Date.now(),
         projectRoot,
+        projectFingerprint,
         techStack,
         build,
         conventions,
@@ -29,6 +32,90 @@ export async function detectProjectEnvironment(projectRoot) {
         directoryMap,
         hotPaths: [],
         userDirectives: [],
+    };
+}
+const FINGERPRINT_FILES = [
+    'package.json',
+    'tsconfig.json',
+    'jsconfig.json',
+    'pnpm-lock.yaml',
+    'yarn.lock',
+    'package-lock.json',
+    'bun.lockb',
+    'Cargo.toml',
+    'Cargo.lock',
+    'pyproject.toml',
+    'requirements.txt',
+    'poetry.lock',
+    'Pipfile',
+    'go.mod',
+    'go.sum',
+    'pom.xml',
+    'build.gradle',
+    'build.gradle.kts',
+    'Gemfile',
+    'composer.json',
+    'CMakeLists.txt',
+    'Makefile',
+    'README.md',
+    'AGENTS.md',
+];
+const FINGERPRINT_DIRS = [
+    'src',
+    'lib',
+    'app',
+    'pages',
+    'components',
+    'tests',
+    'test',
+    'docs',
+];
+const MAX_FINGERPRINT_FILE_BYTES = 256 * 1024;
+const MAX_FINGERPRINT_DIR_ENTRIES = 25;
+/**
+ * Build a compact fingerprint from files/directories that define the current
+ * project incarnation. This prevents learned notes from an old project in the
+ * same path from being treated as current truth after a reset.
+ */
+export async function computeProjectFingerprint(projectRoot) {
+    const hash = createHash('sha256');
+    const markers = [];
+    for (const file of FINGERPRINT_FILES) {
+        const filePath = path.join(projectRoot, file);
+        if (!(await fileExists(filePath))) {
+            continue;
+        }
+        markers.push(file);
+        hash.update(`file:${file}\0`);
+        const content = await fs.readFile(filePath).catch(() => null);
+        if (content) {
+            hash.update(content.subarray(0, MAX_FINGERPRINT_FILE_BYTES));
+        }
+        hash.update('\0');
+    }
+    for (const dir of FINGERPRINT_DIRS) {
+        const dirPath = path.join(projectRoot, dir);
+        try {
+            const entries = await fs.readdir(dirPath, { withFileTypes: true });
+            const names = entries
+                .filter((entry) => !entry.name.startsWith('.'))
+                .map((entry) => `${entry.isDirectory() ? 'd' : 'f'}:${entry.name}`)
+                .sort()
+                .slice(0, MAX_FINGERPRINT_DIR_ENTRIES);
+            if (names.length === 0) {
+                continue;
+            }
+            markers.push(`${dir}/`);
+            hash.update(`dir:${dir}\0${names.join('\0')}\0`);
+        }
+        catch {
+            // Missing or unreadable directories do not contribute to the fingerprint.
+        }
+    }
+    return {
+        hash: hash.digest('hex'),
+        markers,
+        generatedAt: Date.now(),
     };
 }
 /**

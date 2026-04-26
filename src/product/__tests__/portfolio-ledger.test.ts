@@ -54,6 +54,26 @@ describe('portfolio ledger', () => {
     ]));
   });
 
+  it('enforces selected cycle trio shape and active cycle id', () => {
+    const root = createRoot();
+    const broken = ledger();
+    broken.items[2].type = 'quality';
+    writeLedger(root, broken);
+    writeArtifact(root, '.omc/cycles/current.md', `# Product Cycle: first loop
+
+cycle_id: 2026-04-26-other-loop
+cycle_stage: select
+`);
+
+    const report = validatePortfolioLedger(root);
+
+    expect(report.ok).toBe(false);
+    expect(report.issues.map((issue) => issue.code)).toEqual(expect.arrayContaining([
+      'invalid-selected-cycle-trio',
+      'selected-cycle-mismatch',
+    ]));
+  });
+
   it('writes the human-readable current.md projection', () => {
     const root = createRoot();
     writeLedger(root, ledger());

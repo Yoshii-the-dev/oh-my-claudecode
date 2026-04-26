@@ -7,6 +7,7 @@ export interface ProjectMemory {
   version: string;
   lastScanned: number;
   projectRoot: string;
+  projectFingerprint?: ProjectFingerprint;
   techStack: TechStack;
   build: BuildInfo;
   conventions: CodeConventions;
@@ -15,6 +16,12 @@ export interface ProjectMemory {
   directoryMap: Record<string, DirectoryInfo>;
   hotPaths: HotPath[];
   userDirectives: UserDirective[];
+}
+
+export interface ProjectFingerprint {
+  hash: string;
+  markers: string[];
+  generatedAt: number;
 }
 
 export interface TechStack {

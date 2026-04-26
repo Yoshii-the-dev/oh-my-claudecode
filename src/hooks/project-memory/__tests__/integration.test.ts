@@ -11,7 +11,7 @@ import {
   registerProjectMemoryContext,
   clearProjectMemorySession,
 } from "../index.js";
-import { loadProjectMemory, getMemoryPath } from "../storage.js";
+import { loadProjectMemory, getMemoryPath, saveProjectMemory } from "../storage.js";
 import { learnFromToolOutput } from "../learner.js";
 
 describe("Project Memory Integration", () => {
@@ -260,6 +260,139 @@ describe("Project Memory Integration", () => {
       expect(updated!.hotPaths[0].path).toBe("src/index.ts");
       const age = Date.now() - updated!.lastScanned;
       expect(age).toBeLessThan(5000);
+      contextCollector.clear(sessionId);
+    });
+
+    it("should drop learned data when the project fingerprint changes", async () => {
+      const packageJson = {
+        name: "old-project",
+        scripts: { build: "tsc" },
+        devDependencies: { typescript: "^5.0.0" },
+      };
+      await fs.writeFile(
+        path.join(tempDir, "package.json"),
+        JSON.stringify(packageJson),
+      );
+      await fs.writeFile(path.join(tempDir, "tsconfig.json"), "{}");
+
+      const sessionId = "test-session-fingerprint-reset";
+      await registerProjectMemoryContext(sessionId, tempDir);
+
+      const memory = await loadProjectMemory(tempDir);
+      expect(memory?.projectFingerprint?.hash).toBeTruthy();
+      memory!.customNotes = [
+        {
+          timestamp: Date.now(),
+          source: "manual",
+          category: "product",
+          content: "Old product is between Phase 1 and Phase 2",
+        },
+      ];
+      memory!.userDirectives = [
+        {
+          timestamp: Date.now(),
+          directive: "Assume old product scope",
+          context: "",
+          source: "explicit",
+          priority: "high",
+        },
+      ];
+      memory!.hotPaths = [
+        {
+          path: "src/old.ts",
+          accessCount: 3,
+          lastAccessed: Date.now(),
+          type: "file",
+        },
+      ];
+      await saveProjectMemory(tempDir, memory!);
+
+      await fs.writeFile(
+        path.join(tempDir, "package.json"),
+        JSON.stringify({ name: "new-project", scripts: {} }),
+      );
+      await fs.rm(path.join(tempDir, "tsconfig.json"), { force: true });
+
+      clearProjectMemorySession(sessionId);
+      await registerProjectMemoryContext(sessionId, tempDir);
+
+      const updated = await loadProjectMemory(tempDir);
+      expect(updated?.projectFingerprint?.hash).toBeTruthy();
+      expect(updated?.projectFingerprint?.hash).not.toBe(
+        memory?.projectFingerprint?.hash,
+      );
+      expect(updated?.customNotes).toHaveLength(0);
+      expect(updated?.userDirectives).toHaveLength(0);
+      expect(updated?.hotPaths).toHaveLength(0);
+      contextCollector.clear(sessionId);
+    });
+
+    it("should not preserve legacy learned data when old detection markers disappeared", async () => {
+      await fs.mkdir(path.join(tempDir, ".git"));
+      await saveProjectMemory(tempDir, {
+        version: "1.0.0",
+        lastScanned: Date.now(),
+        projectRoot: tempDir,
+        techStack: {
+          languages: [
+            {
+              name: "TypeScript",
+              version: null,
+              confidence: "high",
+              markers: ["tsconfig.json"],
+            },
+          ],
+          frameworks: [],
+          packageManager: "pnpm",
+          runtime: null,
+        },
+        build: {
+          buildCommand: "pnpm build",
+          testCommand: null,
+          lintCommand: null,
+          devCommand: null,
+          scripts: {},
+        },
+        conventions: {
+          namingStyle: null,
+          importStyle: null,
+          testPattern: null,
+          fileOrganization: null,
+        },
+        structure: {
+          isMonorepo: false,
+          workspaces: [],
+          mainDirectories: [],
+          gitBranches: null,
+        },
+        customNotes: [
+          {
+            timestamp: Date.now(),
+            source: "manual",
+            category: "product",
+            content: "Legacy project was already partially implemented",
+          },
+        ],
+        directoryMap: {},
+        hotPaths: [
+          {
+            path: "src/legacy.ts",
+            accessCount: 2,
+            lastAccessed: Date.now(),
+            type: "file",
+          },
+        ],
+        userDirectives: [],
+      });
+
+      const sessionId = "test-session-legacy-reset";
+      const registered = await registerProjectMemoryContext(sessionId, tempDir);
+
+      expect(registered).toBe(false);
+      const updated = await loadProjectMemory(tempDir);
+      expect(updated?.customNotes).toHaveLength(0);
+      expect(updated?.hotPaths).toHaveLength(0);
+      expect(updated?.techStack.languages).toHaveLength(0);
       contextCollector.clear(sessionId);
     });
   });

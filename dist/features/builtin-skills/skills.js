@@ -113,9 +113,9 @@ function applyDeepInterviewRuntimeSettings(template) {
     const threshold = getDeepInterviewAmbiguityThreshold();
     const percent = formatThresholdPercent(threshold);
     return template
-        .replace('4. **Initialize state** via `state_write(mode="deep-interview")`:', [
-        `3.5. **Load runtime settings** from \`~/.claude/settings.json\` and \`./.claude/settings.json\` before state init (project overrides profile). For this run, use \`ambiguityThreshold = ${threshold}\`.`,
-        '4. **Initialize state** via `state_write(mode="deep-interview")`:',
+        .replace('5. **Initialize state** via `state_write(mode="deep-interview")`:', [
+        `4.5. **Load runtime settings** from \`~/.claude/settings.json\` and \`./.claude/settings.json\` before state init (project overrides profile). For this run, use \`ambiguityThreshold = ${threshold}\`.`,
+        '5. **Initialize state** via `state_write(mode="deep-interview")`:',
     ].join('\n'))
         .replace('"threshold": 0.2,', `"threshold": ${threshold},`)
         .replace('We\'ll proceed to execution once ambiguity drops below 20%.', `We'll proceed to execution once ambiguity drops below ${percent}.`)
