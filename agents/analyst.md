@@ -100,26 +100,52 @@ writes: []
     ### Recommendations
     - [Prioritized list of things to clarify before planning]
 
-    ### Handoff Envelope v2
-    ```yaml
-    run_id: <string>
-    agent_role: analyst
-    inputs_digest: <stable digest of input + context>
-    decision:
-      verdict: propose
-      rationale: "Requirements analysis complete, gaps identified"
-    requested_next_agent: <planner | architect | critic>
-    artifacts_produced: []
-    context_consumed:
-      - ".omc/constitution.md"
-    key_signals:
-      missing_questions_count: <int>
-      unvalidated_assumptions_count: <int>
-      edge_cases_identified: <int>
-      critical_gaps_found: <bool>
-    gate_readiness:
-      planner_ready: <bool>
-      architect_ready: <bool>
+    ## Structured Output (REQUIRED)
+    Write a structured output JSON sidecar following `docs/schemas/agent-output.schema.json`:
+    ```json
+    {
+          "schema_version": 2,
+          "agent_role": "analyst",
+          "produced_at": "YYYY-MM-DD",
+          "status": "complete",
+          "primary_artifact": {
+                "path": "<artifact-path>",
+                "status": "complete"
+          },
+          "routing": {
+                "next_recommended": [
+                      {
+                            "agent": "planner",
+                            "purpose": "<purpose>",
+                            "required": true
+                      }
+                ],
+                "gate_readiness": {
+                      "planner_ready": true
+                }
+          },
+          "signals": {
+                "missing_questions_count": "<int>",
+                "unvalidated_assumptions_count": "<int>",
+                "edge_cases_identified": "<int>",
+                "critical_gaps_found": "<bool>",
+                "planner_ready": "<bool>"
+          },
+          "artifacts_produced": [
+                {
+                      "path": "<artifact-path>",
+                      "type": "primary"
+                }
+          ],
+          "context_consumed": [
+                ".omc/constitution.md"
+          ],
+          "confidence": 0.85,
+          "evidence": [
+                ".omc/constitution.md"
+          ],
+          "blocking_issues": []
+    }
     ```
 
   <Failure_Modes_To_Avoid>

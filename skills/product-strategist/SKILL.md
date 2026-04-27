@@ -102,7 +102,7 @@ Invoke with directive:
   - deferred systems and revisit triggers.
 - Write one dated map at `.omc/product/capability-map/YYYY-MM-DD-<slug>.md`.
 - Replace compact pointer `.omc/product/capability-map/current.md`.
-- Append a standard `<handoff>` envelope pointing first to `priority-engine`; technology-strategist is a conditional follow-up after opportunity ranking.
+- Write a structured output JSON sidecar at `.omc/product/capability-map/current.output.json` per `docs/schemas/agent-output.schema.json`, with `routing.next_recommended[0] = priority-engine`; technology-strategist is a conditional follow-up after opportunity ranking.
 
 ## Phase 3 — Post-Invocation Summary
 

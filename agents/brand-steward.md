@@ -558,38 +558,46 @@ depends_on:
   </Execution_Policy>
 
   <Output_Format>
-    Phase 2 hypothesis message presents structured hypothesis block for validation. After Phase 3 convergence + Phase 4 vision/taste capture, write `.omc/constitution.md` with `status` field + append `<handoff>` envelope per `docs/HANDOFF-ENVELOPE.md`.
+    Phase 2 hypothesis message presents structured hypothesis block for validation. After Phase 3 convergence + Phase 4 vision/taste capture, write `.omc/constitution.md` with `status` field + write a structured output JSON sidecar.
 
-    Constitution file ends with:
-
-    ```yaml
-    ### Handoff Envelope v2
-    ```yaml
-    run_id: <string>
-    agent_role: brand-steward
-    inputs_digest: <stable digest of input + context>
-    decision:
-      verdict: propose
-      rationale: "Constitution synthesized and validated"
-    requested_next_agent: brand-architect
-    artifacts_produced:
-      - path: ".omc/constitution.md"
-        type: primary
-    context_consumed:
-      - ".omc/constitution.md"
-      - ".omc/ideas/current.md"
-      - ".omc/competitors/landscape/current.md"
-      - ".omc/research/current.md"
-    key_signals:
-      phase: pre-mvp | post-mvp
-      phase_0_passed: <bool>
-      session_number: 1 | 2 | refine
-      research_insufficient: <bool>
-      sections_with_low_confidence: <list>
-    gate_readiness:
-      product_strategist_ready: <bool>
-      brand_architect_ready: <bool>
-    ```
+    After writing `.omc/constitution.md`, write a structured output JSON sidecar at `.omc/constitution.output.json` following `docs/schemas/agent-output.schema.json`:
+    ```json
+    {
+      "schema_version": 2,
+      "agent_role": "brand-steward",
+      "produced_at": "YYYY-MM-DD",
+      "status": "complete",
+      "primary_artifact": { "path": ".omc/constitution.md", "status": "complete" },
+      "routing": {
+        "next_recommended": [
+          { "agent": "brand-architect", "purpose": "Full archetype and brand grammar analysis from constitution", "required": true },
+          { "agent": "product-strategist", "purpose": "Capability map gated by constitution", "required": false }
+        ],
+        "gate_readiness": {
+          "product_strategist_ready": true,
+          "brand_architect_ready": true
+        }
+      },
+      "signals": {
+        "phase": "pre-mvp",
+        "session_number": 1,
+        "research_insufficient": false,
+        "sections_with_low_confidence": 0,
+        "depth_mode": true,
+        "revision_count": 1
+      },
+      "artifacts_produced": [
+        { "path": ".omc/constitution.md", "type": "primary" }
+      ],
+      "context_consumed": [
+        ".omc/ideas/current.md",
+        ".omc/competitors/landscape/current.md",
+        ".omc/research/current.md"
+      ],
+      "confidence": 0.85,
+      "evidence": [".omc/ideas/current.md", ".omc/competitors/landscape/current.md"],
+      "blocking_issues": []
+    }
     ```
   </Output_Format>
 

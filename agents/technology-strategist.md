@@ -47,7 +47,7 @@ depends_on:
     - Maps inferred blocks to stack-provision canonical blocks/surfaces where possible; records the full inferred set even when granular blocks do not have a canonical match.
     - Identifies professional practice/skill targets for every critical block.
     - Provides a concrete stack-provision handoff command.
-    - Appends a schema-first handoff envelope v2 payload with required machine-readable fields.
+    - Writes a structured output JSON sidecar (`.output.json`) with required machine-readable fields per `docs/schemas/agent-output.schema.json`.
     - Distinguishes current decision scope from future revisit triggers; does not pretend to know every future product block.
     - Marks uncertain or research-dependent choices as open questions instead of silently deciding.
   </Success_Criteria>
@@ -252,49 +252,77 @@ depends_on:
     ### Open Questions
     - [ ] <question> -- <why it matters>
 
-    ### Handoff Envelope v2
-    ```yaml
-    run_id: <string>
-    agent_role: technology-strategist
-    inputs_digest: <stable digest of input + context>
-    artifacts_produced:
-      - path: ".omc/decisions/YYYY-MM-DD-technology-<slug>.md"
-        type: primary
-    context_consumed:
-      - ".omc/product/capability-map/current.md"
-    assumptions:
-      - <assumption>
-    scorecard:
-      weights:
-        product_fit: 0.30
-        operability: 0.20
-        ecosystem_maturity: 0.20
-        performance: 0.15
-        security_compliance: 0.10
-        cost_efficiency: 0.05
-      top2_gap: <number>
-    compatibility_report:
-      overall_status: compatible|risky|blocked|unknown
-      blocked_pairs: <integer>
-      unknown_pairs: <integer>
-    risk_register:
-      - id: <risk-id>
-        severity: low|medium|high|critical
-        mitigation: <text>
-    decision:
-      verdict: propose|approve|revise|rewind
-      rationale: <text>
-    requested_next_agent: <technology-strategist|document-specialist|critic|stack-provision|deep-interview>
-    permissions:
-      read_scope: <paths/globs>
-      write_scope: <paths/globs>
-    response_template:
-      status: <ok|needs-research|blocked>
-      evidence: <brief evidence pointers>
-      confidence: <0..1>
-      blocking_issues:
-        - <issue>
-      next_action: <one-line next step>
+    ### Structured Output (REQUIRED)
+    After writing the ADR, write a structured output JSON sidecar at `.omc/decisions/<date>-technology-<slug>.output.json` following `docs/schemas/agent-output.schema.json`. Use the `strategy` extension for technology-specific fields:
+    ```json
+    {
+      "schema_version": 2,
+      "run_id": "<string>",
+      "agent_role": "technology-strategist",
+      "produced_at": "YYYY-MM-DD",
+      "status": "complete",
+      "primary_artifact": {
+        "path": ".omc/decisions/YYYY-MM-DD-technology-<slug>.md",
+        "status": "complete"
+      },
+      "routing": {
+        "next_recommended": [
+          { "agent": "critic", "purpose": "Validate stack decisions before provisioning", "required": true },
+          { "agent": "stack-provision", "purpose": "Provision the approved stack", "required": true }
+        ],
+        "gate_readiness": {
+          "critic_ready": true,
+          "stack_provision_ready": false
+        }
+      },
+      "signals": {
+        "top2_gap": 12,
+        "compatibility_status": "compatible",
+        "blocked_pairs": 0,
+        "risk_count": 2,
+        "max_risk_severity": "medium"
+      },
+      "strategy": {
+        "inputs_digest": "<stable digest of input + context>",
+        "assumptions": ["<assumption>"],
+        "scorecard": {
+          "weights": {
+            "product_fit": 0.30,
+            "operability": 0.20,
+            "ecosystem_maturity": 0.20,
+            "performance": 0.15,
+            "security_compliance": 0.10,
+            "cost_efficiency": 0.05
+          },
+          "top2_gap": 12
+        },
+        "compatibility_report": {
+          "overall_status": "compatible",
+          "blocked_pairs": 0,
+          "unknown_pairs": 0
+        },
+        "risk_register": [
+          { "id": "r1", "severity": "medium", "mitigation": "<text>" }
+        ],
+        "decision": {
+          "verdict": "approve",
+          "rationale": "<text>"
+        },
+        "permissions": {
+          "read_scope": ".omc/**",
+          "write_scope": ".omc/decisions/**"
+        }
+      },
+      "artifacts_produced": [
+        { "path": ".omc/decisions/YYYY-MM-DD-technology-<slug>.md", "type": "primary" }
+      ],
+      "context_consumed": [
+        ".omc/product/capability-map/current.md"
+      ],
+      "confidence": 0.82,
+      "evidence": [".omc/product/capability-map/current.md"],
+      "blocking_issues": []
+    }
     ```
   </Output_Format>
 

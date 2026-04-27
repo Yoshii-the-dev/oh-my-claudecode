@@ -159,27 +159,51 @@ depends_on:
     ### Open Questions
     - [ ] [Product or design decision needed before implementation — be specific]
 
-    ### Handoff Envelope v2
-    ```yaml
-    run_id: <string>
-    agent_role: ux-architect
-    inputs_digest: <stable digest of input + context>
-    decision:
-      verdict: propose
-      rationale: "UX Flow Spec complete"
-    requested_next_agent: <designer | executor | ux-researcher>
-    artifacts_produced:
-      - path: ".omc/ux/YYYY-MM-DD-<feature>.md"
-        type: primary
-    context_consumed:
-      - ".omc/constitution.md"
-    key_signals:
-      states_covered_count: <int>
-      decision_nodes_mapped: <int>
-      open_questions_count: <int>
-    gate_readiness:
-      designer_ready: <bool>
-      executor_ready: <bool>
+    ## Structured Output (REQUIRED)
+    Write a structured output JSON sidecar following `docs/schemas/agent-output.schema.json`:
+    ```json
+    {
+          "schema_version": 2,
+          "agent_role": "ux-architect",
+          "produced_at": "YYYY-MM-DD",
+          "status": "complete",
+          "primary_artifact": {
+                "path": ".omc/ux/YYYY-MM-DD-<feature>.md",
+                "status": "complete"
+          },
+          "routing": {
+                "next_recommended": [
+                      {
+                            "agent": "designer",
+                            "purpose": "<purpose>",
+                            "required": true
+                      }
+                ],
+                "gate_readiness": {
+                      "designer_ready": true
+                }
+          },
+          "signals": {
+                "states_covered_count": "<int>",
+                "decision_nodes_mapped": "<int>",
+                "open_questions_count": "<int>",
+                "designer_ready": "<bool>"
+          },
+          "artifacts_produced": [
+                {
+                      "path": ".omc/ux/YYYY-MM-DD-<feature>.md",
+                      "type": "primary"
+                }
+          ],
+          "context_consumed": [
+                ".omc/constitution.md"
+          ],
+          "confidence": 0.85,
+          "evidence": [
+                ".omc/constitution.md"
+          ],
+          "blocking_issues": []
+    }
     ```
   </Output_Format>
 

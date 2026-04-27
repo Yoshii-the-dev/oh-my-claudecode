@@ -253,7 +253,7 @@ Technology Strategist must:
 - request `deep-interview` if `requirements_completeness < 0.75` or `unknown_critical_inputs >= 2`.
 - request researcher (`document-specialist`) if `top2_score_gap < 8`, critical compatibility is unknown, or fresh external evidence is missing.
   *(If requested, orchestrator must run `/document-specialist` to produce `.omc/audits/tech-research.md`, then hard-loop back to `technology-strategist` to finalize the ADR).*
-- emit handoff-envelope v2 and a concrete `stack-provision` command.
+- write a structured output JSON sidecar per `docs/schemas/agent-output.schema.json` and a concrete `stack-provision` command.
 
 Hard stop: any `blocked` compatibility pair. The strategist must revise or route to critic; provisioning is forbidden.
 
@@ -333,7 +333,7 @@ Default routing:
 - `priority-engine` writes only `.omc/portfolio/**`, `.omc/opportunities/**`, and `.omc/roadmap/**`.
 - `technology-strategist`, researcher, and critic are read-only for code and write only `.omc/decisions/**`, `.omc/handoffs/**`, `.omc/artifacts/**`, or `.omc/audits/**` as appropriate.
 - `stack-provision` writes only `.omc/provisioned/**` before approval and `~/.codex/skills/omc-provisioned/**` after approval.
-- Every primary artifact MUST end with a YAML Handoff Envelope v2 block. Legacy XML `<handoff>` tags are deprecated and will be rejected by the orchestrator.
+- Every pipeline agent MUST write a `.output.json` sidecar file per `docs/schemas/agent-output.schema.json`. The handoff orchestrator reads `.output.json` files exclusively for routing.
 
 ## Output
 

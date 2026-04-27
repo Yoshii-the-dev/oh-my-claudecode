@@ -9,6 +9,10 @@ export const PRODUCT_PIPELINE_CONTRACT_STAGES = [
 
 export type ProductPipelineContractStage = typeof PRODUCT_PIPELINE_CONTRACT_STAGES[number];
 
+/**
+ * @deprecated Legacy footer fields — validation now uses `.output.json` sidecar files
+ * per `docs/schemas/agent-output.schema.json`. Retained for backward-compatible rendering only.
+ */
 export const PRODUCT_STANDARD_FOOTER_FIELDS = [
   'status:',
   'evidence:',

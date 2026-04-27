@@ -1,0 +1,262 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oh-my-claudecode.local/schemas/agent-output.schema.json",
+  "title": "OMC Agent Structured Output v2",
+  "description": "Unified machine-readable output format for all OMC pipeline agents. Replaces <handoff> envelope v1/v2 with a strict JSON document that downstream agents and orchestrators consume directly.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "agent_role",
+    "produced_at",
+    "status",
+    "primary_artifact",
+    "routing",
+    "signals",
+    "artifacts_produced",
+    "context_consumed",
+    "confidence",
+    "evidence"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 2,
+      "description": "Schema version. Breaking changes bump this number."
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique identifier for this agent invocation."
+    },
+    "agent_role": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The agent or skill that produced this output."
+    },
+    "produced_at": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO date when this output was produced (YYYY-MM-DD)."
+    },
+    "status": {
+      "enum": [
+        "complete",
+        "partial",
+        "halted",
+        "blocked",
+        "needs-research",
+        "needs-human-decision"
+      ],
+      "description": "Overall status of the agent invocation."
+    },
+    "primary_artifact": {
+      "type": "object",
+      "required": ["path", "status"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Relative path from project root to the primary artifact."
+        },
+        "status": {
+          "enum": ["draft", "partial", "complete", "approved", "rejected", "halted"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "routing": {
+      "type": "object",
+      "required": ["next_recommended"],
+      "properties": {
+        "next_recommended": {
+          "type": "array",
+          "description": "Ordered list of downstream agents. First is strongest recommendation.",
+          "items": {
+            "type": "object",
+            "required": ["agent", "purpose", "required"],
+            "properties": {
+              "agent": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Registered OMC agent or skill name."
+              },
+              "purpose": {
+                "type": "string",
+                "description": "One-line reason for hand-off."
+              },
+              "required": {
+                "type": "boolean",
+                "description": "true = pipeline blocks until this step runs."
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "gate_readiness": {
+          "type": "object",
+          "description": "Boolean flags for next-stage prerequisites.",
+          "additionalProperties": { "type": "boolean" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "signals": {
+      "type": "object",
+      "description": "Key-value scalar signals for downstream agents. No nested objects or prose.",
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "number" },
+          { "type": "string", "maxLength": 200 },
+          { "type": "boolean" }
+        ]
+      }
+    },
+    "artifacts_produced": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["path", "type"],
+        "properties": {
+          "path": { "type": "string" },
+          "type": { "enum": ["primary", "supporting", "draft"] },
+          "supersedes": {
+            "type": "string",
+            "description": "Path to the artifact this one replaces."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "context_consumed": {
+      "type": "array",
+      "description": "Artifact paths or globs read during this invocation.",
+      "items": { "type": "string" }
+    },
+    "requires_user_input": {
+      "type": "array",
+      "description": "Questions requiring user decision. Null or empty if none.",
+      "items": {
+        "type": "object",
+        "required": ["question", "blocking"],
+        "properties": {
+          "question": { "type": "string" },
+          "blocking": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "halt": {
+      "type": "object",
+      "description": "Present only when status=halted.",
+      "required": ["reason", "remediation"],
+      "properties": {
+        "reason": { "type": "string" },
+        "remediation": { "type": "string" },
+        "resume_from": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "strategy": {
+      "type": "object",
+      "description": "Extended fields for technology-strategist and stack-provision. Replaces handoff-envelope v2.",
+      "properties": {
+        "inputs_digest": { "type": "string" },
+        "assumptions": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "scorecard": {
+          "type": "object",
+          "properties": {
+            "weights": {
+              "type": "object",
+              "required": [
+                "product_fit",
+                "operability",
+                "ecosystem_maturity",
+                "performance",
+                "security_compliance",
+                "cost_efficiency"
+              ],
+              "properties": {
+                "product_fit": { "type": "number" },
+                "operability": { "type": "number" },
+                "ecosystem_maturity": { "type": "number" },
+                "performance": { "type": "number" },
+                "security_compliance": { "type": "number" },
+                "cost_efficiency": { "type": "number" }
+              },
+              "additionalProperties": false
+            },
+            "top2_gap": { "type": "number" }
+          },
+          "additionalProperties": true
+        },
+        "compatibility_report": {
+          "type": "object",
+          "required": ["overall_status", "blocked_pairs", "unknown_pairs"],
+          "properties": {
+            "overall_status": { "enum": ["compatible", "risky", "blocked", "unknown"] },
+            "blocked_pairs": { "type": "integer", "minimum": 0 },
+            "unknown_pairs": { "type": "integer", "minimum": 0 }
+          },
+          "additionalProperties": true
+        },
+        "risk_register": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "severity", "mitigation"],
+            "properties": {
+              "id": { "type": "string" },
+              "severity": { "enum": ["low", "medium", "high", "critical"] },
+              "mitigation": { "type": "string" }
+            },
+            "additionalProperties": true
+          }
+        },
+        "decision": {
+          "type": "object",
+          "required": ["verdict", "rationale"],
+          "properties": {
+            "verdict": { "enum": ["approve", "revise", "rewind"] },
+            "rationale": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "permissions": {
+          "type": "object",
+          "required": ["read_scope", "write_scope"],
+          "properties": {
+            "read_scope": { "type": "string" },
+            "write_scope": { "type": "string" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Agent's confidence in the output (0.0-1.0)."
+    },
+    "evidence": {
+      "type": "array",
+      "description": "Compact evidence pointers.",
+      "items": { "type": "string" }
+    },
+    "blocking_issues": {
+      "type": "array",
+      "description": "Issues blocking downstream progress. Empty array if none.",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false,
+  "if": {
+    "properties": { "status": { "const": "halted" } }
+  },
+  "then": {
+    "required": ["halt"]
+  }
+}

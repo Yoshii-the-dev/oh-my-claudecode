@@ -79,23 +79,39 @@ depends_on: []
     - Session killed: YES
     - Artifacts removed: YES
 
-    ## Handoff Envelope v2
-    ```yaml
-    run_id: <string>
-    agent_role: qa-tester
-    inputs_digest: <stable digest of input + context>
-    decision:
-      verdict: approve | reject
-      rationale: "QA testing complete"
-    requested_next_agent: <none>
-    artifacts_produced: []
-    context_consumed: []
-    key_signals:
-      tests_total: <int>
-      tests_passed: <int>
-      tests_failed: <int>
-    gate_readiness:
-      pipeline_ready: <bool>
+    ## Structured Output (REQUIRED)
+    Write a structured output JSON sidecar following `docs/schemas/agent-output.schema.json`:
+    ```json
+    {
+          "schema_version": 2,
+          "agent_role": "qa-tester",
+          "produced_at": "YYYY-MM-DD",
+          "status": "complete",
+          "primary_artifact": {
+                "path": "<artifact-path>",
+                "status": "complete"
+          },
+          "routing": {
+                "next_recommended": []
+          },
+          "signals": {
+                "tests_total": "<int>",
+                "tests_passed": "<int>",
+                "tests_failed": "<int>"
+          },
+          "artifacts_produced": [
+                {
+                      "path": "<artifact-path>",
+                      "type": "primary"
+                }
+          ],
+          "context_consumed": [],
+          "confidence": 0.85,
+          "evidence": [
+                "<evidence>"
+          ],
+          "blocking_issues": []
+    }
     ```
   </Output_Format>
 

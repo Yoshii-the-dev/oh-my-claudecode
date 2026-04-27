@@ -99,24 +99,47 @@ depends_on:
     ## Summary
     [1-2 sentences on what was accomplished]
 
-    ## Handoff Envelope v2
-    ```yaml
-    run_id: <string>
-    agent_role: executor
-    inputs_digest: <stable digest of input + context>
-    decision:
-      verdict: propose
-      rationale: "Implementation complete and verified"
-    requested_next_agent: <git-master | code-reviewer | qa-tester>
-    artifacts_produced: []
-    context_consumed:
-      - ".omc/plans/<name>.md"
-    key_signals:
-      files_modified: <int>
-      build_passed: <bool>
-      tests_passed: <bool>
-    gate_readiness:
-      reviewer_ready: <bool>
+    ## Structured Output (REQUIRED)
+    Write a structured output JSON sidecar following `docs/schemas/agent-output.schema.json`:
+    ```json
+    {
+          "schema_version": 2,
+          "agent_role": "executor",
+          "produced_at": "YYYY-MM-DD",
+          "status": "complete",
+          "primary_artifact": {
+                "path": "<artifact-path>",
+                "status": "complete"
+          },
+          "routing": {
+                "next_recommended": [
+                      {
+                            "agent": "git-master",
+                            "purpose": "<purpose>",
+                            "required": true
+                      }
+                ]
+          },
+          "signals": {
+                "files_modified": "<int>",
+                "build_passed": "<bool>",
+                "tests_passed": "<bool>"
+          },
+          "artifacts_produced": [
+                {
+                      "path": "<artifact-path>",
+                      "type": "primary"
+                }
+          ],
+          "context_consumed": [
+                ".omc/plans/<name>.md"
+          ],
+          "confidence": 0.85,
+          "evidence": [
+                ".omc/plans/<name>.md"
+          ],
+          "blocking_issues": []
+    }
     ```
   </Output_Format>
 

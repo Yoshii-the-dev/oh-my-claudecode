@@ -49,8 +49,9 @@ Rules:
 - Treat weak evidence as research debt: it must be represented as a learning/research work item and remain visible in the roadmap.
 - User-facing work must pass `.omc/experience/current.md` before build.
 - Archive or mark stale artifacts; do not let downstream agents discover them by broad glob scans.
-- Every primary artifact must end with a compact `<handoff>` block.
-- Stack strategy/provisioning artifacts must include handoff-envelope v2.
+- Every pipeline agent must write a `.output.json` sidecar file per `docs/schemas/agent-output.schema.json`.
+- Markdown projections are generated from JSON by the runtime; agents do not hand-write Markdown routing blocks.
+- The handoff orchestrator reads `.output.json` files exclusively for routing. Legacy `<handoff>` XML tags are deprecated and no longer parsed.
 
 ## Context Budget Rules
 
@@ -76,7 +77,39 @@ No agent should bulk-read `.omc/archive/**`, old dated artifacts, generated logs
 
 ## Standard Agent Response
 
-Every agent-facing artifact or terminal response should expose the same compact footer:
+### Machine-Readable: Structured Output JSON (Primary)
+
+Every pipeline agent writes a `.output.json` sidecar file alongside its primary artifact:
+
+```
+.omc/product/capability-map/current.output.json   ← orchestrator reads this
+.omc/product/capability-map/current.md             ← human reads this (auto-generated)
+```
+
+The JSON follows `docs/schemas/agent-output.schema.json`:
+
+```json
+{
+  "schema_version": 2,
+  "agent_role": "<agent-name>",
+  "produced_at": "YYYY-MM-DD",
+  "status": "complete | partial | halted | blocked | needs-research | needs-human-decision",
+  "primary_artifact": { "path": "<artifact>", "status": "<status>" },
+  "routing": {
+    "next_recommended": [
+      { "agent": "<name>", "purpose": "<why>", "required": true }
+    ]
+  },
+  "signals": { "<key>": "<scalar value>" },
+  "confidence": 0.85,
+  "evidence": ["<path>"],
+  "blocking_issues": []
+}
+```
+
+### Human-Readable: Standard Footer in Markdown (Backward Compat)
+
+Markdown projections still include the compact footer for backward compatibility with `pipeline-contract-validator`:
 
 ```yaml
 status: ok | needs-research | blocked | needs-human-decision
@@ -90,7 +123,7 @@ artifacts_written:
   - <path or []>
 ```
 
-For cross-agent stack/provisioning handoffs, use `handoff-envelope v2` from `docs/HANDOFF-ENVELOPE.md`.
+This footer is generated from the JSON sidecar — agents do not write it manually.
 
 ## Role Permissions
 

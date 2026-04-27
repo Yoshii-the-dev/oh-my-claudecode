@@ -81,22 +81,44 @@ depends_on: []
     ## Verification
     - Diagnostics: [N errors, M warnings per file]
 
-    ## Handoff Envelope v2
-    ```yaml
-    run_id: <string>
-    agent_role: code-simplifier
-    inputs_digest: <stable digest of input + context>
-    decision:
-      verdict: propose
-      rationale: "Code simplification complete"
-    requested_next_agent: <git-master | code-reviewer>
-    artifacts_produced: []
-    context_consumed: []
-    key_signals:
-      files_simplified: <int>
-      diagnostics_clean: <bool>
-    gate_readiness:
-      reviewer_ready: <bool>
+    ## Structured Output (REQUIRED)
+    Write a structured output JSON sidecar following `docs/schemas/agent-output.schema.json`:
+    ```json
+    {
+          "schema_version": 2,
+          "agent_role": "code-simplifier",
+          "produced_at": "YYYY-MM-DD",
+          "status": "complete",
+          "primary_artifact": {
+                "path": "<artifact-path>",
+                "status": "complete"
+          },
+          "routing": {
+                "next_recommended": [
+                      {
+                            "agent": "git-master",
+                            "purpose": "<purpose>",
+                            "required": true
+                      }
+                ]
+          },
+          "signals": {
+                "files_simplified": "<int>",
+                "diagnostics_clean": "<bool>"
+          },
+          "artifacts_produced": [
+                {
+                      "path": "<artifact-path>",
+                      "type": "primary"
+                }
+          ],
+          "context_consumed": [],
+          "confidence": 0.85,
+          "evidence": [
+                "<evidence>"
+          ],
+          "blocking_issues": []
+    }
     ```
   </Output_Format>
 

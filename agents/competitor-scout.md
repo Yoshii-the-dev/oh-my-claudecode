@@ -378,44 +378,72 @@ writes:
     - Archive: `.omc/competitors/archive/<slug>/` (moved by watchlist rule)
     - Scouting Contract: `.omc/competitors/contract/YYYY-MM-DD-<slug>.md` (one per session)
 
-    ## Handoff Envelope v2 (MANDATORY per docs/HANDOFF-ENVELOPE.md)
-
-    Every scouting session's landscape artifact (or watchlist update) ends with the standard v2 block:
-
-    ```yaml
-    run_id: <string>
-    agent_role: competitor-scout
-    inputs_digest: <stable digest of input + context>
-    decision:
-      verdict: propose
-      rationale: "Scouting session complete, landscape and dossiers updated"
-    requested_next_agent: <ideate | product-strategist | none>
-    artifacts_produced:
-      - path: ".omc/competitors/landscape/YYYY-MM-DD.md"
-        type: primary
-      - path: ".omc/competitors/watchlist.md"
-        type: supporting
-      - path: ".omc/competitors/index.md"
-        type: supporting
-      - path: ".omc/competitors/landscape/current.md"
-        type: supporting
-    context_consumed:
-      - ".omc/constitution.md"
-      - ".omc/competitors/watchlist.md"
-      - ".omc/competitors/index.md"
-      - ".omc/competitors/landscape/current.md"
-    key_signals:
-      new_candidates_surfaced: <int>
-      unverified_quarantined: <int>
-      dossiers_produced: <int>
-      dossiers_refreshed: <int>
-      alerts_emitted: <int>
-      alerts_critical: <int>
-      top_threat_score: <float>
-      recency_quota_achieved: <float>
-    gate_readiness:
-      ideate_counter_move_warranted: <bool>
-      strategy_review_warranted: <bool>
+    ## Structured Output (REQUIRED)
+    Write a structured output JSON sidecar following `docs/schemas/agent-output.schema.json`:
+    ```json
+    {
+          "schema_version": 2,
+          "agent_role": "competitor-scout",
+          "produced_at": "YYYY-MM-DD",
+          "status": "complete",
+          "primary_artifact": {
+                "path": ".omc/competitors/landscape/YYYY-MM-DD.md",
+                "status": "complete"
+          },
+          "routing": {
+                "next_recommended": [
+                      {
+                            "agent": "ideate",
+                            "purpose": "<purpose>",
+                            "required": true
+                      }
+                ],
+                "gate_readiness": {
+                      "ideate_counter_move_warranted": true
+                }
+          },
+          "signals": {
+                "new_candidates_surfaced": "<int>",
+                "unverified_quarantined": "<int>",
+                "dossiers_produced": "<int>",
+                "dossiers_refreshed": "<int>",
+                "alerts_emitted": "<int>",
+                "alerts_critical": "<int>",
+                "top_threat_score": "<float>",
+                "recency_quota_achieved": "<float>",
+                "ideate_counter_move_warranted": "<bool>"
+          },
+          "artifacts_produced": [
+                {
+                      "path": ".omc/competitors/landscape/YYYY-MM-DD.md",
+                      "type": "primary"
+                },
+                {
+                      "path": ".omc/competitors/watchlist.md",
+                      "type": "primary"
+                },
+                {
+                      "path": ".omc/competitors/index.md",
+                      "type": "primary"
+                },
+                {
+                      "path": ".omc/competitors/landscape/current.md",
+                      "type": "primary"
+                }
+          ],
+          "context_consumed": [
+                ".omc/constitution.md",
+                ".omc/competitors/watchlist.md",
+                ".omc/competitors/index.md",
+                ".omc/competitors/landscape/current.md"
+          ],
+          "confidence": 0.85,
+          "evidence": [
+                ".omc/constitution.md",
+                ".omc/competitors/watchlist.md"
+          ],
+          "blocking_issues": []
+    }
     ```
   </Output_Contract>
 

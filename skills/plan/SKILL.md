@@ -138,7 +138,7 @@ Every plan includes:
 - For consensus/ralplan: **RALPLAN-DR summary** (Principles, Decision Drivers, Options)
 - For consensus/ralplan final output: **ADR** (Decision, Drivers, Alternatives considered, Why chosen, Consequences, Follow-ups)
 - For deliberate consensus mode: **Pre-mortem (3 scenarios)** and **Expanded Test Plan** (unit/integration/e2e/observability)
-- Every plan MUST end with a YAML Handoff Envelope v2 block. Legacy XML `<handoff>` tags are deprecated.
+- Every plan MUST be accompanied by a `.output.json` sidecar per `docs/schemas/agent-output.schema.json`. Legacy `<handoff>` XML tags and YAML Handoff Envelope v2 blocks are deprecated.
 
 Plans are saved to `.omc/plans/`. Drafts go to `.omc/drafts/`.
 </Steps>

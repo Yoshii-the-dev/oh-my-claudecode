@@ -238,24 +238,46 @@ depends_on: []
     - Risk/Verification Rigor: [Pass/Fail + reason]
     - Deliberate Additions (if required): [Pass/Fail + reason]
 
-    ## Handoff Envelope v2
-    ```yaml
-    run_id: <string>
-    agent_role: critic
-    inputs_digest: <stable digest of input + context>
-    decision:
-      verdict: approve | revise | reject | rewind
-      rationale: "Critic review complete"
-    requested_next_agent: <planner | architect | executor | analyst | none>
-    artifacts_produced: []
-    context_consumed: []
-    key_signals:
-      critical_findings: <int>
-      major_findings: <int>
-      minor_findings: <int>
-      gaps_identified: <int>
-    gate_readiness:
-      pipeline_ready: <bool>
+    ## Structured Output (REQUIRED)
+    Write a structured output JSON sidecar following `docs/schemas/agent-output.schema.json`:
+    ```json
+    {
+          "schema_version": 2,
+          "agent_role": "critic",
+          "produced_at": "YYYY-MM-DD",
+          "status": "complete",
+          "primary_artifact": {
+                "path": "<artifact-path>",
+                "status": "complete"
+          },
+          "routing": {
+                "next_recommended": [
+                      {
+                            "agent": "planner",
+                            "purpose": "<purpose>",
+                            "required": true
+                      }
+                ]
+          },
+          "signals": {
+                "critical_findings": "<int>",
+                "major_findings": "<int>",
+                "minor_findings": "<int>",
+                "gaps_identified": "<int>"
+          },
+          "artifacts_produced": [
+                {
+                      "path": "<artifact-path>",
+                      "type": "primary"
+                }
+          ],
+          "context_consumed": [],
+          "confidence": 0.85,
+          "evidence": [
+                "<evidence>"
+          ],
+          "blocking_issues": []
+    }
     ```
   </Output_Format>
 

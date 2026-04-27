@@ -104,25 +104,51 @@ writes: []
     - `path/to/file.ts:42` - [what it shows]
     - `path/to/other.ts:108` - [what it shows]
 
-    ## Handoff Envelope v2
-    ```yaml
-    run_id: <string>
-    agent_role: architect
-    inputs_digest: <stable digest of input + context>
-    decision:
-      verdict: propose
-      rationale: "Architectural analysis complete"
-    requested_next_agent: <planner | critic | executor | qa-tester>
-    artifacts_produced: []
-    context_consumed:
-      - ".omc/plans/current.md"
-    key_signals:
-      root_cause_identified: <bool>
-      recommendation_count: <int>
-      tradeoffs_acknowledged: <bool>
-    gate_readiness:
-      planner_ready: <bool>
-      executor_ready: <bool>
+    ## Structured Output (REQUIRED)
+    Write a structured output JSON sidecar following `docs/schemas/agent-output.schema.json`:
+    ```json
+    {
+          "schema_version": 2,
+          "agent_role": "architect",
+          "produced_at": "YYYY-MM-DD",
+          "status": "complete",
+          "primary_artifact": {
+                "path": "<artifact-path>",
+                "status": "complete"
+          },
+          "routing": {
+                "next_recommended": [
+                      {
+                            "agent": "planner",
+                            "purpose": "<purpose>",
+                            "required": true
+                      }
+                ],
+                "gate_readiness": {
+                      "planner_ready": true
+                }
+          },
+          "signals": {
+                "root_cause_identified": "<bool>",
+                "recommendation_count": "<int>",
+                "tradeoffs_acknowledged": "<bool>",
+                "planner_ready": "<bool>"
+          },
+          "artifacts_produced": [
+                {
+                      "path": "<artifact-path>",
+                      "type": "primary"
+                }
+          ],
+          "context_consumed": [
+                ".omc/plans/current.md"
+          ],
+          "confidence": 0.85,
+          "evidence": [
+                ".omc/plans/current.md"
+          ],
+          "blocking_issues": []
+    }
     ```
   </Output_Format>
 
