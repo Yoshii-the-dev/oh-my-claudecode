@@ -163,26 +163,47 @@ writes:
     - **Success metrics:** [what answer resolves the research question]
     - **Estimated time:** [hours for preparation + facilitation + synthesis]
 
-    ### Handoff Envelope v2
-    ```yaml
-    run_id: <string>
-    agent_role: ux-researcher
-    inputs_digest: <stable digest of input + context>
-    decision:
-      verdict: propose
-      rationale: "UX research synthesis complete"
-    requested_next_agent: <ux-architect | designer | product-strategist>
-    artifacts_produced:
-      - path: ".omc/research/YYYY-MM-DD-<topic>.md"
-        type: primary
-    context_consumed:
-      - ".omc/constitution.md"
-    key_signals:
-      evidence_gaps_identified: <int>
-      study_plans_proposed: <int>
-      heuristic_issues_found: <int>
-    gate_readiness:
-      ux_architect_ready: <bool>
+    ## Structured Output (REQUIRED)
+    Write a structured output JSON sidecar following `docs/schemas/agent-output.schema.json`:
+    ```json
+    {
+          "schema_version": 2,
+          "agent_role": "ux-researcher",
+          "produced_at": "YYYY-MM-DD",
+          "status": "complete",
+          "primary_artifact": {
+                "path": ".omc/research/YYYY-MM-DD-<topic>.md",
+                "status": "complete"
+          },
+          "routing": {
+                "next_recommended": [
+                      {
+                            "agent": "ux-architect",
+                            "purpose": "<purpose>",
+                            "required": true
+                      }
+                ]
+          },
+          "signals": {
+                "evidence_gaps_identified": "<int>",
+                "study_plans_proposed": "<int>",
+                "heuristic_issues_found": "<int>"
+          },
+          "artifacts_produced": [
+                {
+                      "path": ".omc/research/YYYY-MM-DD-<topic>.md",
+                      "type": "primary"
+                }
+          ],
+          "context_consumed": [
+                ".omc/constitution.md"
+          ],
+          "confidence": 0.85,
+          "evidence": [
+                ".omc/constitution.md"
+          ],
+          "blocking_issues": []
+    }
     ```
   </Output_Format>
 

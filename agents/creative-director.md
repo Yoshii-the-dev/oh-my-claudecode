@@ -349,43 +349,67 @@ depends_on:
 
     Evidence format (mandatory): every finding cites grammar.md or core.md with line reference.
 
-    ## Handoff Envelope v2 (MANDATORY per docs/HANDOFF-ENVELOPE.md)
-
-    Review artifact ends with:
-
-    ```yaml
-    run_id: <string>
-    agent_role: creative-director
-    inputs_digest: <stable digest of input + context>
-    decision:
-      verdict: approved | partial-approval | blocked
-      rationale: "Campaign review complete"
-    requested_next_agent: <designer | copywriter | campaign-composer | brand-architect>
-    artifacts_produced:
-      - path: ".omc/brand/reviews/YYYY-MM-DD-<campaign-slug>.md"
-        type: primary
-    context_consumed:
-      - ".omc/brand/index.md"
-      - ".omc/brand/core.md"
-      - ".omc/brand/grammar.md"
-      - ".omc/brand/inspiration.md"
-      - ".omc/brand/expressions/YYYY-MM-DD-<campaign-slug>/INDEX.md"
-    key_signals:
-      variations_pass: <int>
-      variations_revise: <int>
-      variations_reject: <int>
-      forbidden_pattern_matches: <int>
-      inspiration_citation_vague: <int>
-      semantic_layer_flat: <int>
-      soul_marker_vague: <int>
-      cross_variation_inspiration_diversity: <int>
-      brand_drift_signals: <int>
-      competitor_echo_conflicts: <int>
-    gate_readiness:
-      designer_ready: <bool>
-      copywriter_ready: <bool>
-      composer_regenerate_needed: <bool>
-      brand_architect_review_needed: <bool>
+    ## Structured Output (REQUIRED)
+    Write a structured output JSON sidecar following `docs/schemas/agent-output.schema.json`:
+    ```json
+    {
+          "schema_version": 2,
+          "agent_role": "creative-director",
+          "produced_at": "YYYY-MM-DD",
+          "status": "complete",
+          "primary_artifact": {
+                "path": ".omc/brand/reviews/YYYY-MM-DD-<campaign-slug>.md",
+                "status": "complete"
+          },
+          "routing": {
+                "next_recommended": [
+                      {
+                            "agent": "designer",
+                            "purpose": "<purpose>",
+                            "required": true
+                      }
+                ],
+                "gate_readiness": {
+                      "designer_ready": true,
+                      "copywriter_ready": true,
+                      "composer_regenerate_needed": true
+                }
+          },
+          "signals": {
+                "variations_pass": "<int>",
+                "variations_revise": "<int>",
+                "variations_reject": "<int>",
+                "forbidden_pattern_matches": "<int>",
+                "inspiration_citation_vague": "<int>",
+                "semantic_layer_flat": "<int>",
+                "soul_marker_vague": "<int>",
+                "cross_variation_inspiration_diversity": "<int>",
+                "brand_drift_signals": "<int>",
+                "competitor_echo_conflicts": "<int>",
+                "designer_ready": "<bool>",
+                "copywriter_ready": "<bool>",
+                "composer_regenerate_needed": "<bool>"
+          },
+          "artifacts_produced": [
+                {
+                      "path": ".omc/brand/reviews/YYYY-MM-DD-<campaign-slug>.md",
+                      "type": "primary"
+                }
+          ],
+          "context_consumed": [
+                ".omc/brand/index.md",
+                ".omc/brand/core.md",
+                ".omc/brand/grammar.md",
+                ".omc/brand/inspiration.md",
+                ".omc/brand/expressions/YYYY-MM-DD-<campaign-slug>/INDEX.md"
+          ],
+          "confidence": 0.85,
+          "evidence": [
+                ".omc/brand/index.md",
+                ".omc/brand/core.md"
+          ],
+          "blocking_issues": []
+    }
     ```
   </Output_Contract>
 

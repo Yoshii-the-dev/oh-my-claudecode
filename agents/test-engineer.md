@@ -104,23 +104,45 @@ depends_on: []
     ### Verification
     - Test run: [command] -> [N passed, 0 failed]
 
-    ## Handoff Envelope v2
-    ```yaml
-    run_id: <string>
-    agent_role: test-engineer
-    inputs_digest: <stable digest of input + context>
-    decision:
-      verdict: approve | revise
-      rationale: "Testing phase complete"
-    requested_next_agent: <executor | none>
-    artifacts_produced: []
-    context_consumed: []
-    key_signals:
-      tests_written: <int>
-      coverage_gaps: <int>
-      flaky_tests_fixed: <int>
-    gate_readiness:
-      pipeline_ready: <bool>
+    ## Structured Output (REQUIRED)
+    Write a structured output JSON sidecar following `docs/schemas/agent-output.schema.json`:
+    ```json
+    {
+          "schema_version": 2,
+          "agent_role": "test-engineer",
+          "produced_at": "YYYY-MM-DD",
+          "status": "complete",
+          "primary_artifact": {
+                "path": "<artifact-path>",
+                "status": "complete"
+          },
+          "routing": {
+                "next_recommended": [
+                      {
+                            "agent": "executor",
+                            "purpose": "<purpose>",
+                            "required": true
+                      }
+                ]
+          },
+          "signals": {
+                "tests_written": "<int>",
+                "coverage_gaps": "<int>",
+                "flaky_tests_fixed": "<int>"
+          },
+          "artifacts_produced": [
+                {
+                      "path": "<artifact-path>",
+                      "type": "primary"
+                }
+          ],
+          "context_consumed": [],
+          "confidence": 0.85,
+          "evidence": [
+                "<evidence>"
+          ],
+          "blocking_issues": []
+    }
     ```
   </Output_Format>
 

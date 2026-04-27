@@ -308,59 +308,65 @@ writes:
     Compact pointers:
     - `.omc/expert-review/current.md` — latest review path, domains, personas, launch recommendation, critical counts, real-expert validation needs, and handoff targets.
     - `.omc/expert-review/index.md` — compact review history by feature/domain (target ≤250 lines).
-
-    ## Handoff Envelope (MANDATORY per docs/HANDOFF-ENVELOPE.md)
-
-    ```yaml
-    <handoff>
-      schema_version: 1
-      produced_by: domain-expert-reviewer
-      produced_at: YYYY-MM-DD
-      primary_artifact:
-        path: ".omc/expert-review/YYYY-MM-DD-<domain>-<slug>.md"
-        status: complete
-      next_recommended:
-        # If launch recommendation is HOLD or DO-NOT-LAUNCH:
-        - agent: product-strategist
-          purpose: "Scope revision in light of proxy review findings"
-          required: true
-        # If CRITICAL findings are CITED:
-        - agent: executor
-          purpose: "Remediate CITED CRITICAL findings"
-          required: true
-        # Always:
-        - agent: user
-          purpose: "Schedule real-expert validation sessions per Questions for Real Expert list"
-          required: true
-      key_signals:
-        personas_engaged: <int>
-        critical_findings_cited: <int>
-        critical_findings_domain_knowledge: <int>
-        major_findings: <int>
-        minor_findings: <int>
-        launch_recommendation: GO | GO-with-risk-register | HOLD | DO-NOT-LAUNCH
-        confidence_high_count: <int>
-        confidence_low_count: <int>
-      gate_readiness:
-        real_expert_validation_required: true
-        remediation_required: <bool>
-        constitution_update_warranted: <bool>
-      artifacts_produced:
-        - path: ".omc/expert-review/YYYY-MM-DD-<domain>-<slug>.md"
-          type: primary
-      context_consumed:
-        - ".omc/constitution.md"
-        - ".omc/digests/research-highlights.md"
-        - ".omc/research/current.md"
-        - ".omc/features/<slug>/brief.md"
-        - ".omc/strategy/current.md"
-        - ".omc/sprints/<slug>/00-foundation.md"
-        - ".omc/sprints/<slug>/week3-validation.md"
-        - ".omc/sprints/<slug>/05-launch-gate.md"
-      requires_user_input:
-        - question: "Schedule real-expert session for <persona-role>?"
-          blocking: false
-    </handoff>
+    ## Structured Output (REQUIRED)
+    Write a structured output JSON sidecar following `docs/schemas/agent-output.schema.json`:
+    ```json
+    {
+          "schema_version": 2,
+          "agent_role": "domain-expert-reviewer",
+          "produced_at": "YYYY-MM-DD",
+          "status": "complete",
+          "primary_artifact": {
+                "path": ".omc/expert-review/YYYY-MM-DD-<domain>-<slug>.md",
+                "status": "complete"
+          },
+          "routing": {
+                "next_recommended": [],
+                "gate_readiness": {
+                      "real_expert_validation_required": true,
+                      "remediation_required": true,
+                      "constitution_update_warranted": true,
+                      "type": true
+                }
+          },
+          "signals": {
+                "personas_engaged": "<int>",
+                "critical_findings_cited": "<int>",
+                "critical_findings_domain_knowledge": "<int>",
+                "major_findings": "<int>",
+                "minor_findings": "<int>",
+                "launch_recommendation": "<GO | GO-with-risk-register | HOLD | DO-NOT-LAUNCH>",
+                "confidence_high_count": "<int>",
+                "confidence_low_count": "<int>",
+                "real_expert_validation_required": true,
+                "remediation_required": "<bool>",
+                "constitution_update_warranted": "<bool>",
+                "type": "<primary>"
+          },
+          "artifacts_produced": [
+                {
+                      "path": ".omc/expert-review/YYYY-MM-DD-<domain>-<slug>.md",
+                      "type": "primary"
+                }
+          ],
+          "context_consumed": [
+                ".omc/constitution.md",
+                ".omc/digests/research-highlights.md",
+                ".omc/research/current.md",
+                ".omc/features/<slug>/brief.md",
+                ".omc/strategy/current.md",
+                ".omc/sprints/<slug>/00-foundation.md",
+                ".omc/sprints/<slug>/week3-validation.md",
+                ".omc/sprints/<slug>/05-launch-gate.md"
+          ],
+          "confidence": 0.85,
+          "evidence": [
+                ".omc/constitution.md",
+                ".omc/digests/research-highlights.md"
+          ],
+          "blocking_issues": []
+    }
+    ```
     ```
   </Output_Contract>
 

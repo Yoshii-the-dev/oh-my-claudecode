@@ -151,29 +151,52 @@ depends_on:
     - "adjust [X]" - Return to interview to modify
     - "restart" - Discard and start fresh
 
-    ## Handoff Envelope v2
-    ```yaml
-    run_id: <string>
-    agent_role: planner
-    inputs_digest: <stable digest of input + context>
-    decision:
-      verdict: propose
-      rationale: "Work plan generated and ready for user approval"
-    requested_next_agent: <executor | none>
-    artifacts_produced:
-      - path: ".omc/plans/{name}.md"
-        type: primary
-      - path: ".omc/plans/open-questions.md"
-        type: secondary
-    context_consumed:
-      - ".omc/constitution.md"
-    key_signals:
-      plan_steps: <int>
-      open_questions_added: <int>
-      consensus_mode: <bool>
-      deliberate_mode: <bool>
-    gate_readiness:
-      executor_ready: <bool>
+    ## Structured Output (REQUIRED)
+    Write a structured output JSON sidecar following `docs/schemas/agent-output.schema.json`:
+    ```json
+    {
+          "schema_version": 2,
+          "agent_role": "planner",
+          "produced_at": "YYYY-MM-DD",
+          "status": "complete",
+          "primary_artifact": {
+                "path": ".omc/plans/{name}.md",
+                "status": "complete"
+          },
+          "routing": {
+                "next_recommended": [
+                      {
+                            "agent": "executor",
+                            "purpose": "<purpose>",
+                            "required": true
+                      }
+                ]
+          },
+          "signals": {
+                "plan_steps": "<int>",
+                "open_questions_added": "<int>",
+                "consensus_mode": "<bool>",
+                "deliberate_mode": "<bool>"
+          },
+          "artifacts_produced": [
+                {
+                      "path": ".omc/plans/{name}.md",
+                      "type": "primary"
+                },
+                {
+                      "path": ".omc/plans/open-questions.md",
+                      "type": "primary"
+                }
+          ],
+          "context_consumed": [
+                ".omc/constitution.md"
+          ],
+          "confidence": 0.85,
+          "evidence": [
+                ".omc/constitution.md"
+          ],
+          "blocking_issues": []
+    }
     ```
   </Output_Format>
 

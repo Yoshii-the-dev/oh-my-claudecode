@@ -4,7 +4,6 @@ import {
   PRODUCT_ARTIFACT_ALLOWED_DIRECTORIES,
   PRODUCT_ARTIFACT_CURRENT_PATHS,
   PRODUCT_ARTIFACT_REGISTRY,
-  PRODUCT_STANDARD_FOOTER_FIELDS,
   getProductArtifactRegistryEntries,
 } from './pipeline-registry.js';
 
@@ -27,7 +26,7 @@ export interface ProductArtifactInventoryReport {
     warnings: number;
     registeredArtifacts: number;
     unregisteredCurrentArtifacts: number;
-    markdownWithoutFooter: number;
+    markdownWithoutSidecar: number;
     stalePressureDirectories: number;
   };
 }
@@ -65,12 +64,12 @@ export function validateProductArtifactInventory(root = process.cwd()): ProductA
       ));
     }
 
-    if (file.relativePath.endsWith('.md') && shouldRequireFooter(file.relativePath) && !hasStandardFooter(file.content)) {
+    if (file.relativePath.endsWith('.md') && shouldRequireFooter(file.relativePath) && !hasOutputSidecar(file.path)) {
       issues.push(issue(
         'warning',
-        'markdown-missing-contract-footer',
+        'markdown-missing-output-sidecar',
         file.relativePath,
-        `Markdown product artifact is missing standard footer fields: ${PRODUCT_STANDARD_FOOTER_FIELDS.join(', ')}`,
+        'Markdown product artifact has no .output.json sidecar — agents must write structured output sidecars per docs/schemas/agent-output.schema.json',
       ));
     }
 
@@ -131,8 +130,9 @@ function shouldRequireFooter(relativePath: string): boolean {
   return /\b20\d{2}-\d{2}-\d{2}\b/.test(relativePath);
 }
 
-function hasStandardFooter(content: string): boolean {
-  return PRODUCT_STANDARD_FOOTER_FIELDS.every((field) => content.includes(field));
+function hasOutputSidecar(artifactPath: string): boolean {
+  const sidecarPath = artifactPath.replace(/\.md$/, '.output.json');
+  return existsSync(sidecarPath);
 }
 
 function isValidJson(content: string): boolean {
@@ -182,7 +182,7 @@ function makeReport(
       warnings,
       registeredArtifacts: getProductArtifactRegistryEntries().length,
       unregisteredCurrentArtifacts: issues.filter((entry) => entry.code === 'unregistered-current-artifact').length,
-      markdownWithoutFooter: issues.filter((entry) => entry.code === 'markdown-missing-contract-footer').length,
+      markdownWithoutSidecar: issues.filter((entry) => entry.code === 'markdown-missing-output-sidecar').length,
       stalePressureDirectories: issues.filter((entry) => entry.code === 'stale-artifact-pressure').length,
     },
   };

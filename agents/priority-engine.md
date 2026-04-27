@@ -196,26 +196,12 @@ depends_on:
 
     ## Phase 5 - Outputs
 
-    Write:
-    - `.omc/portfolio/current.json`
-    - `.omc/portfolio/current.md` generated from the ledger when tooling is available
-    - `.omc/opportunities/YYYY-MM-DD-<slug>.md`
-    - `.omc/opportunities/current.md`
-    - `.omc/roadmap/YYYY-MM-DD-<slug>.md`
-    - `.omc/roadmap/current.md`
-
-    Both artifacts must end with:
-    ```yaml
-    status: ok | needs-research | blocked | needs-human-decision
-    evidence:
-      - <artifact path or source>
-    confidence: <0.0-1.0>
-    blocking_issues:
-      - <issue or []>
-    next_action: <agent/command and why>
-    artifacts_written:
-      - <path>
-    ```
+    Write these data artifacts:
+    - `.omc/portfolio/current.json` (portfolio ledger — existing shape, unchanged)
+    - `.omc/opportunities/YYYY-MM-DD-<slug>.md` (human-readable opportunity ranking)
+    - `.omc/opportunities/current.md` (pointer copy)
+    - `.omc/roadmap/YYYY-MM-DD-<slug>.md` (human-readable rolling roadmap)
+    - `.omc/roadmap/current.md` (pointer copy)
 
     The portfolio ledger must follow this compact JSON shape:
     ```json
@@ -241,6 +227,54 @@ depends_on:
       ]
     }
     ```
+
+    **Structured Output (REQUIRED):** After writing the above artifacts, write a structured output JSON sidecar at `.omc/opportunities/current.output.json` following `docs/schemas/agent-output.schema.json`:
+    ```json
+    {
+      "schema_version": 2,
+      "agent_role": "priority-engine",
+      "produced_at": "YYYY-MM-DD",
+      "status": "complete",
+      "primary_artifact": {
+        "path": ".omc/portfolio/current.json",
+        "status": "complete"
+      },
+      "routing": {
+        "next_recommended": [
+          { "agent": "product-cycle-controller", "purpose": "Select cycle portfolio and advance to spec", "required": true },
+          { "agent": "technology-strategist", "purpose": "ADR for selected cycle if stack gap exists", "required": false }
+        ],
+        "gate_readiness": {
+          "cycle_controller_ready": true,
+          "technology_strategy_needed": false
+        }
+      },
+      "signals": {
+        "candidate_count": 28,
+        "lane_count": 7,
+        "selected_core_slice": "first-reader-loop",
+        "selected_enabling": "project-persistence",
+        "selected_learning": "usability-interview",
+        "product_stage": "pre-mvp",
+        "weak_confidence_items": 3
+      },
+      "artifacts_produced": [
+        { "path": ".omc/portfolio/current.json", "type": "primary" },
+        { "path": ".omc/opportunities/current.md", "type": "supporting" },
+        { "path": ".omc/roadmap/current.md", "type": "supporting" }
+      ],
+      "context_consumed": [
+        ".omc/product/capability-map/current.md",
+        ".omc/meaning/current.md",
+        ".omc/ecosystem/current.md"
+      ],
+      "confidence": 0.82,
+      "evidence": [".omc/product/capability-map/current.md"],
+      "blocking_issues": []
+    }
+    ```
+
+    The Markdown artifacts (opportunities and roadmap) still use the standard footer at the end for backward compatibility with `pipeline-contract-validator`. The structured output JSON is the machine-readable source for the orchestrator.
 
     Run when available:
     ```bash

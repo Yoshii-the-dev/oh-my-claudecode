@@ -1,8 +1,52 @@
-<!-- OMC:VERSION:4.16.0 -->
+<!-- OMC:VERSION:4.17.0 -->
 # Handoff Envelope Standard
 
-**Introduced:** v4.16.0
+**Introduced:** v4.16.0  
+**Deprecated:** v4.17.0 — Replaced by **Structured Outputs** (JSON-first sidecar files)  
 **Scope:** Convention for agent outputs; enables machine-readable handoffs and downstream token savings.
+
+> [!CAUTION]
+> **This document describes the LEGACY handoff system.** As of v4.17.0, all pipeline agents use
+> **JSON Structured Outputs** (`docs/schemas/agent-output.schema.json`) instead of `<handoff>` XML tags.
+>
+> - New agents MUST write `.output.json` sidecar files, not `<handoff>` blocks.
+> - The `handoff-orchestrator` skill reads `.output.json` files exclusively.
+> - Markdown projections are generated from JSON by the runtime, not by agents.
+>
+> See `docs/schemas/agent-output.schema.json` for the canonical schema.
+
+---
+
+## v2: Structured Outputs (Current Standard)
+
+Every pipeline agent writes a **JSON sidecar file** alongside its primary artifact:
+
+```
+.omc/product/capability-map/current.md          ← human-readable (generated)
+.omc/product/capability-map/current.output.json  ← machine-readable (source of truth)
+```
+
+The JSON file follows `docs/schemas/agent-output.schema.json` and contains:
+- `routing.next_recommended` — deterministic next-agent routing
+- `signals` — scalar key-value signals for downstream agents
+- `strategy` — extended fields for technology strategist / stack-provision
+- `confidence`, `evidence`, `blocking_issues` — quality metadata
+
+The orchestrator reads ONLY the `.output.json` file. It never parses Markdown for routing decisions.
+
+### Migration from v1/v1.5
+
+| v1 (legacy) | v2 (structured outputs) |
+|---|---|
+| `<handoff>` YAML block in Markdown | `.output.json` sidecar file |
+| `next_recommended` in YAML | `routing.next_recommended` in JSON |
+| `key_signals` in YAML | `signals` in JSON |
+| `response_template` (v1.5 only) | `strategy` extension in JSON |
+| Markdown is hand-written by agent | Markdown is generated from JSON by runtime |
+
+---
+
+## v1: Legacy Envelope (Deprecated)
 
 ## Problem
 

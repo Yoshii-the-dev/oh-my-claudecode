@@ -125,7 +125,7 @@ This skill encodes the minimum backend quality chain as non-skippable stages wit
 **Protocol:**
 1. Invoke `technology-strategist` with requirements, strategy artifact, known stack, and current provisioning manifest.
 2. Technology Strategist enumerates application blocks such as auth, authorization, background jobs, telemetry, analytics, billing, ledgers, integrations, data pipelines, search, caching/rate-limiting, and compliance triggers.
-3. It produces fixed-weight scorecards, pairwise compatibility report, risk register, and handoff-envelope v2.
+3. It produces fixed-weight scorecards, pairwise compatibility report, risk register, and a structured output JSON sidecar (`.output.json` per `docs/schemas/agent-output.schema.json`).
 4. If `requirements_completeness < 0.75` or `unknown_critical_inputs >= 2`, route to `/deep-interview` or analyst clarification and pause before architecture.
 5. If `top2_score_gap < 8`, critical compatibility is `unknown`, or fresh external evidence is missing, route to `document-specialist` researcher before critic.
 6. Run critic on the technology ADR. Only `approve` may proceed. `revise` returns to technology-strategist; `rewind` hard-rewinds to capability-map and invalidates downstream artifacts.
@@ -313,7 +313,7 @@ See Stage 9 Consolidated Report + stage-specific artifacts:
 - `.omc/audits/YYYY-MM-DD-perf-<slug>.md`
 - Source files modified or created (paths in Stage 6 handoff)
 
-**Important:** Every generated artifact MUST end with a YAML Handoff Envelope v2 block. Legacy XML `<handoff>` tags are deprecated.
+**Structured Output:** Each stage writes a structured output JSON sidecar alongside its primary artifact (e.g., `.omc/handoffs/backend-pipeline-stage6.output.json`) following `docs/schemas/agent-output.schema.json`. The orchestrator reads these JSON files for routing. Legacy `<handoff>` XML tags are no longer used.
 </Output>
 
 <Failure_Modes_To_Avoid>

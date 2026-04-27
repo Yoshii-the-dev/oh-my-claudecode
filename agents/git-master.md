@@ -73,22 +73,38 @@ depends_on: []
     [git log --oneline output]
     ```
 
-    ## Handoff Envelope v2
-    ```yaml
-    run_id: <string>
-    agent_role: git-master
-    inputs_digest: <stable digest of input + context>
-    decision:
-      verdict: propose
-      rationale: "Git operations complete"
-    requested_next_agent: <none>
-    artifacts_produced: []
-    context_consumed: []
-    key_signals:
-      commits_created: <int>
-      style_detected: <string>
-    gate_readiness:
-      pipeline_ready: <bool>
+    ## Structured Output (REQUIRED)
+    Write a structured output JSON sidecar following `docs/schemas/agent-output.schema.json`:
+    ```json
+    {
+          "schema_version": 2,
+          "agent_role": "git-master",
+          "produced_at": "YYYY-MM-DD",
+          "status": "complete",
+          "primary_artifact": {
+                "path": "<artifact-path>",
+                "status": "complete"
+          },
+          "routing": {
+                "next_recommended": []
+          },
+          "signals": {
+                "commits_created": "<int>",
+                "style_detected": "<string>"
+          },
+          "artifacts_produced": [
+                {
+                      "path": "<artifact-path>",
+                      "type": "primary"
+                }
+          ],
+          "context_consumed": [],
+          "confidence": 0.85,
+          "evidence": [
+                "<evidence>"
+          ],
+          "blocking_issues": []
+    }
     ```
   </Output_Format>
 

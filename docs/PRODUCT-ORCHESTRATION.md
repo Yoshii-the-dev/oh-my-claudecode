@@ -242,7 +242,7 @@ It must:
   - Security/Compliance: 10%
   - Cost: 5%
 - produce pairwise compatibility for `auth`, `analytics`, `telemetry`, `frontend-core`, `backend-core`, and `integration-layer`.
-- emit handoff-envelope v2.
+- write a structured output JSON sidecar per `docs/schemas/agent-output.schema.json`.
 
 It must not:
 
@@ -312,7 +312,7 @@ The orchestrator owns state. Agents write artifacts.
 | Stack Provision | run contract/review/provision files | `.omc/provisioned/**`, approved skill root |
 | Backend/Product pipelines | approved plans and code | scoped source/test files |
 
-All stack strategy/provisioning handoffs use handoff-envelope v2. Malformed envelopes are rejected and corrected before the next agent runs.
+All pipeline agents write `.output.json` sidecar files per `docs/schemas/agent-output.schema.json`. The orchestrator reads these JSON files for routing. Invalid or missing structured outputs are surfaced and corrected before the next agent runs.
 
 ## Practical Command Sequence
 

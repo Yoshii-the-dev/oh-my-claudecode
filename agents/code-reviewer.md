@@ -136,24 +136,46 @@ depends_on: []
     ### Recommendation
     APPROVE / REQUEST CHANGES / COMMENT
 
-    ## Handoff Envelope v2
-    ```yaml
-    run_id: <string>
-    agent_role: code-reviewer
-    inputs_digest: <stable digest of input + context>
-    decision:
-      verdict: approve | request-changes | comment
-      rationale: "Code review complete"
-    requested_next_agent: <executor | none>
-    artifacts_produced: []
-    context_consumed: []
-    key_signals:
-      critical_issues: <int>
-      high_issues: <int>
-      medium_issues: <int>
-      low_issues: <int>
-    gate_readiness:
-      merge_ready: <bool>
+    ## Structured Output (REQUIRED)
+    Write a structured output JSON sidecar following `docs/schemas/agent-output.schema.json`:
+    ```json
+    {
+          "schema_version": 2,
+          "agent_role": "code-reviewer",
+          "produced_at": "YYYY-MM-DD",
+          "status": "complete",
+          "primary_artifact": {
+                "path": "<artifact-path>",
+                "status": "complete"
+          },
+          "routing": {
+                "next_recommended": [
+                      {
+                            "agent": "executor",
+                            "purpose": "<purpose>",
+                            "required": true
+                      }
+                ]
+          },
+          "signals": {
+                "critical_issues": "<int>",
+                "high_issues": "<int>",
+                "medium_issues": "<int>",
+                "low_issues": "<int>"
+          },
+          "artifacts_produced": [
+                {
+                      "path": "<artifact-path>",
+                      "type": "primary"
+                }
+          ],
+          "context_consumed": [],
+          "confidence": 0.85,
+          "evidence": [
+                "<evidence>"
+          ],
+          "blocking_issues": []
+    }
     ```
   </Output_Format>
 

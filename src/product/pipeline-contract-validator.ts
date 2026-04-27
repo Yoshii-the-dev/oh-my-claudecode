@@ -2,10 +2,10 @@ import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import {
   PRODUCT_ARTIFACT_PATHS,
-  PRODUCT_STANDARD_FOOTER_FIELDS,
   type ProductPipelineArtifactName,
   type ProductPipelineContractStage,
 } from './pipeline-registry.js';
+import { validateAgentOutput, type AgentOutput } from './agent-output.js';
 import {
   CYCLE_DOCUMENT_RELATIVE_PATH,
   readCycleDocument,
@@ -355,7 +355,7 @@ function validateCapabilityMap(content: string, result: ProductPipelineArtifactR
     'Backend/Product Split',
   ]);
 
-  if (hasRequestedNextAgent(content, 'technology-strategist') && !hasRequestedNextAgent(content, 'priority-engine')) {
+  if (hasRequestedNextAgent(content, result.path, 'technology-strategist') && !hasRequestedNextAgent(content, result.path, 'priority-engine')) {
     addIssue(
       result,
       'error',
@@ -365,7 +365,7 @@ function validateCapabilityMap(content: string, result: ProductPipelineArtifactR
   }
 
   result.metrics.hasFirstUsableLoop = containsAny(content, ['first usable loop', 'usable loop']);
-  validateHandoffBasics(content, result, false);
+  validateStructuredOutput(result);
 }
 
 function validateMeaningGraph(content: string, result: ProductPipelineArtifactResult): void {
@@ -397,7 +397,7 @@ function validateEcosystemMap(content: string, result: ProductPipelineArtifactRe
     'v2',
     'research gate',
   ]);
-  validateStandardFooter(content, result);
+  validateStructuredOutput(result);
 }
 
 function validateOpportunities(content: string, result: ProductPipelineArtifactResult): void {
@@ -437,7 +437,7 @@ function validateOpportunities(content: string, result: ProductPipelineArtifactR
     addIssue(result, 'error', 'missing-cycle-portfolio', 'Missing selected cycle portfolio with core product slice, enabling task, and learning/research task');
   }
 
-  validateStandardFooter(content, result);
+  validateStructuredOutput(result);
 }
 
 function validatePortfolioLedgerArtifact(content: string, result: ProductPipelineArtifactResult): void {
@@ -588,7 +588,7 @@ function validateRoadmap(content: string, result: ProductPipelineArtifactResult)
     addIssue(result, 'warning', 'fixed-long-roadmap', 'Roadmap mentions 24-week planning; keep product roadmap rolling rather than fixed long-range planning');
   }
 
-  validateStandardFooter(content, result);
+  validateStructuredOutput(result);
 }
 
 function validateExperienceGate(content: string, result: ProductPipelineArtifactResult): void {
@@ -607,7 +607,7 @@ function validateExperienceGate(content: string, result: ProductPipelineArtifact
     addIssue(result, 'error', 'experience-gate-not-passed', 'Experience gate UX Verdict must be exactly pass before user-facing build');
   }
 
-  validateStandardFooter(content, result);
+  validateStructuredOutput(result);
 }
 
 function validateCycle(content: string, result: ProductPipelineArtifactResult): void {
@@ -658,7 +658,7 @@ function validateCycle(content: string, result: ProductPipelineArtifactResult): 
     addIssue(result, 'error', 'complete-without-learning', 'Completed cycle must reference .omc/learning/current.md');
   }
 
-  validateStandardFooter(content, result);
+  validateStructuredOutput(result);
 }
 
 function validateLearning(content: string, result: ProductPipelineArtifactResult): void {
@@ -669,44 +669,57 @@ function validateLearning(content: string, result: ProductPipelineArtifactResult
     'invalidated assumptions',
     'recommended next cycle',
   ]);
-  validateStandardFooter(content, result);
+  validateStructuredOutput(result);
 }
 
-function validateStandardFooter(content: string, result: ProductPipelineArtifactResult): void {
-  const missing = PRODUCT_STANDARD_FOOTER_FIELDS.filter((field) => !hasFooterField(content, field));
-  if (missing.length > 0) {
-    addIssue(result, 'error', 'missing-standard-footer', `Missing standard footer fields: ${missing.join(', ')}`);
-  }
+/**
+ * Resolve the `.output.json` sidecar path for a given artifact path.
+ * For `.md` artifacts: replaces `.md` with `.output.json`.
+ * For `.json` artifacts: replaces `.json` with `.output.json`.
+ */
+function resolveSidecarPath(artifactPath: string): string {
+  if (artifactPath.endsWith('.md')) return artifactPath.replace(/\.md$/, '.output.json');
+  if (artifactPath.endsWith('.json')) return artifactPath.replace(/\.json$/, '.output.json');
+  return `${artifactPath}.output.json`;
+}
 
-  const status = readField(content, 'status');
-  const confidence = readField(content, 'confidence');
-  const nextAction = readField(content, 'next_action');
-  const evidence = readListOrInline(content, 'evidence');
-  const artifacts = readListOrInline(content, 'artifacts_written');
-
-  if (status !== undefined && isPlaceholderValue(status)) {
-    addIssue(result, 'error', 'placeholder-footer-status', 'status must not be empty or placeholder');
-  }
-  if (confidence !== undefined && isPlaceholderValue(confidence)) {
-    addIssue(result, 'error', 'placeholder-footer-confidence', 'confidence must not be empty or placeholder');
-  }
-  if (nextAction !== undefined && isPlaceholderValue(nextAction)) {
-    addIssue(result, 'error', 'placeholder-footer-next-action', 'next_action must not be empty or placeholder');
-  }
-  if (hasFooterField(content, 'evidence:') && evidence.length === 0) {
-    addIssue(result, 'error', 'empty-footer-evidence', 'evidence must include at least one entry');
-  }
-  if (hasFooterField(content, 'artifacts_written:') && artifacts.length === 0) {
-    addIssue(result, 'error', 'empty-footer-artifacts-written', 'artifacts_written must include at least one entry');
+/**
+ * Read and parse an agent output sidecar file if it exists.
+ */
+function readAgentOutputSidecar(artifactPath: string): AgentOutput | undefined {
+  const sidecarPath = resolveSidecarPath(artifactPath);
+  if (!existsSync(sidecarPath)) return undefined;
+  try {
+    return JSON.parse(readFileSync(sidecarPath, 'utf-8')) as AgentOutput;
+  } catch {
+    return undefined;
   }
 }
 
-function validateHandoffBasics(content: string, result: ProductPipelineArtifactResult, required: boolean): void {
-  const hasHandoff = containsAll(content, ['run_id:', 'agent_role:', 'requested_next_agent:', 'artifacts_produced:']);
-  result.metrics.hasHandoffEnvelope = hasHandoff;
-  if (required && !hasHandoff) {
-    addIssue(result, 'error', 'missing-handoff-envelope', 'Missing minimal handoff envelope fields');
+/**
+ * Validates the structured output JSON sidecar for an artifact.
+ * This replaces both the old validateStandardFooter and validateHandoffBasics.
+ */
+function validateStructuredOutput(result: ProductPipelineArtifactResult): void {
+  const sidecar = readAgentOutputSidecar(result.path);
+
+  if (!sidecar) {
+    addIssue(result, 'warning', 'missing-structured-output', `No .output.json sidecar found for ${result.artifact}`);
+    result.metrics.hasStructuredOutput = false;
+    return;
   }
+
+  result.metrics.hasStructuredOutput = true;
+
+  const validation = validateAgentOutput(sidecar);
+  if (!validation.ok) {
+    for (const issue of validation.issues) {
+      addIssue(result, 'error', `structured-output-${issue.code}`, issue.message);
+    }
+    return;
+  }
+
+  result.metrics.hasHandoffEnvelope = true;
 }
 
 function requireTerms(
@@ -747,7 +760,15 @@ function containsAll(content: string, terms: string[]): boolean {
   return terms.every((term) => containsTerm(content, term));
 }
 
-function hasRequestedNextAgent(content: string, agent: string): boolean {
+function hasRequestedNextAgent(content: string, artifactPath: string, agent: string): boolean {
+  // Check JSON sidecar first (new standard)
+  const sidecar = readAgentOutputSidecar(artifactPath);
+  if (sidecar?.routing?.next_recommended) {
+    return sidecar.routing.next_recommended.some(
+      (rec) => rec.agent.toLowerCase() === agent.toLowerCase(),
+    );
+  }
+  // Fallback: check Markdown content (legacy)
   return new RegExp(`requested_next_agent:\\s*['"]?${escapeRegExp(agent)}['"]?`, 'i').test(content);
 }
 

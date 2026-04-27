@@ -143,27 +143,48 @@ depends_on:
     - designer: [list of findings requiring UI/visual changes]
     - executor: [list of findings requiring code changes only]
 
-    ## Handoff Envelope v2
-    ```yaml
-    run_id: <string>
-    agent_role: accessibility-auditor
-    inputs_digest: <stable digest of input + context>
-    decision:
-      verdict: approve | revise | reject
-      rationale: "Accessibility audit complete"
-    requested_next_agent: <executor | designer | none>
-    artifacts_produced:
-      - path: ".omc/audits/YYYY-MM-DD-a11y-<scope>.md"
-        type: primary
-    context_consumed:
-      - ".omc/constitution.md"
-    key_signals:
-      critical_issues: <int>
-      major_issues: <int>
-      contrast_failures: <int>
-      aria_failures: <int>
-    gate_readiness:
-      pipeline_ready: <bool>
+    ## Structured Output (REQUIRED)
+    Write a structured output JSON sidecar following `docs/schemas/agent-output.schema.json`:
+    ```json
+    {
+          "schema_version": 2,
+          "agent_role": "accessibility-auditor",
+          "produced_at": "YYYY-MM-DD",
+          "status": "complete",
+          "primary_artifact": {
+                "path": ".omc/audits/YYYY-MM-DD-a11y-<scope>.md",
+                "status": "complete"
+          },
+          "routing": {
+                "next_recommended": [
+                      {
+                            "agent": "executor",
+                            "purpose": "<purpose>",
+                            "required": true
+                      }
+                ]
+          },
+          "signals": {
+                "critical_issues": "<int>",
+                "major_issues": "<int>",
+                "contrast_failures": "<int>",
+                "aria_failures": "<int>"
+          },
+          "artifacts_produced": [
+                {
+                      "path": ".omc/audits/YYYY-MM-DD-a11y-<scope>.md",
+                      "type": "primary"
+                }
+          ],
+          "context_consumed": [
+                ".omc/constitution.md"
+          ],
+          "confidence": 0.85,
+          "evidence": [
+                ".omc/constitution.md"
+          ],
+          "blocking_issues": []
+    }
     ```
   </Output_Format>
 

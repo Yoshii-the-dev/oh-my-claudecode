@@ -242,31 +242,50 @@ depends_on:
     - deep-interview: run if blocking unknowns remain.
     - ideate: run if differentiators are too weak or competitor whitespace is unclear.
 
-    ### Handoff Envelope v2
-    ```yaml
-    run_id: <string>
-    agent_role: product-strategist
-    inputs_digest: <stable digest of input + context>
-    decision:
-      verdict: propose
-      rationale: "Capability map synthesized"
-    requested_next_agent: priority-engine
-    artifacts_produced:
-      - path: ".omc/product/capability-map/YYYY-MM-DD-<slug>.md"
-        type: primary
-      - path: ".omc/product/capability-map/current.md"
-        type: supporting
-    context_consumed:
-      - ".omc/constitution.md"
-      - ".omc/competitors/landscape/current.md"
-    key_signals:
-      mvp_feature_count: <number>
-      required_system_count: <number>
-      blocked_capability_count: <number>
-      unknown_blocking_count: <number>
-    gate_readiness:
-      priority_engine_ready: true | false
-      technology_strategy_ready: true | false
+    ### Structured Output (REQUIRED)
+    After writing the capability map, write a structured output JSON sidecar at `.omc/product/capability-map/current.output.json` following `docs/schemas/agent-output.schema.json`:
+    ```json
+    {
+      "schema_version": 2,
+      "agent_role": "product-strategist",
+      "produced_at": "YYYY-MM-DD",
+      "status": "complete",
+      "primary_artifact": {
+        "path": ".omc/product/capability-map/YYYY-MM-DD-<slug>.md",
+        "status": "complete"
+      },
+      "routing": {
+        "next_recommended": [
+          { "agent": "priority-engine", "purpose": "Rank the capability map into a living portfolio", "required": true },
+          { "agent": "technology-strategist", "purpose": "ADR for selected cycle if stack gap exists", "required": false }
+        ],
+        "gate_readiness": {
+          "priority_engine_ready": true,
+          "technology_strategy_ready": false
+        }
+      },
+      "signals": {
+        "mvp_feature_count": 5,
+        "required_system_count": 8,
+        "blocked_capability_count": 0,
+        "unknown_blocking_count": 0,
+        "first_usable_loop_defined": true
+      },
+      "artifacts_produced": [
+        { "path": ".omc/product/capability-map/YYYY-MM-DD-<slug>.md", "type": "primary" },
+        { "path": ".omc/product/capability-map/current.md", "type": "supporting" }
+      ],
+      "context_consumed": [
+        ".omc/constitution.md",
+        ".omc/competitors/landscape/current.md"
+      ],
+      "confidence": 0.85,
+      "evidence": [
+        ".omc/constitution.md",
+        ".omc/competitors/landscape/current.md"
+      ],
+      "blocking_issues": []
+    }
     ```
   </Output_Format>
 

@@ -102,26 +102,50 @@ depends_on:
     - Responsive: [breakpoints tested]
     - Accessible: [ARIA labels, keyboard nav]
 
-    ### Handoff Envelope v2
-    ```yaml
-    run_id: <string>
-    agent_role: designer
-    inputs_digest: <stable digest of input + context>
-    decision:
-      verdict: propose
-      rationale: "UI components implemented and styled"
-    requested_next_agent: <executor | none>
-    artifacts_produced: []
-    context_consumed:
-      - "package.json"
-      - ".omc/ux/YYYY-MM-DD-<feature>.md"
-    key_signals:
-      components_created: <int>
-      components_modified: <int>
-      verified_renders: <bool>
-      verified_responsive: <bool>
-    gate_readiness:
-      executor_ready: <bool>
+    ## Structured Output (REQUIRED)
+    Write a structured output JSON sidecar following `docs/schemas/agent-output.schema.json`:
+    ```json
+    {
+          "schema_version": 2,
+          "agent_role": "designer",
+          "produced_at": "YYYY-MM-DD",
+          "status": "complete",
+          "primary_artifact": {
+                "path": "<artifact-path>",
+                "status": "complete"
+          },
+          "routing": {
+                "next_recommended": [
+                      {
+                            "agent": "executor",
+                            "purpose": "<purpose>",
+                            "required": true
+                      }
+                ]
+          },
+          "signals": {
+                "components_created": "<int>",
+                "components_modified": "<int>",
+                "verified_renders": "<bool>",
+                "verified_responsive": "<bool>"
+          },
+          "artifacts_produced": [
+                {
+                      "path": "<artifact-path>",
+                      "type": "primary"
+                }
+          ],
+          "context_consumed": [
+                "package.json",
+                ".omc/ux/YYYY-MM-DD-<feature>.md"
+          ],
+          "confidence": 0.85,
+          "evidence": [
+                "package.json",
+                ".omc/ux/YYYY-MM-DD-<feature>.md"
+          ],
+          "blocking_issues": []
+    }
     ```
   </Output_Format>
 

@@ -576,68 +576,79 @@ writes:
     ## Open Gaps
     - <gap + recommended next agent/skill>
     ```
-
-    ## Handoff Envelope (MANDATORY per docs/HANDOFF-ENVELOPE.md)
-
-    Every run appends `<handoff>` block at the end of `.omc/brand/core.md`:
-
-    ```yaml
-    <handoff>
-      schema_version: 1
-      produced_by: brand-architect
-      produced_at: YYYY-MM-DD
-      primary_artifact:
-        path: ".omc/brand/core.md"
-        status: complete | partial
-      next_recommended:
-        # If inspiration library <3 sources:
-        - agent: user
-          purpose: "Provide inspiration URLs; run /inspiration-fetch; re-run brand-architect --inspiration"
-          required: true
-        # Else:
-        - skill: brand-variations-generate
-          purpose: "Generate first test campaign from grammar"
-          required: false
-        # If constitution status: draft:
-        - agent: brand-steward
-          purpose: "Close strategic foundation gaps"
-          required: false
-      key_signals:
-        archetype_primary: <name>
-        archetype_secondary: <name or null>
-        grammar_invariant_count: <int>
-        grammar_variable_count: <int>
-        anti_template_patterns_count: <int>
-        inspiration_source_count: <int>
-        inspiration_axes_covered: <int>
-        constitution_status: complete | partial | draft | absent
-      gate_readiness:
-        campaign_composer_ready: <bool>  # true if ≥3 inspiration sources + grammar complete
-        inspiration_library_seeded: <bool>
-        refinement_recommended_at: "YYYY-MM-DD (≈14 days from now)"
-      artifacts_produced:
-        - path: ".omc/brand/core.md"
-          type: primary
-        - path: ".omc/brand/grammar.md"
-          type: primary
-        - path: ".omc/brand/inspiration.md"
-          type: primary
-        - path: ".omc/meaning/current.md"
-          type: supporting
-      context_consumed:
-        - ".omc/constitution.md"
-        - ".omc/digests/competitors-landscape.md"
-        - ".omc/competitors/index.md"
-        - ".omc/competitors/landscape/current.md"
-        - ".omc/digests/research-highlights.md"
-        - ".omc/research/current.md"
-        - ".omc/brand/core.md"
-        - ".omc/brand/grammar.md"
-        - ".omc/brand/inspiration.md"
-        - ".omc/brand/index.md"
-      requires_user_input:
-        # Populated when inspiration library <3 sources, or core metaphor needs concreteness check
-    </handoff>
+    ## Structured Output (REQUIRED)
+    Write a structured output JSON sidecar following `docs/schemas/agent-output.schema.json`:
+    ```json
+    {
+          "schema_version": 2,
+          "agent_role": "brand-architect",
+          "produced_at": "YYYY-MM-DD",
+          "status": "complete",
+          "primary_artifact": {
+                "path": ".omc/brand/core.md",
+                "status": "complete"
+          },
+          "routing": {
+                "next_recommended": [],
+                "gate_readiness": {
+                      "campaign_composer_ready": true,
+                      "inspiration_library_seeded": true,
+                      "refinement_recommended_at": true,
+                      "type": true
+                }
+          },
+          "signals": {
+                "archetype_primary": "<name>",
+                "archetype_secondary": "<name or null>",
+                "grammar_invariant_count": "<int>",
+                "grammar_variable_count": "<int>",
+                "anti_template_patterns_count": "<int>",
+                "inspiration_source_count": "<int>",
+                "inspiration_axes_covered": "<int>",
+                "constitution_status": "<complete | partial | draft | absent>",
+                "campaign_composer_ready": "<bool  # true if ≥3 inspiration sources + grammar complete>",
+                "inspiration_library_seeded": "<bool>",
+                "refinement_recommended_at": "<\"YYYY-MM-DD (≈14 days from now)\">",
+                "type": "<supporting>"
+          },
+          "artifacts_produced": [
+                {
+                      "path": ".omc/brand/core.md",
+                      "type": "primary"
+                },
+                {
+                      "path": ".omc/brand/grammar.md",
+                      "type": "primary"
+                },
+                {
+                      "path": ".omc/brand/inspiration.md",
+                      "type": "primary"
+                },
+                {
+                      "path": ".omc/meaning/current.md",
+                      "type": "primary"
+                }
+          ],
+          "context_consumed": [
+                ".omc/constitution.md",
+                ".omc/digests/competitors-landscape.md",
+                ".omc/competitors/index.md",
+                ".omc/competitors/landscape/current.md",
+                ".omc/digests/research-highlights.md",
+                ".omc/research/current.md",
+                ".omc/brand/core.md",
+                ".omc/brand/grammar.md",
+                ".omc/brand/inspiration.md",
+                ".omc/brand/index.md"
+          ],
+          "confidence": 0.85,
+          "evidence": [
+                ".omc/constitution.md",
+                ".omc/digests/competitors-landscape.md"
+          ],
+          "blocking_issues": []
+    }
+    ```
     ```
   </Output_Contract>
 

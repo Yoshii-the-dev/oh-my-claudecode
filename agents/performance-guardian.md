@@ -160,26 +160,47 @@ depends_on:
     - executor: [list of findings requiring code changes]
     - architect: [list of findings requiring structural changes]
 
-    ## Handoff Envelope v2
-    ```yaml
-    run_id: <string>
-    agent_role: performance-guardian
-    inputs_digest: <stable digest of input + context>
-    decision:
-      verdict: approve | revise | reject
-      rationale: "Performance audit complete"
-    requested_next_agent: <executor | architect | none>
-    artifacts_produced:
-      - path: ".omc/audits/YYYY-MM-DD-perf-<scope>.md"
-        type: primary
-    context_consumed:
-      - ".omc/constitution.md"
-    key_signals:
-      critical_issues: <int>
-      major_issues: <int>
-      budget_breaches: <int>
-    gate_readiness:
-      pipeline_ready: <bool>
+    ## Structured Output (REQUIRED)
+    Write a structured output JSON sidecar following `docs/schemas/agent-output.schema.json`:
+    ```json
+    {
+          "schema_version": 2,
+          "agent_role": "performance-guardian",
+          "produced_at": "YYYY-MM-DD",
+          "status": "complete",
+          "primary_artifact": {
+                "path": ".omc/audits/YYYY-MM-DD-perf-<scope>.md",
+                "status": "complete"
+          },
+          "routing": {
+                "next_recommended": [
+                      {
+                            "agent": "executor",
+                            "purpose": "<purpose>",
+                            "required": true
+                      }
+                ]
+          },
+          "signals": {
+                "critical_issues": "<int>",
+                "major_issues": "<int>",
+                "budget_breaches": "<int>"
+          },
+          "artifacts_produced": [
+                {
+                      "path": ".omc/audits/YYYY-MM-DD-perf-<scope>.md",
+                      "type": "primary"
+                }
+          ],
+          "context_consumed": [
+                ".omc/constitution.md"
+          ],
+          "confidence": 0.85,
+          "evidence": [
+                ".omc/constitution.md"
+          ],
+          "blocking_issues": []
+    }
     ```
   </Output_Format>
 

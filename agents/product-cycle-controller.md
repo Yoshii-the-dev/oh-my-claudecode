@@ -222,49 +222,72 @@ depends_on:
     Update `.omc/cycles/current.md` to `cycle_stage: complete` only after learning is captured.
   </Cycle_State_Machine>
 
-  <Cycle_Artifact_Template>
-    ```markdown
-    # Product Cycle: <cycle goal>
+  <Structured_Output>
+    After writing the cycle document (`.omc/cycles/current.json` via `omc product-cycle advance`), you MUST also write a structured output JSON sidecar at `.omc/cycles/current.output.json` following `docs/schemas/agent-output.schema.json`.
 
-    cycle_id: YYYY-MM-DD-<slug>
-    cycle_stage: discover | rank | select | spec | build | verify | learn | complete | blocked
-    product_stage: empty | pre-mvp | mvp | post-mvp
+    The Markdown projection (`.omc/cycles/current.md`) is generated automatically from the JSON by the runtime. Do NOT write the Markdown file yourself.
 
-    ## Stage Checklist
-    - [ ] discover
-    - [ ] rank
-    - [ ] select
-    - [ ] spec
-    - [ ] build
-    - [ ] verify
-    - [ ] learn
-
-    ## Selected Cycle Portfolio
-    core_product_slice: <slice>
-    enabling_task: <task>
-    learning_task: <task>
-
-    ## Cycle Spec
-    acceptance_criteria:
-      - <testable outcome>
-    build_route: product-pipeline | backend-pipeline | both | blocked
-    verification_plan:
-      - <command or evidence>
-    learning_plan:
-      - <research/distribution/user signal>
-    experience_gate: .omc/experience/current.md
-
-    status: ok | needs-research | blocked | needs-human-decision
-    evidence:
-      - <artifact path or source>
-    confidence: <0.0-1.0>
-    blocking_issues:
-      - <issue or []>
-    next_action: <agent/command and why>
-    artifacts_written:
-      - ".omc/cycles/current.md"
+    Example `.omc/cycles/current.output.json`:
+    ```json
+    {
+      "schema_version": 2,
+      "agent_role": "product-cycle-controller",
+      "produced_at": "2026-04-27",
+      "status": "complete",
+      "primary_artifact": {
+        "path": ".omc/cycles/current.json",
+        "status": "complete"
+      },
+      "routing": {
+        "next_recommended": [
+          {
+            "agent": "product-pipeline",
+            "purpose": "Build core product slice from cycle spec",
+            "required": true
+          }
+        ],
+        "gate_readiness": {
+          "discovery_complete": true,
+          "priority_ranked": true,
+          "cycle_selected": true,
+          "experience_gate_passed": true
+        }
+      },
+      "signals": {
+        "cycle_stage": "build",
+        "product_stage": "pre-mvp",
+        "build_route": "product-pipeline",
+        "core_slice": "pattern-reader-loop",
+        "enabling_task": "project-persistence",
+        "learning_task": "usability-interview-plan"
+      },
+      "artifacts_produced": [
+        { "path": ".omc/cycles/current.json", "type": "primary" },
+        { "path": ".omc/cycles/current.md", "type": "supporting" }
+      ],
+      "context_consumed": [
+        ".omc/portfolio/current.json",
+        ".omc/opportunities/current.md",
+        ".omc/experience/current.md"
+      ],
+      "confidence": 0.85,
+      "evidence": [
+        ".omc/portfolio/current.json",
+        ".omc/experience/current.md"
+      ],
+      "blocking_issues": []
+    }
     ```
-  </Cycle_Artifact_Template>
+
+    The `routing.next_recommended` array determines what the orchestrator invokes next. Map cycle stages to agents:
+    - `discover` → `product-foundation` or `ideate`
+    - `rank` → `priority-engine`
+    - `select` → (controller itself selects from portfolio)
+    - `spec` → `product-experience-gate`
+    - `build` → `product-pipeline` and/or `backend-pipeline`
+    - `verify` → `verifier`
+    - `learn` → (controller itself captures learning)
+  </Structured_Output>
 
   <Failure_Modes_To_Avoid>
     - Treating `/product-cycle` as another planning report with no state transitions.

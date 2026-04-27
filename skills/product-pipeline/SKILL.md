@@ -99,7 +99,7 @@ This skill makes every gate non-skippable. Each stage's output becomes the next 
 
 **Protocol:**
 1. Invoke `technology-strategist` with the feature, strategy artifact path, current stack, brand/constitution context, and known provisioned manifest.
-2. Technology Strategist classifies the product/domain, maps application blocks, produces weighted scorecard, compatibility report, risk register, and handoff-envelope v2.
+2. Technology Strategist classifies the product/domain, maps application blocks, produces weighted scorecard, compatibility report, risk register, and structured output JSON sidecar.
 3. If `requirements_completeness < 0.75` or `unknown_critical_inputs >= 2`, route to `/deep-interview` and pause this pipeline until the missing inputs are resolved.
 4. If `top2_score_gap < 8`, critical compatibility is `unknown`, or fresh external evidence is missing, route to `document-specialist` researcher before critic.
 5. Run critic on the technology ADR. Only `approve` may proceed. `revise` returns to technology-strategist; `rewind` hard-rewinds to capability-map and invalidates downstream stack/provision artifacts.
@@ -265,7 +265,7 @@ Final pipeline report aggregating outputs from all completed stages:
 [MAJOR/MINOR findings from quality audits, open research questions, study plans]
 ```
 
-**Important:** Every generated artifact MUST end with a YAML Handoff Envelope v2 block. Legacy XML `<handoff>` tags are deprecated.
+**Structured Output:** Each stage writes a structured output JSON sidecar alongside its primary artifact (e.g., `.omc/handoffs/product-pipeline-stage5.output.json`) following `docs/schemas/agent-output.schema.json`. The orchestrator reads these JSON files for routing. Legacy `<handoff>` XML tags are no longer used.
 </Output>
 
 <Failure_Modes_To_Avoid>
