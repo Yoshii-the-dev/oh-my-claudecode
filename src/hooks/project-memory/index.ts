@@ -6,7 +6,7 @@
 import path from "path";
 import fs from "fs/promises";
 import { contextCollector } from "../../features/context-injector/collector.js";
-import { emit } from "../../telemetry/writer.js";
+import { emitHookEvent } from "../../telemetry/emit.js";
 import { findProjectRoot } from "../rules-injector/finder.js";
 import {
   loadProjectMemory,
@@ -44,9 +44,10 @@ export async function registerProjectMemoryContext(
   sessionId: string,
   workingDirectory: string,
 ): Promise<boolean> {
-  void emit({ directory: workingDirectory, stream: 'hook-events', payload: { hook_name: 'project-memory', event: 'fired' } });
+  const t0 = Date.now();
   const projectRoot = findProjectRoot(workingDirectory);
   if (!projectRoot) {
+    void emitHookEvent({ directory: workingDirectory, session_id: sessionId, hook_name: 'project-memory', event: 'fired', latency_ms: Date.now() - t0 });
     return false;
   }
 
@@ -117,9 +118,11 @@ export async function registerProjectMemoryContext(
     });
 
     cache.add(cacheKey);
+    void emitHookEvent({ directory: workingDirectory, session_id: sessionId, hook_name: 'project-memory', event: 'fired', latency_ms: Date.now() - t0 });
     return true;
   } catch (error) {
     console.error("Error registering project memory context:", error);
+    void emitHookEvent({ directory: workingDirectory, session_id: sessionId, hook_name: 'project-memory', event: 'fired', latency_ms: Date.now() - t0 });
     return false;
   }
 }

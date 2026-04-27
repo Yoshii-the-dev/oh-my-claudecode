@@ -29,7 +29,7 @@ import {
   SYNTHETIC_THINKING_ID_PREFIX,
   HOOK_NAME,
 } from "./constants.js";
-import { emit } from "../../telemetry/writer.js";
+import { emitHookEvent } from "../../telemetry/emit.js";
 
 export * from "./types.js";
 export * from "./constants.js";
@@ -157,7 +157,7 @@ export function validateMessage(
 export function createThinkingBlockValidatorHook(): MessagesTransformHook {
   return {
     "experimental.chat.messages.transform": async (_input, output) => {
-      void emit({ directory: process.cwd(), stream: 'hook-events', payload: { hook_name: 'thinking-block-validator', event: 'fired' } });
+      void emitHookEvent({ directory: process.cwd(), hook_name: 'thinking-block-validator', event: 'fired' });
       const { messages } = output;
 
       if (!messages || messages.length === 0) {

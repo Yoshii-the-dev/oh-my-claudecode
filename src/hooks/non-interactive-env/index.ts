@@ -1,6 +1,6 @@
 import type { ShellHook } from "./types.js"
 import { HOOK_NAME, NON_INTERACTIVE_ENV, SHELL_COMMAND_PATTERNS } from "./constants.js"
-import { emit } from "../../telemetry/writer.js"
+import { emitHookEvent } from "../../telemetry/emit.js"
 
 export * from "./constants.js"
 export * from "./detector.js"
@@ -60,7 +60,7 @@ export const nonInteractiveEnvHook: ShellHook = {
   name: HOOK_NAME,
 
   async beforeCommand(command: string): Promise<{ command: string; warning?: string }> {
-    void emit({ directory: process.cwd(), stream: 'hook-events', payload: { hook_name: 'non-interactive-env', event: 'fired' } });
+    void emitHookEvent({ directory: process.cwd(), hook_name: 'non-interactive-env', event: 'fired' });
     // Check for banned interactive commands
     const bannedCmd = detectBannedCommand(command)
     const warning = bannedCmd

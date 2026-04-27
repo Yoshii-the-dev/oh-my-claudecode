@@ -29,6 +29,7 @@ import { formatOmcCliInvocation } from "../utils/omc-cli-rendering.js";
 import { createSwallowedErrorLogger } from "../lib/swallowed-error.js";
 import { readCanonicalTeamStateCandidate } from "./team-canonical-state.js";
 import { emitUserCorrection } from "../telemetry/emit.js";
+import { emit } from "../telemetry/writer.js";
 import { hashFilePath } from "../telemetry/redact.js";
 
 // Hot-path imports: needed on every/most hook invocations (keyword-detector, pre/post-tool-use)
@@ -1123,6 +1124,8 @@ async function processKeywordDetector(input: HookInput): Promise<HookOutput> {
       sessionId,
       "prompt-submit:explicit-slash",
     );
+    // Telemetry: Skill detection
+    void emit({ directory, stream: 'skill-events', payload: { event: 'detected', skill_slug: explicitSlash.skill, keyword: explicitSlash.keyword } });
     await seedModeStateForExplicitWorkflowSlash(
       explicitSlash.skill,
       directory,

@@ -12,7 +12,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { tmpdir } from 'os';
-import { emit } from '../../telemetry/writer.js';
+import { emitHookEvent } from '../../telemetry/emit.js';
 import {
   HOOK_MESSAGE_HEADER,
   LINE_COMMENT_PATTERNS,
@@ -245,7 +245,7 @@ export function createCommentCheckerHook(config?: CommentCheckerConfig) {
       tool_input: Record<string, unknown>;
     }): { decision: string } | null => {
       const toolLower = input.tool_name.toLowerCase();
-      void emit({ directory: process.cwd(), stream: 'hook-events', payload: { hook_name: 'comment-checker', event: 'pre_tool_use', tool: toolLower } });
+      void emitHookEvent({ directory: process.cwd(), session_id: input.session_id, hook_name: 'comment-checker', event: 'pre_tool_use', tool: toolLower });
 
       if (
         toolLower !== 'write' &&
