@@ -14,7 +14,7 @@ import { createContentHash, isDuplicateByContentHash, isDuplicateByRealPath, sho
 import { parseRuleFrontmatter } from './parser.js';
 import { clearInjectedRules, loadInjectedRules, saveInjectedRules, } from './storage.js';
 import { TRACKED_TOOLS } from './constants.js';
-import { emit } from '../../telemetry/writer.js';
+import { emitHookEvent } from '../../telemetry/emit.js';
 // Re-export all submodules
 export * from './types.js';
 export * from './constants.js';
@@ -29,7 +29,7 @@ export * from './storage.js';
  * @returns Hook handlers for tool execution
  */
 export function createRulesInjectorHook(workingDirectory) {
-    void emit({ directory: workingDirectory, stream: 'hook-events', payload: { hook_name: 'rules-injector', event: 'fired' } });
+    void emitHookEvent({ directory: workingDirectory, hook_name: 'rules-injector', event: 'fired' });
     const sessionCaches = new Map();
     function getSessionCache(sessionId) {
         if (!sessionCaches.has(sessionId)) {
@@ -117,7 +117,16 @@ export function createRulesInjectorHook(workingDirectory) {
             if (!TRACKED_TOOLS.includes(toolName.toLowerCase())) {
                 return '';
             }
+            const t0 = Date.now();
             const rules = processFilePathForRules(filePath, sessionId);
+            const latency_ms = Date.now() - t0;
+            void emitHookEvent({
+                directory: workingDirectory,
+                session_id: sessionId,
+                hook_name: 'rules-injector',
+                event: 'rules_processed',
+                latency_ms
+            });
             return formatRulesForInjection(rules);
         },
         /**

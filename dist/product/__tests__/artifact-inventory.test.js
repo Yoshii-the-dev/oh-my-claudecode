@@ -17,17 +17,17 @@ describe('product artifact inventory', () => {
         expect(report.ok).toBe(true);
         expect(report.filesScanned).toBe(0);
     });
-    it('flags unregistered current artifacts and markdown without contract footer', () => {
+    it('flags unregistered current artifacts and markdown without output sidecar', () => {
         const root = createRoot();
         writeArtifact(root, '.omc/research/current.md', '# Research\n');
         writeArtifact(root, '.omc/opportunities/current.md', '# Opportunities\n');
         const report = validateProductArtifactInventory(root);
         expect(report.ok).toBe(true);
         expect(report.summary.unregisteredCurrentArtifacts).toBe(1);
-        expect(report.summary.markdownWithoutFooter).toBe(2);
+        expect(report.summary.markdownWithoutSidecar).toBe(2);
         expect(report.issues.map((issue) => issue.code)).toEqual(expect.arrayContaining([
             'unregistered-current-artifact',
-            'markdown-missing-contract-footer',
+            'markdown-missing-output-sidecar',
         ]));
     });
     it('treats invalid registered JSON as an error', () => {

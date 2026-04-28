@@ -1125,7 +1125,7 @@ async function processKeywordDetector(input: HookInput): Promise<HookOutput> {
       "prompt-submit:explicit-slash",
     );
     // Telemetry: Skill detection
-    void emit({ directory, stream: 'skill-events', payload: { event: 'detected', skill_slug: explicitSlash.skill, keyword: explicitSlash.keyword } });
+    void emit({ directory, stream: 'skill-events', payload: { event: 'detected', skill_slug: explicitSlash.skill, keyword: explicitSlash.raw.trim() } });
     await seedModeStateForExplicitWorkflowSlash(
       explicitSlash.skill,
       directory,

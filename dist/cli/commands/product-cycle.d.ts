@@ -10,6 +10,10 @@ export interface ProductCycleCommandOptions {
     stopAt?: string;
     dryRun?: boolean;
     verifyCommand?: string;
+    provider?: string;
+    maxSteps?: number;
+    wait?: boolean;
+    waitTimeoutMs?: number;
 }
 interface LoggerLike {
     log: (message?: unknown) => void;
@@ -20,5 +24,11 @@ export declare function productCycleNextCommand(root: string | undefined, option
 export declare function productCycleValidateCommand(root: string | undefined, options: ProductCycleCommandOptions, logger?: LoggerLike): Promise<number>;
 export declare function productCycleAdvanceCommand(root: string | undefined, options: ProductCycleCommandOptions, logger?: LoggerLike): Promise<number>;
 export declare function productCycleRunCommand(root: string | undefined, options: ProductCycleCommandOptions, logger?: LoggerLike): Promise<number>;
+export declare function productCycleInterventionsCommand(root: string | undefined, options: ProductCycleCommandOptions, logger?: LoggerLike): Promise<number>;
+export declare function productCycleInterventionsPlanCommand(root: string | undefined, options: ProductCycleCommandOptions, logger?: LoggerLike): Promise<number>;
+export declare function productCycleInterventionsRunCommand(root: string | undefined, options: ProductCycleCommandOptions, logger?: LoggerLike): Promise<number>;
+export declare function productCycleResearchCommand(root: string | undefined, options: ProductCycleCommandOptions, logger?: LoggerLike): Promise<number>;
+export declare function productCycleResearchPlanCommand(root: string | undefined, options: ProductCycleCommandOptions, logger?: LoggerLike): Promise<number>;
+export declare function productCycleResearchRunCommand(root: string | undefined, options: ProductCycleCommandOptions, logger?: LoggerLike): Promise<number>;
 export {};
 //# sourceMappingURL=product-cycle.d.ts.map

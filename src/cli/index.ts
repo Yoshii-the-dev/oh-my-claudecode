@@ -49,7 +49,13 @@ import { productArtifactsCommand } from './commands/product-artifacts.js';
 import { productContractsCommand } from './commands/product-contracts.js';
 import {
   productCycleAdvanceCommand,
+  productCycleInterventionsCommand,
+  productCycleInterventionsPlanCommand,
+  productCycleInterventionsRunCommand,
   productCycleNextCommand,
+  productCycleResearchCommand,
+  productCycleResearchPlanCommand,
+  productCycleResearchRunCommand,
   productCycleRunCommand,
   productCycleStatusCommand,
   productCycleValidateCommand,
@@ -1362,6 +1368,72 @@ Examples:
   $ omc product-cycle run --verify-command "npm run test:cycle"`)
   .action(async (root, options) => {
     const exitCode = await productCycleRunCommand(root, options);
+    process.exit(exitCode);
+  });
+
+productCycleCmd
+  .command('interventions [root]')
+  .description('Show the latest pending product-cycle intervention handoff')
+  .option('--json', 'Output as JSON')
+  .action(async (root, options) => {
+    const exitCode = await productCycleInterventionsCommand(root, options);
+    process.exit(exitCode);
+  });
+
+productCycleCmd
+  .command('interventions-plan [root]')
+  .description('Build an execution plan for the latest pending product-cycle interventions')
+  .option('--provider <provider>', 'Advisor provider for /prompts routes: claude | codex | gemini', 'codex')
+  .option('--dry-run', 'Render the plan without writing execution-plan artifacts')
+  .option('--json', 'Output as JSON')
+  .action(async (root, options) => {
+    const exitCode = await productCycleInterventionsPlanCommand(root, options);
+    process.exit(exitCode);
+  });
+
+productCycleCmd
+  .command('interventions-run [root]')
+  .description('Run safe executable steps from the latest product-cycle intervention execution plan')
+  .option('--provider <provider>', 'Advisor provider when a plan must be built from the handoff', 'codex')
+  .option('--max-steps <count>', 'Maximum safe steps to run', (value) => Number.parseInt(value, 10))
+  .option('--wait', 'Wait for team-start jobs to finish')
+  .option('--wait-timeout-ms <ms>', 'Timeout for each waited team-start job', (value) => Number.parseInt(value, 10))
+  .option('--dry-run', 'Show runnable/skipped steps without spawning commands')
+  .option('--json', 'Output as JSON')
+  .action(async (root, options) => {
+    const exitCode = await productCycleInterventionsRunCommand(root, options);
+    process.exit(exitCode);
+  });
+
+productCycleCmd
+  .command('research [root]')
+  .description('Show the latest pending product-cycle research handoff')
+  .option('--json', 'Output as JSON')
+  .action(async (root, options) => {
+    const exitCode = await productCycleResearchCommand(root, options);
+    process.exit(exitCode);
+  });
+
+productCycleCmd
+  .command('research-plan [root]')
+  .description('Build an execution plan for the latest pending product-cycle research')
+  .option('--provider <provider>', 'Advisor provider for /prompts routes: claude | codex | gemini', 'codex')
+  .option('--dry-run', 'Render the plan without writing execution-plan artifacts')
+  .option('--json', 'Output as JSON')
+  .action(async (root, options) => {
+    const exitCode = await productCycleResearchPlanCommand(root, options);
+    process.exit(exitCode);
+  });
+
+productCycleCmd
+  .command('research-run [root]')
+  .description('Run safe executable steps from the latest product-cycle research execution plan')
+  .option('--provider <provider>', 'Advisor provider when a plan must be built from the research handoff', 'codex')
+  .option('--max-steps <count>', 'Maximum research steps to run', (value) => Number.parseInt(value, 10))
+  .option('--dry-run', 'Show runnable/skipped steps without spawning commands')
+  .option('--json', 'Output as JSON')
+  .action(async (root, options) => {
+    const exitCode = await productCycleResearchRunCommand(root, options);
     process.exit(exitCode);
   });
 

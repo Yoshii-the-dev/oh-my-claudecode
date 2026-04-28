@@ -1,4 +1,4 @@
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'fs';
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -40,8 +40,8 @@ describe('runProductCycle', () => {
   it('advances discover -> rank when capability map is present and stops at rank for missing portfolio', () => {
     const root = createRoot();
     advanceProductCycle({ root, to: 'discover', goal: 'ship first usable loop' });
-    writeArtifact(root, '.omc/product/capability-map/current.md', '# capability map');
-    writeArtifact(root, '.omc/ecosystem/current.md', '# ecosystem');
+    writeArtifact(root, '.omc/product/capability-map/current.md', discoveryCapabilityArtifact());
+    writeArtifact(root, '.omc/ecosystem/current.md', discoveryEcosystemArtifact());
 
     const report = runProductCycle({ root });
 
@@ -82,6 +82,105 @@ describe('runProductCycle', () => {
     expect(report.stoppedReason).toBe('verify-failed');
     const verifyResult = report.stageResults.find((entry) => entry.stage === 'verify');
     expect(verifyResult?.outcome).toBe('verify-failed');
+    expect(verifyResult?.interventions?.map((route) => route.agent)).toEqual([
+      'debugger',
+      'executor',
+      'test-engineer',
+      'verifier',
+    ]);
+    expect(report.interventionHandoff?.jsonPath).toContain('.omc/handoffs/product-cycle-interventions/current.json');
+    expect(report.interventionHandoff?.jsonPath ? existsSync(report.interventionHandoff.jsonPath) : false).toBe(true);
+    expect(report.interventionExecutionPlan?.jsonPath)
+      .toContain('.omc/handoffs/product-cycle-interventions/execution-plan.json');
+    expect(report.interventionExecutionPlan?.jsonPath
+      ? existsSync(report.interventionExecutionPlan.jsonPath)
+      : false).toBe(true);
+    const handoff = JSON.parse(readFileSync(report.interventionHandoff!.jsonPath, 'utf-8')) as {
+      routes: Array<{ agent: string; command: string }>;
+      next_command: string;
+    };
+    expect(handoff.routes.map((route) => route.agent)).toEqual(['debugger', 'executor', 'test-engineer', 'verifier']);
+    expect(handoff.next_command).toContain('/prompts:debugger');
+  });
+
+  it('routes visual user-facing builds through stack provisioning before product-pipeline', () => {
+    const root = createRoot();
+    setupCycleAt(root, 'build');
+    writeArtifact(root, '.omc/research/product-cycle/current.md', 'research_verdict: pass\nsources: fixture\n');
+    writeArtifact(root, '.omc/experience/current.md', richExperienceGateArtifact());
+
+    const report = runProductCycle({ root });
+
+    expect(report.stoppedReason).toBe('pause-for-llm');
+    const buildResult = report.stageResults.find((entry) => entry.stage === 'build');
+    expect(buildResult?.instruction).toContain('stack-provision');
+    expect(buildResult?.interventions?.map((route) => route.id)).toEqual([
+      'visual-creative-skill-provisioning',
+      'product-build-pipeline',
+    ]);
+    expect(report.interventionHandoff?.jsonPath ? existsSync(report.interventionHandoff.jsonPath) : false).toBe(true);
+    expect(report.interventionExecutionPlan?.jsonPath
+      ? existsSync(report.interventionExecutionPlan.jsonPath)
+      : false).toBe(true);
+    const handoff = JSON.parse(readFileSync(report.interventionHandoff!.jsonPath, 'utf-8')) as {
+      routes: Array<{ id: string; command: string }>;
+    };
+    expect(handoff.routes[0]?.id).toBe('visual-creative-skill-provisioning');
+    expect(handoff.routes[0]?.command).toContain('--surfaces=frontend-product,visual-creative');
+  });
+
+  it('blocks visual user-facing builds for research before implementation routing', () => {
+    const root = createRoot();
+    setupCycleAt(root, 'build');
+    writeArtifact(root, '.omc/experience/current.md', `# Experience Gate
+
+## User Journey
+The dashboard screen has a visual row-tracking interface.
+
+## UX Verdict
+pass
+`);
+
+    const report = runProductCycle({ root });
+
+    expect(report.stoppedReason).toBe('pause-for-llm');
+    const buildResult = report.stageResults.find((entry) => entry.stage === 'build');
+    expect(buildResult?.reason).toContain('research required');
+    expect(buildResult?.research?.map((route) => route.id)).toEqual(['user-interaction-research']);
+    expect(report.researchHandoff?.jsonPath).toContain('.omc/handoffs/product-cycle-research/current.json');
+    expect(report.researchHandoff?.jsonPath ? existsSync(report.researchHandoff.jsonPath) : false).toBe(true);
+    expect(report.interventionHandoff).toBeUndefined();
+  });
+
+  it('does not request visual skill provisioning when the visual manifest is already present', () => {
+    const root = createRoot();
+    setupCycleAt(root, 'build');
+    writeArtifact(root, '.omc/research/product-cycle/current.md', 'research_verdict: pass\nsources: fixture\n');
+    writeArtifact(root, '.omc/experience/current.md', richExperienceGateArtifact());
+    writeArtifact(root, '.omc/provisioned/current.json', JSON.stringify({
+      surfaces: ['visual-creative'],
+      installed: ['meaning-driven-ui-builder', 'visual-verdict'],
+    }));
+
+    const report = runProductCycle({ root });
+
+    const buildResult = report.stageResults.find((entry) => entry.stage === 'build');
+    expect(buildResult?.instruction).toContain('product-pipeline');
+    expect(buildResult?.interventions?.map((route) => route.id)).toEqual(['product-build-pipeline']);
+  });
+
+  it('blocks user-facing builds when the experience gate is too thin', () => {
+    const root = createRoot();
+    setupCycleAt(root, 'build');
+    writeArtifact(root, '.omc/research/product-cycle/current.md', 'research_verdict: pass\nsources: fixture\n');
+    writeArtifact(root, '.omc/experience/current.md', 'UX Verdict\npass\n\nScreen flow uses visual QA.\n');
+
+    const report = runProductCycle({ root });
+
+    const buildResult = report.stageResults.find((entry) => entry.stage === 'build');
+    expect(buildResult?.instruction).toContain('product-experience-gate');
+    expect(buildResult?.interventions?.map((route) => route.id)).toEqual(['prebuild-experience-gate']);
+    expect(buildResult?.interventions?.[0]?.trigger).toContain('real passing experience gate');
   });
 
   it('respects --dry-run and does not mutate the cycle file', () => {
@@ -110,7 +209,7 @@ function writeArtifact(root: string, relativePath: string, content: string): voi
   writeFileSync(path, content, 'utf-8');
 }
 
-function setupCycleAt(root: string, stage: 'verify' | 'select', cycleId = '2026-04-25-first'): void {
+function setupCycleAt(root: string, stage: 'build' | 'verify' | 'select', cycleId = '2026-04-25-first'): void {
   writeArtifact(root, '.omc/cycles/current.md', `# Product Cycle: ship loop
 
 cycle_id: ${cycleId}
@@ -224,5 +323,100 @@ confidence: 0.7
 blocking_issues: none
 next_action: start next cycle
 artifacts_written: .omc/learning/current.md
+`;
+}
+
+function richExperienceGateArtifact(): string {
+  return `# Experience Gate
+
+## User Journey
+The user opens the reader screen from the project dashboard, sees the current pattern row, selects the row state, and continues through the focused row-tracking flow without setup work.
+
+## Empty States
+When no pattern is loaded, the empty state explains that the first step is opening the sample pattern, shows one primary start action, and avoids presenting inactive controls.
+
+## Failure States
+If progress cannot be saved, the error state explains the failed save, keeps the current row visible, offers retry, and makes recovery safe before the user leaves.
+
+## Return Session
+When the user reopens the app, the return session resumes at the next row, shows the previous completion state, and lets the user continue without reselecting context.
+
+## Perceived Value
+The value is clear because the interface makes row progress easier to trust, reduces repeated setup, and gives confidence that the next session will resume correctly.
+
+## UX Verdict
+pass
+
+status: ok
+evidence: fixture
+confidence: 0.8
+blocking_issues: []
+next_action: build
+artifacts_written: .omc/experience/current.md
+`;
+}
+
+function discoveryCapabilityArtifact(): string {
+  return `# Capability Map
+
+## MVP Feature Set
+- Reader shell
+
+## First Usable Loop
+Import/open sample pattern -> row track -> persist progress -> resume next session.
+
+## Required Product Systems
+- Pattern reader
+- Progress persistence
+
+## Retention
+Return to the next row without setup.
+
+## Launch Readiness
+Invite design partners after the loop is usable.
+
+## Backend/Product Split
+Backend work is limited to persistence for the first loop.
+
+run_id: test
+agent_role: product-strategist
+requested_next_agent: priority-engine
+artifacts_produced:
+  - .omc/product/capability-map/current.md
+`;
+}
+
+function discoveryEcosystemArtifact(): string {
+  return `# Ecosystem Map
+
+## App Surfaces
+Reader, library, progress dashboard.
+
+## Content Loops
+Sample patterns and walkthroughs.
+
+## Data Loops
+Progress events improve row tracking.
+
+## Distribution Loops
+Design partner invitations and creator walkthrough sharing.
+
+## Integrations
+Pattern import sources.
+
+## Research Loop
+Observe resume sessions.
+
+## Deeper Version Paths
+v0: first reader loop.
+v1: shared pattern projects.
+v2: creator tooling.
+research gate: validate resume behavior with design partners.
+
+run_id: test
+agent_role: product-ecosystem-architect
+requested_next_agent: priority-engine
+artifacts_produced:
+  - .omc/ecosystem/current.md
 `;
 }

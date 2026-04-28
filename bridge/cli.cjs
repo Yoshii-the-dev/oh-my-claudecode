@@ -10829,7 +10829,7 @@ async function removeFileIfExists(filePath) {
   }
 }
 function sleep2(ms) {
-  return new Promise((resolve33) => setTimeout(resolve33, ms));
+  return new Promise((resolve39) => setTimeout(resolve39, ms));
 }
 var import_child_process9, fs5, fsPromises2, path5, import_url6, import_child_process10, import_util6, execFileAsync3, BRIDGE_SPAWN_TIMEOUT_MS, DEFAULT_GRACE_PERIOD_MS, SIGTERM_GRACE_MS, ownedBridgeSessionIds, USE_TCP_FALLBACK;
 var init_bridge_manager = __esm({
@@ -12234,7 +12234,7 @@ function withFileLockSync(lockPath, fn, opts) {
   }
 }
 function sleep3(ms) {
-  return new Promise((resolve33) => setTimeout(resolve33, ms));
+  return new Promise((resolve39) => setTimeout(resolve39, ms));
 }
 async function acquireFileLock(lockPath, opts) {
   const staleLockMs = opts?.staleLockMs ?? DEFAULT_STALE_LOCK_MS;
@@ -27004,7 +27004,7 @@ async function sendTelegram(config2, payload) {
       text: payload.message,
       parse_mode: config2.parseMode || "Markdown"
     });
-    const result = await new Promise((resolve33) => {
+    const result = await new Promise((resolve39) => {
       const req = (0, import_https.request)(
         {
           hostname: "api.telegram.org",
@@ -27031,9 +27031,9 @@ async function sendTelegram(config2, payload) {
                 }
               } catch {
               }
-              resolve33({ platform: "telegram", success: true, messageId });
+              resolve39({ platform: "telegram", success: true, messageId });
             } else {
-              resolve33({
+              resolve39({
                 platform: "telegram",
                 success: false,
                 error: `HTTP ${res.statusCode}`
@@ -27043,11 +27043,11 @@ async function sendTelegram(config2, payload) {
         }
       );
       req.on("error", (e) => {
-        resolve33({ platform: "telegram", success: false, error: e.message });
+        resolve39({ platform: "telegram", success: false, error: e.message });
       });
       req.on("timeout", () => {
         req.destroy();
-        resolve33({
+        resolve39({
           platform: "telegram",
           success: false,
           error: "Request timeout"
@@ -27293,9 +27293,9 @@ async function dispatchNotifications(config2, event, payload, platformMessages) 
           }
         )
       ),
-      new Promise((resolve33) => {
+      new Promise((resolve39) => {
         timer = setTimeout(
-          () => resolve33([
+          () => resolve39([
             {
               platform: "unknown",
               success: false,
@@ -29849,7 +29849,7 @@ async function pollTelegram(config2, state, rateLimiter) {
   try {
     const offset = state.telegramLastUpdateId ? state.telegramLastUpdateId + 1 : 0;
     const path23 = `/bot${config2.telegramBotToken}/getUpdates?offset=${offset}&timeout=0`;
-    const updates = await new Promise((resolve33, reject) => {
+    const updates = await new Promise((resolve39, reject) => {
       const req = (0, import_https2.request)(
         {
           hostname: "api.telegram.org",
@@ -29866,7 +29866,7 @@ async function pollTelegram(config2, state, rateLimiter) {
             try {
               const body = JSON.parse(Buffer.concat(chunks).toString("utf-8"));
               if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
-                resolve33(body.result || []);
+                resolve39(body.result || []);
               } else {
                 reject(new Error(`HTTP ${res.statusCode}`));
               }
@@ -29930,7 +29930,7 @@ async function pollTelegram(config2, state, rateLimiter) {
             text: "Injected into Claude Code session.",
             reply_to_message_id: msg.message_id
           });
-          await new Promise((resolve33) => {
+          await new Promise((resolve39) => {
             const replyReq = (0, import_https2.request)(
               {
                 hostname: "api.telegram.org",
@@ -29945,13 +29945,13 @@ async function pollTelegram(config2, state, rateLimiter) {
               },
               (res) => {
                 res.resume();
-                resolve33();
+                resolve39();
               }
             );
-            replyReq.on("error", () => resolve33());
+            replyReq.on("error", () => resolve39());
             replyReq.on("timeout", () => {
               replyReq.destroy();
-              resolve33();
+              resolve39();
             });
             replyReq.write(replyBody);
             replyReq.end();
@@ -30088,13 +30088,13 @@ async function pollLoop() {
         }
       }
       writeDaemonState(state);
-      await new Promise((resolve33) => setTimeout(resolve33, config2.pollIntervalMs));
+      await new Promise((resolve39) => setTimeout(resolve39, config2.pollIntervalMs));
     } catch (error2) {
       state.errors++;
       state.lastError = redactTokens(error2 instanceof Error ? error2.message : String(error2));
       log(`Poll error: ${state.lastError}`);
       writeDaemonState(state);
-      await new Promise((resolve33) => setTimeout(resolve33, config2.pollIntervalMs * 2));
+      await new Promise((resolve39) => setTimeout(resolve39, config2.pollIntervalMs * 2));
     }
   }
   log("Poll loop ended");
@@ -31301,7 +31301,7 @@ async function triggerStopCallbacks(metrics, _input, options = {}) {
   try {
     await Promise.race([
       Promise.allSettled(promises),
-      new Promise((resolve33) => setTimeout(resolve33, 5e3))
+      new Promise((resolve39) => setTimeout(resolve39, 5e3))
     ]);
   } catch (error2) {
     console.error("[stop-callback] Callback execution error:", error2);
@@ -32151,7 +32151,7 @@ async function withMailboxLock(teamName, workerName2, cwd2, fn) {
   while (Date.now() < deadline) {
     const result = await withLock(lockDir, fn);
     if (result.ok) return result.value;
-    await new Promise((resolve33) => setTimeout(resolve33, delayMs));
+    await new Promise((resolve39) => setTimeout(resolve39, delayMs));
     delayMs = Math.min(delayMs * 2, 200);
   }
   throw new Error(`Failed to acquire mailbox lock for ${workerName2} after ${timeoutMs}ms`);
@@ -32256,7 +32256,7 @@ async function teamCreateTask(teamName, task, cwd2) {
       return created;
     });
     if (result.ok) return result.value;
-    await new Promise((resolve33) => setTimeout(resolve33, delayMs));
+    await new Promise((resolve39) => setTimeout(resolve39, delayMs));
     delayMs = Math.min(delayMs * 2, 200);
   }
   throw new Error(`Failed to acquire task creation lock for team ${teamName} after ${timeoutMs}ms`);
@@ -32296,7 +32296,7 @@ async function teamUpdateTask(teamName, taskId, updates, cwd2) {
       return merged;
     });
     if (result.ok) return result.value;
-    await new Promise((resolve33) => setTimeout(resolve33, delayMs));
+    await new Promise((resolve39) => setTimeout(resolve39, delayMs));
     delayMs = Math.min(delayMs * 2, 200);
   }
   throw new Error(`Failed to acquire task update lock for task ${taskId} in team ${teamName} after ${timeoutMs}ms`);
@@ -34330,7 +34330,7 @@ async function withDispatchLock(teamName, cwd2, fn) {
         );
       }
       const jitter = 0.5 + Math.random() * 0.5;
-      await new Promise((resolve33) => setTimeout(resolve33, Math.floor(pollMs * jitter)));
+      await new Promise((resolve39) => setTimeout(resolve39, Math.floor(pollMs * jitter)));
       pollMs = Math.min(pollMs * 2, DISPATCH_LOCK_MAX_POLL_MS);
     }
   }
@@ -35531,7 +35531,7 @@ async function waitForWorkerStartupEvidence(teamName, workerName2, taskId, cwd2,
       return true;
     }
     if (attempt < attempts) {
-      await new Promise((resolve33) => setTimeout(resolve33, delayMs));
+      await new Promise((resolve39) => setTimeout(resolve39, delayMs));
     }
   }
   return false;
@@ -35992,10 +35992,10 @@ async function requeueDeadWorkerTasks(teamName, deadWorkerNames, cwd2) {
     await writeFile9(sidecarPath, JSON.stringify(sidecar, null, 2), "utf-8");
     const taskPath2 = absPath(cwd2, TeamPaths.taskFile(sanitized, task.id));
     try {
-      const { readFileSync: readFileSync106, writeFileSync: writeFileSync45 } = await import("fs");
+      const { readFileSync: readFileSync110, writeFileSync: writeFileSync45 } = await import("fs");
       const { withFileLockSync: withFileLockSync2 } = await Promise.resolve().then(() => (init_file_lock(), file_lock_exports));
       withFileLockSync2(taskPath2 + ".lock", () => {
-        const raw = readFileSync106(taskPath2, "utf-8");
+        const raw = readFileSync110(taskPath2, "utf-8");
         const taskData = JSON.parse(raw);
         if (taskData.status === "in_progress") {
           taskData.status = "pending";
@@ -36025,7 +36025,7 @@ async function processCliWorkerVerdicts(teamName, cwd2) {
     "team.runtime-v2.processCliWorkerVerdicts appendTeamEvent failed"
   );
   const { rename: rename3 } = await import("fs/promises");
-  const { readFileSync: readFileSync106, writeFileSync: writeFileSync45, existsSync: fsExistsSync } = await import("fs");
+  const { readFileSync: readFileSync110, writeFileSync: writeFileSync45, existsSync: fsExistsSync } = await import("fs");
   const { withFileLockSync: withFileLockSync2 } = await Promise.resolve().then(() => (init_file_lock(), file_lock_exports));
   for (const worker of config2.workers) {
     const outputFile = worker.output_file;
@@ -36059,7 +36059,7 @@ async function processCliWorkerVerdicts(teamName, cwd2) {
       const taskPath2 = absPath(cwd2, TeamPaths.taskFile(sanitized, taskId));
       if (!fsExistsSync(taskPath2)) continue;
       try {
-        const taskRaw = readFileSync106(taskPath2, "utf-8");
+        const taskRaw = readFileSync110(taskPath2, "utf-8");
         const taskData = JSON.parse(taskRaw);
         if (taskData.owner === worker.name && taskData.status === "in_progress") {
           targetTaskId = taskId;
@@ -36087,7 +36087,7 @@ async function processCliWorkerVerdicts(teamName, cwd2) {
     let transitionOk = false;
     try {
       withFileLockSync2(targetTaskPath + ".lock", () => {
-        const raw = readFileSync106(targetTaskPath, "utf-8");
+        const raw = readFileSync110(targetTaskPath, "utf-8");
         const taskData = JSON.parse(raw);
         if (taskData.status !== "in_progress" || taskData.owner !== worker.name) {
           return;
@@ -36714,7 +36714,7 @@ async function readJsonSafe5(filePath) {
         return null;
       }
     }
-    await new Promise((resolve33) => setTimeout(resolve33, 25));
+    await new Promise((resolve39) => setTimeout(resolve39, 25));
   }
   return null;
 }
@@ -36832,7 +36832,7 @@ async function nextPendingTaskIndex(runtime) {
     let task = await readTask(root2, taskId);
     if (!task) {
       for (let attempt = 1; attempt < transientReadRetryAttempts; attempt++) {
-        await new Promise((resolve33) => setTimeout(resolve33, transientReadRetryDelayMs));
+        await new Promise((resolve39) => setTimeout(resolve39, transientReadRetryDelayMs));
         task = await readTask(root2, taskId);
         if (task) break;
       }
@@ -45011,7 +45011,7 @@ function validateCredentials(creds) {
   return !isCredentialExpired(creds);
 }
 function refreshAccessToken(refreshToken) {
-  return new Promise((resolve33) => {
+  return new Promise((resolve39) => {
     const clientId = process.env.CLAUDE_CODE_OAUTH_CLIENT_ID || DEFAULT_OAUTH_CLIENT_ID;
     const body = new URLSearchParams({
       grant_type: "refresh_token",
@@ -45039,7 +45039,7 @@ function refreshAccessToken(refreshToken) {
             try {
               const parsed = JSON.parse(data);
               if (parsed.access_token) {
-                resolve33({
+                resolve39({
                   accessToken: parsed.access_token,
                   refreshToken: parsed.refresh_token || refreshToken,
                   expiresAt: parsed.expires_in ? Date.now() + parsed.expires_in * 1e3 : parsed.expires_at
@@ -45052,20 +45052,20 @@ function refreshAccessToken(refreshToken) {
           if (process.env.OMC_DEBUG) {
             console.error(`[usage-api] Token refresh failed: HTTP ${res.statusCode}`);
           }
-          resolve33(null);
+          resolve39(null);
         });
       }
     );
-    req.on("error", () => resolve33(null));
+    req.on("error", () => resolve39(null));
     req.on("timeout", () => {
       req.destroy();
-      resolve33(null);
+      resolve39(null);
     });
     req.end(body);
   });
 }
 function fetchUsageFromApi(accessToken) {
-  return new Promise((resolve33) => {
+  return new Promise((resolve39) => {
     const req = import_https3.default.request(
       {
         hostname: "api.anthropic.com",
@@ -45086,41 +45086,41 @@ function fetchUsageFromApi(accessToken) {
         res.on("end", () => {
           if (res.statusCode === 200) {
             try {
-              resolve33({ data: JSON.parse(data) });
+              resolve39({ data: JSON.parse(data) });
             } catch {
-              resolve33({ data: null });
+              resolve39({ data: null });
             }
           } else if (res.statusCode === 429) {
             if (process.env.OMC_DEBUG) {
               console.error(`[usage-api] Anthropic API returned 429 (rate limited)`);
             }
-            resolve33({ data: null, rateLimited: true });
+            resolve39({ data: null, rateLimited: true });
           } else {
-            resolve33({ data: null });
+            resolve39({ data: null });
           }
         });
       }
     );
-    req.on("error", () => resolve33({ data: null }));
+    req.on("error", () => resolve39({ data: null }));
     req.on("timeout", () => {
       req.destroy();
-      resolve33({ data: null });
+      resolve39({ data: null });
     });
     req.end();
   });
 }
 function fetchUsageFromZai() {
-  return new Promise((resolve33) => {
+  return new Promise((resolve39) => {
     const baseUrl = process.env.ANTHROPIC_BASE_URL;
     const authToken = process.env.ANTHROPIC_AUTH_TOKEN;
     if (!baseUrl || !authToken) {
-      resolve33({ data: null });
+      resolve39({ data: null });
       return;
     }
     const validation = validateAnthropicBaseUrl(baseUrl);
     if (!validation.allowed) {
       console.error(`[SSRF Guard] Blocking usage API call: ${validation.reason}`);
-      resolve33({ data: null });
+      resolve39({ data: null });
       return;
     }
     try {
@@ -45148,29 +45148,29 @@ function fetchUsageFromZai() {
           res.on("end", () => {
             if (res.statusCode === 200) {
               try {
-                resolve33({ data: JSON.parse(data) });
+                resolve39({ data: JSON.parse(data) });
               } catch {
-                resolve33({ data: null });
+                resolve39({ data: null });
               }
             } else if (res.statusCode === 429) {
               if (process.env.OMC_DEBUG) {
                 console.error(`[usage-api] z.ai API returned 429 (rate limited)`);
               }
-              resolve33({ data: null, rateLimited: true });
+              resolve39({ data: null, rateLimited: true });
             } else {
-              resolve33({ data: null });
+              resolve39({ data: null });
             }
           });
         }
       );
-      req.on("error", () => resolve33({ data: null }));
+      req.on("error", () => resolve39({ data: null }));
       req.on("timeout", () => {
         req.destroy();
-        resolve33({ data: null });
+        resolve39({ data: null });
       });
       req.end();
     } catch {
-      resolve33({ data: null });
+      resolve39({ data: null });
     }
   });
 }
@@ -45311,16 +45311,16 @@ function parseZaiResponse(response) {
   return result;
 }
 function fetchUsageFromMinimax(apiKey) {
-  return new Promise((resolve33) => {
+  return new Promise((resolve39) => {
     const baseUrl = process.env.ANTHROPIC_BASE_URL;
     if (!baseUrl) {
-      resolve33({ data: null });
+      resolve39({ data: null });
       return;
     }
     const validation = validateAnthropicBaseUrl(baseUrl);
     if (!validation.allowed) {
       console.error(`[SSRF Guard] Blocking usage API call: ${validation.reason}`);
-      resolve33({ data: null });
+      resolve39({ data: null });
       return;
     }
     try {
@@ -45347,29 +45347,29 @@ function fetchUsageFromMinimax(apiKey) {
           res.on("end", () => {
             if (res.statusCode === 200) {
               try {
-                resolve33({ data: JSON.parse(data) });
+                resolve39({ data: JSON.parse(data) });
               } catch {
-                resolve33({ data: null });
+                resolve39({ data: null });
               }
             } else if (res.statusCode === 429) {
               if (process.env.OMC_DEBUG) {
                 console.error(`[usage-api] MiniMax API returned 429 (rate limited)`);
               }
-              resolve33({ data: null, rateLimited: true });
+              resolve39({ data: null, rateLimited: true });
             } else {
-              resolve33({ data: null });
+              resolve39({ data: null });
             }
           });
         }
       );
-      req.on("error", () => resolve33({ data: null }));
+      req.on("error", () => resolve39({ data: null }));
       req.on("timeout", () => {
         req.destroy();
-        resolve33({ data: null });
+        resolve39({ data: null });
       });
       req.end();
     } catch {
-      resolve33({ data: null });
+      resolve39({ data: null });
     }
   });
 }
@@ -45669,26 +45669,26 @@ var init_leader_nudge_guidance = __esm({
 // src/hud/stdin.ts
 function getStdinCachePath() {
   const root2 = getWorktreeRoot() || process.cwd();
-  return (0, import_path137.join)(root2, ".omc", "state", "hud-stdin-cache.json");
+  return (0, import_path143.join)(root2, ".omc", "state", "hud-stdin-cache.json");
 }
 function writeStdinCache(stdin) {
   try {
     const root2 = getWorktreeRoot() || process.cwd();
-    const cacheDir = (0, import_path137.join)(root2, ".omc", "state");
-    if (!(0, import_fs117.existsSync)(cacheDir)) {
-      (0, import_fs117.mkdirSync)(cacheDir, { recursive: true });
+    const cacheDir = (0, import_path143.join)(root2, ".omc", "state");
+    if (!(0, import_fs122.existsSync)(cacheDir)) {
+      (0, import_fs122.mkdirSync)(cacheDir, { recursive: true });
     }
-    (0, import_fs117.writeFileSync)(getStdinCachePath(), JSON.stringify(stdin));
+    (0, import_fs122.writeFileSync)(getStdinCachePath(), JSON.stringify(stdin));
   } catch {
   }
 }
 function readStdinCache() {
   try {
     const cachePath = getStdinCachePath();
-    if (!(0, import_fs117.existsSync)(cachePath)) {
+    if (!(0, import_fs122.existsSync)(cachePath)) {
       return null;
     }
-    return JSON.parse((0, import_fs117.readFileSync)(cachePath, "utf-8"));
+    return JSON.parse((0, import_fs122.readFileSync)(cachePath, "utf-8"));
   } catch {
     return null;
   }
@@ -45805,12 +45805,12 @@ function getRateLimitsFromStdin(stdin) {
 function getModelName(stdin) {
   return stdin.model?.display_name ?? stdin.model?.id ?? "Unknown";
 }
-var import_fs117, import_path137, TRANSIENT_CONTEXT_PERCENT_TOLERANCE;
+var import_fs122, import_path143, TRANSIENT_CONTEXT_PERCENT_TOLERANCE;
 var init_stdin = __esm({
   "src/hud/stdin.ts"() {
     "use strict";
-    import_fs117 = require("fs");
-    import_path137 = require("path");
+    import_fs122 = require("fs");
+    import_path143 = require("path");
     init_worktree_paths();
     TRANSIENT_CONTEXT_PERCENT_TOLERANCE = 3;
   }
@@ -45828,12 +45828,12 @@ async function parseTranscript(transcriptPath, options) {
     skillCallCount: 0,
     lastToolName: null
   };
-  if (!transcriptPath || !(0, import_fs118.existsSync)(transcriptPath)) {
+  if (!transcriptPath || !(0, import_fs123.existsSync)(transcriptPath)) {
     return result;
   }
   let cacheKey = null;
   try {
-    const stat3 = (0, import_fs118.statSync)(transcriptPath);
+    const stat3 = (0, import_fs123.statSync)(transcriptPath);
     cacheKey = `${transcriptPath}:${stat3.size}:${stat3.mtimeMs}`;
     const cached2 = transcriptCache.get(transcriptPath);
     if (cached2?.cacheKey === cacheKey) {
@@ -45853,7 +45853,7 @@ async function parseTranscript(transcriptPath, options) {
   let sessionTotalsReliable = false;
   const observedSessionIds = /* @__PURE__ */ new Set();
   try {
-    const stat3 = (0, import_fs118.statSync)(transcriptPath);
+    const stat3 = (0, import_fs123.statSync)(transcriptPath);
     const fileSize = stat3.size;
     if (fileSize > MAX_TAIL_BYTES) {
       const lines = readTailLines(transcriptPath, fileSize, MAX_TAIL_BYTES);
@@ -45876,7 +45876,7 @@ async function parseTranscript(transcriptPath, options) {
       }
       sessionTotalsReliable = sessionTokenTotals.seenUsage;
     } else {
-      const fileStream = (0, import_fs118.createReadStream)(transcriptPath);
+      const fileStream = (0, import_fs123.createReadStream)(transcriptPath);
       const rl = (0, import_readline3.createInterface)({
         input: fileStream,
         crlfDelay: Infinity
@@ -45992,12 +45992,12 @@ function finalizeTranscriptResult(result, options, pendingPermissions) {
 function readTailLines(filePath, fileSize, maxBytes) {
   const startOffset = Math.max(0, fileSize - maxBytes);
   const bytesToRead = fileSize - startOffset;
-  const fd = (0, import_fs118.openSync)(filePath, "r");
+  const fd = (0, import_fs123.openSync)(filePath, "r");
   const buffer = Buffer.alloc(bytesToRead);
   try {
-    (0, import_fs118.readSync)(fd, buffer, 0, bytesToRead, startOffset);
+    (0, import_fs123.readSync)(fd, buffer, 0, bytesToRead, startOffset);
   } finally {
-    (0, import_fs118.closeSync)(fd);
+    (0, import_fs123.closeSync)(fd);
   }
   const content = buffer.toString("utf8");
   const lines = content.split("\n");
@@ -46031,7 +46031,7 @@ function extractTargetSummary(input, toolName) {
   if (toolName.includes("Edit") || toolName.includes("Write")) {
     const filePath = inp.file_path;
     if (filePath) {
-      return (0, import_path138.basename)(filePath) || filePath;
+      return (0, import_path144.basename)(filePath) || filePath;
     }
   }
   if (toolName.includes("Bash")) {
@@ -46219,13 +46219,13 @@ function extractLastRequestTokenUsage(usage) {
 function getNumericUsageValue(value) {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
-var import_fs118, import_readline3, import_path138, MAX_TAIL_BYTES, MAX_AGENT_MAP_SIZE, PERMISSION_TOOLS, PERMISSION_THRESHOLD_MS, pendingPermissionMap, THINKING_PART_TYPES2, THINKING_RECENCY_MS, transcriptCache, TRANSCRIPT_CACHE_MAX_SIZE;
+var import_fs123, import_readline3, import_path144, MAX_TAIL_BYTES, MAX_AGENT_MAP_SIZE, PERMISSION_TOOLS, PERMISSION_THRESHOLD_MS, pendingPermissionMap, THINKING_PART_TYPES2, THINKING_RECENCY_MS, transcriptCache, TRANSCRIPT_CACHE_MAX_SIZE;
 var init_transcript = __esm({
   "src/hud/transcript.ts"() {
     "use strict";
-    import_fs118 = require("fs");
+    import_fs123 = require("fs");
     import_readline3 = require("readline");
-    import_path138 = require("path");
+    import_path144 = require("path");
     MAX_TAIL_BYTES = 4 * 1024 * 1024;
     MAX_AGENT_MAP_SIZE = 100;
     PERMISSION_TOOLS = [
@@ -46248,7 +46248,7 @@ var init_transcript = __esm({
 // src/hud/omc-state.ts
 function isStateFileStale(filePath) {
   try {
-    const stat3 = (0, import_fs119.statSync)(filePath);
+    const stat3 = (0, import_fs124.statSync)(filePath);
     const age = Date.now() - stat3.mtimeMs;
     return age > MAX_STATE_AGE_MS2;
   } catch {
@@ -46258,21 +46258,21 @@ function isStateFileStale(filePath) {
 function resolveStatePath2(directory, filename, sessionId) {
   const omcRoot = getOmcRoot(directory);
   if (sessionId) {
-    const sessionPath = (0, import_path139.join)(omcRoot, "state", "sessions", sessionId, filename);
-    return (0, import_fs119.existsSync)(sessionPath) ? sessionPath : null;
+    const sessionPath = (0, import_path145.join)(omcRoot, "state", "sessions", sessionId, filename);
+    return (0, import_fs124.existsSync)(sessionPath) ? sessionPath : null;
   }
   let bestPath = null;
   let bestMtime = 0;
-  const sessionsDir = (0, import_path139.join)(omcRoot, "state", "sessions");
-  if ((0, import_fs119.existsSync)(sessionsDir)) {
+  const sessionsDir = (0, import_path145.join)(omcRoot, "state", "sessions");
+  if ((0, import_fs124.existsSync)(sessionsDir)) {
     try {
-      const entries = (0, import_fs119.readdirSync)(sessionsDir, { withFileTypes: true });
+      const entries = (0, import_fs124.readdirSync)(sessionsDir, { withFileTypes: true });
       for (const entry of entries) {
         if (!entry.isDirectory()) continue;
-        const sessionFile = (0, import_path139.join)(sessionsDir, entry.name, filename);
-        if ((0, import_fs119.existsSync)(sessionFile)) {
+        const sessionFile = (0, import_path145.join)(sessionsDir, entry.name, filename);
+        if ((0, import_fs124.existsSync)(sessionFile)) {
           try {
-            const mtime = (0, import_fs119.statSync)(sessionFile).mtimeMs;
+            const mtime = (0, import_fs124.statSync)(sessionFile).mtimeMs;
             if (mtime > bestMtime) {
               bestMtime = mtime;
               bestPath = sessionFile;
@@ -46284,10 +46284,10 @@ function resolveStatePath2(directory, filename, sessionId) {
     } catch {
     }
   }
-  const newPath = (0, import_path139.join)(omcRoot, "state", filename);
-  if ((0, import_fs119.existsSync)(newPath)) {
+  const newPath = (0, import_path145.join)(omcRoot, "state", filename);
+  if ((0, import_fs124.existsSync)(newPath)) {
     try {
-      const mtime = (0, import_fs119.statSync)(newPath).mtimeMs;
+      const mtime = (0, import_fs124.statSync)(newPath).mtimeMs;
       if (mtime > bestMtime) {
         bestMtime = mtime;
         bestPath = newPath;
@@ -46296,10 +46296,10 @@ function resolveStatePath2(directory, filename, sessionId) {
       if (!bestPath) bestPath = newPath;
     }
   }
-  const legacyPath = (0, import_path139.join)(omcRoot, filename);
-  if ((0, import_fs119.existsSync)(legacyPath)) {
+  const legacyPath = (0, import_path145.join)(omcRoot, filename);
+  if ((0, import_fs124.existsSync)(legacyPath)) {
     try {
-      const mtime = (0, import_fs119.statSync)(legacyPath).mtimeMs;
+      const mtime = (0, import_fs124.statSync)(legacyPath).mtimeMs;
       if (mtime > bestMtime) {
         bestPath = legacyPath;
       }
@@ -46318,7 +46318,7 @@ function readRalphStateForHud(directory, sessionId) {
     return null;
   }
   try {
-    const content = (0, import_fs119.readFileSync)(stateFile, "utf-8");
+    const content = (0, import_fs124.readFileSync)(stateFile, "utf-8");
     const state = JSON.parse(content);
     if (!state.active) {
       return null;
@@ -46340,7 +46340,7 @@ function readUltraworkStateForHud(directory, sessionId) {
     return null;
   }
   try {
-    const content = (0, import_fs119.readFileSync)(localFile, "utf-8");
+    const content = (0, import_fs124.readFileSync)(localFile, "utf-8");
     const state = JSON.parse(content);
     if (!state.active) {
       return null;
@@ -46354,15 +46354,15 @@ function readUltraworkStateForHud(directory, sessionId) {
   }
 }
 function readPrdStateForHud(directory) {
-  let prdPath = (0, import_path139.join)(directory, "prd.json");
-  if (!(0, import_fs119.existsSync)(prdPath)) {
-    prdPath = (0, import_path139.join)(getOmcRoot(directory), "prd.json");
-    if (!(0, import_fs119.existsSync)(prdPath)) {
+  let prdPath = (0, import_path145.join)(directory, "prd.json");
+  if (!(0, import_fs124.existsSync)(prdPath)) {
+    prdPath = (0, import_path145.join)(getOmcRoot(directory), "prd.json");
+    if (!(0, import_fs124.existsSync)(prdPath)) {
       return null;
     }
   }
   try {
-    const content = (0, import_fs119.readFileSync)(prdPath, "utf-8");
+    const content = (0, import_fs124.readFileSync)(prdPath, "utf-8");
     const prd = JSON.parse(content);
     if (!prd.userStories || !Array.isArray(prd.userStories)) {
       return null;
@@ -46389,7 +46389,7 @@ function readAutopilotStateForHud(directory, sessionId) {
     return null;
   }
   try {
-    const content = (0, import_fs119.readFileSync)(stateFile, "utf-8");
+    const content = (0, import_fs124.readFileSync)(stateFile, "utf-8");
     const state = JSON.parse(content);
     if (!state.active) {
       return null;
@@ -46411,12 +46411,12 @@ function readAutopilotStateForHud(directory, sessionId) {
     return null;
   }
 }
-var import_fs119, import_path139, MAX_STATE_AGE_MS2;
+var import_fs124, import_path145, MAX_STATE_AGE_MS2;
 var init_omc_state = __esm({
   "src/hud/omc-state.ts"() {
     "use strict";
-    import_fs119 = require("fs");
-    import_path139 = require("path");
+    import_fs124 = require("fs");
+    import_path145 = require("path");
     init_worktree_paths();
     MAX_STATE_AGE_MS2 = 2 * 60 * 60 * 1e3;
   }
@@ -46424,7 +46424,7 @@ var init_omc_state = __esm({
 
 // src/hud/custom-rate-provider.ts
 function getCachePath2() {
-  return (0, import_path140.join)(
+  return (0, import_path146.join)(
     getClaudeConfigDir(),
     "plugins",
     "oh-my-claudecode",
@@ -46434,8 +46434,8 @@ function getCachePath2() {
 function readCache2() {
   try {
     const p = getCachePath2();
-    if (!(0, import_fs120.existsSync)(p)) return null;
-    return JSON.parse((0, import_fs120.readFileSync)(p, "utf-8"));
+    if (!(0, import_fs125.existsSync)(p)) return null;
+    return JSON.parse((0, import_fs125.readFileSync)(p, "utf-8"));
   } catch {
     return null;
   }
@@ -46443,10 +46443,10 @@ function readCache2() {
 function writeCache2(buckets) {
   try {
     const p = getCachePath2();
-    const dir = (0, import_path140.dirname)(p);
-    if (!(0, import_fs120.existsSync)(dir)) (0, import_fs120.mkdirSync)(dir, { recursive: true });
+    const dir = (0, import_path146.dirname)(p);
+    if (!(0, import_fs125.existsSync)(dir)) (0, import_fs125.mkdirSync)(dir, { recursive: true });
     const cache = { timestamp: Date.now(), buckets };
-    (0, import_fs120.writeFileSync)(p, JSON.stringify(cache, null, 2));
+    (0, import_fs125.writeFileSync)(p, JSON.stringify(cache, null, 2));
   } catch {
   }
 }
@@ -46454,9 +46454,9 @@ function isCacheValid2(cache) {
   return Date.now() - cache.timestamp < CACHE_TTL_MS2;
 }
 function spawnWithTimeout(cmd, timeoutMs) {
-  return new Promise((resolve33, reject) => {
+  return new Promise((resolve39, reject) => {
     const [executable, ...args] = Array.isArray(cmd) ? cmd : ["sh", "-c", cmd];
-    const child = (0, import_child_process40.spawn)(executable, args, { stdio: ["ignore", "pipe", "pipe"] });
+    const child = (0, import_child_process42.spawn)(executable, args, { stdio: ["ignore", "pipe", "pipe"] });
     let stdout = "";
     child.stdout.on("data", (chunk) => {
       stdout += chunk.toString();
@@ -46477,7 +46477,7 @@ function spawnWithTimeout(cmd, timeoutMs) {
       clearTimeout(timer);
       if (!timedOut) {
         if (code === 0) {
-          resolve33(stdout);
+          resolve39(stdout);
         } else {
           reject(new Error(`Command exited with code ${code}`));
         }
@@ -46544,13 +46544,13 @@ async function executeCustomProvider(config2) {
     return { buckets: [], stale: false, error: "command failed" };
   }
 }
-var import_child_process40, import_fs120, import_path140, CACHE_TTL_MS2, DEFAULT_TIMEOUT_MS2;
+var import_child_process42, import_fs125, import_path146, CACHE_TTL_MS2, DEFAULT_TIMEOUT_MS2;
 var init_custom_rate_provider = __esm({
   "src/hud/custom-rate-provider.ts"() {
     "use strict";
-    import_child_process40 = require("child_process");
-    import_fs120 = require("fs");
-    import_path140 = require("path");
+    import_child_process42 = require("child_process");
+    import_fs125 = require("fs");
+    import_path146 = require("path");
     init_config_dir();
     CACHE_TTL_MS2 = 3e4;
     DEFAULT_TIMEOUT_MS2 = 800;
@@ -47890,8 +47890,8 @@ var init_model = __esm({
 // src/hud/elements/api-key-source.ts
 function settingsFileHasApiKey(filePath) {
   try {
-    if (!(0, import_fs121.existsSync)(filePath)) return false;
-    const content = (0, import_fs121.readFileSync)(filePath, "utf-8");
+    if (!(0, import_fs126.existsSync)(filePath)) return false;
+    const content = (0, import_fs126.readFileSync)(filePath, "utf-8");
     const settings = JSON.parse(content);
     const env2 = settings?.env;
     if (typeof env2 !== "object" || env2 === null) return false;
@@ -47902,10 +47902,10 @@ function settingsFileHasApiKey(filePath) {
 }
 function detectApiKeySource(cwd2) {
   if (cwd2) {
-    const projectSettings = (0, import_path141.join)(cwd2, ".claude", "settings.local.json");
+    const projectSettings = (0, import_path147.join)(cwd2, ".claude", "settings.local.json");
     if (settingsFileHasApiKey(projectSettings)) return "project";
   }
-  const globalSettings = (0, import_path141.join)(getClaudeConfigDir(), "settings.json");
+  const globalSettings = (0, import_path147.join)(getClaudeConfigDir(), "settings.json");
   if (settingsFileHasApiKey(globalSettings)) return "global";
   if (process.env.ANTHROPIC_API_KEY) return "env";
   return null;
@@ -47914,12 +47914,12 @@ function renderApiKeySource(source) {
   if (!source) return null;
   return `${dim("key:")}${cyan(source)}`;
 }
-var import_fs121, import_path141;
+var import_fs126, import_path147;
 var init_api_key_source = __esm({
   "src/hud/elements/api-key-source.ts"() {
     "use strict";
-    import_fs121 = require("fs");
-    import_path141 = require("path");
+    import_fs126 = require("fs");
+    import_path147 = require("path");
     init_colors();
     init_config_dir();
   }
@@ -48441,10 +48441,10 @@ function extractSessionIdFromPath(transcriptPath) {
   return match ? match[1] : null;
 }
 function readSessionSummary(stateDir, sessionId) {
-  const statePath = (0, import_path142.join)(stateDir, `session-summary-${sessionId}.json`);
-  if (!(0, import_fs122.existsSync)(statePath)) return null;
+  const statePath = (0, import_path148.join)(stateDir, `session-summary-${sessionId}.json`);
+  if (!(0, import_fs127.existsSync)(statePath)) return null;
   try {
-    return JSON.parse((0, import_fs122.readFileSync)(statePath, "utf-8"));
+    return JSON.parse((0, import_fs127.readFileSync)(statePath, "utf-8"));
   } catch {
     return null;
   }
@@ -48470,22 +48470,22 @@ function spawnSessionSummaryScript(transcriptPath, stateDir, sessionId) {
     return;
   }
   lastSummarySpawnTimestamp = now;
-  const thisDir = (0, import_path142.dirname)((0, import_url17.fileURLToPath)(importMetaUrl));
-  const scriptPath = (0, import_path142.join)(
+  const thisDir = (0, import_path148.dirname)((0, import_url17.fileURLToPath)(importMetaUrl));
+  const scriptPath = (0, import_path148.join)(
     thisDir,
     "..",
     "..",
     "scripts",
     "session-summary.mjs"
   );
-  if (!(0, import_fs122.existsSync)(scriptPath)) {
+  if (!(0, import_fs127.existsSync)(scriptPath)) {
     if (process.env.OMC_DEBUG) {
       console.error("[HUD] session-summary script not found:", scriptPath);
     }
     return;
   }
   try {
-    const child = (0, import_child_process41.spawn)(
+    const child = (0, import_child_process43.spawn)(
       "node",
       [scriptPath, transcriptPath, stateDir, sessionId],
       {
@@ -48517,12 +48517,12 @@ async function calculateSessionHealth(sessionStart, contextPercent) {
 function showDiagnostic() {
   const version3 = getRuntimePackageVersion();
   const configDir = getClaudeConfigDir();
-  const hudScript = (0, import_path142.join)(configDir, "hud", "omc-hud.mjs");
-  const settingsFile = (0, import_path142.join)(configDir, "settings.json");
-  const hudExists = (0, import_fs122.existsSync)(hudScript);
+  const hudScript = (0, import_path148.join)(configDir, "hud", "omc-hud.mjs");
+  const settingsFile = (0, import_path148.join)(configDir, "settings.json");
+  const hudExists = (0, import_fs127.existsSync)(hudScript);
   let statusLineOk = false;
   try {
-    const settings = JSON.parse((0, import_fs122.readFileSync)(settingsFile, "utf-8"));
+    const settings = JSON.parse((0, import_fs127.readFileSync)(settingsFile, "utf-8"));
     const sl = settings.statusLine;
     if (sl && typeof sl === "object" && typeof sl.command === "string") {
       statusLineOk = sl.command.includes("omc-hud");
@@ -48627,7 +48627,7 @@ async function main2(watchMode = false, skipInit = false) {
       }
     }
     try {
-      const updateCacheFile = (0, import_path142.join)((0, import_os23.homedir)(), ".omc", "update-check.json");
+      const updateCacheFile = (0, import_path148.join)((0, import_os23.homedir)(), ".omc", "update-check.json");
       await (0, import_promises23.access)(updateCacheFile);
       const content = await (0, import_promises23.readFile)(updateCacheFile, "utf-8");
       const cached2 = JSON.parse(content);
@@ -48645,7 +48645,7 @@ async function main2(watchMode = false, skipInit = false) {
     let sessionSummary = null;
     const sessionSummaryEnabled = config2.elements.sessionSummary ?? false;
     if (sessionSummaryEnabled && resolvedTranscriptPath && currentSessionId) {
-      const omcStateDir = (0, import_path142.join)(getOmcRoot(cwd2), "state");
+      const omcStateDir = (0, import_path148.join)(getOmcRoot(cwd2), "state");
       sessionSummary = readSessionSummary(omcStateDir, currentSessionId);
       const shouldSpawn = !sessionSummary?.generatedAt || Date.now() - new Date(sessionSummary.generatedAt).getTime() > 6e4;
       if (shouldSpawn) {
@@ -48687,7 +48687,7 @@ async function main2(watchMode = false, skipInit = false) {
       skillCallCount: transcriptData.skillCallCount,
       promptTime: hudState?.lastPromptTimestamp ? new Date(hudState.lastPromptTimestamp) : null,
       apiKeySource: config2.elements.apiKeySource ? detectApiKeySource(cwd2) : null,
-      profileName: process.env.CLAUDE_CONFIG_DIR ? (0, import_path142.basename)(process.env.CLAUDE_CONFIG_DIR).replace(/^\./, "") : null,
+      profileName: process.env.CLAUDE_CONFIG_DIR ? (0, import_path148.basename)(process.env.CLAUDE_CONFIG_DIR).replace(/^\./, "") : null,
       sessionSummary,
       lastToolName: transcriptData.lastToolName
     };
@@ -48703,10 +48703,10 @@ async function main2(watchMode = false, skipInit = false) {
     }
     if (config2.contextLimitWarning.autoCompact && context.contextPercent >= config2.contextLimitWarning.threshold) {
       try {
-        const omcStateDir = (0, import_path142.join)(getOmcRoot(cwd2), "state");
-        (0, import_fs122.mkdirSync)(omcStateDir, { recursive: true });
-        const triggerFile = (0, import_path142.join)(omcStateDir, "compact-requested.json");
-        (0, import_fs122.writeFileSync)(
+        const omcStateDir = (0, import_path148.join)(getOmcRoot(cwd2), "state");
+        (0, import_fs127.mkdirSync)(omcStateDir, { recursive: true });
+        const triggerFile = (0, import_path148.join)(omcStateDir, "compact-requested.json");
+        (0, import_fs127.writeFileSync)(
           triggerFile,
           JSON.stringify({
             requestedAt: (/* @__PURE__ */ new Date()).toISOString(),
@@ -48745,7 +48745,7 @@ async function main2(watchMode = false, skipInit = false) {
     }
   }
 }
-var import_fs122, import_promises23, import_path142, import_os23, import_child_process41, import_url17, lastSummarySpawnTimestamp, summaryProcessPid;
+var import_fs127, import_promises23, import_path148, import_os23, import_child_process43, import_url17, lastSummarySpawnTimestamp, summaryProcessPid;
 var init_hud = __esm({
   "src/hud/index.ts"() {
     "use strict";
@@ -48762,11 +48762,11 @@ var init_hud = __esm({
     init_version();
     init_auto_update();
     init_worktree_paths();
-    import_fs122 = require("fs");
+    import_fs127 = require("fs");
     import_promises23 = require("fs/promises");
-    import_path142 = require("path");
+    import_path148 = require("path");
     import_os23 = require("os");
-    import_child_process41 = require("child_process");
+    import_child_process43 = require("child_process");
     import_url17 = require("url");
     init_worktree_paths();
     init_config_dir();
@@ -49297,8 +49297,8 @@ var chalkStderr = createChalk({ level: stderrColor ? stderrColor.level : 0 });
 var source_default = chalk;
 
 // src/cli/index.ts
-var import_path143 = require("path");
-var import_fs123 = require("fs");
+var import_path149 = require("path");
+var import_fs128 = require("fs");
 init_config_dir();
 
 // src/lib/env-vars.ts
@@ -52222,7 +52222,7 @@ var require_compile = __commonJS2((exports2) => {
     const schOrFunc = root2.refs[ref];
     if (schOrFunc)
       return schOrFunc;
-    let _sch = resolve33.call(this, root2, ref);
+    let _sch = resolve39.call(this, root2, ref);
     if (_sch === void 0) {
       const schema = (_a = root2.localRefs) === null || _a === void 0 ? void 0 : _a[ref];
       const { schemaId } = this.opts;
@@ -52249,7 +52249,7 @@ var require_compile = __commonJS2((exports2) => {
   function sameSchemaEnv(s1, s2) {
     return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
   }
-  function resolve33(root2, ref) {
+  function resolve39(root2, ref) {
     let sch;
     while (typeof (sch = this.refs[ref]) == "string")
       ref = sch;
@@ -52747,7 +52747,7 @@ var require_fast_uri = __commonJS2((exports2, module2) => {
     }
     return uri;
   }
-  function resolve33(baseURI, relativeURI, options) {
+  function resolve39(baseURI, relativeURI, options) {
     const schemelessOptions = Object.assign({ scheme: "null" }, options);
     const resolved = resolveComponents(parse62(baseURI, schemelessOptions), parse62(relativeURI, schemelessOptions), schemelessOptions, true);
     return serialize(resolved, { ...schemelessOptions, skipEscape: true });
@@ -52980,7 +52980,7 @@ var require_fast_uri = __commonJS2((exports2, module2) => {
   var fastUri = {
     SCHEMES,
     normalize: normalize12,
-    resolve: resolve33,
+    resolve: resolve39,
     resolveComponents,
     equal,
     serialize,
@@ -67347,7 +67347,7 @@ var Protocol = class {
           return;
         }
         const pollInterval = (_c = (_a = task2.pollInterval) !== null && _a !== void 0 ? _a : (_b = this._options) === null || _b === void 0 ? void 0 : _b.defaultTaskPollInterval) !== null && _c !== void 0 ? _c : 1e3;
-        await new Promise((resolve33) => setTimeout(resolve33, pollInterval));
+        await new Promise((resolve39) => setTimeout(resolve39, pollInterval));
         (_d = options === null || options === void 0 ? void 0 : options.signal) === null || _d === void 0 || _d.throwIfAborted();
       }
     } catch (error2) {
@@ -67359,7 +67359,7 @@ var Protocol = class {
   }
   request(request, resultSchema, options) {
     const { relatedRequestId, resumptionToken, onresumptiontoken, task, relatedTask } = options !== null && options !== void 0 ? options : {};
-    return new Promise((resolve33, reject) => {
+    return new Promise((resolve39, reject) => {
       var _a, _b, _c, _d, _e, _f, _g;
       const earlyReject = (error2) => {
         reject(error2);
@@ -67440,7 +67440,7 @@ var Protocol = class {
           if (!parseResult.success) {
             reject(parseResult.error);
           } else {
-            resolve33(parseResult.data);
+            resolve39(parseResult.data);
           }
         } catch (error2) {
           reject(error2);
@@ -67637,12 +67637,12 @@ var Protocol = class {
       }
     } catch (_d) {
     }
-    return new Promise((resolve33, reject) => {
+    return new Promise((resolve39, reject) => {
       if (signal.aborted) {
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
         return;
       }
-      const timeoutId = setTimeout(resolve33, interval);
+      const timeoutId = setTimeout(resolve39, interval);
       signal.addEventListener("abort", () => {
         clearTimeout(timeoutId);
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
@@ -68441,7 +68441,7 @@ var McpServer = class {
     let task = createTaskResult.task;
     const pollInterval = (_a = task.pollInterval) !== null && _a !== void 0 ? _a : 5e3;
     while (task.status !== "completed" && task.status !== "failed" && task.status !== "cancelled") {
-      await new Promise((resolve33) => setTimeout(resolve33, pollInterval));
+      await new Promise((resolve39) => setTimeout(resolve39, pollInterval));
       const updatedTask = await extra.taskStore.getTask(taskId);
       if (!updatedTask) {
         throw new McpError(ErrorCode.InternalError, `Task ${taskId} not found during polling`);
@@ -69472,7 +69472,7 @@ var LspClient = class _LspClient {
 Install with: ${this.serverConfig.installHint}`
       );
     }
-    return new Promise((resolve33, reject) => {
+    return new Promise((resolve39, reject) => {
       const command = this.devContainerContext ? "docker" : this.serverConfig.command;
       const args = this.devContainerContext ? ["exec", "-i", "-w", this.devContainerContext.containerWorkspaceRoot, this.devContainerContext.containerId, this.serverConfig.command, ...this.serverConfig.args] : this.serverConfig.args;
       this.process = (0, import_child_process4.spawn)(command, args, {
@@ -69499,7 +69499,7 @@ Install with: ${this.serverConfig.installHint}`
       });
       this.initialize().then(() => {
         this.initialized = true;
-        resolve33();
+        resolve39();
       }).catch(reject);
     });
   }
@@ -69643,13 +69643,13 @@ Install with: ${this.serverConfig.installHint}`
     const message = `Content-Length: ${Buffer.byteLength(content)}\r
 \r
 ${content}`;
-    return new Promise((resolve33, reject) => {
+    return new Promise((resolve39, reject) => {
       const timeoutHandle = setTimeout(() => {
         this.pendingRequests.delete(id);
         reject(new Error(`LSP request '${method}' timed out after ${effectiveTimeout}ms`));
       }, effectiveTimeout);
       this.pendingRequests.set(id, {
-        resolve: resolve33,
+        resolve: resolve39,
         reject,
         timeout: timeoutHandle
       });
@@ -69725,7 +69725,7 @@ ${content}`;
       }
     });
     this.openDocuments.add(hostUri);
-    await new Promise((resolve33) => setTimeout(resolve33, 100));
+    await new Promise((resolve39) => setTimeout(resolve39, 100));
   }
   /**
    * Close a document
@@ -69886,13 +69886,13 @@ ${content}`;
     if (this.diagnostics.has(uri)) {
       return Promise.resolve();
     }
-    return new Promise((resolve33) => {
+    return new Promise((resolve39) => {
       let resolved = false;
       const timer = setTimeout(() => {
         if (!resolved) {
           resolved = true;
           this.diagnosticWaiters.delete(uri);
-          resolve33();
+          resolve39();
         }
       }, timeoutMs);
       const existing = this.diagnosticWaiters.get(uri) || [];
@@ -69900,7 +69900,7 @@ ${content}`;
         if (!resolved) {
           resolved = true;
           clearTimeout(timer);
-          resolve33();
+          resolve39();
         }
       });
       this.diagnosticWaiters.set(uri, existing);
@@ -71799,7 +71799,7 @@ var SessionLock = class {
   }
 };
 function sleep(ms) {
-  return new Promise((resolve33) => setTimeout(resolve33, ms));
+  return new Promise((resolve39) => setTimeout(resolve39, ms));
 }
 
 // src/tools/python-repl/socket-client.ts
@@ -71829,7 +71829,7 @@ var JsonRpcError = class extends Error {
   }
 };
 async function sendSocketRequest(socketPath, method, params, timeout = 6e4) {
-  return new Promise((resolve33, reject) => {
+  return new Promise((resolve39, reject) => {
     const id = (0, import_crypto5.randomUUID)();
     const request = {
       jsonrpc: "2.0",
@@ -71919,7 +71919,7 @@ async function sendSocketRequest(socketPath, method, params, timeout = 6e4) {
           }
           if (!settled) {
             settled = true;
-            resolve33(response.result);
+            resolve39(response.result);
           }
         } catch (e) {
           if (!settled) {
@@ -74264,7 +74264,7 @@ function mergeArrays(fieldName, base, incoming) {
       return mergeScalarArray(base, incoming);
   }
 }
-function mergeByKey(base, incoming, keyFn, resolve33) {
+function mergeByKey(base, incoming, keyFn, resolve39) {
   const seen = /* @__PURE__ */ new Map();
   for (const item of base) {
     seen.set(keyFn(item), item);
@@ -74273,7 +74273,7 @@ function mergeByKey(base, incoming, keyFn, resolve33) {
     const key = keyFn(item);
     const existing = seen.get(key);
     if (existing) {
-      seen.set(key, resolve33(existing, item));
+      seen.set(key, resolve39(existing, item));
     } else {
       seen.set(key, item);
     }
@@ -81120,7 +81120,7 @@ async function processKeywordDetector(input) {
       sessionId,
       "prompt-submit:explicit-slash"
     );
-    void emit({ directory, stream: "skill-events", payload: { event: "detected", skill_slug: explicitSlash.skill, keyword: explicitSlash.keyword } });
+    void emit({ directory, stream: "skill-events", payload: { event: "detected", skill_slug: explicitSlash.skill, keyword: explicitSlash.raw.trim() } });
     await seedModeStateForExplicitWorkflowSlash(
       explicitSlash.skill,
       directory,
@@ -82771,10 +82771,10 @@ function applyDeepInterviewRuntimeSettings(template) {
   const threshold = getDeepInterviewAmbiguityThreshold();
   const percent = formatThresholdPercent(threshold);
   return template.replace(
-    '5. **Initialize state** via `state_write(mode="deep-interview")`:',
+    /(\d+\.\s+\*\*Initialize state\*\* via `state_write\(mode="deep-interview"\)`:)/,
     [
       `4.5. **Load runtime settings** from \`~/.claude/settings.json\` and \`./.claude/settings.json\` before state init (project overrides profile). For this run, use \`ambiguityThreshold = ${threshold}\`.`,
-      '5. **Initialize state** via `state_write(mode="deep-interview")`:'
+      "$1"
     ].join("\n")
   ).replace('"threshold": 0.2,', `"threshold": ${threshold},`).replace(
     "We'll proceed to execution once ambiguity drops below 20%.",
@@ -83687,7 +83687,7 @@ async function pollLoop2(config2) {
       log2(`Poll error: ${state.lastError}`, config2);
       writeDaemonState2(state, config2);
     }
-    await new Promise((resolve33) => setTimeout(resolve33, config2.pollIntervalMs));
+    await new Promise((resolve39) => setTimeout(resolve39, config2.pollIntervalMs));
   }
 }
 function startDaemon(config2) {
@@ -86656,8 +86656,8 @@ function escapeRegExp4(input) {
 }
 
 // src/product/cycle-runner.ts
-var import_fs102 = require("fs");
-var import_path122 = require("path");
+var import_fs105 = require("fs");
+var import_path125 = require("path");
 var import_child_process29 = require("child_process");
 
 // src/product/portfolio-ledger.ts
@@ -87180,6 +87180,726 @@ function escapeCell(value) {
   return value.replace(/\|/g, "\\|").replace(/\n/g, " ");
 }
 
+// src/product/intervention-router.ts
+var import_fs102 = require("fs");
+var import_path122 = require("path");
+init_atomic_write();
+var PRODUCT_INTERVENTION_HANDOFF_RELATIVE_PATH = ".omc/handoffs/product-cycle-interventions/current.json";
+var PRODUCT_BUILD_ROUTES = /* @__PURE__ */ new Set(["product-pipeline", "both"]);
+function planProductInterventions(options) {
+  const root2 = (0, import_path122.resolve)(options.root ?? process.cwd());
+  const routes = [];
+  if (options.stage === "spec") {
+    routes.push(...planSpecInterventions(root2, options.snapshot));
+  }
+  if (options.stage === "build") {
+    routes.push(...planBuildInterventions(root2, options.snapshot));
+  }
+  if (options.stage === "verify" && options.failure) {
+    routes.push(...planVerifyRepairInterventions(options.failure));
+  }
+  const blockingRoutes = routes.filter((route) => route.required && route.blocksStage);
+  return {
+    stage: options.stage,
+    routes,
+    blockingRoutes,
+    nextCommand: blockingRoutes[0]?.command ?? routes.find((route) => route.required)?.command ?? routes[0]?.command
+  };
+}
+function writeProductInterventionHandoff(root2, snapshot, plan) {
+  const jsonRelativePath = PRODUCT_INTERVENTION_HANDOFF_RELATIVE_PATH;
+  const mdRelativePath = ".omc/handoffs/product-cycle-interventions/current.md";
+  const jsonPath = (0, import_path122.resolve)(root2, jsonRelativePath);
+  const mdPath = (0, import_path122.resolve)(root2, mdRelativePath);
+  const handoff = {
+    schema_version: 1,
+    produced_at: (/* @__PURE__ */ new Date()).toISOString(),
+    agent_role: "product-intervention-router",
+    cycle_id: snapshot.cycleId,
+    cycle_goal: snapshot.cycleGoal,
+    cycle_stage: plan.stage,
+    status: plan.blockingRoutes.length > 0 ? "blocked" : "ready",
+    next_command: plan.nextCommand,
+    routes: plan.routes,
+    blocking_route_count: plan.blockingRoutes.length,
+    context_consumed: interventionContext(plan)
+  };
+  ensureDirSync((0, import_path122.dirname)(jsonPath));
+  atomicWriteJsonSync(jsonPath, handoff);
+  atomicWriteFileSync(mdPath, renderProductInterventionHandoff(handoff));
+  return { jsonPath, mdPath };
+}
+function readProductInterventionHandoff(root2 = process.cwd()) {
+  const path23 = (0, import_path122.resolve)(root2, PRODUCT_INTERVENTION_HANDOFF_RELATIVE_PATH);
+  if (!(0, import_fs102.existsSync)(path23)) return void 0;
+  return JSON.parse((0, import_fs102.readFileSync)(path23, "utf-8"));
+}
+function planSpecInterventions(root2, snapshot) {
+  if (!isUserFacingCycle2(snapshot)) return [];
+  const experienceRoute = planExperienceGateIntervention(root2, snapshot);
+  return experienceRoute ? [experienceRoute] : [];
+}
+function planExperienceGateIntervention(root2, snapshot) {
+  const experiencePath = ".omc/experience/current.md";
+  const experienceContent = readRelative(root2, experiencePath);
+  const quality = evaluateExperienceGateQuality(experienceContent ?? "");
+  if (quality.passed) return void 0;
+  return {
+    id: "prebuild-experience-gate",
+    agent: "product-experience-gate",
+    trigger: `user-facing cycle lacks a real passing experience gate: ${quality.reasons.join(", ")}`,
+    purpose: "Prove the concrete user journey, empty states, failure states, return session, perceived value, and build readiness before implementation.",
+    required: true,
+    command: `/product-experience-gate "${quoteArg(coreSliceOrGoal(snapshot))}"`,
+    blocksStage: true,
+    evidence: [experiencePath]
+  };
+}
+function renderProductInterventionHandoff(handoff) {
+  const lines = [
+    `# Product Cycle Interventions: ${handoff.cycle_goal ?? handoff.cycle_id ?? handoff.cycle_stage}`,
+    "",
+    `produced_at: ${handoff.produced_at}`,
+    `cycle_id: ${handoff.cycle_id ?? "unknown"}`,
+    `cycle_stage: ${handoff.cycle_stage}`,
+    `status: ${handoff.status}`,
+    `blocking_route_count: ${handoff.blocking_route_count}`,
+    `next_command: ${handoff.next_command ?? "none"}`,
+    "",
+    "## Routes"
+  ];
+  if (handoff.routes.length === 0) {
+    lines.push("- none");
+  } else {
+    for (const route of handoff.routes) {
+      lines.push(`- ${route.required ? "required" : "recommended"} ${route.agent}: ${route.command}`);
+      lines.push(`  - trigger: ${route.trigger}`);
+      lines.push(`  - purpose: ${route.purpose}`);
+      lines.push(`  - blocks_stage: ${route.blocksStage}`);
+    }
+  }
+  lines.push("");
+  lines.push("## Context Consumed");
+  for (const path23 of handoff.context_consumed) {
+    lines.push(`- ${path23}`);
+  }
+  lines.push("");
+  lines.push("artifacts_written:");
+  lines.push("  - .omc/handoffs/product-cycle-interventions/current.json");
+  lines.push("  - .omc/handoffs/product-cycle-interventions/current.md");
+  lines.push("");
+  return lines.join("\n");
+}
+function interventionContext(plan) {
+  return Array.from(new Set(plan.routes.flatMap((route) => route.evidence ?? []))).sort();
+}
+function planBuildInterventions(root2, snapshot) {
+  const route = (snapshot.buildRoute ?? "").toLowerCase();
+  const routes = [];
+  const experienceRoute = isUserFacingCycle2(snapshot) ? planExperienceGateIntervention(root2, snapshot) : void 0;
+  if (experienceRoute) {
+    routes.push(experienceRoute);
+    return routes;
+  }
+  if (PRODUCT_BUILD_ROUTES.has(route) && needsVisualCreativeProvisioning(root2, snapshot)) {
+    const intent = coreSliceOrGoal(snapshot);
+    routes.push({
+      id: "visual-creative-skill-provisioning",
+      agent: "stack-provision",
+      trigger: "user-facing build needs UX/visual capability coverage and no visual-creative provisioning manifest is present",
+      purpose: "Provision frontend-product and visual-creative skills for art direction, motion, generated assets, visual QA, and richer UI decisions before implementation.",
+      required: true,
+      command: `/stack-provision --surfaces=frontend-product,visual-creative --creative-intent="${quoteArg(intent)}"`,
+      blocksStage: true,
+      evidence: [".omc/provisioned/current.json", ".omc/experience/current.md", ".omc/cycles/current.md"]
+    });
+  }
+  if (route === "backend-pipeline" || route === "both") {
+    routes.push({
+      id: "backend-build-pipeline",
+      agent: "backend-pipeline",
+      trigger: `build_route=${route}`,
+      purpose: "Build the enabling/backend task through backend implementation and verification gates.",
+      required: true,
+      command: '/backend-pipeline "<enabling task>"',
+      blocksStage: true,
+      evidence: [".omc/cycles/current.md"]
+    });
+  }
+  if (route === "product-pipeline" || route === "both" || route === "") {
+    routes.push({
+      id: "product-build-pipeline",
+      agent: "product-pipeline",
+      trigger: `build_route=${route || "unknown"}`,
+      purpose: "Build the core product slice through UX, designer/executor, quality, and verifier gates.",
+      required: true,
+      command: '/product-pipeline "<core product slice>"',
+      blocksStage: true,
+      evidence: [".omc/cycles/current.md", ".omc/experience/current.md"]
+    });
+  }
+  return routes;
+}
+function planVerifyRepairInterventions(failure) {
+  const trigger = failure.reason ?? failure.kind;
+  const command = failure.command ? ` (${failure.command})` : "";
+  return [
+    {
+      id: "verify-root-cause",
+      agent: "debugger",
+      trigger,
+      purpose: `Find the root cause of the failed verification${command} before another implementation pass.`,
+      required: true,
+      command: '/prompts:debugger "root-cause the failed product-cycle verification and identify the smallest fix"',
+      blocksStage: true
+    },
+    {
+      id: "verify-minimal-fix",
+      agent: "executor",
+      trigger,
+      purpose: "Apply the smallest code change that addresses the debugger root cause without broad refactors.",
+      required: true,
+      command: '/prompts:executor "apply the minimal repair from debugger findings"',
+      blocksStage: true
+    },
+    {
+      id: "verify-regression-coverage",
+      agent: "test-engineer",
+      trigger,
+      purpose: "Add or update regression coverage for the failed path so the bug does not return.",
+      required: true,
+      command: '/prompts:test-engineer "add regression coverage for the product-cycle verification failure"',
+      blocksStage: true
+    },
+    {
+      id: "verify-final-approval",
+      agent: "verifier",
+      trigger,
+      purpose: "Re-run acceptance evidence and approve or reject the repaired cycle.",
+      required: true,
+      command: '/prompts:verifier "verify the repaired product-cycle acceptance criteria and evidence"',
+      blocksStage: true
+    }
+  ];
+}
+function needsVisualCreativeProvisioning(root2, snapshot) {
+  if (!isUserFacingCycle2(snapshot)) return false;
+  if (hasVisualCreativeProvisioning(root2)) return false;
+  return hasVisualCreativeSignal(root2, snapshot);
+}
+function hasVisualCreativeProvisioning(root2) {
+  const manifest = readRelative(root2, ".omc/provisioned/current.json");
+  if (!manifest) return false;
+  return /\bvisual-creative\b|\bmeaning-driven-ui-builder\b|\bvisual-verdict\b|\bimagegen\b|\bcreative-direction\b/i.test(manifest);
+}
+function hasVisualCreativeSignal(root2, snapshot) {
+  const corpus = [
+    snapshot.cycleGoal,
+    snapshot.buildRoute,
+    readRelative(root2, ".omc/cycles/current.md"),
+    readRelative(root2, ".omc/experience/current.md"),
+    readRelative(root2, ".omc/product/capability-map/current.md"),
+    readRelative(root2, ".omc/meaning/current.md")
+  ].filter(Boolean).join("\n").toLowerCase();
+  return /\b(ui|ux|visual|interface|screen|dashboard|onboarding|empty state|error state|return session|flow|layout|brand|typography|motion|animation|icon|illustration|hero|canvas|3d|chart|graph|image|asset|style|theme)\b/i.test(corpus);
+}
+function isUserFacingCycle2(snapshot) {
+  const route = (snapshot.buildRoute ?? "").toLowerCase();
+  return PRODUCT_BUILD_ROUTES.has(route) || route === "";
+}
+function coreSliceOrGoal(snapshot) {
+  return snapshot.cycleGoal ?? "core product slice";
+}
+function readRelative(root2, relativePath) {
+  const path23 = (0, import_path122.resolve)(root2, relativePath);
+  if (!(0, import_fs102.existsSync)(path23)) return void 0;
+  try {
+    return (0, import_fs102.readFileSync)(path23, "utf-8");
+  } catch {
+    return void 0;
+  }
+}
+function evaluateExperienceGateQuality(content) {
+  const reasons = [];
+  if (!content.trim()) {
+    return { passed: false, reasons: ["missing .omc/experience/current.md"] };
+  }
+  if (extractUxVerdict2(content) !== "pass") {
+    reasons.push("UX Verdict is not pass");
+  }
+  const requiredSections = [
+    ["User Journey", ["user", "screen", "flow", "opens", "sees", "clicks", "selects", "continues"]],
+    ["Empty States", ["empty", "no ", "first", "sample", "placeholder", "start"]],
+    ["Failure States", ["error", "fail", "recover", "retry", "invalid", "offline"]],
+    ["Return Session", ["return", "resume", "reopen", "continue", "next"]],
+    ["Perceived Value", ["value", "faster", "clear", "confidence", "useful", "less", "easier"]]
+  ];
+  for (const [sectionName, terms] of requiredSections) {
+    const section = extractSection2(content, sectionName);
+    if (!section) {
+      reasons.push(`${sectionName} section missing`);
+      continue;
+    }
+    const normalized = section.toLowerCase();
+    if (normalized.replace(/\s+/g, " ").trim().length < 60) {
+      reasons.push(`${sectionName} section too thin`);
+    }
+    if (!terms.some((term) => normalized.includes(term))) {
+      reasons.push(`${sectionName} lacks concrete product detail`);
+    }
+  }
+  return { passed: reasons.length === 0, reasons };
+}
+function extractUxVerdict2(content) {
+  const section = content.match(/(?:^|\n)#{1,6}\s*UX Verdict\s*\n([\s\S]*?)(?=\n#{1,6}\s|$)/i)?.[1];
+  const source = section ?? content;
+  const firstMeaningfulLine = source.split(/\r?\n/).map((line) => line.trim().toLowerCase()).find((line) => line.length > 0 && !line.includes(":"));
+  if (!firstMeaningfulLine) return void 0;
+  const match = firstMeaningfulLine.match(/^(pass|blocked|needs-research)\b/);
+  return match?.[1];
+}
+function extractSection2(content, sectionName) {
+  return content.match(new RegExp(`(?:^|\\n)#{1,6}\\s*${escapeRegExp5(sectionName)}\\s*\\n([\\s\\S]*?)(?=\\n#{1,6}\\s|$)`, "i"))?.[1];
+}
+function escapeRegExp5(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+function quoteArg(input) {
+  return input.replace(/["\\]/g, " ").replace(/\s+/g, " ").trim().slice(0, 160) || "core product slice";
+}
+
+// src/product/intervention-execution-plan.ts
+var import_fs103 = require("fs");
+var import_path123 = require("path");
+init_atomic_write();
+var PRODUCT_INTERVENTION_EXECUTION_PLAN_RELATIVE_PATH = ".omc/handoffs/product-cycle-interventions/execution-plan.json";
+var DEFAULT_PROVIDER = "codex";
+var PRODUCT_INTERVENTION_EXECUTION_PLAN_MD_RELATIVE_PATH = ".omc/handoffs/product-cycle-interventions/execution-plan.md";
+function buildProductInterventionExecutionPlan(handoff, options = {}) {
+  const provider = normalizeProvider(options.provider);
+  const steps = handoff.routes.map((route) => buildStep(route, provider));
+  const firstExecutable = steps.find((step) => step.executable);
+  return {
+    schema_version: 1,
+    produced_at: (/* @__PURE__ */ new Date()).toISOString(),
+    agent_role: "product-intervention-execution-planner",
+    source_handoff: options.sourceHandoff ?? ".omc/handoffs/product-cycle-interventions/current.json",
+    cycle_id: handoff.cycle_id,
+    cycle_goal: handoff.cycle_goal,
+    cycle_stage: handoff.cycle_stage,
+    provider,
+    steps,
+    executable_step_count: steps.filter((step) => step.executable).length,
+    review_required_step_count: steps.filter((step) => step.review_required).length,
+    manual_step_count: steps.filter((step) => !step.executable).length,
+    next_argv: firstExecutable?.argv
+  };
+}
+function writeProductInterventionExecutionPlan(root2, plan) {
+  const jsonPath = (0, import_path123.resolve)(root2, PRODUCT_INTERVENTION_EXECUTION_PLAN_RELATIVE_PATH);
+  const mdPath = (0, import_path123.resolve)(root2, PRODUCT_INTERVENTION_EXECUTION_PLAN_MD_RELATIVE_PATH);
+  ensureDirSync((0, import_path123.dirname)(jsonPath));
+  atomicWriteJsonSync(jsonPath, plan);
+  atomicWriteFileSync(mdPath, renderProductInterventionExecutionPlan(plan));
+  return { jsonPath, mdPath };
+}
+function readProductInterventionExecutionPlan(root2 = process.cwd()) {
+  const path23 = (0, import_path123.resolve)(root2, PRODUCT_INTERVENTION_EXECUTION_PLAN_RELATIVE_PATH);
+  if (!(0, import_fs103.existsSync)(path23)) return void 0;
+  return JSON.parse((0, import_fs103.readFileSync)(path23, "utf-8"));
+}
+function renderProductInterventionExecutionPlan(plan) {
+  const lines = [
+    `# Product Cycle Intervention Execution Plan: ${plan.cycle_goal ?? plan.cycle_id ?? plan.cycle_stage}`,
+    "",
+    `produced_at: ${plan.produced_at}`,
+    `cycle_id: ${plan.cycle_id ?? "unknown"}`,
+    `cycle_stage: ${plan.cycle_stage}`,
+    `provider: ${plan.provider}`,
+    `source_handoff: ${plan.source_handoff}`,
+    `executable_step_count: ${plan.executable_step_count}`,
+    `review_required_step_count: ${plan.review_required_step_count}`,
+    `manual_step_count: ${plan.manual_step_count}`,
+    `next_argv: ${plan.next_argv ? renderArgv(plan.next_argv) : "none"}`,
+    "",
+    "## Steps"
+  ];
+  if (plan.steps.length === 0) {
+    lines.push("- none");
+  } else {
+    for (const step of plan.steps) {
+      lines.push(`- ${step.route_id}: ${step.execution_surface}`);
+      lines.push(`  - agent: ${step.agent}`);
+      lines.push(`  - executable: ${step.executable}`);
+      lines.push(`  - review_required: ${step.review_required}`);
+      lines.push(`  - reason: ${step.reason}`);
+      lines.push(`  - source_command: ${step.source_command}`);
+      lines.push(`  - argv: ${step.argv ? renderArgv(step.argv) : "none"}`);
+    }
+  }
+  lines.push("");
+  lines.push("artifacts_written:");
+  lines.push(`  - ${PRODUCT_INTERVENTION_EXECUTION_PLAN_RELATIVE_PATH}`);
+  lines.push(`  - ${PRODUCT_INTERVENTION_EXECUTION_PLAN_MD_RELATIVE_PATH}`);
+  lines.push("");
+  return lines.join("\n");
+}
+function buildStep(route, provider) {
+  const promptRoute = parsePromptRoute(route.command);
+  if (promptRoute) {
+    return {
+      route_id: route.id,
+      agent: route.agent,
+      source_command: route.command,
+      execution_surface: "agent-prompt",
+      executable: true,
+      review_required: false,
+      reason: "Prompt routes can run through the provider advisor with the matching agent prompt.",
+      argv: ["omc", "ask", provider, "--agent-prompt", promptRoute.role, "--prompt", promptRoute.prompt]
+    };
+  }
+  const stackRoute = parseSlashCommand2(route.command, "/stack-provision");
+  if (stackRoute) {
+    return {
+      route_id: route.id,
+      agent: route.agent,
+      source_command: route.command,
+      execution_surface: "stack-plan",
+      executable: true,
+      review_required: true,
+      reason: "Stack provisioning is planned headlessly first; applying installs remains an explicit reviewed action.",
+      argv: ["omc", "stack", "plan", ...stackRoute.args]
+    };
+  }
+  const pipelineRoute = parsePipelineRoute(route, provider);
+  if (pipelineRoute) {
+    return pipelineRoute;
+  }
+  const slashRoute = parseGenericSlashCommand(route.command);
+  if (slashRoute) {
+    return {
+      route_id: route.id,
+      agent: route.agent,
+      source_command: route.command,
+      execution_surface: "slash-skill",
+      executable: false,
+      review_required: true,
+      reason: "This route is an interactive slash skill and needs an orchestrator-specific execution surface."
+    };
+  }
+  return {
+    route_id: route.id,
+    agent: route.agent,
+    source_command: route.command,
+    execution_surface: "manual",
+    executable: false,
+    review_required: true,
+    reason: "The command is not recognized as a safe automatic execution surface."
+  };
+}
+function parsePipelineRoute(route, provider) {
+  if (route.agent !== "product-pipeline" && route.agent !== "backend-pipeline") return void 0;
+  const expectedCommand = route.agent === "product-pipeline" ? "/product-pipeline" : "/backend-pipeline";
+  const parsed = parseSlashCommand2(route.command, expectedCommand);
+  if (!parsed) return void 0;
+  const routeTarget = parsed.args.join(" ").trim() || route.purpose;
+  const task = [
+    `Run ${route.agent} for product-cycle route "${route.id}".`,
+    `Target: ${routeTarget}`,
+    `Trigger: ${route.trigger}`,
+    `Purpose: ${route.purpose}`,
+    `Source command: ${route.command}`,
+    "Use the existing product-cycle artifacts as context, keep the diff small, and produce verification evidence."
+  ].join("\n");
+  return {
+    route_id: route.id,
+    agent: route.agent,
+    source_command: route.command,
+    execution_surface: "team-start",
+    executable: true,
+    review_required: true,
+    reason: "Pipeline slash routes can be launched as governed team jobs instead of direct interactive slash execution.",
+    argv: ["omc", "team", "start", "--agent", provider, "--count", "2", "--subject", route.agent, "--task", task]
+  };
+}
+function parsePromptRoute(command) {
+  const tokens = splitCommandLine(command);
+  if (tokens.length < 2) return void 0;
+  const first = tokens[0];
+  const match = first.match(/^\/prompts:([a-z][a-z0-9-]*)$/);
+  if (!match) return void 0;
+  return {
+    role: match[1],
+    prompt: tokens.slice(1).join(" ").trim()
+  };
+}
+function parseSlashCommand2(command, commandName) {
+  const tokens = splitCommandLine(command);
+  if (tokens[0] !== commandName) return void 0;
+  return { args: tokens.slice(1) };
+}
+function parseGenericSlashCommand(command) {
+  const tokens = splitCommandLine(command);
+  const commandName = tokens[0];
+  if (!commandName?.startsWith("/")) return void 0;
+  return { commandName };
+}
+function splitCommandLine(command) {
+  const tokens = [];
+  let current = "";
+  let quote;
+  let escaping = false;
+  for (const char of command.trim()) {
+    if (escaping) {
+      current += char;
+      escaping = false;
+      continue;
+    }
+    if (char === "\\") {
+      escaping = true;
+      continue;
+    }
+    if (quote) {
+      if (char === quote) {
+        quote = void 0;
+      } else {
+        current += char;
+      }
+      continue;
+    }
+    if (char === '"' || char === "'") {
+      quote = char;
+      continue;
+    }
+    if (/\s/.test(char)) {
+      if (current) {
+        tokens.push(current);
+        current = "";
+      }
+      continue;
+    }
+    current += char;
+  }
+  if (escaping) current += "\\";
+  if (current) tokens.push(current);
+  return tokens;
+}
+function normalizeProvider(provider) {
+  const normalized = (provider ?? DEFAULT_PROVIDER).trim().toLowerCase();
+  if (normalized === "claude" || normalized === "codex" || normalized === "gemini") return normalized;
+  return DEFAULT_PROVIDER;
+}
+function renderArgv(argv) {
+  return argv.map((arg) => /^[a-z0-9_./:=,-]+$/i.test(arg) ? arg : JSON.stringify(arg)).join(" ");
+}
+
+// src/product/research-router.ts
+var import_fs104 = require("fs");
+var import_path124 = require("path");
+init_atomic_write();
+var PRODUCT_RESEARCH_HANDOFF_RELATIVE_PATH = ".omc/handoffs/product-cycle-research/current.json";
+var PRODUCT_RESEARCH_ARTIFACT_RELATIVE_PATH = ".omc/research/product-cycle/current.md";
+var PRODUCT_RESEARCH_HANDOFF_MD_RELATIVE_PATH = ".omc/handoffs/product-cycle-research/current.md";
+var USER_FACING_BUILD_ROUTES = /* @__PURE__ */ new Set(["product-pipeline", "both", ""]);
+function planProductResearch(options) {
+  const root2 = (0, import_path124.resolve)(options.root ?? process.cwd());
+  const routes = [];
+  if ((options.stage === "spec" || options.stage === "build") && !hasPassingResearchArtifact(root2)) {
+    routes.push(...planStageResearch(root2, options.snapshot, options.stage));
+  }
+  const blockingRoutes = routes.filter((route) => route.required && route.blocksStage);
+  return {
+    stage: options.stage,
+    routes,
+    blockingRoutes,
+    nextCommand: blockingRoutes[0]?.command ?? routes.find((route) => route.required)?.command ?? routes[0]?.command
+  };
+}
+function writeProductResearchHandoff(root2, snapshot, plan) {
+  const jsonPath = (0, import_path124.resolve)(root2, PRODUCT_RESEARCH_HANDOFF_RELATIVE_PATH);
+  const mdPath = (0, import_path124.resolve)(root2, PRODUCT_RESEARCH_HANDOFF_MD_RELATIVE_PATH);
+  const handoff = {
+    schema_version: 1,
+    produced_at: (/* @__PURE__ */ new Date()).toISOString(),
+    agent_role: "product-research-router",
+    cycle_id: snapshot.cycleId,
+    cycle_goal: snapshot.cycleGoal,
+    cycle_stage: plan.stage,
+    status: plan.blockingRoutes.length > 0 ? "blocked" : "ready",
+    next_command: plan.nextCommand,
+    routes: plan.routes,
+    blocking_route_count: plan.blockingRoutes.length,
+    research_artifact: PRODUCT_RESEARCH_ARTIFACT_RELATIVE_PATH,
+    context_consumed: Array.from(new Set(plan.routes.flatMap((route) => route.evidence))).sort()
+  };
+  ensureDirSync((0, import_path124.dirname)(jsonPath));
+  atomicWriteJsonSync(jsonPath, handoff);
+  atomicWriteFileSync(mdPath, renderProductResearchHandoff(handoff));
+  return { jsonPath, mdPath };
+}
+function readProductResearchHandoff(root2 = process.cwd()) {
+  const path23 = (0, import_path124.resolve)(root2, PRODUCT_RESEARCH_HANDOFF_RELATIVE_PATH);
+  if (!(0, import_fs104.existsSync)(path23)) return void 0;
+  return JSON.parse((0, import_fs104.readFileSync)(path23, "utf-8"));
+}
+function planStageResearch(root2, snapshot, stage) {
+  const corpus = researchCorpus(root2, snapshot);
+  const routes = [];
+  if (isUserFacingCycle3(snapshot) && hasUxResearchSignal(corpus)) {
+    routes.push({
+      id: "user-interaction-research",
+      agent: "ux-researcher",
+      trigger: `${stage} user-facing feature has UX/interface signals but no passing product-cycle research artifact`,
+      purpose: "Research expected user interaction, workflow states, accessibility constraints, and real-world UI references before implementation choices.",
+      required: true,
+      command: `/prompts:ux-researcher "${quoteArg2(`research UX patterns and states for ${coreSliceOrGoal2(snapshot)}; write ${PRODUCT_RESEARCH_ARTIFACT_RELATIVE_PATH} with Research Verdict pass/blocked`)}"`,
+      blocksStage: true,
+      evidence: researchEvidencePaths(root2),
+      expectedArtifact: PRODUCT_RESEARCH_ARTIFACT_RELATIVE_PATH
+    });
+  }
+  if (hasDependencyResearchSignal(corpus)) {
+    routes.push({
+      id: "dependency-api-research",
+      agent: "dependency-expert",
+      trigger: `${stage} references SDK/API/framework/library choices but no passing product-cycle research artifact`,
+      purpose: "Check official documentation, current package/API behavior, constraints, and integration risks before choosing implementation details.",
+      required: true,
+      command: `/prompts:dependency-expert "${quoteArg2(`research official docs and constraints for ${coreSliceOrGoal2(snapshot)}; write ${PRODUCT_RESEARCH_ARTIFACT_RELATIVE_PATH} with sources and Research Verdict pass/blocked`)}"`,
+      blocksStage: true,
+      evidence: researchEvidencePaths(root2),
+      expectedArtifact: PRODUCT_RESEARCH_ARTIFACT_RELATIVE_PATH
+    });
+  }
+  if (hasBackendArchitectureSignal(corpus)) {
+    routes.push({
+      id: "backend-architecture-research",
+      agent: "architect",
+      trigger: `${stage} has backend/security/performance-sensitive signals but no passing product-cycle research artifact`,
+      purpose: "Research architectural constraints, data/API boundaries, security risks, and performance-sensitive decisions before backend implementation.",
+      required: true,
+      command: `/prompts:architect "${quoteArg2(`research backend architecture constraints for ${coreSliceOrGoal2(snapshot)}; write ${PRODUCT_RESEARCH_ARTIFACT_RELATIVE_PATH} with decision evidence and Research Verdict pass/blocked`)}"`,
+      blocksStage: true,
+      evidence: researchEvidencePaths(root2),
+      expectedArtifact: PRODUCT_RESEARCH_ARTIFACT_RELATIVE_PATH
+    });
+  }
+  if (!isUserFacingCycle3(snapshot) && routes.length === 0 && stage === "spec") {
+    routes.push({
+      id: "product-scope-research",
+      agent: "product-manager",
+      trigger: "spec stage lacks evidence that the selected slice is useful and correctly scoped",
+      purpose: "Clarify user job, success criteria, anti-scope, and launch slice before implementation planning.",
+      required: true,
+      command: `/prompts:product-manager "${quoteArg2(`research product usefulness and scope for ${coreSliceOrGoal2(snapshot)}; write ${PRODUCT_RESEARCH_ARTIFACT_RELATIVE_PATH} with Research Verdict pass/blocked`)}"`,
+      blocksStage: true,
+      evidence: researchEvidencePaths(root2),
+      expectedArtifact: PRODUCT_RESEARCH_ARTIFACT_RELATIVE_PATH
+    });
+  }
+  return dedupeRoutes(routes);
+}
+function renderProductResearchHandoff(handoff) {
+  const lines = [
+    `# Product Cycle Research: ${handoff.cycle_goal ?? handoff.cycle_id ?? handoff.cycle_stage}`,
+    "",
+    `produced_at: ${handoff.produced_at}`,
+    `cycle_id: ${handoff.cycle_id ?? "unknown"}`,
+    `cycle_stage: ${handoff.cycle_stage}`,
+    `status: ${handoff.status}`,
+    `blocking_route_count: ${handoff.blocking_route_count}`,
+    `research_artifact: ${handoff.research_artifact}`,
+    `next_command: ${handoff.next_command ?? "none"}`,
+    "",
+    "## Routes"
+  ];
+  if (handoff.routes.length === 0) {
+    lines.push("- none");
+  } else {
+    for (const route of handoff.routes) {
+      lines.push(`- ${route.required ? "required" : "recommended"} ${route.agent}: ${route.command}`);
+      lines.push(`  - trigger: ${route.trigger}`);
+      lines.push(`  - purpose: ${route.purpose}`);
+      lines.push(`  - expected_artifact: ${route.expectedArtifact}`);
+    }
+  }
+  lines.push("");
+  lines.push("## Context Consumed");
+  for (const path23 of handoff.context_consumed) {
+    lines.push(`- ${path23}`);
+  }
+  lines.push("");
+  lines.push("artifacts_written:");
+  lines.push(`  - ${PRODUCT_RESEARCH_HANDOFF_RELATIVE_PATH}`);
+  lines.push(`  - ${PRODUCT_RESEARCH_HANDOFF_MD_RELATIVE_PATH}`);
+  lines.push("");
+  return lines.join("\n");
+}
+function hasPassingResearchArtifact(root2) {
+  const content = readRelative2(root2, PRODUCT_RESEARCH_ARTIFACT_RELATIVE_PATH);
+  if (!content) return false;
+  const normalized = content.toLowerCase();
+  return /research[_\s-]*verdict\s*:\s*pass\b/.test(normalized) || /(?:^|\n)#{1,6}\s*research verdict\s*\n\s*pass\b/.test(normalized);
+}
+function researchCorpus(root2, snapshot) {
+  return [
+    snapshot.cycleGoal,
+    snapshot.buildRoute,
+    readRelative2(root2, ".omc/cycles/current.md"),
+    readRelative2(root2, ".omc/experience/current.md"),
+    readRelative2(root2, ".omc/product/capability-map/current.md"),
+    readRelative2(root2, ".omc/ecosystem/current.md"),
+    readRelative2(root2, ".omc/portfolio/current.json"),
+    readRelative2(root2, ".omc/meaning/current.md")
+  ].filter(Boolean).join("\n").toLowerCase();
+}
+function researchEvidencePaths(root2) {
+  return [
+    ".omc/cycles/current.md",
+    ".omc/experience/current.md",
+    ".omc/product/capability-map/current.md",
+    ".omc/ecosystem/current.md",
+    ".omc/portfolio/current.json",
+    ".omc/meaning/current.md"
+  ].filter((path23) => (0, import_fs104.existsSync)((0, import_path124.resolve)(root2, path23)));
+}
+function hasUxResearchSignal(corpus) {
+  return /\b(ui|ux|interface|screen|dashboard|onboarding|form|table|empty state|error state|loading|return session|flow|layout|navigation|accessibility|a11y|visual|brand|typography|motion|animation|chart|graph|canvas|3d)\b/i.test(corpus);
+}
+function hasDependencyResearchSignal(corpus) {
+  return /\b(sdk|api|official docs|library|framework|package|dependency|integration|webhook|oauth|stripe|supabase|firebase|openai|anthropic|next\.js|react|vue|svelte|expo|tailwind|shadcn|radix|postgres|redis|graphql|grpc|rest)\b/i.test(corpus);
+}
+function hasBackendArchitectureSignal(corpus) {
+  return /\b(backend|database|schema|migration|auth|authorization|authentication|permission|security|payment|billing|rate limit|queue|job|realtime|websocket|cache|latency|throughput|performance|multi-tenant|tenant|audit)\b/i.test(corpus);
+}
+function isUserFacingCycle3(snapshot) {
+  const route = (snapshot.buildRoute ?? "").toLowerCase();
+  return USER_FACING_BUILD_ROUTES.has(route);
+}
+function coreSliceOrGoal2(snapshot) {
+  return snapshot.cycleGoal ?? "core product slice";
+}
+function readRelative2(root2, relativePath) {
+  const path23 = (0, import_path124.resolve)(root2, relativePath);
+  if (!(0, import_fs104.existsSync)(path23)) return void 0;
+  try {
+    return (0, import_fs104.readFileSync)(path23, "utf-8");
+  } catch {
+    return void 0;
+  }
+}
+function dedupeRoutes(routes) {
+  const seen = /* @__PURE__ */ new Set();
+  return routes.filter((route) => {
+    if (seen.has(route.id)) return false;
+    seen.add(route.id);
+    return true;
+  });
+}
+function quoteArg2(input) {
+  return input.replace(/["\\]/g, " ").replace(/\s+/g, " ").trim().slice(0, 220) || "product-cycle research";
+}
+
 // src/product/cycle-runner.ts
 var DEFAULT_VERIFY_COMMAND = "npm test";
 var DEFAULT_MAX_STAGES = 10;
@@ -87194,7 +87914,7 @@ var NEXT_STAGE2 = {
   learn: "complete"
 };
 function runProductCycle(options = {}) {
-  const root2 = (0, import_path122.resolve)(options.root ?? process.cwd());
+  const root2 = (0, import_path125.resolve)(options.root ?? process.cwd());
   const dryRun = options.dryRun === true;
   const maxStages = options.maxStages ?? DEFAULT_MAX_STAGES;
   const verifyCommand = options.verifyCommand ?? DEFAULT_VERIFY_COMMAND;
@@ -87292,6 +88012,8 @@ function runProductCycle(options = {}) {
     stageResults.push(evaluation);
     if (evaluation.outcome !== "advance") {
       const reason = evaluation.outcome === "verify-failed" ? "verify-failed" : evaluation.outcome === "contract-failed" ? "contract-failed" : evaluation.outcome === "pause-for-human" ? "pause-for-human" : "pause-for-llm";
+      const interventionArtifacts = !dryRun && evaluation.interventions && evaluation.interventions.length > 0 ? writeInterventionArtifacts(root2, snapshot, currentStage, evaluation) : void 0;
+      const researchHandoff = !dryRun && evaluation.research && evaluation.research.length > 0 ? writeResearchArtifacts(root2, snapshot, currentStage) : void 0;
       return finalize({
         ok: reason === "pause-for-human" || reason === "pause-for-llm",
         startedAt,
@@ -87299,6 +88021,9 @@ function runProductCycle(options = {}) {
         endedAtStage: currentStage,
         stoppedReason: reason,
         pauseInstruction: evaluation.instruction,
+        researchHandoff,
+        interventionHandoff: interventionArtifacts?.handoff,
+        interventionExecutionPlan: interventionArtifacts?.executionPlan,
         stagesAdvanced,
         stageResults,
         issues
@@ -87355,6 +88080,26 @@ function runProductCycle(options = {}) {
     issues
   });
 }
+function writeResearchArtifacts(root2, snapshot, currentStage) {
+  const plan = planProductResearch({ root: root2, stage: currentStage, snapshot });
+  if (plan.routes.length === 0) return void 0;
+  return writeProductResearchHandoff(root2, snapshot, plan);
+}
+function writeInterventionArtifacts(root2, snapshot, currentStage, evaluation) {
+  const handoff = writeProductInterventionHandoff(
+    root2,
+    snapshot,
+    planProductInterventions({
+      root: root2,
+      stage: currentStage,
+      snapshot,
+      failure: evaluation.outcome === "verify-failed" ? { kind: "verify-command-failed", command: evaluation.instruction, reason: evaluation.reason } : evaluation.outcome === "contract-failed" ? { kind: "contract-failed", command: evaluation.instruction, reason: evaluation.reason } : void 0
+    })
+  );
+  const writtenHandoff = readProductInterventionHandoff(root2);
+  const executionPlan = writtenHandoff ? writeProductInterventionExecutionPlan(root2, buildProductInterventionExecutionPlan(writtenHandoff)) : void 0;
+  return { handoff, executionPlan };
+}
 function evaluateStage(stage, snapshot, root2, verifyCommand) {
   switch (stage) {
     case "discover":
@@ -87366,7 +88111,7 @@ function evaluateStage(stage, snapshot, root2, verifyCommand) {
     case "spec":
       return evaluateSpec(root2);
     case "build":
-      return evaluateBuild(snapshot);
+      return evaluateBuild(root2, snapshot);
     case "verify":
       return evaluateVerify(root2, verifyCommand);
     case "learn":
@@ -87383,8 +88128,8 @@ function evaluateDiscover(root2) {
   const capabilityPath = ".omc/product/capability-map/current.md";
   const ecosystemPath = ".omc/ecosystem/current.md";
   const expected = [
-    { path: capabilityPath, exists: (0, import_fs102.existsSync)((0, import_path122.resolve)(root2, capabilityPath)) },
-    { path: ecosystemPath, exists: (0, import_fs102.existsSync)((0, import_path122.resolve)(root2, ecosystemPath)) }
+    { path: capabilityPath, exists: (0, import_fs105.existsSync)((0, import_path125.resolve)(root2, capabilityPath)) },
+    { path: ecosystemPath, exists: (0, import_fs105.existsSync)((0, import_path125.resolve)(root2, ecosystemPath)) }
   ];
   if (expected[0].exists) {
     return {
@@ -87407,9 +88152,9 @@ function evaluateRank(root2) {
   const ledger = ".omc/portfolio/current.json";
   const roadmap = ".omc/roadmap/current.md";
   const expected = [
-    { path: opportunities, exists: (0, import_fs102.existsSync)((0, import_path122.resolve)(root2, opportunities)) },
-    { path: roadmap, exists: (0, import_fs102.existsSync)((0, import_path122.resolve)(root2, roadmap)) },
-    { path: ledger, exists: (0, import_fs102.existsSync)((0, import_path122.resolve)(root2, ledger)) }
+    { path: opportunities, exists: (0, import_fs105.existsSync)((0, import_path125.resolve)(root2, opportunities)) },
+    { path: roadmap, exists: (0, import_fs105.existsSync)((0, import_path125.resolve)(root2, roadmap)) },
+    { path: ledger, exists: (0, import_fs105.existsSync)((0, import_path125.resolve)(root2, ledger)) }
   ];
   const missing = expected.filter((entry) => !entry.exists).map((entry) => entry.path);
   if (missing.length > 0) {
@@ -87483,6 +88228,17 @@ function evaluateSelect(root2, cycleId) {
   };
 }
 function evaluateSpec(root2) {
+  const snapshot = readProductCycle(root2);
+  const researchPlan = planProductResearch({ root: root2, stage: "spec", snapshot });
+  if (researchPlan.blockingRoutes.length > 0) {
+    return {
+      stage: "spec",
+      outcome: "pause-for-llm",
+      reason: "product-cycle research required before spec/build decisions",
+      instruction: researchPlan.nextCommand,
+      research: researchPlan.routes
+    };
+  }
   const cycleReport = validateProductPipelineContracts({ root: root2, stage: "cycle" });
   if (cycleReport.ok) {
     return {
@@ -87496,17 +88252,35 @@ function evaluateSpec(root2) {
     outcome: "contract-failed",
     reason: "cycle contract failed",
     instruction: "omc doctor product-contracts --stage cycle",
+    interventions: planProductInterventions({
+      root: root2,
+      stage: "spec",
+      snapshot,
+      failure: { kind: "contract-failed", reason: "cycle contract failed" }
+    }).routes,
     evidence: { issues: cycleReport.issues }
   };
 }
-function evaluateBuild(snapshot) {
+function evaluateBuild(root2, snapshot) {
   const route = (snapshot.buildRoute ?? "").toLowerCase();
-  const command = route === "backend-pipeline" ? '/backend-pipeline "<enabling task>"' : route === "both" ? '/backend-pipeline "<enabling task>" then /product-pipeline "<core product slice>"' : '/product-pipeline "<core product slice>"';
+  const researchPlan = planProductResearch({ root: root2, stage: "build", snapshot });
+  if (researchPlan.blockingRoutes.length > 0) {
+    return {
+      stage: "build",
+      outcome: "pause-for-llm",
+      reason: "product-cycle research required before build pipeline",
+      instruction: researchPlan.nextCommand,
+      research: researchPlan.routes
+    };
+  }
+  const interventionPlan = planProductInterventions({ root: root2, stage: "build", snapshot });
+  const command = interventionPlan.nextCommand ?? (route === "backend-pipeline" ? '/backend-pipeline "<enabling task>"' : route === "both" ? '/backend-pipeline "<enabling task>" then /product-pipeline "<core product slice>"' : '/product-pipeline "<core product slice>"');
   return {
     stage: "build",
     outcome: "pause-for-llm",
     reason: `build_route=${route || "unknown"} requires LLM-driven pipeline`,
-    instruction: command
+    instruction: command,
+    interventions: interventionPlan.routes
   };
 }
 function evaluateVerify(root2, verifyCommand) {
@@ -87526,11 +88300,18 @@ function evaluateVerify(root2, verifyCommand) {
     encoding: "utf-8"
   });
   if (result.error) {
+    const reason2 = `verify command error: ${result.error.message}`;
     return {
       stage: "verify",
       outcome: "verify-failed",
-      reason: `verify command error: ${result.error.message}`,
+      reason: reason2,
       instruction: trimmed,
+      interventions: planProductInterventions({
+        root: root2,
+        stage: "verify",
+        snapshot: readProductCycle(root2),
+        failure: { kind: "verify-command-failed", command: trimmed, reason: reason2 }
+      }).routes,
       evidence: { command: trimmed, error: String(result.error) }
     };
   }
@@ -87542,11 +88323,18 @@ function evaluateVerify(root2, verifyCommand) {
       evidence: { command: trimmed, exitCode: 0 }
     };
   }
+  const reason = `verify failed (${trimmed}, exit ${result.status})`;
   return {
     stage: "verify",
     outcome: "verify-failed",
-    reason: `verify failed (${trimmed}, exit ${result.status})`,
+    reason,
     instruction: trimmed,
+    interventions: planProductInterventions({
+      root: root2,
+      stage: "verify",
+      snapshot: readProductCycle(root2),
+      failure: { kind: "verify-command-failed", command: trimmed, reason }
+    }).routes,
     evidence: {
       command: trimmed,
       exitCode: result.status,
@@ -87556,8 +88344,8 @@ function evaluateVerify(root2, verifyCommand) {
   };
 }
 function evaluateLearn(root2) {
-  const learningPath = (0, import_path122.resolve)(root2, ".omc/learning/current.md");
-  const expected = [{ path: ".omc/learning/current.md", exists: (0, import_fs102.existsSync)(learningPath) }];
+  const learningPath = (0, import_path125.resolve)(root2, ".omc/learning/current.md");
+  const expected = [{ path: ".omc/learning/current.md", exists: (0, import_fs105.existsSync)(learningPath) }];
   if (!expected[0].exists) {
     return {
       stage: "learn",
@@ -87567,7 +88355,7 @@ function evaluateLearn(root2) {
       expectedArtifacts: expected
     };
   }
-  const content = (0, import_fs102.readFileSync)(learningPath, "utf-8").toLowerCase();
+  const content = (0, import_fs105.readFileSync)(learningPath, "utf-8").toLowerCase();
   const required2 = ["shipped outcome", "evidence collected", "user/product learning", "invalidated assumptions", "recommended next cycle"];
   const missing = required2.filter((term) => !content.includes(term));
   if (missing.length > 0) {
@@ -87592,6 +88380,600 @@ function truncate(value, max = 600) {
 }
 function finalize(report2) {
   return report2;
+}
+
+// src/product/intervention-runner.ts
+var import_child_process30 = require("child_process");
+var import_path126 = require("path");
+init_atomic_write();
+var PRODUCT_INTERVENTION_RUN_REPORT_RELATIVE_PATH = ".omc/handoffs/product-cycle-interventions/run-report.json";
+var PRODUCT_INTERVENTION_RUN_REPORT_MD_RELATIVE_PATH = ".omc/handoffs/product-cycle-interventions/run-report.md";
+function runProductInterventionExecutionPlan(plan, options = {}) {
+  const root2 = (0, import_path126.resolve)(options.root ?? process.cwd());
+  const dryRun = options.dryRun === true;
+  const maxSteps = options.maxSteps ?? Number.POSITIVE_INFINITY;
+  const waitForTeamJobs = options.waitForTeamJobs === true;
+  const commandRunner = options.commandRunner ?? defaultCommandRunner;
+  const stepResults = [];
+  let runnableSeen = 0;
+  for (const step of plan.steps) {
+    if (!isSafeAutoRunnableStep(step)) {
+      stepResults.push({
+        route_id: step.route_id,
+        execution_surface: step.execution_surface,
+        status: "skipped",
+        argv: step.argv,
+        reason: skipReason(step)
+      });
+      continue;
+    }
+    runnableSeen += 1;
+    if (runnableSeen > maxSteps) {
+      stepResults.push({
+        route_id: step.route_id,
+        execution_surface: step.execution_surface,
+        status: "skipped",
+        argv: step.argv,
+        reason: `Skipped because --max-steps=${maxSteps} was reached.`
+      });
+      continue;
+    }
+    if (dryRun) {
+      stepResults.push({
+        route_id: step.route_id,
+        execution_surface: step.execution_surface,
+        status: "dry-run",
+        argv: step.argv,
+        reason: "Would run this safe intervention step."
+      });
+      continue;
+    }
+    const argv = waitForTeamJobs && step.execution_surface === "team-start" ? ensureFlag(step.argv, "--json") : step.argv;
+    const result = commandRunner(argv, root2);
+    if (result.error || result.status !== 0) {
+      stepResults.push({
+        route_id: step.route_id,
+        execution_surface: step.execution_surface,
+        status: "failed",
+        argv,
+        exit_code: result.status,
+        signal: result.signal,
+        reason: result.error?.message ?? `Command exited with status ${result.status ?? "unknown"}.`
+      });
+      break;
+    }
+    if (waitForTeamJobs && step.execution_surface === "team-start") {
+      const waitResult = waitForTeamJob({ startResult: result, root: root2, commandRunner, timeoutMs: options.teamWaitTimeoutMs });
+      if (waitResult.failed) {
+        stepResults.push({
+          route_id: step.route_id,
+          execution_surface: step.execution_surface,
+          status: "failed",
+          argv,
+          wait_argv: waitResult.waitArgv,
+          child_job_id: waitResult.jobId,
+          child_job_status: waitResult.jobStatus,
+          exit_code: result.status,
+          wait_exit_code: waitResult.result?.status,
+          signal: result.signal,
+          wait_signal: waitResult.result?.signal,
+          reason: waitResult.reason
+        });
+        break;
+      }
+      stepResults.push({
+        route_id: step.route_id,
+        execution_surface: step.execution_surface,
+        status: "passed",
+        argv,
+        wait_argv: waitResult.waitArgv,
+        child_job_id: waitResult.jobId,
+        child_job_status: waitResult.jobStatus,
+        exit_code: result.status,
+        wait_exit_code: waitResult.result?.status,
+        signal: result.signal,
+        wait_signal: waitResult.result?.signal,
+        reason: waitResult.reason
+      });
+      continue;
+    }
+    stepResults.push({
+      route_id: step.route_id,
+      execution_surface: step.execution_surface,
+      status: "passed",
+      argv,
+      exit_code: result.status,
+      signal: result.signal,
+      reason: "Command completed successfully."
+    });
+  }
+  const executedStepCount = stepResults.filter((step) => step.status === "passed").length;
+  const failedStepCount = stepResults.filter((step) => step.status === "failed").length;
+  const skippedStepCount = stepResults.filter((step) => step.status === "skipped").length;
+  return {
+    schema_version: 1,
+    produced_at: (/* @__PURE__ */ new Date()).toISOString(),
+    agent_role: "product-intervention-runner",
+    source_plan: options.sourcePlan ?? ".omc/handoffs/product-cycle-interventions/execution-plan.json",
+    dry_run: dryRun,
+    status: resolveRunStatus({ dryRun, stepResults, failedStepCount }),
+    executed_step_count: executedStepCount,
+    skipped_step_count: skippedStepCount,
+    failed_step_count: failedStepCount,
+    step_results: stepResults
+  };
+}
+function writeProductInterventionRunReport(root2, report2) {
+  const jsonPath = (0, import_path126.resolve)(root2, PRODUCT_INTERVENTION_RUN_REPORT_RELATIVE_PATH);
+  const mdPath = (0, import_path126.resolve)(root2, PRODUCT_INTERVENTION_RUN_REPORT_MD_RELATIVE_PATH);
+  ensureDirSync((0, import_path126.dirname)(jsonPath));
+  atomicWriteJsonSync(jsonPath, report2);
+  atomicWriteFileSync(mdPath, renderProductInterventionRunReport(report2));
+  return { jsonPath, mdPath };
+}
+function renderProductInterventionRunReport(report2) {
+  const lines = [
+    "# Product Cycle Intervention Run Report",
+    "",
+    `produced_at: ${report2.produced_at}`,
+    `status: ${report2.status}`,
+    `dry_run: ${report2.dry_run}`,
+    `source_plan: ${report2.source_plan}`,
+    `executed_step_count: ${report2.executed_step_count}`,
+    `skipped_step_count: ${report2.skipped_step_count}`,
+    `failed_step_count: ${report2.failed_step_count}`,
+    "",
+    "## Step Results"
+  ];
+  if (report2.step_results.length === 0) {
+    lines.push("- none");
+  } else {
+    for (const step of report2.step_results) {
+      lines.push(`- ${step.route_id}: ${step.status}`);
+      lines.push(`  - surface: ${step.execution_surface}`);
+      lines.push(`  - reason: ${step.reason}`);
+      lines.push(`  - argv: ${step.argv ? renderArgv2(step.argv) : "none"}`);
+      if (step.wait_argv) lines.push(`  - wait_argv: ${renderArgv2(step.wait_argv)}`);
+      if (step.child_job_id) lines.push(`  - child_job_id: ${step.child_job_id}`);
+      if (step.child_job_status) lines.push(`  - child_job_status: ${step.child_job_status}`);
+      if (step.exit_code !== void 0) lines.push(`  - exit_code: ${step.exit_code}`);
+      if (step.wait_exit_code !== void 0) lines.push(`  - wait_exit_code: ${step.wait_exit_code}`);
+      if (step.signal !== void 0) lines.push(`  - signal: ${step.signal ?? "none"}`);
+      if (step.wait_signal !== void 0) lines.push(`  - wait_signal: ${step.wait_signal ?? "none"}`);
+    }
+  }
+  lines.push("");
+  lines.push("artifacts_written:");
+  lines.push(`  - ${PRODUCT_INTERVENTION_RUN_REPORT_RELATIVE_PATH}`);
+  lines.push(`  - ${PRODUCT_INTERVENTION_RUN_REPORT_MD_RELATIVE_PATH}`);
+  lines.push("");
+  return lines.join("\n");
+}
+function isSafeAutoRunnableStep(step) {
+  if (!step.executable || !step.argv || step.argv.length === 0) return false;
+  return step.execution_surface === "agent-prompt" || step.execution_surface === "stack-plan" || step.execution_surface === "team-start";
+}
+function skipReason(step) {
+  if (!step.executable) return "Step is not marked executable.";
+  if (!step.argv || step.argv.length === 0) return "Step has no argv to execute.";
+  return "Step requires an interactive or manual execution surface.";
+}
+function resolveRunStatus(options) {
+  if (options.failedStepCount > 0) return "failed";
+  if (options.stepResults.length === 0) return "noop";
+  if (options.dryRun) return "noop";
+  const hasPassed = options.stepResults.some((step) => step.status === "passed");
+  const hasSkipped = options.stepResults.some((step) => step.status === "skipped");
+  if (hasPassed && hasSkipped) return "partial";
+  if (hasPassed) return "passed";
+  return "noop";
+}
+function defaultCommandRunner(argv, cwd2) {
+  const [command, ...args] = argv;
+  const result = (0, import_child_process30.spawnSync)(command, args, {
+    cwd: cwd2,
+    stdio: ["ignore", "pipe", "pipe"],
+    encoding: "utf-8"
+  });
+  return {
+    status: result.status,
+    signal: result.signal,
+    error: result.error,
+    stdout: result.stdout ?? "",
+    stderr: result.stderr ?? ""
+  };
+}
+function waitForTeamJob(options) {
+  const jobId = parseTeamJobId(options.startResult.stdout ?? "");
+  if (!jobId) {
+    return {
+      failed: true,
+      reason: "Team start succeeded but no jobId was found in JSON output."
+    };
+  }
+  const waitArgv = ["omc", "team", "wait", jobId, "--json"];
+  if (options.timeoutMs != null) {
+    waitArgv.push("--timeout-ms", String(options.timeoutMs));
+  }
+  const result = options.commandRunner(waitArgv, options.root);
+  const parsed = parseJsonObject(result.stdout ?? "");
+  const jobStatus = typeof parsed?.status === "string" ? parsed.status : void 0;
+  const timedOut = parsed?.timedOut === true;
+  if (result.error || result.status !== 0) {
+    return {
+      failed: true,
+      reason: result.error?.message ?? `Team wait exited with status ${result.status ?? "unknown"}.`,
+      jobId,
+      jobStatus,
+      waitArgv,
+      result
+    };
+  }
+  if (timedOut) {
+    return {
+      failed: true,
+      reason: "Team wait timed out before completion.",
+      jobId,
+      jobStatus,
+      waitArgv,
+      result
+    };
+  }
+  if (jobStatus !== "completed") {
+    return {
+      failed: true,
+      reason: `Team job ended with status ${jobStatus ?? "unknown"}.`,
+      jobId,
+      jobStatus,
+      waitArgv,
+      result
+    };
+  }
+  return {
+    failed: false,
+    reason: "Team job completed successfully.",
+    jobId,
+    jobStatus,
+    waitArgv,
+    result
+  };
+}
+function parseTeamJobId(stdout) {
+  const parsed = parseJsonObject(stdout);
+  const jobId = parsed?.jobId;
+  return typeof jobId === "string" && jobId.trim() ? jobId : void 0;
+}
+function parseJsonObject(raw) {
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return parsed;
+    }
+  } catch {
+  }
+  return void 0;
+}
+function ensureFlag(argv, flag) {
+  return argv.includes(flag) ? argv : [...argv, flag];
+}
+function renderArgv2(argv) {
+  return argv.map((arg) => /^[a-z0-9_./:=,-]+$/i.test(arg) ? arg : JSON.stringify(arg)).join(" ");
+}
+
+// src/product/research-execution-plan.ts
+var import_fs106 = require("fs");
+var import_path127 = require("path");
+init_atomic_write();
+var PRODUCT_RESEARCH_EXECUTION_PLAN_RELATIVE_PATH = ".omc/handoffs/product-cycle-research/execution-plan.json";
+var DEFAULT_PROVIDER2 = "codex";
+var PRODUCT_RESEARCH_EXECUTION_PLAN_MD_RELATIVE_PATH = ".omc/handoffs/product-cycle-research/execution-plan.md";
+function buildProductResearchExecutionPlan(handoff, options = {}) {
+  const provider = normalizeProvider2(options.provider);
+  const steps = handoff.routes.map((route) => buildStep2(route, provider));
+  const firstExecutable = steps.find((step) => step.executable);
+  return {
+    schema_version: 1,
+    produced_at: (/* @__PURE__ */ new Date()).toISOString(),
+    agent_role: "product-research-execution-planner",
+    source_handoff: options.sourceHandoff ?? ".omc/handoffs/product-cycle-research/current.json",
+    cycle_id: handoff.cycle_id,
+    cycle_goal: handoff.cycle_goal,
+    cycle_stage: handoff.cycle_stage,
+    provider,
+    research_artifact: handoff.research_artifact,
+    steps,
+    executable_step_count: steps.filter((step) => step.executable).length,
+    manual_step_count: steps.filter((step) => !step.executable).length,
+    next_argv: firstExecutable?.argv
+  };
+}
+function writeProductResearchExecutionPlan(root2, plan) {
+  const jsonPath = (0, import_path127.resolve)(root2, PRODUCT_RESEARCH_EXECUTION_PLAN_RELATIVE_PATH);
+  const mdPath = (0, import_path127.resolve)(root2, PRODUCT_RESEARCH_EXECUTION_PLAN_MD_RELATIVE_PATH);
+  ensureDirSync((0, import_path127.dirname)(jsonPath));
+  atomicWriteJsonSync(jsonPath, plan);
+  atomicWriteFileSync(mdPath, renderProductResearchExecutionPlan(plan));
+  return { jsonPath, mdPath };
+}
+function readProductResearchExecutionPlan(root2 = process.cwd()) {
+  const path23 = (0, import_path127.resolve)(root2, PRODUCT_RESEARCH_EXECUTION_PLAN_RELATIVE_PATH);
+  if (!(0, import_fs106.existsSync)(path23)) return void 0;
+  return JSON.parse((0, import_fs106.readFileSync)(path23, "utf-8"));
+}
+function renderProductResearchExecutionPlan(plan) {
+  const lines = [
+    `# Product Cycle Research Execution Plan: ${plan.cycle_goal ?? plan.cycle_id ?? plan.cycle_stage}`,
+    "",
+    `produced_at: ${plan.produced_at}`,
+    `cycle_id: ${plan.cycle_id ?? "unknown"}`,
+    `cycle_stage: ${plan.cycle_stage}`,
+    `provider: ${plan.provider}`,
+    `source_handoff: ${plan.source_handoff}`,
+    `research_artifact: ${plan.research_artifact}`,
+    `executable_step_count: ${plan.executable_step_count}`,
+    `manual_step_count: ${plan.manual_step_count}`,
+    `next_argv: ${plan.next_argv ? renderArgv3(plan.next_argv) : "none"}`,
+    "",
+    "## Steps"
+  ];
+  if (plan.steps.length === 0) {
+    lines.push("- none");
+  } else {
+    for (const step of plan.steps) {
+      lines.push(`- ${step.route_id}: ${step.execution_surface}`);
+      lines.push(`  - agent: ${step.agent}`);
+      lines.push(`  - executable: ${step.executable}`);
+      lines.push(`  - review_required: ${step.review_required}`);
+      lines.push(`  - reason: ${step.reason}`);
+      lines.push(`  - expected_artifact: ${step.expected_artifact}`);
+      lines.push(`  - source_command: ${step.source_command}`);
+      lines.push(`  - argv: ${step.argv ? renderArgv3(step.argv) : "none"}`);
+    }
+  }
+  lines.push("");
+  lines.push("artifacts_written:");
+  lines.push(`  - ${PRODUCT_RESEARCH_EXECUTION_PLAN_RELATIVE_PATH}`);
+  lines.push(`  - ${PRODUCT_RESEARCH_EXECUTION_PLAN_MD_RELATIVE_PATH}`);
+  lines.push("");
+  return lines.join("\n");
+}
+function buildStep2(route, provider) {
+  const promptRoute = parsePromptRoute2(route.command);
+  if (promptRoute) {
+    return {
+      route_id: route.id,
+      agent: route.agent,
+      source_command: route.command,
+      execution_surface: "agent-prompt",
+      executable: true,
+      review_required: false,
+      reason: "Research prompt routes can run through the provider advisor with the matching agent prompt.",
+      expected_artifact: route.expectedArtifact,
+      argv: ["omc", "ask", provider, "--agent-prompt", promptRoute.role, "--prompt", promptRoute.prompt]
+    };
+  }
+  return {
+    route_id: route.id,
+    agent: route.agent,
+    source_command: route.command,
+    execution_surface: "manual",
+    executable: false,
+    review_required: true,
+    reason: "The research command is not recognized as a safe automatic execution surface.",
+    expected_artifact: route.expectedArtifact
+  };
+}
+function parsePromptRoute2(command) {
+  const tokens = splitCommandLine2(command);
+  if (tokens.length < 2) return void 0;
+  const match = tokens[0].match(/^\/prompts:([a-z][a-z0-9-]*)$/);
+  if (!match) return void 0;
+  return {
+    role: match[1],
+    prompt: tokens.slice(1).join(" ").trim()
+  };
+}
+function splitCommandLine2(command) {
+  const tokens = [];
+  let current = "";
+  let quote;
+  let escaping = false;
+  for (const char of command.trim()) {
+    if (escaping) {
+      current += char;
+      escaping = false;
+      continue;
+    }
+    if (char === "\\") {
+      escaping = true;
+      continue;
+    }
+    if (quote) {
+      if (char === quote) quote = void 0;
+      else current += char;
+      continue;
+    }
+    if (char === '"' || char === "'") {
+      quote = char;
+      continue;
+    }
+    if (/\s/.test(char)) {
+      if (current) {
+        tokens.push(current);
+        current = "";
+      }
+      continue;
+    }
+    current += char;
+  }
+  if (escaping) current += "\\";
+  if (current) tokens.push(current);
+  return tokens;
+}
+function normalizeProvider2(provider) {
+  const normalized = (provider ?? DEFAULT_PROVIDER2).trim().toLowerCase();
+  if (normalized === "claude" || normalized === "codex" || normalized === "gemini") return normalized;
+  return DEFAULT_PROVIDER2;
+}
+function renderArgv3(argv) {
+  return argv.map((arg) => /^[a-z0-9_./:=,-]+$/i.test(arg) ? arg : JSON.stringify(arg)).join(" ");
+}
+
+// src/product/research-runner.ts
+var import_fs107 = require("fs");
+var import_child_process31 = require("child_process");
+var import_path128 = require("path");
+init_atomic_write();
+var PRODUCT_RESEARCH_RUN_REPORT_RELATIVE_PATH = ".omc/handoffs/product-cycle-research/run-report.json";
+var PRODUCT_RESEARCH_RUN_REPORT_MD_RELATIVE_PATH = ".omc/handoffs/product-cycle-research/run-report.md";
+function runProductResearchExecutionPlan(plan, options = {}) {
+  const root2 = (0, import_path128.resolve)(options.root ?? process.cwd());
+  const dryRun = options.dryRun === true;
+  const maxSteps = options.maxSteps ?? Number.POSITIVE_INFINITY;
+  const commandRunner = options.commandRunner ?? defaultCommandRunner2;
+  const stepResults = [];
+  let runnableSeen = 0;
+  for (const step of plan.steps) {
+    if (!step.executable || !step.argv || step.argv.length === 0) {
+      stepResults.push({
+        route_id: step.route_id,
+        execution_surface: step.execution_surface,
+        status: "skipped",
+        argv: step.argv,
+        reason: step.executable ? "Step has no argv to execute." : "Step is not marked executable."
+      });
+      continue;
+    }
+    runnableSeen += 1;
+    if (runnableSeen > maxSteps) {
+      stepResults.push({
+        route_id: step.route_id,
+        execution_surface: step.execution_surface,
+        status: "skipped",
+        argv: step.argv,
+        reason: `Skipped because --max-steps=${maxSteps} was reached.`
+      });
+      continue;
+    }
+    if (dryRun) {
+      stepResults.push({
+        route_id: step.route_id,
+        execution_surface: step.execution_surface,
+        status: "dry-run",
+        argv: step.argv,
+        reason: "Would run this research step."
+      });
+      continue;
+    }
+    const result = commandRunner(step.argv, root2);
+    if (result.error || result.status !== 0) {
+      stepResults.push({
+        route_id: step.route_id,
+        execution_surface: step.execution_surface,
+        status: "failed",
+        argv: step.argv,
+        exit_code: result.status,
+        signal: result.signal,
+        reason: result.error?.message ?? `Command exited with status ${result.status ?? "unknown"}.`
+      });
+      break;
+    }
+    stepResults.push({
+      route_id: step.route_id,
+      execution_surface: step.execution_surface,
+      status: "passed",
+      argv: step.argv,
+      exit_code: result.status,
+      signal: result.signal,
+      reason: "Command completed successfully."
+    });
+  }
+  const executedStepCount = stepResults.filter((step) => step.status === "passed").length;
+  const failedStepCount = stepResults.filter((step) => step.status === "failed").length;
+  const skippedStepCount = stepResults.filter((step) => step.status === "skipped").length;
+  const researchArtifactExists = (0, import_fs107.existsSync)((0, import_path128.resolve)(root2, plan.research_artifact));
+  return {
+    schema_version: 1,
+    produced_at: (/* @__PURE__ */ new Date()).toISOString(),
+    agent_role: "product-research-runner",
+    source_plan: options.sourcePlan ?? ".omc/handoffs/product-cycle-research/execution-plan.json",
+    research_artifact: plan.research_artifact,
+    research_artifact_exists: researchArtifactExists,
+    dry_run: dryRun,
+    status: resolveRunStatus2({ dryRun, stepResults, failedStepCount }),
+    executed_step_count: executedStepCount,
+    skipped_step_count: skippedStepCount,
+    failed_step_count: failedStepCount,
+    step_results: stepResults
+  };
+}
+function writeProductResearchRunReport(root2, report2) {
+  const jsonPath = (0, import_path128.resolve)(root2, PRODUCT_RESEARCH_RUN_REPORT_RELATIVE_PATH);
+  const mdPath = (0, import_path128.resolve)(root2, PRODUCT_RESEARCH_RUN_REPORT_MD_RELATIVE_PATH);
+  ensureDirSync((0, import_path128.dirname)(jsonPath));
+  atomicWriteJsonSync(jsonPath, report2);
+  atomicWriteFileSync(mdPath, renderProductResearchRunReport(report2));
+  return { jsonPath, mdPath };
+}
+function renderProductResearchRunReport(report2) {
+  const lines = [
+    "# Product Cycle Research Run Report",
+    "",
+    `produced_at: ${report2.produced_at}`,
+    `status: ${report2.status}`,
+    `dry_run: ${report2.dry_run}`,
+    `source_plan: ${report2.source_plan}`,
+    `research_artifact: ${report2.research_artifact}`,
+    `research_artifact_exists: ${report2.research_artifact_exists}`,
+    `executed_step_count: ${report2.executed_step_count}`,
+    `skipped_step_count: ${report2.skipped_step_count}`,
+    `failed_step_count: ${report2.failed_step_count}`,
+    "",
+    "## Step Results"
+  ];
+  if (report2.step_results.length === 0) {
+    lines.push("- none");
+  } else {
+    for (const step of report2.step_results) {
+      lines.push(`- ${step.route_id}: ${step.status}`);
+      lines.push(`  - surface: ${step.execution_surface}`);
+      lines.push(`  - reason: ${step.reason}`);
+      lines.push(`  - argv: ${step.argv ? renderArgv4(step.argv) : "none"}`);
+      if (step.exit_code !== void 0) lines.push(`  - exit_code: ${step.exit_code}`);
+      if (step.signal !== void 0) lines.push(`  - signal: ${step.signal ?? "none"}`);
+    }
+  }
+  lines.push("");
+  lines.push("artifacts_written:");
+  lines.push(`  - ${PRODUCT_RESEARCH_RUN_REPORT_RELATIVE_PATH}`);
+  lines.push(`  - ${PRODUCT_RESEARCH_RUN_REPORT_MD_RELATIVE_PATH}`);
+  lines.push("");
+  return lines.join("\n");
+}
+function resolveRunStatus2(options) {
+  if (options.failedStepCount > 0) return "failed";
+  if (options.stepResults.length === 0) return "noop";
+  if (options.dryRun) return "noop";
+  const hasPassed = options.stepResults.some((step) => step.status === "passed");
+  const hasSkipped = options.stepResults.some((step) => step.status === "skipped");
+  if (hasPassed && hasSkipped) return "partial";
+  if (hasPassed) return "passed";
+  return "noop";
+}
+function defaultCommandRunner2(argv, cwd2) {
+  const [command, ...args] = argv;
+  const result = (0, import_child_process31.spawnSync)(command, args, {
+    cwd: cwd2,
+    stdio: "inherit"
+  });
+  return {
+    status: result.status,
+    signal: result.signal,
+    error: result.error
+  };
+}
+function renderArgv4(argv) {
+  return argv.map((arg) => /^[a-z0-9_./:=,-]+$/i.test(arg) ? arg : JSON.stringify(arg)).join(" ");
 }
 
 // src/cli/commands/product-cycle.ts
@@ -87661,6 +89043,172 @@ async function productCycleRunCommand(root2, options, logger = console) {
   }
   return report2.ok ? 0 : 1;
 }
+async function productCycleInterventionsCommand(root2, options, logger = console) {
+  const handoff = readProductInterventionHandoff(root2);
+  if (!handoff) {
+    if (options.json) {
+      logger.log(JSON.stringify({ exists: false, path: PRODUCT_INTERVENTION_HANDOFF_RELATIVE_PATH }, null, 2));
+    } else {
+      logger.log(`No pending product-cycle interventions at ${PRODUCT_INTERVENTION_HANDOFF_RELATIVE_PATH}`);
+    }
+    return 0;
+  }
+  if (options.json) {
+    logger.log(JSON.stringify({ exists: true, path: PRODUCT_INTERVENTION_HANDOFF_RELATIVE_PATH, handoff }, null, 2));
+  } else {
+    logger.log(renderInterventionHandoff(handoff));
+  }
+  return handoff.blocking_route_count > 0 ? 1 : 0;
+}
+async function productCycleInterventionsPlanCommand(root2, options, logger = console) {
+  const handoff = readProductInterventionHandoff(root2);
+  if (!handoff) {
+    if (options.json) {
+      logger.log(JSON.stringify({
+        exists: false,
+        path: PRODUCT_INTERVENTION_HANDOFF_RELATIVE_PATH,
+        executionPlanPath: PRODUCT_INTERVENTION_EXECUTION_PLAN_RELATIVE_PATH
+      }, null, 2));
+    } else {
+      logger.log(`No pending product-cycle interventions at ${PRODUCT_INTERVENTION_HANDOFF_RELATIVE_PATH}`);
+    }
+    return 0;
+  }
+  const plan = buildProductInterventionExecutionPlan(handoff, {
+    provider: options.provider,
+    sourceHandoff: PRODUCT_INTERVENTION_HANDOFF_RELATIVE_PATH
+  });
+  const written = options.dryRun ? void 0 : writeProductInterventionExecutionPlan(root2 ?? process.cwd(), plan);
+  if (options.json) {
+    logger.log(JSON.stringify({
+      exists: true,
+      path: PRODUCT_INTERVENTION_EXECUTION_PLAN_RELATIVE_PATH,
+      written: written ?? null,
+      plan
+    }, null, 2));
+  } else {
+    logger.log(renderInterventionExecutionPlan(plan, written));
+  }
+  return plan.steps.some((step) => !step.executable) ? 1 : 0;
+}
+async function productCycleInterventionsRunCommand(root2, options, logger = console) {
+  const loaded = loadOrBuildInterventionExecutionPlan(root2, options);
+  if (!loaded.plan) {
+    if (options.json) {
+      logger.log(JSON.stringify({
+        exists: false,
+        path: PRODUCT_INTERVENTION_EXECUTION_PLAN_RELATIVE_PATH,
+        handoffPath: PRODUCT_INTERVENTION_HANDOFF_RELATIVE_PATH
+      }, null, 2));
+    } else {
+      logger.log(`No pending product-cycle execution plan at ${PRODUCT_INTERVENTION_EXECUTION_PLAN_RELATIVE_PATH}`);
+    }
+    return 0;
+  }
+  const report2 = runProductInterventionExecutionPlan(loaded.plan, {
+    root: root2,
+    dryRun: options.dryRun,
+    maxSteps: options.maxSteps,
+    waitForTeamJobs: options.wait,
+    teamWaitTimeoutMs: options.waitTimeoutMs,
+    sourcePlan: PRODUCT_INTERVENTION_EXECUTION_PLAN_RELATIVE_PATH
+  });
+  const written = options.dryRun ? void 0 : writeProductInterventionRunReport(root2 ?? process.cwd(), report2);
+  if (options.json) {
+    logger.log(JSON.stringify({
+      exists: true,
+      path: PRODUCT_INTERVENTION_RUN_REPORT_RELATIVE_PATH,
+      planWritten: loaded.written ?? null,
+      written: written ?? null,
+      report: report2
+    }, null, 2));
+  } else {
+    logger.log(renderInterventionRunReport(report2, written, loaded.written));
+  }
+  return report2.failed_step_count > 0 ? 1 : 0;
+}
+async function productCycleResearchCommand(root2, options, logger = console) {
+  const handoff = readProductResearchHandoff(root2);
+  if (!handoff) {
+    if (options.json) {
+      logger.log(JSON.stringify({ exists: false, path: PRODUCT_RESEARCH_HANDOFF_RELATIVE_PATH }, null, 2));
+    } else {
+      logger.log(`No pending product-cycle research at ${PRODUCT_RESEARCH_HANDOFF_RELATIVE_PATH}`);
+    }
+    return 0;
+  }
+  if (options.json) {
+    logger.log(JSON.stringify({ exists: true, path: PRODUCT_RESEARCH_HANDOFF_RELATIVE_PATH, handoff }, null, 2));
+  } else {
+    logger.log(renderResearchHandoff(handoff));
+  }
+  return handoff.blocking_route_count > 0 ? 1 : 0;
+}
+async function productCycleResearchPlanCommand(root2, options, logger = console) {
+  const handoff = readProductResearchHandoff(root2);
+  if (!handoff) {
+    if (options.json) {
+      logger.log(JSON.stringify({
+        exists: false,
+        path: PRODUCT_RESEARCH_HANDOFF_RELATIVE_PATH,
+        executionPlanPath: PRODUCT_RESEARCH_EXECUTION_PLAN_RELATIVE_PATH
+      }, null, 2));
+    } else {
+      logger.log(`No pending product-cycle research at ${PRODUCT_RESEARCH_HANDOFF_RELATIVE_PATH}`);
+    }
+    return 0;
+  }
+  const plan = buildProductResearchExecutionPlan(handoff, {
+    provider: options.provider,
+    sourceHandoff: PRODUCT_RESEARCH_HANDOFF_RELATIVE_PATH
+  });
+  const written = options.dryRun ? void 0 : writeProductResearchExecutionPlan(root2 ?? process.cwd(), plan);
+  if (options.json) {
+    logger.log(JSON.stringify({
+      exists: true,
+      path: PRODUCT_RESEARCH_EXECUTION_PLAN_RELATIVE_PATH,
+      written: written ?? null,
+      plan
+    }, null, 2));
+  } else {
+    logger.log(renderResearchExecutionPlan(plan, written));
+  }
+  return plan.steps.some((step) => !step.executable) ? 1 : 0;
+}
+async function productCycleResearchRunCommand(root2, options, logger = console) {
+  const loaded = loadOrBuildResearchExecutionPlan(root2, options);
+  if (!loaded.plan) {
+    if (options.json) {
+      logger.log(JSON.stringify({
+        exists: false,
+        path: PRODUCT_RESEARCH_EXECUTION_PLAN_RELATIVE_PATH,
+        handoffPath: PRODUCT_RESEARCH_HANDOFF_RELATIVE_PATH
+      }, null, 2));
+    } else {
+      logger.log(`No pending product-cycle research execution plan at ${PRODUCT_RESEARCH_EXECUTION_PLAN_RELATIVE_PATH}`);
+    }
+    return 0;
+  }
+  const report2 = runProductResearchExecutionPlan(loaded.plan, {
+    root: root2,
+    dryRun: options.dryRun,
+    maxSteps: options.maxSteps,
+    sourcePlan: PRODUCT_RESEARCH_EXECUTION_PLAN_RELATIVE_PATH
+  });
+  const written = options.dryRun ? void 0 : writeProductResearchRunReport(root2 ?? process.cwd(), report2);
+  if (options.json) {
+    logger.log(JSON.stringify({
+      exists: true,
+      path: PRODUCT_RESEARCH_RUN_REPORT_RELATIVE_PATH,
+      planWritten: loaded.written ?? null,
+      written: written ?? null,
+      report: report2
+    }, null, 2));
+  } else {
+    logger.log(renderResearchRunReport(report2, written, loaded.written));
+  }
+  return report2.failed_step_count > 0 ? 1 : 0;
+}
 function renderRunReport(report2) {
   const lines = [];
   lines.push(colors.bold(`Product cycle runner \u2014 stopped: ${report2.stoppedReason}`));
@@ -87685,12 +89233,39 @@ function renderRunReport(report2) {
       if (result.instruction) {
         lines.push(`    ${colors.gray("next:")} ${result.instruction}`);
       }
+      if (result.interventions && result.interventions.length > 0) {
+        for (const route of result.interventions) {
+          const marker = route.required ? "required" : "recommended";
+          lines.push(`    ${colors.gray(marker)} ${route.agent}: ${route.command}`);
+        }
+      }
+      if (result.research && result.research.length > 0) {
+        for (const route of result.research) {
+          const marker = route.required ? "required research" : "recommended research";
+          lines.push(`    ${colors.gray(marker)} ${route.agent}: ${route.command}`);
+        }
+      }
     }
   }
   if (report2.pauseInstruction) {
     lines.push("");
     lines.push(colors.bold("Pause instruction:"));
     lines.push(`  ${report2.pauseInstruction}`);
+  }
+  if (report2.interventionHandoff) {
+    lines.push("");
+    lines.push(colors.bold("Intervention handoff:"));
+    lines.push(`  ${report2.interventionHandoff.jsonPath}`);
+  }
+  if (report2.researchHandoff) {
+    lines.push("");
+    lines.push(colors.bold("Research handoff:"));
+    lines.push(`  ${report2.researchHandoff.jsonPath}`);
+  }
+  if (report2.interventionExecutionPlan) {
+    lines.push("");
+    lines.push(colors.bold("Intervention execution plan:"));
+    lines.push(`  ${report2.interventionExecutionPlan.jsonPath}`);
   }
   if (report2.issues.length > 0) {
     lines.push("");
@@ -87705,6 +89280,115 @@ function renderRunReport(report2) {
 function formatStageOutcome(result) {
   const verdictColor = result.outcome === "advance" ? colors.green : result.outcome === "verify-failed" || result.outcome === "contract-failed" ? colors.red : colors.yellow;
   return `${verdictColor(result.outcome.padEnd(15))} ${result.stage}: ${result.reason}`;
+}
+function renderInterventionHandoff(handoff) {
+  const lines = [
+    colors.bold("Product cycle interventions"),
+    `cycle_stage: ${handoff.cycle_stage}`,
+    `status: ${handoff.status}`,
+    `blocking_route_count: ${handoff.blocking_route_count}`
+  ];
+  if (handoff.next_command) {
+    lines.push(`next_command: ${handoff.next_command}`);
+  }
+  if (handoff.routes.length > 0) {
+    lines.push("");
+    lines.push(colors.bold("Routes:"));
+    for (const route of handoff.routes) {
+      const marker = route.required ? "required" : "recommended";
+      lines.push(`  ${marker} ${route.agent}: ${route.command}`);
+      lines.push(`    ${colors.gray(route.trigger)}`);
+    }
+  }
+  return lines.join("\n");
+}
+function renderResearchHandoff(handoff) {
+  const lines = [
+    colors.bold("Product cycle research"),
+    `cycle_stage: ${handoff.cycle_stage}`,
+    `status: ${handoff.status}`,
+    `blocking_route_count: ${handoff.blocking_route_count}`,
+    `research_artifact: ${handoff.research_artifact}`
+  ];
+  if (handoff.next_command) {
+    lines.push(`next_command: ${handoff.next_command}`);
+  }
+  if (handoff.routes.length > 0) {
+    lines.push("");
+    lines.push(colors.bold("Routes:"));
+    for (const route of handoff.routes) {
+      const marker = route.required ? "required" : "recommended";
+      lines.push(`  ${marker} ${route.agent}: ${route.command}`);
+      lines.push(`    ${colors.gray(route.trigger)}`);
+    }
+  }
+  return lines.join("\n");
+}
+function renderResearchExecutionPlan(plan, written) {
+  const rendered = renderProductResearchExecutionPlan(plan);
+  if (!written) return rendered;
+  return [
+    rendered.trimEnd(),
+    "",
+    colors.bold("Research execution plan written:"),
+    `  ${written.jsonPath}`,
+    `  ${written.mdPath}`
+  ].join("\n");
+}
+function renderResearchRunReport(report2, written, planWritten) {
+  const lines = [renderProductResearchRunReport(report2).trimEnd()];
+  if (planWritten) {
+    lines.push("", colors.bold("Research execution plan written:"), `  ${planWritten.jsonPath}`, `  ${planWritten.mdPath}`);
+  }
+  if (written) {
+    lines.push("", colors.bold("Research run report written:"), `  ${written.jsonPath}`, `  ${written.mdPath}`);
+  }
+  return lines.join("\n");
+}
+function renderInterventionExecutionPlan(plan, written) {
+  const rendered = renderProductInterventionExecutionPlan(plan);
+  if (!written) return rendered;
+  return [
+    rendered.trimEnd(),
+    "",
+    colors.bold("Execution plan written:"),
+    `  ${written.jsonPath}`,
+    `  ${written.mdPath}`
+  ].join("\n");
+}
+function renderInterventionRunReport(report2, written, planWritten) {
+  const lines = [renderProductInterventionRunReport(report2).trimEnd()];
+  if (planWritten) {
+    lines.push("", colors.bold("Execution plan written:"), `  ${planWritten.jsonPath}`, `  ${planWritten.mdPath}`);
+  }
+  if (written) {
+    lines.push("", colors.bold("Run report written:"), `  ${written.jsonPath}`, `  ${written.mdPath}`);
+  }
+  return lines.join("\n");
+}
+function loadOrBuildInterventionExecutionPlan(root2, options) {
+  const existing = readProductInterventionExecutionPlan(root2);
+  if (existing) return { plan: existing };
+  const handoff = readProductInterventionHandoff(root2);
+  if (!handoff) return {};
+  const plan = buildProductInterventionExecutionPlan(handoff, {
+    provider: options.provider,
+    sourceHandoff: PRODUCT_INTERVENTION_HANDOFF_RELATIVE_PATH
+  });
+  const written = options.dryRun ? void 0 : writeProductInterventionExecutionPlan(root2 ?? process.cwd(), plan);
+  return { plan, written };
+}
+function loadOrBuildResearchExecutionPlan(root2, options) {
+  const existing = readProductResearchExecutionPlan(root2);
+  if (existing) return { plan: existing };
+  const handoff = readProductResearchHandoff(root2);
+  if (!handoff) return {};
+  const plan = buildProductResearchExecutionPlan(handoff, {
+    provider: options.provider,
+    sourceHandoff: PRODUCT_RESEARCH_HANDOFF_RELATIVE_PATH
+  });
+  const written = options.dryRun ? void 0 : writeProductResearchExecutionPlan(root2 ?? process.cwd(), plan);
+  return { plan, written };
 }
 function renderSnapshot(snapshot) {
   const rows = [
@@ -87796,31 +89480,31 @@ async function cycleDocumentValidateCommand(root2, options, logger = console) {
 init_formatting();
 
 // src/product/learning-document.ts
-var import_fs103 = require("fs");
-var import_path123 = require("path");
+var import_fs108 = require("fs");
+var import_path129 = require("path");
 var LEARNING_DOCUMENT_RELATIVE_PATH = ".omc/learning/current.json";
 var LEARNING_PROJECTION_RELATIVE_PATH = ".omc/learning/current.md";
 function getLearningDocumentPath(root2 = process.cwd()) {
-  return (0, import_path123.resolve)(root2, LEARNING_DOCUMENT_RELATIVE_PATH);
+  return (0, import_path129.resolve)(root2, LEARNING_DOCUMENT_RELATIVE_PATH);
 }
 function getLearningProjectionPath(root2 = process.cwd()) {
-  return (0, import_path123.resolve)(root2, LEARNING_PROJECTION_RELATIVE_PATH);
+  return (0, import_path129.resolve)(root2, LEARNING_PROJECTION_RELATIVE_PATH);
 }
 function readLearningDocument(root2 = process.cwd()) {
   const path23 = getLearningDocumentPath(root2);
-  if (!(0, import_fs103.existsSync)(path23)) return void 0;
-  return JSON.parse((0, import_fs103.readFileSync)(path23, "utf-8"));
+  if (!(0, import_fs108.existsSync)(path23)) return void 0;
+  return JSON.parse((0, import_fs108.readFileSync)(path23, "utf-8"));
 }
 function validateLearningDocument(root2 = process.cwd()) {
   const path23 = getLearningDocumentPath(root2);
   const issues = [];
-  if (!(0, import_fs103.existsSync)(path23)) {
+  if (!(0, import_fs108.existsSync)(path23)) {
     issues.push({ severity: "error", code: "missing-document", path: path23, message: `Missing ${LEARNING_DOCUMENT_RELATIVE_PATH}` });
     return { ok: false, path: path23, issues };
   }
   let document;
   try {
-    document = JSON.parse((0, import_fs103.readFileSync)(path23, "utf-8"));
+    document = JSON.parse((0, import_fs108.readFileSync)(path23, "utf-8"));
   } catch (error2) {
     issues.push({ severity: "error", code: "invalid-json", path: path23, message: error2 instanceof Error ? error2.message : String(error2) });
     return { ok: false, path: path23, issues };
@@ -87830,8 +89514,8 @@ function validateLearningDocument(root2 = process.cwd()) {
 }
 function writeLearningDocument(root2, doc) {
   const jsonPath = getLearningDocumentPath(root2);
-  (0, import_fs103.mkdirSync)((0, import_path123.dirname)(jsonPath), { recursive: true });
-  (0, import_fs103.writeFileSync)(jsonPath, `${JSON.stringify(doc, null, 2)}
+  (0, import_fs108.mkdirSync)((0, import_path129.dirname)(jsonPath), { recursive: true });
+  (0, import_fs108.writeFileSync)(jsonPath, `${JSON.stringify(doc, null, 2)}
 `, "utf-8");
   const projectionPath = writeLearningProjection(root2, doc);
   return { jsonPath, projectionPath };
@@ -87840,8 +89524,8 @@ function writeLearningProjection(root2, document) {
   const doc = document ?? readLearningDocument(root2);
   if (!doc) throw new Error(`Missing ${LEARNING_DOCUMENT_RELATIVE_PATH}`);
   const projectionPath = getLearningProjectionPath(root2);
-  (0, import_fs103.mkdirSync)((0, import_path123.dirname)(projectionPath), { recursive: true });
-  (0, import_fs103.writeFileSync)(projectionPath, renderLearningProjection(doc), "utf-8");
+  (0, import_fs108.mkdirSync)((0, import_path129.dirname)(projectionPath), { recursive: true });
+  (0, import_fs108.writeFileSync)(projectionPath, renderLearningProjection(doc), "utf-8");
   return projectionPath;
 }
 function renderLearningProjection(doc) {
@@ -87888,19 +89572,19 @@ ${artifacts}
 `;
 }
 function migrateLearningMarkdownToJson(root2 = process.cwd(), options = {}) {
-  const resolvedRoot = (0, import_path123.resolve)(root2);
-  const sourcePath = (0, import_path123.resolve)(resolvedRoot, options.source ?? LEARNING_PROJECTION_RELATIVE_PATH);
+  const resolvedRoot = (0, import_path129.resolve)(root2);
+  const sourcePath = (0, import_path129.resolve)(resolvedRoot, options.source ?? LEARNING_PROJECTION_RELATIVE_PATH);
   const jsonPath = getLearningDocumentPath(resolvedRoot);
   const issues = [];
-  if (!(0, import_fs103.existsSync)(sourcePath)) {
-    issues.push({ severity: "error", code: "missing-source", path: sourcePath, message: `Missing ${(0, import_path123.relative)(resolvedRoot, sourcePath)}` });
+  if (!(0, import_fs108.existsSync)(sourcePath)) {
+    issues.push({ severity: "error", code: "missing-source", path: sourcePath, message: `Missing ${(0, import_path129.relative)(resolvedRoot, sourcePath)}` });
     return { ok: false, sourcePath, jsonPath, wrote: false, issues };
   }
-  if (options.write && (0, import_fs103.existsSync)(jsonPath) && !options.force) {
+  if (options.write && (0, import_fs108.existsSync)(jsonPath) && !options.force) {
     issues.push({ severity: "error", code: "json-exists", path: jsonPath, message: `${LEARNING_DOCUMENT_RELATIVE_PATH} already exists; pass --force to overwrite` });
     return { ok: false, sourcePath, jsonPath, wrote: false, issues };
   }
-  const content = (0, import_fs103.readFileSync)(sourcePath, "utf-8");
+  const content = (0, import_fs108.readFileSync)(sourcePath, "utf-8");
   const document = parseLearningMarkdown(content, options);
   validateDocumentShape2(jsonPath, document, issues);
   const errors = issues.filter((entry) => entry.severity === "error");
@@ -88099,14 +89783,14 @@ async function learningValidateCommand(root2, options, logger = console) {
 init_formatting();
 
 // src/product/historical-scorecard.ts
-var import_fs104 = require("fs");
-var import_path124 = require("path");
+var import_fs109 = require("fs");
+var import_path130 = require("path");
 var USER_VISIBLE_LANES = /* @__PURE__ */ new Set(["product", "ux", "distribution", "brand-content"]);
 var INFRA_HINTS = /\b(backend|schema|migration|api|worker|queue|infra|stack|adr|provision)\b/i;
 var USER_HINTS = /\b(reader|editor|onboarding|screen|loop|content|distribution|ui|ux|activation|retention)\b/i;
 function generateHistoricalScorecard(root2 = process.cwd()) {
-  const resolvedRoot = (0, import_path124.resolve)(root2);
-  const artifactRoot = (0, import_path124.join)(resolvedRoot, ".omc");
+  const resolvedRoot = (0, import_path130.resolve)(root2);
+  const artifactRoot = (0, import_path130.join)(resolvedRoot, ".omc");
   const rawCycles = collectCycleDocuments(artifactRoot);
   const cycles = rawCycles.map((entry) => buildCycleSummary(artifactRoot, entry)).sort((a, b) => (a.start_date ?? "").localeCompare(b.start_date ?? ""));
   const completed = cycles.filter((cycle) => cycle.cycle_stage === "complete").length;
@@ -88128,12 +89812,12 @@ function generateHistoricalScorecard(root2 = process.cwd()) {
   };
 }
 function collectCycleDocuments(artifactRoot) {
-  const cyclesDir = (0, import_path124.join)(artifactRoot, "cycles");
-  if (!(0, import_fs104.existsSync)(cyclesDir)) return [];
-  const entries = (0, import_fs104.readdirSync)(cyclesDir).filter((entry) => /^\d{4}-\d{2}-\d{2}/.test(entry));
+  const cyclesDir = (0, import_path130.join)(artifactRoot, "cycles");
+  if (!(0, import_fs109.existsSync)(cyclesDir)) return [];
+  const entries = (0, import_fs109.readdirSync)(cyclesDir).filter((entry) => /^\d{4}-\d{2}-\d{2}/.test(entry));
   const seen = /* @__PURE__ */ new Map();
   for (const entry of entries) {
-    const filePath = (0, import_path124.join)(cyclesDir, entry);
+    const filePath = (0, import_path130.join)(cyclesDir, entry);
     const stat3 = safeStat(filePath);
     if (!stat3 || !stat3.isFile()) continue;
     const fileMtime = Number(stat3.mtimeMs);
@@ -88183,11 +89867,11 @@ function buildCycleSummary(artifactRoot, entry) {
   };
 }
 function readMatchingLearning(artifactRoot, cycleId) {
-  const dir = (0, import_path124.join)(artifactRoot, "learning");
-  if (!(0, import_fs104.existsSync)(dir)) return void 0;
-  const candidates = (0, import_fs104.readdirSync)(dir).filter((entry) => entry.startsWith(cycleId) || entry.includes(cycleId));
+  const dir = (0, import_path130.join)(artifactRoot, "learning");
+  if (!(0, import_fs109.existsSync)(dir)) return void 0;
+  const candidates = (0, import_fs109.readdirSync)(dir).filter((entry) => entry.startsWith(cycleId) || entry.includes(cycleId));
   for (const candidate of candidates) {
-    const path23 = (0, import_path124.join)(dir, candidate);
+    const path23 = (0, import_path130.join)(dir, candidate);
     const stat3 = safeStat(path23);
     if (!stat3?.isFile()) continue;
     if (candidate.endsWith(".json")) {
@@ -88330,21 +90014,21 @@ function toNumber(value) {
 }
 function safeStat(path23) {
   try {
-    return (0, import_fs104.statSync)(path23);
+    return (0, import_fs109.statSync)(path23);
   } catch {
     return void 0;
   }
 }
 function safeRead3(path23) {
   try {
-    return (0, import_fs104.readFileSync)(path23, "utf-8");
+    return (0, import_fs109.readFileSync)(path23, "utf-8");
   } catch {
     return void 0;
   }
 }
 function parseJsonDocument(path23) {
   try {
-    return JSON.parse((0, import_fs104.readFileSync)(path23, "utf-8"));
+    return JSON.parse((0, import_fs109.readFileSync)(path23, "utf-8"));
   } catch {
     return void 0;
   }
@@ -88509,13 +90193,13 @@ function renderMigrationReport(report2) {
 init_formatting();
 
 // src/product/run-scorecard.ts
-var import_fs105 = require("fs");
-var import_path125 = require("path");
+var import_fs110 = require("fs");
+var import_path131 = require("path");
 var ARTIFACT_WORD_BUDGET = 1800;
 var MAX_ARTIFACTS = 600;
 function generateRunScorecard(root2 = process.cwd()) {
-  const resolvedRoot = (0, import_path125.resolve)(root2);
-  const artifactRoot = (0, import_path125.join)(resolvedRoot, ".omc");
+  const resolvedRoot = (0, import_path131.resolve)(root2);
+  const artifactRoot = (0, import_path131.join)(resolvedRoot, ".omc");
   const artifacts = readArtifacts(artifactRoot, resolvedRoot);
   const handoffs = artifacts.filter(isHandoffArtifact);
   const decisions = artifacts.filter(isDecisionArtifact);
@@ -88595,7 +90279,7 @@ function generateRunScorecard(root2 = process.cwd()) {
   };
 }
 function readArtifacts(artifactRoot, root2) {
-  if (!(0, import_fs105.existsSync)(artifactRoot)) return [];
+  if (!(0, import_fs110.existsSync)(artifactRoot)) return [];
   const files = [];
   collectFiles(artifactRoot, files);
   const fileSet = new Set(files);
@@ -88603,7 +90287,7 @@ function readArtifacts(artifactRoot, root2) {
     const content = safeRead4(path23);
     return {
       path: path23,
-      relativePath: (0, import_path125.relative)(root2, path23),
+      relativePath: (0, import_path131.relative)(root2, path23),
       content,
       words: wordCount2(content),
       date: extractDate(path23, content)
@@ -88622,9 +90306,9 @@ function normalizePath4(path23) {
   return path23.replace(/\\/g, "/");
 }
 function collectFiles(dir, out) {
-  for (const entry of (0, import_fs105.readdirSync)(dir)) {
-    const path23 = (0, import_path125.join)(dir, entry);
-    const stat3 = (0, import_fs105.statSync)(path23);
+  for (const entry of (0, import_fs110.readdirSync)(dir)) {
+    const path23 = (0, import_path131.join)(dir, entry);
+    const stat3 = (0, import_fs110.statSync)(path23);
     if (stat3.isDirectory()) {
       collectFiles(path23, out);
     } else if (stat3.isFile()) {
@@ -88634,7 +90318,7 @@ function collectFiles(dir, out) {
 }
 function safeRead4(path23) {
   try {
-    return (0, import_fs105.readFileSync)(path23, "utf-8");
+    return (0, import_fs110.readFileSync)(path23, "utf-8");
   } catch {
     return "";
   }
@@ -90287,7 +91971,7 @@ async function teamCommand(args) {
 
 // src/cli/commands/ralphthon.ts
 init_tmux_utils();
-var import_fs107 = require("fs");
+var import_fs112 = require("fs");
 
 // src/ralphthon/types.ts
 var RALPHTHON_DEFAULTS = {
@@ -90303,8 +91987,8 @@ var RALPHTHON_DEFAULTS = {
 var PRD_FILENAME2 = "ralphthon-prd.json";
 
 // src/ralphthon/prd.ts
-var import_fs106 = require("fs");
-var import_path126 = require("path");
+var import_fs111 = require("fs");
+var import_path132 = require("path");
 init_worktree_paths();
 var DEFAULT_PLANNING_CONTEXT = {
   brownfield: false,
@@ -90321,20 +92005,20 @@ function normalizePlanningContext(context) {
   };
 }
 function getRalphthonPrdPath(directory) {
-  return (0, import_path126.join)(getOmcRoot(directory), PRD_FILENAME2);
+  return (0, import_path132.join)(getOmcRoot(directory), PRD_FILENAME2);
 }
 function findRalphthonPrdPath(directory) {
-  const rootPath = (0, import_path126.join)(directory, PRD_FILENAME2);
-  if ((0, import_fs106.existsSync)(rootPath)) return rootPath;
+  const rootPath = (0, import_path132.join)(directory, PRD_FILENAME2);
+  if ((0, import_fs111.existsSync)(rootPath)) return rootPath;
   const omcPath = getRalphthonPrdPath(directory);
-  if ((0, import_fs106.existsSync)(omcPath)) return omcPath;
+  if ((0, import_fs111.existsSync)(omcPath)) return omcPath;
   return null;
 }
 function readRalphthonPrd(directory) {
   const prdPath = findRalphthonPrdPath(directory);
   if (!prdPath) return null;
   try {
-    const content = (0, import_fs106.readFileSync)(prdPath, "utf-8");
+    const content = (0, import_fs111.readFileSync)(prdPath, "utf-8");
     const prd = JSON.parse(content);
     if (!prd.stories || !Array.isArray(prd.stories)) return null;
     if (!prd.config) return null;
@@ -90348,9 +92032,9 @@ function writeRalphthonPrd(directory, prd) {
   let prdPath = findRalphthonPrdPath(directory);
   if (!prdPath) {
     const omcDir = getOmcRoot(directory);
-    if (!(0, import_fs106.existsSync)(omcDir)) {
+    if (!(0, import_fs111.existsSync)(omcDir)) {
       try {
-        (0, import_fs106.mkdirSync)(omcDir, { recursive: true });
+        (0, import_fs111.mkdirSync)(omcDir, { recursive: true });
       } catch {
         return false;
       }
@@ -90362,7 +92046,7 @@ function writeRalphthonPrd(directory, prd) {
       ...prd,
       planningContext: normalizePlanningContext(prd.planningContext)
     };
-    (0, import_fs106.writeFileSync)(prdPath, JSON.stringify(normalizedPrd, null, 2));
+    (0, import_fs111.writeFileSync)(prdPath, JSON.stringify(normalizedPrd, null, 2));
     return true;
   } catch {
     return false;
@@ -91116,7 +92800,7 @@ async function ralphthonCommand(args) {
     const pollMs = 5e3;
     let waited = 0;
     while (waited < maxWaitMs) {
-      if ((0, import_fs107.existsSync)(prdPath)) {
+      if ((0, import_fs112.existsSync)(prdPath)) {
         const prd = readRalphthonPrd(cwd2);
         if (prd && prd.stories.length > 0) {
           console.log(source_default.green("PRD generated successfully!"));
@@ -91167,14 +92851,14 @@ async function ralphthonCommand(args) {
   console.log(source_default.gray("Orchestrator running. Press Ctrl+C to stop."));
 }
 function sleep5(ms) {
-  return new Promise((resolve33) => setTimeout(resolve33, ms));
+  return new Promise((resolve39) => setTimeout(resolve39, ms));
 }
 
 // src/cli/commands/telemetry.ts
-var import_path127 = require("path");
+var import_path133 = require("path");
 init_aggregator();
 async function telemetryDigestCommand(options = {}) {
-  const directory = options.directory ? (0, import_path127.resolve)(options.directory) : process.cwd();
+  const directory = options.directory ? (0, import_path133.resolve)(options.directory) : process.cwd();
   try {
     const { digestPath } = await aggregate({ trigger: "on-demand", directory });
     console.log(source_default.green(`Telemetry digest written to:`));
@@ -91186,13 +92870,13 @@ async function telemetryDigestCommand(options = {}) {
 }
 
 // src/cli/commands/teleport.ts
-var import_child_process30 = require("child_process");
-var import_fs108 = require("fs");
+var import_child_process32 = require("child_process");
+var import_fs113 = require("fs");
 var import_os19 = require("os");
-var import_path128 = require("path");
+var import_path134 = require("path");
 init_loader();
 init_providers();
-var DEFAULT_WORKTREE_ROOT = (0, import_path128.join)((0, import_os19.homedir)(), "Workspace", "omc-worktrees");
+var DEFAULT_WORKTREE_ROOT = (0, import_path134.join)((0, import_os19.homedir)(), "Workspace", "omc-worktrees");
 var PACKAGE_JSON_NAME = "package.json";
 var PACKAGE_MANAGER_LOCKFILES = {
   pnpm: "pnpm-lock.yaml",
@@ -91201,14 +92885,14 @@ var PACKAGE_MANAGER_LOCKFILES = {
 };
 function readPackageJsonText(directory) {
   try {
-    return (0, import_fs108.readFileSync)((0, import_path128.join)(directory, PACKAGE_JSON_NAME), "utf-8");
+    return (0, import_fs113.readFileSync)((0, import_path134.join)(directory, PACKAGE_JSON_NAME), "utf-8");
   } catch {
     return null;
   }
 }
 function detectPackageManager(parentRepoRoot, worktreePath) {
   for (const [manager, lockfile] of Object.entries(PACKAGE_MANAGER_LOCKFILES)) {
-    if ((0, import_fs108.existsSync)((0, import_path128.join)(worktreePath, lockfile)) || (0, import_fs108.existsSync)((0, import_path128.join)(parentRepoRoot, lockfile))) {
+    if ((0, import_fs113.existsSync)((0, import_path134.join)(worktreePath, lockfile)) || (0, import_fs113.existsSync)((0, import_path134.join)(parentRepoRoot, lockfile))) {
       return manager;
     }
   }
@@ -91227,12 +92911,12 @@ function detectPackageManager(parentRepoRoot, worktreePath) {
   return "npm";
 }
 function symlinkNodeModules(parentRepoRoot, worktreePath) {
-  const sourceNodeModules = (0, import_path128.join)(parentRepoRoot, "node_modules");
-  const targetNodeModules = (0, import_path128.join)(worktreePath, "node_modules");
-  if (!(0, import_fs108.existsSync)(sourceNodeModules) || (0, import_fs108.existsSync)(targetNodeModules)) {
+  const sourceNodeModules = (0, import_path134.join)(parentRepoRoot, "node_modules");
+  const targetNodeModules = (0, import_path134.join)(worktreePath, "node_modules");
+  if (!(0, import_fs113.existsSync)(sourceNodeModules) || (0, import_fs113.existsSync)(targetNodeModules)) {
     return false;
   }
-  (0, import_fs108.symlinkSync)(sourceNodeModules, targetNodeModules, process.platform === "win32" ? "junction" : "dir");
+  (0, import_fs113.symlinkSync)(sourceNodeModules, targetNodeModules, process.platform === "win32" ? "junction" : "dir");
   return true;
 }
 function installDependencies(worktreePath, packageManager) {
@@ -91241,7 +92925,7 @@ function installDependencies(worktreePath, packageManager) {
     pnpm: ["install"],
     yarn: ["install"]
   };
-  (0, import_child_process30.execFileSync)(packageManager, argsByManager[packageManager], {
+  (0, import_child_process32.execFileSync)(packageManager, argsByManager[packageManager], {
     cwd: worktreePath,
     stdio: "inherit"
   });
@@ -91419,8 +93103,8 @@ function sanitize(str, maxLen = 30) {
 }
 function getCurrentRepo() {
   try {
-    const root2 = (0, import_child_process30.execSync)("git rev-parse --show-toplevel", { encoding: "utf-8", timeout: 5e3 }).trim();
-    const remoteUrl = (0, import_child_process30.execSync)("git remote get-url origin", { encoding: "utf-8", timeout: 5e3 }).trim();
+    const root2 = (0, import_child_process32.execSync)("git rev-parse --show-toplevel", { encoding: "utf-8", timeout: 5e3 }).trim();
+    const remoteUrl = (0, import_child_process32.execSync)("git remote get-url origin", { encoding: "utf-8", timeout: 5e3 }).trim();
     const parsed = parseRemoteUrl(remoteUrl);
     if (parsed) {
       return { owner: parsed.owner, repo: parsed.repo, root: root2, provider: parsed.provider };
@@ -91439,25 +93123,25 @@ async function fetchProviderInfo(type, number3, provider, owner, repo) {
 }
 function createWorktree(repoRoot, worktreePath, branchName, baseBranch) {
   try {
-    const parentDir = (0, import_path128.join)(worktreePath, "..");
-    if (!(0, import_fs108.existsSync)(parentDir)) {
-      (0, import_fs108.mkdirSync)(parentDir, { recursive: true });
+    const parentDir = (0, import_path134.join)(worktreePath, "..");
+    if (!(0, import_fs113.existsSync)(parentDir)) {
+      (0, import_fs113.mkdirSync)(parentDir, { recursive: true });
     }
-    if ((0, import_fs108.existsSync)(worktreePath)) {
+    if ((0, import_fs113.existsSync)(worktreePath)) {
       return { success: false, error: `Worktree already exists at ${worktreePath}` };
     }
-    (0, import_child_process30.execFileSync)("git", ["fetch", "origin", baseBranch], {
+    (0, import_child_process32.execFileSync)("git", ["fetch", "origin", baseBranch], {
       cwd: repoRoot,
       stdio: "pipe"
     });
     try {
-      (0, import_child_process30.execFileSync)("git", ["branch", branchName, `origin/${baseBranch}`], {
+      (0, import_child_process32.execFileSync)("git", ["branch", branchName, `origin/${baseBranch}`], {
         cwd: repoRoot,
         stdio: "pipe"
       });
     } catch {
     }
-    (0, import_child_process30.execFileSync)("git", ["worktree", "add", worktreePath, branchName], {
+    (0, import_child_process32.execFileSync)("git", ["worktree", "add", worktreePath, branchName], {
       cwd: repoRoot,
       stdio: "pipe"
     });
@@ -91480,7 +93164,7 @@ async function teleportCommand(ref, options) {
     return { success: false, error: error2 };
   }
   const { owner, repo, root: repoRoot } = currentRepo;
-  const repoName = (0, import_path128.basename)(repoRoot);
+  const repoName = (0, import_path134.basename)(repoRoot);
   const config2 = loadConfig();
   const shouldSymlinkNodeModules = config2.teleport?.symlinkNodeModules ?? true;
   const effectiveProviderName = parsed.provider || currentRepo.provider;
@@ -91536,7 +93220,7 @@ async function teleportCommand(ref, options) {
       if (provider.prRefspec) {
         try {
           const refspec = provider.prRefspec.replace("{number}", String(parsed.number)).replace("{branch}", branchName);
-          (0, import_child_process30.execFileSync)(
+          (0, import_child_process32.execFileSync)(
             "git",
             ["fetch", "origin", refspec],
             { cwd: repoRoot, stdio: ["pipe", "pipe", "pipe"], timeout: 3e4 }
@@ -91545,7 +93229,7 @@ async function teleportCommand(ref, options) {
         }
       } else if (info.branch) {
         try {
-          (0, import_child_process30.execFileSync)(
+          (0, import_child_process32.execFileSync)(
             "git",
             ["fetch", "origin", `${info.branch}:${branchName}`],
             { cwd: repoRoot, stdio: ["pipe", "pipe", "pipe"], timeout: 3e4 }
@@ -91561,7 +93245,7 @@ async function teleportCommand(ref, options) {
       }
     }
   }
-  const worktreePath = (0, import_path128.join)(worktreeRoot, worktreeDirName);
+  const worktreePath = (0, import_path134.join)(worktreeRoot, worktreeDirName);
   if (!options.json) {
     console.log(source_default.gray(`  Branch: ${branchName}`));
     console.log(source_default.gray(`  Path: ${worktreePath}`));
@@ -91614,13 +93298,13 @@ function findWorktreeDirs(dir, maxDepth = 3, currentDepth = 0) {
   if (currentDepth >= maxDepth) return [];
   const results = [];
   try {
-    const entries = (0, import_fs108.readdirSync)(dir, { withFileTypes: true });
+    const entries = (0, import_fs113.readdirSync)(dir, { withFileTypes: true });
     for (const entry of entries) {
       if (!entry.isDirectory()) continue;
-      const fullPath = (0, import_path128.join)(dir, entry.name);
+      const fullPath = (0, import_path134.join)(dir, entry.name);
       try {
-        const gitPath = (0, import_path128.join)(fullPath, ".git");
-        const stat3 = (0, import_fs108.statSync)(gitPath);
+        const gitPath = (0, import_path134.join)(fullPath, ".git");
+        const stat3 = (0, import_fs113.statSync)(gitPath);
         if (stat3.isFile()) {
           results.push(fullPath);
           continue;
@@ -91635,7 +93319,7 @@ function findWorktreeDirs(dir, maxDepth = 3, currentDepth = 0) {
 }
 async function teleportListCommand(options) {
   const worktreeRoot = DEFAULT_WORKTREE_ROOT;
-  if (!(0, import_fs108.existsSync)(worktreeRoot)) {
+  if (!(0, import_fs113.existsSync)(worktreeRoot)) {
     if (options.json) {
       console.log(JSON.stringify({ worktrees: [] }));
     } else {
@@ -91645,10 +93329,10 @@ async function teleportListCommand(options) {
   }
   const worktreeDirs = findWorktreeDirs(worktreeRoot);
   const worktrees = worktreeDirs.map((worktreePath) => {
-    const relativePath = (0, import_path128.relative)(worktreeRoot, worktreePath);
+    const relativePath = (0, import_path134.relative)(worktreeRoot, worktreePath);
     let branch = "unknown";
     try {
-      branch = (0, import_child_process30.execSync)("git branch --show-current", {
+      branch = (0, import_child_process32.execSync)("git branch --show-current", {
         cwd: worktreePath,
         encoding: "utf-8"
       }).trim();
@@ -91676,10 +93360,10 @@ async function teleportListCommand(options) {
 async function teleportRemoveCommand(pathOrName, options) {
   const worktreeRoot = DEFAULT_WORKTREE_ROOT;
   let worktreePath = pathOrName;
-  if (!(0, import_path128.isAbsolute)(pathOrName)) {
-    worktreePath = (0, import_path128.join)(worktreeRoot, pathOrName);
+  if (!(0, import_path134.isAbsolute)(pathOrName)) {
+    worktreePath = (0, import_path134.join)(worktreeRoot, pathOrName);
   }
-  if (!(0, import_fs108.existsSync)(worktreePath)) {
+  if (!(0, import_fs113.existsSync)(worktreePath)) {
     const error2 = `Worktree not found: ${worktreePath}`;
     if (options.json) {
       console.log(JSON.stringify({ success: false, error: error2 }));
@@ -91688,8 +93372,8 @@ async function teleportRemoveCommand(pathOrName, options) {
     }
     return 1;
   }
-  const rel = (0, import_path128.relative)(worktreeRoot, worktreePath);
-  if (rel.startsWith("..") || (0, import_path128.isAbsolute)(rel)) {
+  const rel = (0, import_path134.relative)(worktreeRoot, worktreePath);
+  if (rel.startsWith("..") || (0, import_path134.isAbsolute)(rel)) {
     const error2 = `Refusing to remove worktree outside of ${worktreeRoot}`;
     if (options.json) {
       console.log(JSON.stringify({ success: false, error: error2 }));
@@ -91700,7 +93384,7 @@ async function teleportRemoveCommand(pathOrName, options) {
   }
   try {
     if (!options.force) {
-      const status = (0, import_child_process30.execSync)("git status --porcelain", {
+      const status = (0, import_child_process32.execSync)("git status --porcelain", {
         cwd: worktreePath,
         encoding: "utf-8"
       });
@@ -91714,7 +93398,7 @@ async function teleportRemoveCommand(pathOrName, options) {
         return 1;
       }
     }
-    const gitDir = (0, import_child_process30.execSync)("git rev-parse --git-dir", {
+    const gitDir = (0, import_child_process32.execSync)("git rev-parse --git-dir", {
       cwd: worktreePath,
       encoding: "utf-8"
     }).trim();
@@ -91722,12 +93406,12 @@ async function teleportRemoveCommand(pathOrName, options) {
     const mainRepo = mainRepoMatch ? mainRepoMatch[1] : null;
     if (mainRepo) {
       const args = options.force ? ["worktree", "remove", "--force", worktreePath] : ["worktree", "remove", worktreePath];
-      (0, import_child_process30.execFileSync)("git", args, {
+      (0, import_child_process32.execFileSync)("git", args, {
         cwd: mainRepo,
         stdio: "pipe"
       });
     } else {
-      (0, import_fs108.rmSync)(worktreePath, { recursive: true, force: true });
+      (0, import_fs113.rmSync)(worktreePath, { recursive: true, force: true });
     }
     if (options.json) {
       console.log(JSON.stringify({ success: true, removed: worktreePath }));
@@ -91750,19 +93434,19 @@ async function teleportRemoveCommand(pathOrName, options) {
 init_version();
 
 // src/lib/plugin-dir.ts
-var import_path129 = require("path");
+var import_path135 = require("path");
 function resolvePluginDirArg(rawPath) {
   if (!rawPath || rawPath.trim().length === 0) {
     throw new Error("--plugin-dir requires a non-empty path argument");
   }
-  return (0, import_path129.resolve)(rawPath);
+  return (0, import_path135.resolve)(rawPath);
 }
 
 // src/cli/launch.ts
-var import_child_process31 = require("child_process");
-var import_fs109 = require("fs");
+var import_child_process33 = require("child_process");
+var import_fs114 = require("fs");
 var import_os20 = require("os");
-var import_path130 = require("path");
+var import_path136 = require("path");
 init_mcp_registry();
 init_config_dir();
 init_tmux_utils();
@@ -91778,45 +93462,45 @@ var SLACK_FLAG = "--slack";
 var WEBHOOK_FLAG = "--webhook";
 var OMC_RUNTIME_DIRNAME = ".omc-launch";
 function hasOmcMarkers(path23) {
-  if (!(0, import_fs109.existsSync)(path23)) return false;
-  const content = (0, import_fs109.readFileSync)(path23, "utf-8");
+  if (!(0, import_fs114.existsSync)(path23)) return false;
+  const content = (0, import_fs114.readFileSync)(path23, "utf-8");
   return content.includes("<!-- OMC:START -->") && content.includes("<!-- OMC:END -->");
 }
 function ensureMirroredPath(sourcePath, targetPath) {
-  if (!(0, import_fs109.existsSync)(sourcePath)) return;
+  if (!(0, import_fs114.existsSync)(sourcePath)) return;
   try {
-    const sourceStat = (0, import_fs109.lstatSync)(sourcePath);
-    const targetExists = (0, import_fs109.existsSync)(targetPath);
+    const sourceStat = (0, import_fs114.lstatSync)(sourcePath);
+    const targetExists = (0, import_fs114.existsSync)(targetPath);
     if (targetExists) {
-      const targetStat = (0, import_fs109.lstatSync)(targetPath);
+      const targetStat = (0, import_fs114.lstatSync)(targetPath);
       if (targetStat.isSymbolicLink()) {
         return;
       }
-      (0, import_fs109.rmSync)(targetPath, { recursive: true, force: true });
+      (0, import_fs114.rmSync)(targetPath, { recursive: true, force: true });
     }
     if (sourceStat.isDirectory()) {
-      (0, import_fs109.symlinkSync)(sourcePath, targetPath, process.platform === "win32" ? "junction" : "dir");
+      (0, import_fs114.symlinkSync)(sourcePath, targetPath, process.platform === "win32" ? "junction" : "dir");
       return;
     }
-    (0, import_fs109.symlinkSync)(sourcePath, targetPath, "file");
+    (0, import_fs114.symlinkSync)(sourcePath, targetPath, "file");
   } catch {
-    const sourceStat = (0, import_fs109.lstatSync)(sourcePath);
+    const sourceStat = (0, import_fs114.lstatSync)(sourcePath);
     if (sourceStat.isDirectory()) {
-      (0, import_fs109.cpSync)(sourcePath, targetPath, { recursive: true });
+      (0, import_fs114.cpSync)(sourcePath, targetPath, { recursive: true });
       return;
     }
-    (0, import_fs109.copyFileSync)(sourcePath, targetPath);
+    (0, import_fs114.copyFileSync)(sourcePath, targetPath);
   }
 }
 function prepareOmcLaunchConfigDir(baseConfigDir = getClaudeConfigDir()) {
-  const companionPath = (0, import_path130.join)(baseConfigDir, "CLAUDE-omc.md");
+  const companionPath = (0, import_path136.join)(baseConfigDir, "CLAUDE-omc.md");
   if (!hasOmcMarkers(companionPath)) {
     return baseConfigDir;
   }
-  const runtimeConfigDir = (0, import_path130.join)(baseConfigDir, OMC_RUNTIME_DIRNAME);
-  (0, import_fs109.rmSync)(runtimeConfigDir, { recursive: true, force: true });
-  (0, import_fs109.mkdirSync)(runtimeConfigDir, { recursive: true });
-  (0, import_fs109.copyFileSync)(companionPath, (0, import_path130.join)(runtimeConfigDir, "CLAUDE.md"));
+  const runtimeConfigDir = (0, import_path136.join)(baseConfigDir, OMC_RUNTIME_DIRNAME);
+  (0, import_fs114.rmSync)(runtimeConfigDir, { recursive: true, force: true });
+  (0, import_fs114.mkdirSync)(runtimeConfigDir, { recursive: true });
+  (0, import_fs114.copyFileSync)(companionPath, (0, import_path136.join)(runtimeConfigDir, "CLAUDE.md"));
   for (const entry of [
     "agents",
     "commands",
@@ -91833,27 +93517,27 @@ function prepareOmcLaunchConfigDir(baseConfigDir = getClaudeConfigDir()) {
     "settings.json",
     "settings.local.json"
   ]) {
-    ensureMirroredPath((0, import_path130.join)(baseConfigDir, entry), (0, import_path130.join)(runtimeConfigDir, (0, import_path130.basename)(entry)));
+    ensureMirroredPath((0, import_path136.join)(baseConfigDir, entry), (0, import_path136.join)(runtimeConfigDir, (0, import_path136.basename)(entry)));
   }
-  const runtimeSettingsPath = (0, import_path130.join)(runtimeConfigDir, "settings.json");
-  if ((0, import_fs109.existsSync)(runtimeSettingsPath)) {
+  const runtimeSettingsPath = (0, import_path136.join)(runtimeConfigDir, "settings.json");
+  if ((0, import_fs114.existsSync)(runtimeSettingsPath)) {
     try {
-      const rawSettings = JSON.parse((0, import_fs109.readFileSync)(runtimeSettingsPath, "utf-8"));
+      const rawSettings = JSON.parse((0, import_fs114.readFileSync)(runtimeSettingsPath, "utf-8"));
       const repaired = stripRetiredTeamMcpServers(rawSettings);
       if (repaired.changed) {
-        (0, import_fs109.writeFileSync)(runtimeSettingsPath, JSON.stringify(repaired.settings, null, 2));
+        (0, import_fs114.writeFileSync)(runtimeSettingsPath, JSON.stringify(repaired.settings, null, 2));
       }
     } catch {
     }
   }
-  (0, import_fs109.writeFileSync)(
-    (0, import_path130.join)(runtimeConfigDir, ".omc-launch-profile.json"),
+  (0, import_fs114.writeFileSync)(
+    (0, import_path136.join)(runtimeConfigDir, ".omc-launch-profile.json"),
     JSON.stringify({ sourceConfigDir: baseConfigDir, sourceClaudeMd: companionPath }, null, 2)
   );
   return runtimeConfigDir;
 }
 function isDefaultClaudeConfigDirPath2(configDir) {
-  return configDir === (0, import_path130.join)((0, import_os20.homedir)(), ".claude");
+  return configDir === (0, import_path136.join)((0, import_os20.homedir)(), ".claude");
 }
 function extractNotifyFlag(args) {
   let notifyEnabled = true;
@@ -92016,7 +93700,7 @@ function runClaudeInsideTmux(cwd2, args) {
   } catch {
   }
   try {
-    (0, import_child_process31.execFileSync)("claude", args, { cwd: cwd2, stdio: "inherit" });
+    (0, import_child_process33.execFileSync)("claude", args, { cwd: cwd2, stdio: "inherit" });
   } catch (error2) {
     const err = error2;
     if (err.code === "ENOENT") {
@@ -92078,7 +93762,7 @@ function runClaudeOutsideTmux(cwd2, args, _sessionId) {
 }
 function runClaudeDirect(cwd2, args) {
   try {
-    (0, import_child_process31.execFileSync)("claude", args, { cwd: cwd2, stdio: "inherit" });
+    (0, import_child_process33.execFileSync)("claude", args, { cwd: cwd2, stdio: "inherit" });
   } catch (error2) {
     const err = error2;
     if (err.code === "ENOENT") {
@@ -92177,7 +93861,7 @@ async function launchCommand(args) {
 }
 
 // src/cli/interop.ts
-var import_child_process32 = require("child_process");
+var import_child_process34 = require("child_process");
 var import_crypto20 = require("crypto");
 init_tmux_utils();
 function readInteropRuntimeFlags(env2 = process.env) {
@@ -92201,7 +93885,7 @@ function validateInteropRuntimeFlags(flags) {
 }
 function isCodexAvailable() {
   try {
-    (0, import_child_process32.execFileSync)("codex", ["--version"], { stdio: "ignore" });
+    (0, import_child_process34.execFileSync)("codex", ["--version"], { stdio: "ignore" });
     return true;
   } catch {
     return false;
@@ -92291,11 +93975,11 @@ function interopCommand(options = {}) {
 }
 
 // src/cli/ask.ts
-var import_child_process33 = require("child_process");
-var import_fs110 = require("fs");
+var import_child_process35 = require("child_process");
+var import_fs115 = require("fs");
 var import_promises17 = require("fs/promises");
 var import_os21 = require("os");
-var import_path131 = require("path");
+var import_path137 = require("path");
 var import_url15 = require("url");
 init_security_config();
 var ASK_USAGE = [
@@ -92323,19 +94007,19 @@ function warnDeprecatedAlias(alias, canonical) {
 }
 function getPackageRoot() {
   if (typeof __dirname !== "undefined" && __dirname) {
-    const currentDirName = (0, import_path131.basename)(__dirname);
-    const parentDirName = (0, import_path131.basename)((0, import_path131.dirname)(__dirname));
+    const currentDirName = (0, import_path137.basename)(__dirname);
+    const parentDirName = (0, import_path137.basename)((0, import_path137.dirname)(__dirname));
     if (currentDirName === "bridge") {
-      return (0, import_path131.join)(__dirname, "..");
+      return (0, import_path137.join)(__dirname, "..");
     }
     if (currentDirName === "cli" && (parentDirName === "src" || parentDirName === "dist")) {
-      return (0, import_path131.join)(__dirname, "..", "..");
+      return (0, import_path137.join)(__dirname, "..", "..");
     }
   }
   try {
     const __filename4 = (0, import_url15.fileURLToPath)(importMetaUrl);
-    const __dirname2 = (0, import_path131.dirname)(__filename4);
-    return (0, import_path131.join)(__dirname2, "..", "..");
+    const __dirname2 = (0, import_path137.dirname)(__filename4);
+    return (0, import_path137.join)(__dirname2, "..", "..");
   } catch {
     return process.cwd();
   }
@@ -92343,30 +94027,30 @@ function getPackageRoot() {
 function resolveAskPromptsDir(cwd2, packageRoot, env2 = process.env) {
   const codexHomeOverride = env2.CODEX_HOME?.trim();
   if (codexHomeOverride) {
-    return (0, import_path131.join)(codexHomeOverride, "prompts");
+    return (0, import_path137.join)(codexHomeOverride, "prompts");
   }
   try {
-    const scopePath = (0, import_path131.join)(cwd2, ".omx", "setup-scope.json");
-    if ((0, import_fs110.existsSync)(scopePath)) {
-      const parsed = JSON.parse((0, import_fs110.readFileSync)(scopePath, "utf-8"));
+    const scopePath = (0, import_path137.join)(cwd2, ".omx", "setup-scope.json");
+    if ((0, import_fs115.existsSync)(scopePath)) {
+      const parsed = JSON.parse((0, import_fs115.readFileSync)(scopePath, "utf-8"));
       if (parsed.scope === "project" || parsed.scope === "project-local") {
-        return (0, import_path131.join)(cwd2, ".codex", "prompts");
+        return (0, import_path137.join)(cwd2, ".codex", "prompts");
       }
     }
   } catch {
   }
-  return (0, import_path131.join)(packageRoot, "agents");
+  return (0, import_path137.join)(packageRoot, "agents");
 }
 async function resolveAgentPromptContent(role, promptsDir) {
   const normalizedRole = role.trim().toLowerCase();
   if (!SAFE_ROLE_PATTERN.test(normalizedRole)) {
     throw new Error(`[ask] invalid --agent-prompt role "${role}". Expected lowercase role names like "executor" or "test-engineer".`);
   }
-  if (!(0, import_fs110.existsSync)(promptsDir)) {
+  if (!(0, import_fs115.existsSync)(promptsDir)) {
     throw new Error(`[ask] prompts directory not found: ${promptsDir}.`);
   }
-  const promptPath = (0, import_path131.join)(promptsDir, `${normalizedRole}.md`);
-  if (!(0, import_fs110.existsSync)(promptPath)) {
+  const promptPath = (0, import_path137.join)(promptsDir, `${normalizedRole}.md`);
+  if (!(0, import_fs115.existsSync)(promptPath)) {
     const files = await (0, import_promises17.readdir)(promptsDir).catch(() => []);
     const availableRoles = files.filter((file) => file.endsWith(".md")).map((file) => file.slice(0, -3)).sort();
     const availableSuffix = availableRoles.length > 0 ? ` Available roles: ${availableRoles.join(", ")}.` : "";
@@ -92432,14 +94116,14 @@ function parseAskArgs(args) {
 function resolveAskAdvisorScriptPath(packageRoot = getPackageRoot(), env2 = process.env) {
   const canonical = env2[ASK_ADVISOR_SCRIPT_ENV]?.trim();
   if (canonical) {
-    return (0, import_path131.isAbsolute)(canonical) ? canonical : (0, import_path131.join)(packageRoot, canonical);
+    return (0, import_path137.isAbsolute)(canonical) ? canonical : (0, import_path137.join)(packageRoot, canonical);
   }
   const alias = env2[ASK_ADVISOR_SCRIPT_ENV_ALIAS]?.trim();
   if (alias) {
     warnDeprecatedAlias(ASK_ADVISOR_SCRIPT_ENV_ALIAS, ASK_ADVISOR_SCRIPT_ENV);
-    return (0, import_path131.isAbsolute)(alias) ? alias : (0, import_path131.join)(packageRoot, alias);
+    return (0, import_path137.isAbsolute)(alias) ? alias : (0, import_path137.join)(packageRoot, alias);
   }
-  return (0, import_path131.join)(packageRoot, "scripts", "run-provider-advisor.js");
+  return (0, import_path137.join)(packageRoot, "scripts", "run-provider-advisor.js");
 }
 function resolveSignalExitCode(signal) {
   if (!signal) return 1;
@@ -92459,7 +94143,7 @@ async function askCommand(args) {
   const packageRoot = getPackageRoot();
   const advisorScriptPath = resolveAskAdvisorScriptPath(packageRoot);
   const promptsDir = resolveAskPromptsDir(process.cwd(), packageRoot, process.env);
-  if (!(0, import_fs110.existsSync)(advisorScriptPath)) {
+  if (!(0, import_fs115.existsSync)(advisorScriptPath)) {
     throw new Error(`[ask] advisor script not found: ${advisorScriptPath}`);
   }
   let finalPrompt = parsed.prompt;
@@ -92469,7 +94153,7 @@ async function askCommand(args) {
 
 ${parsed.prompt}`;
   }
-  const child = (0, import_child_process33.spawnSync)(
+  const child = (0, import_child_process35.spawnSync)(
     process.execPath,
     [advisorScriptPath, parsed.provider, finalPrompt],
     {
@@ -92497,9 +94181,9 @@ ${parsed.prompt}`;
 }
 
 // src/cli/stack.ts
-var import_child_process34 = require("child_process");
-var import_path132 = require("path");
-var import_fs111 = require("fs");
+var import_child_process36 = require("child_process");
+var import_path138 = require("path");
+var import_fs116 = require("fs");
 var import_url16 = require("url");
 var STACK_USAGE = `
 Usage:
@@ -92555,29 +94239,29 @@ function parseCli(argv) {
 }
 function getPackageRoot2() {
   if (typeof __dirname !== "undefined" && __dirname) {
-    const currentDirName = (0, import_path132.basename)(__dirname);
-    const parentDirName = (0, import_path132.basename)((0, import_path132.dirname)(__dirname));
-    if (currentDirName === "bridge") return (0, import_path132.join)(__dirname, "..");
+    const currentDirName = (0, import_path138.basename)(__dirname);
+    const parentDirName = (0, import_path138.basename)((0, import_path138.dirname)(__dirname));
+    if (currentDirName === "bridge") return (0, import_path138.join)(__dirname, "..");
     if (currentDirName === "cli" && (parentDirName === "src" || parentDirName === "dist")) {
-      return (0, import_path132.join)(__dirname, "..", "..");
+      return (0, import_path138.join)(__dirname, "..", "..");
     }
   }
   try {
     const filename = (0, import_url16.fileURLToPath)(importMetaUrl);
-    return (0, import_path132.join)((0, import_path132.dirname)(filename), "..", "..");
+    return (0, import_path138.join)((0, import_path138.dirname)(filename), "..", "..");
   } catch {
     return process.cwd();
   }
 }
 function resolveOrchestratorPath(packageRoot) {
   const candidates = [
-    (0, import_path132.join)(packageRoot, "skills", "stack-provision", "scripts", "orchestrate.mjs"),
-    (0, import_path132.join)(packageRoot, "..", "skills", "stack-provision", "scripts", "orchestrate.mjs")
+    (0, import_path138.join)(packageRoot, "skills", "stack-provision", "scripts", "orchestrate.mjs"),
+    (0, import_path138.join)(packageRoot, "..", "skills", "stack-provision", "scripts", "orchestrate.mjs")
   ];
   for (const candidate of candidates) {
-    if ((0, import_fs111.existsSync)(candidate)) return (0, import_path132.resolve)(candidate);
+    if ((0, import_fs116.existsSync)(candidate)) return (0, import_path138.resolve)(candidate);
   }
-  return (0, import_path132.resolve)(candidates[0]);
+  return (0, import_path138.resolve)(candidates[0]);
 }
 function prettyEvent(evt) {
   switch (evt.event) {
@@ -92656,7 +94340,7 @@ async function stackCommand(argv) {
   }
   const packageRoot = getPackageRoot2();
   const orchestrator = resolveOrchestratorPath(packageRoot);
-  if (!(0, import_fs111.existsSync)(orchestrator)) {
+  if (!(0, import_fs116.existsSync)(orchestrator)) {
     process.stderr.write(
       source_default.red(`[omc stack] orchestrator not found at ${orchestrator}.
 `) + "Re-install or rebuild the package, or run from a development checkout.\n"
@@ -92667,7 +94351,7 @@ async function stackCommand(argv) {
   const { args } = buildOrchestratorArgs(parsed);
   const useRaw = parsed.raw || !process.stdout.isTTY;
   return new Promise((resolveExit, reject) => {
-    const proc = (0, import_child_process34.spawn)(process.execPath, [orchestrator, ...args], {
+    const proc = (0, import_child_process36.spawn)(process.execPath, [orchestrator, ...args], {
       stdio: useRaw ? "inherit" : ["inherit", "pipe", "inherit"]
     });
     if (!useRaw && proc.stdout) {
@@ -92717,20 +94401,20 @@ function warnIfWin32() {
 }
 
 // src/cli/autoresearch.ts
-var import_child_process39 = require("child_process");
-var import_fs116 = require("fs");
+var import_child_process41 = require("child_process");
+var import_fs121 = require("fs");
 
 // src/autoresearch/contracts.ts
-var import_child_process35 = require("child_process");
-var import_fs112 = require("fs");
+var import_child_process37 = require("child_process");
+var import_fs117 = require("fs");
 var import_promises18 = require("fs/promises");
-var import_path133 = require("path");
+var import_path139 = require("path");
 function contractError(message) {
   return new Error(message);
 }
 function readGit(repoPath, args) {
   try {
-    return (0, import_child_process35.execFileSync)("git", args, {
+    return (0, import_child_process37.execFileSync)("git", args, {
       cwd: repoPath,
       encoding: "utf-8",
       stdio: ["ignore", "pipe", "pipe"]
@@ -92745,7 +94429,7 @@ function slugifyMissionName(value) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").slice(0, 48) || "mission";
 }
 function ensurePathInside(parentPath, childPath) {
-  const rel = (0, import_path133.relative)(parentPath, childPath);
+  const rel = (0, import_path139.relative)(parentPath, childPath);
   if (rel === "" || !rel.startsWith("..") && rel !== "..") return;
   throw contractError("mission-dir must be inside a git repository.");
 }
@@ -92855,28 +94539,28 @@ function parseEvaluatorResult(raw) {
   return result.score === void 0 ? { pass: result.pass } : { pass: result.pass, score: result.score };
 }
 async function loadAutoresearchMissionContract(missionDirArg) {
-  let missionDir = (0, import_path133.resolve)(missionDirArg);
-  if (!(0, import_fs112.existsSync)(missionDir)) {
+  let missionDir = (0, import_path139.resolve)(missionDirArg);
+  if (!(0, import_fs117.existsSync)(missionDir)) {
     throw contractError(`mission-dir does not exist: ${missionDir}`);
   }
   try {
-    missionDir = (0, import_fs112.realpathSync)(missionDir);
+    missionDir = (0, import_fs117.realpathSync)(missionDir);
   } catch {
   }
   const repoRoot = readGit(missionDir, ["rev-parse", "--show-toplevel"]);
   ensurePathInside(repoRoot, missionDir);
-  const missionFile = (0, import_path133.join)(missionDir, "mission.md");
-  const sandboxFile = (0, import_path133.join)(missionDir, "sandbox.md");
-  if (!(0, import_fs112.existsSync)(missionFile)) {
+  const missionFile = (0, import_path139.join)(missionDir, "mission.md");
+  const sandboxFile = (0, import_path139.join)(missionDir, "sandbox.md");
+  if (!(0, import_fs117.existsSync)(missionFile)) {
     throw contractError(`mission.md is required inside mission-dir: ${missionFile}`);
   }
-  if (!(0, import_fs112.existsSync)(sandboxFile)) {
+  if (!(0, import_fs117.existsSync)(sandboxFile)) {
     throw contractError(`sandbox.md is required inside mission-dir: ${sandboxFile}`);
   }
   const missionContent = await (0, import_promises18.readFile)(missionFile, "utf-8");
   const sandboxContent = await (0, import_promises18.readFile)(sandboxFile, "utf-8");
   const sandbox = parseSandboxContract(sandboxContent);
-  const missionRelativeDir = (0, import_path133.relative)(repoRoot, missionDir) || (0, import_path133.basename)(missionDir);
+  const missionRelativeDir = (0, import_path139.relative)(repoRoot, missionDir) || (0, import_path139.basename)(missionDir);
   const missionSlug = slugifyMissionName(missionRelativeDir);
   return {
     missionDir,
@@ -92892,10 +94576,10 @@ async function loadAutoresearchMissionContract(missionDirArg) {
 }
 
 // src/autoresearch/runtime.ts
-var import_child_process36 = require("child_process");
-var import_fs113 = require("fs");
+var import_child_process38 = require("child_process");
+var import_fs118 = require("fs");
 var import_promises19 = require("fs/promises");
-var import_path134 = require("path");
+var import_path140 = require("path");
 init_mode_state_io();
 var AUTORESEARCH_RESULTS_HEADER = "iteration	commit	pass	score	status	description\n";
 var AUTORESEARCH_WORKTREE_EXCLUDES = ["results.tsv", "run.log", "node_modules", ".omc/"];
@@ -92911,7 +94595,7 @@ function buildRunId(missionSlug, runTag) {
   return `${missionSlug}-${runTag.toLowerCase()}`;
 }
 function activeRunStateFile(projectRoot) {
-  return (0, import_path134.join)(projectRoot, ".omc", "state", "autoresearch-state.json");
+  return (0, import_path140.join)(projectRoot, ".omc", "state", "autoresearch-state.json");
 }
 function trimContent(value, max = 4e3) {
   const trimmed = value.trim();
@@ -92920,7 +94604,7 @@ function trimContent(value, max = 4e3) {
 }
 function readGit2(repoPath, args) {
   try {
-    return (0, import_child_process36.execFileSync)("git", args, {
+    return (0, import_child_process38.execFileSync)("git", args, {
       cwd: repoPath,
       encoding: "utf-8",
       stdio: ["ignore", "pipe", "pipe"]
@@ -92932,7 +94616,7 @@ function readGit2(repoPath, args) {
   }
 }
 function tryResolveGitCommit(worktreePath, ref) {
-  const result = (0, import_child_process36.spawnSync)("git", ["rev-parse", "--verify", `${ref}^{commit}`], {
+  const result = (0, import_child_process38.spawnSync)("git", ["rev-parse", "--verify", `${ref}^{commit}`], {
     cwd: worktreePath,
     encoding: "utf-8"
   });
@@ -92942,7 +94626,7 @@ function tryResolveGitCommit(worktreePath, ref) {
 }
 async function writeGitInfoExclude(worktreePath, pattern) {
   const excludePath = readGit2(worktreePath, ["rev-parse", "--git-path", "info/exclude"]);
-  const existing = (0, import_fs113.existsSync)(excludePath) ? await (0, import_promises19.readFile)(excludePath, "utf-8") : "";
+  const existing = (0, import_fs118.existsSync)(excludePath) ? await (0, import_promises19.readFile)(excludePath, "utf-8") : "";
   const lines = new Set(existing.split(/\r?\n/).filter(Boolean));
   if (lines.has(pattern)) return;
   const next = `${existing}${existing.endsWith("\n") || existing.length === 0 ? "" : "\n"}${pattern}
@@ -92956,9 +94640,9 @@ async function ensureRuntimeExcludes(worktreePath) {
   }
 }
 async function ensureAutoresearchWorktreeDependencies(repoRoot, worktreePath) {
-  const sourceNodeModules = (0, import_path134.join)(repoRoot, "node_modules");
-  const targetNodeModules = (0, import_path134.join)(worktreePath, "node_modules");
-  if (!(0, import_fs113.existsSync)(sourceNodeModules) || (0, import_fs113.existsSync)(targetNodeModules)) {
+  const sourceNodeModules = (0, import_path140.join)(repoRoot, "node_modules");
+  const targetNodeModules = (0, import_path140.join)(worktreePath, "node_modules");
+  if (!(0, import_fs118.existsSync)(sourceNodeModules) || (0, import_fs118.existsSync)(targetNodeModules)) {
     return;
   }
   await (0, import_promises19.symlink)(sourceNodeModules, targetNodeModules, process.platform === "win32" ? "junction" : "dir");
@@ -92970,7 +94654,7 @@ function readGitFullHead(worktreePath) {
   return readGit2(worktreePath, ["rev-parse", "HEAD"]);
 }
 function requireGitSuccess(worktreePath, args) {
-  const result = (0, import_child_process36.spawnSync)("git", args, {
+  const result = (0, import_child_process38.spawnSync)("git", args, {
     cwd: worktreePath,
     encoding: "utf-8"
   });
@@ -92978,7 +94662,7 @@ function requireGitSuccess(worktreePath, args) {
   throw new Error((result.stderr || "").trim() || `git ${args.join(" ")} failed`);
 }
 function gitStatusLines(worktreePath) {
-  const result = (0, import_child_process36.spawnSync)("git", ["status", "--porcelain", "--untracked-files=all"], {
+  const result = (0, import_child_process38.spawnSync)("git", ["status", "--porcelain", "--untracked-files=all"], {
     cwd: worktreePath,
     encoding: "utf-8"
   });
@@ -92994,10 +94678,10 @@ function isAllowedRuntimeDirtyPath(path23) {
   return AUTORESEARCH_WORKTREE_EXCLUDES.some((exclude) => exclude.endsWith("/") ? path23.startsWith(exclude) || path23 === exclude.slice(0, -1) : path23 === exclude);
 }
 function allowedBootstrapDirtyPaths(worktreePath, allowedDirtyPaths = []) {
-  const normalizedWorktreePath = (0, import_path134.resolve)(worktreePath);
+  const normalizedWorktreePath = (0, import_path140.resolve)(worktreePath);
   return new Set(
     allowedDirtyPaths.map((path23) => {
-      const normalizedPath = (0, import_path134.resolve)(path23);
+      const normalizedPath = (0, import_path140.resolve)(path23);
       return normalizedPath.startsWith(`${normalizedWorktreePath}/`) ? normalizedPath.slice(normalizedWorktreePath.length + 1) : null;
     }).filter((path23) => Boolean(path23))
   );
@@ -93017,7 +94701,7 @@ function assertResetSafeWorktree(worktreePath, allowedDirtyPaths = []) {
   throw new Error(`autoresearch_reset_requires_clean_worktree:${worktreePath}:${blocking.join(" | ")}`);
 }
 async function ensureParentDir2(filePath) {
-  await (0, import_promises19.mkdir)((0, import_path134.dirname)(filePath), { recursive: true });
+  await (0, import_promises19.mkdir)((0, import_path140.dirname)(filePath), { recursive: true });
 }
 async function writeJsonFile(filePath, value) {
   await ensureParentDir2(filePath);
@@ -93029,7 +94713,7 @@ async function readJsonFile2(filePath) {
 }
 async function readActiveRunState(projectRoot) {
   const file = activeRunStateFile(projectRoot);
-  if (!(0, import_fs113.existsSync)(file)) return null;
+  if (!(0, import_fs118.existsSync)(file)) return null;
   return readJsonFile2(file);
 }
 async function writeActiveRunState(projectRoot, value) {
@@ -93099,12 +94783,12 @@ function resultScoreValue(value) {
   return typeof value === "number" ? String(value) : "";
 }
 async function initializeAutoresearchResultsFile(resultsFile) {
-  if ((0, import_fs113.existsSync)(resultsFile)) return;
+  if ((0, import_fs118.existsSync)(resultsFile)) return;
   await ensureParentDir2(resultsFile);
   await (0, import_promises19.writeFile)(resultsFile, AUTORESEARCH_RESULTS_HEADER, "utf-8");
 }
 async function appendAutoresearchResultsRow(resultsFile, row) {
-  const existing = (0, import_fs113.existsSync)(resultsFile) ? await (0, import_promises19.readFile)(resultsFile, "utf-8") : AUTORESEARCH_RESULTS_HEADER;
+  const existing = (0, import_fs118.existsSync)(resultsFile) ? await (0, import_promises19.readFile)(resultsFile, "utf-8") : AUTORESEARCH_RESULTS_HEADER;
   await (0, import_promises19.writeFile)(
     resultsFile,
     `${existing}${row.iteration}	${row.commit}	${resultPassValue(row.pass)}	${resultScoreValue(row.score)}	${row.status}	${row.description}
@@ -93113,7 +94797,7 @@ async function appendAutoresearchResultsRow(resultsFile, row) {
   );
 }
 async function appendAutoresearchLedgerEntry(ledgerFile, entry) {
-  const parsed = (0, import_fs113.existsSync)(ledgerFile) ? await readJsonFile2(ledgerFile) : { schema_version: 1, entries: [] };
+  const parsed = (0, import_fs118.existsSync)(ledgerFile) ? await readJsonFile2(ledgerFile) : { schema_version: 1, entries: [] };
   const entries = Array.isArray(parsed.entries) ? parsed.entries : [];
   entries.push(entry);
   await writeJsonFile(ledgerFile, {
@@ -93125,7 +94809,7 @@ async function appendAutoresearchLedgerEntry(ledgerFile, entry) {
   });
 }
 async function readAutoresearchLedgerEntries(ledgerFile) {
-  if (!(0, import_fs113.existsSync)(ledgerFile)) return [];
+  if (!(0, import_fs118.existsSync)(ledgerFile)) return [];
   const parsed = await readJsonFile2(ledgerFile);
   return Array.isArray(parsed.entries) ? parsed.entries : [];
 }
@@ -93161,7 +94845,7 @@ async function buildAutoresearchInstructionContext(manifest) {
 }
 async function runAutoresearchEvaluator(contract, worktreePath, ledgerFile, latestEvaluatorFile) {
   const ran_at = nowIso2();
-  const result = (0, import_child_process36.spawnSync)(contract.sandbox.evaluator.command, {
+  const result = (0, import_child_process38.spawnSync)(contract.sandbox.evaluator.command, {
     cwd: worktreePath,
     encoding: "utf-8",
     shell: true,
@@ -93378,9 +95062,9 @@ function buildAutoresearchInstructions(contract, context) {
   ].join("\n");
 }
 async function materializeAutoresearchMissionToWorktree(contract, worktreePath) {
-  const missionDir = (0, import_path134.join)(worktreePath, contract.missionRelativeDir);
-  const missionFile = (0, import_path134.join)(missionDir, "mission.md");
-  const sandboxFile = (0, import_path134.join)(missionDir, "sandbox.md");
+  const missionDir = (0, import_path140.join)(worktreePath, contract.missionRelativeDir);
+  const missionFile = (0, import_path140.join)(missionDir, "mission.md");
+  const sandboxFile = (0, import_path140.join)(missionDir, "sandbox.md");
   await (0, import_promises19.mkdir)(missionDir, { recursive: true });
   await (0, import_promises19.writeFile)(missionFile, contract.missionContent, "utf-8");
   await (0, import_promises19.writeFile)(sandboxFile, contract.sandboxContent, "utf-8");
@@ -93392,8 +95076,8 @@ async function materializeAutoresearchMissionToWorktree(contract, worktreePath) 
   };
 }
 async function loadAutoresearchRunManifest(projectRoot, runId) {
-  const manifestFile = (0, import_path134.join)(projectRoot, ".omc", "logs", "autoresearch", runId, "manifest.json");
-  if (!(0, import_fs113.existsSync)(manifestFile)) {
+  const manifestFile = (0, import_path140.join)(projectRoot, ".omc", "logs", "autoresearch", runId, "manifest.json");
+  if (!(0, import_fs118.existsSync)(manifestFile)) {
     throw new Error(`autoresearch_resume_manifest_missing:${runId}`);
   }
   return readJsonFile2(manifestFile);
@@ -93462,14 +95146,14 @@ async function prepareAutoresearchRuntime(contract, projectRoot, worktreePath, o
   const runId = buildRunId(contract.missionSlug, runTag);
   const baselineCommit = readGitShortHead(worktreePath);
   const branchName = readGit2(worktreePath, ["symbolic-ref", "--quiet", "--short", "HEAD"]);
-  const runDir = (0, import_path134.join)(projectRoot, ".omc", "logs", "autoresearch", runId);
+  const runDir = (0, import_path140.join)(projectRoot, ".omc", "logs", "autoresearch", runId);
   const stateFile = activeRunStateFile(projectRoot);
-  const instructionsFile = (0, import_path134.join)(runDir, "bootstrap-instructions.md");
-  const manifestFile = (0, import_path134.join)(runDir, "manifest.json");
-  const ledgerFile = (0, import_path134.join)(runDir, "iteration-ledger.json");
-  const latestEvaluatorFile = (0, import_path134.join)(runDir, "latest-evaluator-result.json");
-  const candidateFile = (0, import_path134.join)(runDir, "candidate.json");
-  const resultsFile = (0, import_path134.join)(worktreePath, "results.tsv");
+  const instructionsFile = (0, import_path140.join)(runDir, "bootstrap-instructions.md");
+  const manifestFile = (0, import_path140.join)(runDir, "manifest.json");
+  const ledgerFile = (0, import_path140.join)(runDir, "iteration-ledger.json");
+  const latestEvaluatorFile = (0, import_path140.join)(runDir, "latest-evaluator-result.json");
+  const candidateFile = (0, import_path140.join)(runDir, "candidate.json");
+  const resultsFile = (0, import_path140.join)(worktreePath, "results.tsv");
   const taskDescription = `autoresearch ${contract.missionRelativeDir} (${runId})`;
   const keepPolicy = contract.sandbox.evaluator.keep_policy ?? "score_improvement";
   await (0, import_promises19.mkdir)(runDir, { recursive: true });
@@ -93585,7 +95269,7 @@ async function resumeAutoresearchRuntime(projectRoot, runId) {
   if (manifest.status !== "running") {
     throw new Error(`autoresearch_resume_terminal_run:${runId}`);
   }
-  if (!(0, import_fs113.existsSync)(manifest.worktree_path)) {
+  if (!(0, import_fs118.existsSync)(manifest.worktree_path)) {
     throw new Error(`autoresearch_resume_missing_worktree:${manifest.worktree_path}`);
   }
   await ensureRuntimeExcludes(manifest.worktree_path);
@@ -93618,7 +95302,7 @@ async function resumeAutoresearchRuntime(projectRoot, runId) {
   return {
     runId: manifest.run_id,
     runTag: manifest.run_tag,
-    runDir: (0, import_path134.dirname)(manifest.manifest_file),
+    runDir: (0, import_path140.dirname)(manifest.manifest_file),
     instructionsFile: manifest.instructions_file,
     manifestFile: manifest.manifest_file,
     ledgerFile: manifest.ledger_file,
@@ -93671,7 +95355,7 @@ function parseAutoresearchCandidateArtifact(raw) {
   };
 }
 async function readCandidateArtifact(candidateFile) {
-  if (!(0, import_fs113.existsSync)(candidateFile)) {
+  if (!(0, import_fs118.existsSync)(candidateFile)) {
     throw new Error(`autoresearch_candidate_missing:${candidateFile}`);
   }
   return parseAutoresearchCandidateArtifact(await (0, import_promises19.readFile)(candidateFile, "utf-8"));
@@ -93926,10 +95610,10 @@ async function finalizeAutoresearchRunState(projectRoot, runId, updates) {
 }
 
 // src/cli/autoresearch-guided.ts
-var import_child_process38 = require("child_process");
-var import_fs115 = require("fs");
+var import_child_process40 = require("child_process");
+var import_fs120 = require("fs");
 var import_promises21 = require("fs/promises");
-var import_path136 = require("path");
+var import_path142 = require("path");
 var import_os22 = require("os");
 var import_promises22 = require("readline/promises");
 
@@ -94094,9 +95778,9 @@ async function writeAutoresearchDeepInterviewArtifacts(input) {
 }
 
 // src/cli/autoresearch-setup-session.ts
-var import_child_process37 = require("child_process");
-var import_fs114 = require("fs");
-var import_path135 = require("path");
+var import_child_process39 = require("child_process");
+var import_fs119 = require("fs");
+var import_path141 = require("path");
 
 // src/cli/autoresearch-guided.ts
 init_tmux_utils();
@@ -94144,21 +95828,21 @@ async function materializeAutoresearchDeepInterviewResult(result) {
   return initAutoresearchMission(result.compileTarget);
 }
 async function initAutoresearchMission(opts) {
-  const missionsRoot = (0, import_path136.join)(opts.repoRoot, "missions");
-  const missionDir = (0, import_path136.join)(missionsRoot, opts.slug);
-  const rel = (0, import_path136.relative)(missionsRoot, missionDir);
-  if (!rel || rel === ".." || rel.startsWith(`..${import_path136.sep}`)) {
+  const missionsRoot = (0, import_path142.join)(opts.repoRoot, "missions");
+  const missionDir = (0, import_path142.join)(missionsRoot, opts.slug);
+  const rel = (0, import_path142.relative)(missionsRoot, missionDir);
+  if (!rel || rel === ".." || rel.startsWith(`..${import_path142.sep}`)) {
     throw new Error("Invalid slug: resolves outside missions/ directory.");
   }
-  if ((0, import_fs115.existsSync)(missionDir)) {
+  if ((0, import_fs120.existsSync)(missionDir)) {
     throw new Error(`Mission directory already exists: ${missionDir}`);
   }
   await (0, import_promises21.mkdir)(missionDir, { recursive: true });
   const missionContent = buildMissionContent(opts.topic);
   const sandboxContent = buildSandboxContent(opts.evaluatorCommand, opts.keepPolicy);
   parseSandboxContract(sandboxContent);
-  await (0, import_promises21.writeFile)((0, import_path136.join)(missionDir, "mission.md"), missionContent, "utf-8");
-  await (0, import_promises21.writeFile)((0, import_path136.join)(missionDir, "sandbox.md"), sandboxContent, "utf-8");
+  await (0, import_promises21.writeFile)((0, import_path142.join)(missionDir, "mission.md"), missionContent, "utf-8");
+  await (0, import_promises21.writeFile)((0, import_path142.join)(missionDir, "sandbox.md"), sandboxContent, "utf-8");
   return { missionDir, slug: opts.slug };
 }
 function parseInitArgs(args) {
@@ -94252,7 +95936,7 @@ function checkTmuxAvailable() {
   return isTmuxAvailable();
 }
 function resolveMissionRepoRoot(missionDir) {
-  return (0, import_child_process38.execFileSync)("git", ["rev-parse", "--show-toplevel"], {
+  return (0, import_child_process40.execFileSync)("git", ["rev-parse", "--show-toplevel"], {
     cwd: missionDir,
     encoding: "utf-8",
     stdio: ["ignore", "pipe", "pipe"]
@@ -94286,7 +95970,7 @@ function spawnAutoresearchTmux(missionDir, slug) {
     }
   }
   const repoRoot = resolveMissionRepoRoot(missionDir);
-  const omcPath = (0, import_path136.resolve)((0, import_path136.join)(__dirname, "..", "..", "bin", "omc.js"));
+  const omcPath = (0, import_path142.resolve)((0, import_path142.join)(__dirname, "..", "..", "bin", "omc.js"));
   const command = buildTmuxShellCommand(process.execPath, [omcPath, "autoresearch", missionDir]);
   const wrappedCommand = wrapWithLoginShell(command);
   tmuxExec(["new-session", "-d", "-s", sessionName2, "-c", repoRoot, wrappedCommand], { stripTmux: true, stdio: "ignore" });
@@ -94298,27 +95982,27 @@ function spawnAutoresearchTmux(missionDir, slug) {
 }
 function ensureSymlink(target, linkPath) {
   try {
-    const existing = (0, import_fs115.lstatSync)(linkPath);
+    const existing = (0, import_fs120.lstatSync)(linkPath);
     if (existing.isSymbolicLink()) {
       return;
     }
-    (0, import_fs115.unlinkSync)(linkPath);
+    (0, import_fs120.unlinkSync)(linkPath);
   } catch {
   }
-  (0, import_fs115.symlinkSync)(target, linkPath, "dir");
+  (0, import_fs120.symlinkSync)(target, linkPath, "dir");
 }
 function prepareAutoresearchSetupCodexHome(repoRoot, sessionName2) {
-  const baseCodexHome = process.env.CODEX_HOME?.trim() || (0, import_path136.join)((0, import_os22.homedir)(), ".codex");
-  const tempCodexHome = (0, import_path136.join)(repoRoot, ".omx", "tmp", sessionName2, "codex-home");
-  (0, import_fs115.mkdirSync)(tempCodexHome, { recursive: true });
+  const baseCodexHome = process.env.CODEX_HOME?.trim() || (0, import_path142.join)((0, import_os22.homedir)(), ".codex");
+  const tempCodexHome = (0, import_path142.join)(repoRoot, ".omx", "tmp", sessionName2, "codex-home");
+  (0, import_fs120.mkdirSync)(tempCodexHome, { recursive: true });
   for (const dirName of ["skills", "commands"]) {
-    const sourceDir = (0, import_path136.join)(baseCodexHome, dirName);
-    if ((0, import_fs115.existsSync)(sourceDir)) {
-      ensureSymlink(sourceDir, (0, import_path136.join)(tempCodexHome, dirName));
+    const sourceDir = (0, import_path142.join)(baseCodexHome, dirName);
+    if ((0, import_fs120.existsSync)(sourceDir)) {
+      ensureSymlink(sourceDir, (0, import_path142.join)(tempCodexHome, dirName));
     }
   }
-  (0, import_fs115.writeFileSync)(
-    (0, import_path136.join)(tempCodexHome, ".omx-config.json"),
+  (0, import_fs120.writeFileSync)(
+    (0, import_path142.join)(tempCodexHome, ".omx-config.json"),
     `${JSON.stringify({ autoNudge: { enabled: false } }, null, 2)}
 `,
     "utf-8"
@@ -94407,9 +96091,9 @@ function normalizeAutoresearchClaudeArgs(claudeArgs) {
   return normalized;
 }
 function runAutoresearchTurn(worktreePath, instructionsFile, claudeArgs) {
-  const prompt = (0, import_fs116.readFileSync)(instructionsFile, "utf-8");
+  const prompt = (0, import_fs121.readFileSync)(instructionsFile, "utf-8");
   const launchArgs = ["--print", ...normalizeAutoresearchClaudeArgs(claudeArgs), "-p", prompt];
-  const result = (0, import_child_process39.spawnSync)("claude", launchArgs, {
+  const result = (0, import_child_process41.spawnSync)("claude", launchArgs, {
     cwd: worktreePath,
     stdio: ["pipe", "inherit", "inherit"],
     encoding: "utf-8",
@@ -94525,7 +96209,7 @@ ${AUTORESEARCH_HELP}`
   };
 }
 function resolveRepoRoot(cwd2) {
-  return (0, import_child_process39.execFileSync)("git", ["rev-parse", "--show-toplevel"], {
+  return (0, import_child_process41.execFileSync)("git", ["rev-parse", "--show-toplevel"], {
     cwd: cwd2,
     encoding: "utf-8",
     stdio: ["ignore", "pipe", "pipe"]
@@ -94582,7 +96266,7 @@ async function runAutoresearchLoop(claudeArgs, runtime, missionDir) {
     while (true) {
       runAutoresearchTurn(runtime.worktreePath, runtime.instructionsFile, claudeArgs);
       const contract = await loadAutoresearchMissionContract(missionDir);
-      const manifest = await loadAutoresearchRunManifest(runtime.repoRoot, JSON.parse((0, import_child_process39.execFileSync)("cat", [runtime.manifestFile], { encoding: "utf-8" })).run_id);
+      const manifest = await loadAutoresearchRunManifest(runtime.repoRoot, JSON.parse((0, import_child_process41.execFileSync)("cat", [runtime.manifestFile], { encoding: "utf-8" })).run_id);
       const decision = await processAutoresearchCandidate(contract, manifest, runtime.repoRoot);
       if (decision === "abort" || decision === "error") {
         return;
@@ -94670,7 +96354,7 @@ ${AUTORESEARCH_HELP}`
   await assertModeStartAllowed("autoresearch", contract.repoRoot);
   const runTag = buildAutoresearchRunTag();
   const plan = planWorktree(contract.repoRoot, contract.missionSlug, runTag);
-  (0, import_child_process39.execFileSync)("git", ["worktree", "add", "-b", plan.branchName, plan.worktreePath, "HEAD"], {
+  (0, import_child_process41.execFileSync)("git", ["worktree", "add", "-b", plan.branchName, plan.worktreePath, "HEAD"], {
     cwd: contract.repoRoot,
     stdio: "ignore"
   });
@@ -94761,15 +96445,15 @@ async function runHudWatchLoop(options) {
     if (shouldStop) {
       break;
     }
-    await new Promise((resolve33) => {
+    await new Promise((resolve39) => {
       const timer = setTimeout(() => {
         wakeSleep = null;
-        resolve33();
+        resolve39();
       }, options.intervalMs);
       wakeSleep = () => {
         clearTimeout(timer);
         wakeSleep = null;
-        resolve33();
+        resolve39();
       };
       timer.unref?.();
     });
@@ -94855,8 +96539,8 @@ Examples:
     console.log(`  User:    ${paths2.user}`);
     console.log(`  Project: ${paths2.project}`);
     console.log(source_default.blue("\nFile status:"));
-    console.log(`  User:    ${(0, import_fs123.existsSync)(paths2.user) ? source_default.green("exists") : source_default.gray("not found")}`);
-    console.log(`  Project: ${(0, import_fs123.existsSync)(paths2.project) ? source_default.green("exists") : source_default.gray("not found")}`);
+    console.log(`  User:    ${(0, import_fs128.existsSync)(paths2.user) ? source_default.green("exists") : source_default.gray("not found")}`);
+    console.log(`  Project: ${(0, import_fs128.existsSync)(paths2.project) ? source_default.green("exists") : source_default.gray("not found")}`);
     return;
   }
   const config2 = loadConfig();
@@ -94899,7 +96583,7 @@ Profile types (use with --profile):
   webhook      Generic webhook (POST with JSON body)
 
 Examples:
-  $ omc config-stop-callback file --enable --path ${(0, import_path143.join)(getClaudeConfigDir(), "logs/{date}.md")}
+  $ omc config-stop-callback file --enable --path ${(0, import_path149.join)(getClaudeConfigDir(), "logs/{date}.md")}
   $ omc config-stop-callback telegram --enable --token <token> --chat <id>
   $ omc config-stop-callback discord --enable --webhook <url>
   $ omc config-stop-callback file --disable
@@ -95025,7 +96709,7 @@ Examples:
     }
     config3.notificationProfiles[profileName] = profile;
     try {
-      (0, import_fs123.writeFileSync)(CONFIG_FILE, JSON.stringify(config3, null, 2), "utf-8");
+      (0, import_fs128.writeFileSync)(CONFIG_FILE, JSON.stringify(config3, null, 2), "utf-8");
       console.log(source_default.green(`\u2713 Profile "${profileName}" \u2014 ${type} configured`));
       console.log(JSON.stringify(profile[type], null, 2));
     } catch (error2) {
@@ -95084,7 +96768,7 @@ Examples:
       const current = config2.stopHookCallbacks.file;
       config2.stopHookCallbacks.file = {
         enabled: enabled ?? current?.enabled ?? false,
-        path: options.path ?? current?.path ?? (0, import_path143.join)(getClaudeConfigDir(), "session-logs/{session_id}.md"),
+        path: options.path ?? current?.path ?? (0, import_path149.join)(getClaudeConfigDir(), "session-logs/{session_id}.md"),
         format: options.format ?? current?.format ?? "markdown"
       };
       break;
@@ -95138,7 +96822,7 @@ Examples:
     }
   }
   try {
-    (0, import_fs123.writeFileSync)(CONFIG_FILE, JSON.stringify(config2, null, 2), "utf-8");
+    (0, import_fs128.writeFileSync)(CONFIG_FILE, JSON.stringify(config2, null, 2), "utf-8");
     console.log(source_default.green(`\u2713 Stop callback '${type}' configured`));
     console.log(JSON.stringify(config2.stopHookCallbacks[type], null, 2));
   } catch (error2) {
@@ -95200,7 +96884,7 @@ Active profile (OMC_NOTIFY_PROFILE): ${activeProfile}`));
       delete config2.notificationProfiles;
     }
     try {
-      (0, import_fs123.writeFileSync)(CONFIG_FILE, JSON.stringify(config2, null, 2), "utf-8");
+      (0, import_fs128.writeFileSync)(CONFIG_FILE, JSON.stringify(config2, null, 2), "utf-8");
       console.log(source_default.green(`\u2713 Profile "${name}" deleted`));
     } catch (error2) {
       console.error(source_default.red("Failed to write configuration:"), error2);
@@ -95636,6 +97320,30 @@ Examples:
   $ omc product-cycle run --stop-at build
   $ omc product-cycle run --verify-command "npm run test:cycle"`).action(async (root2, options) => {
   const exitCode = await productCycleRunCommand(root2, options);
+  process.exit(exitCode);
+});
+productCycleCmd.command("interventions [root]").description("Show the latest pending product-cycle intervention handoff").option("--json", "Output as JSON").action(async (root2, options) => {
+  const exitCode = await productCycleInterventionsCommand(root2, options);
+  process.exit(exitCode);
+});
+productCycleCmd.command("interventions-plan [root]").description("Build an execution plan for the latest pending product-cycle interventions").option("--provider <provider>", "Advisor provider for /prompts routes: claude | codex | gemini", "codex").option("--dry-run", "Render the plan without writing execution-plan artifacts").option("--json", "Output as JSON").action(async (root2, options) => {
+  const exitCode = await productCycleInterventionsPlanCommand(root2, options);
+  process.exit(exitCode);
+});
+productCycleCmd.command("interventions-run [root]").description("Run safe executable steps from the latest product-cycle intervention execution plan").option("--provider <provider>", "Advisor provider when a plan must be built from the handoff", "codex").option("--max-steps <count>", "Maximum safe steps to run", (value) => Number.parseInt(value, 10)).option("--wait", "Wait for team-start jobs to finish").option("--wait-timeout-ms <ms>", "Timeout for each waited team-start job", (value) => Number.parseInt(value, 10)).option("--dry-run", "Show runnable/skipped steps without spawning commands").option("--json", "Output as JSON").action(async (root2, options) => {
+  const exitCode = await productCycleInterventionsRunCommand(root2, options);
+  process.exit(exitCode);
+});
+productCycleCmd.command("research [root]").description("Show the latest pending product-cycle research handoff").option("--json", "Output as JSON").action(async (root2, options) => {
+  const exitCode = await productCycleResearchCommand(root2, options);
+  process.exit(exitCode);
+});
+productCycleCmd.command("research-plan [root]").description("Build an execution plan for the latest pending product-cycle research").option("--provider <provider>", "Advisor provider for /prompts routes: claude | codex | gemini", "codex").option("--dry-run", "Render the plan without writing execution-plan artifacts").option("--json", "Output as JSON").action(async (root2, options) => {
+  const exitCode = await productCycleResearchPlanCommand(root2, options);
+  process.exit(exitCode);
+});
+productCycleCmd.command("research-run [root]").description("Run safe executable steps from the latest product-cycle research execution plan").option("--provider <provider>", "Advisor provider when a plan must be built from the research handoff", "codex").option("--max-steps <count>", "Maximum research steps to run", (value) => Number.parseInt(value, 10)).option("--dry-run", "Show runnable/skipped steps without spawning commands").option("--json", "Output as JSON").action(async (root2, options) => {
+  const exitCode = await productCycleResearchRunCommand(root2, options);
   process.exit(exitCode);
 });
 productCycleCmd.command("migrate-document [root]").description("Migrate .omc/cycles/current.md to a typed JSON document and project it back").option("--write", "Write .omc/cycles/current.json (and refresh the markdown projection)").option("--force", "Overwrite existing .omc/cycles/current.json").option("--json", "Output as JSON").action(async (root2, options) => {

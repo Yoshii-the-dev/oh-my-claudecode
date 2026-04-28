@@ -1,10 +1,15 @@
 import { type ProductCycleIssue, type ProductCycleStage } from './cycle-fsm.js';
+import { type ProductInterventionHandoffWriteResult, type ProductInterventionRoute } from './intervention-router.js';
+import { type ProductInterventionExecutionPlanWriteResult } from './intervention-execution-plan.js';
+import { type ProductResearchHandoffWriteResult, type ProductResearchRoute } from './research-router.js';
 export type CycleRunnerStopReason = 'complete' | 'pause-for-llm' | 'pause-for-human' | 'verify-failed' | 'contract-failed' | 'blocked' | 'max-stages' | 'stop-at' | 'missing-goal';
 export interface CycleRunnerStageResult {
     stage: ProductCycleStage;
     outcome: 'advance' | 'pause-for-llm' | 'pause-for-human' | 'verify-failed' | 'contract-failed';
     reason: string;
     instruction?: string;
+    interventions?: ProductInterventionRoute[];
+    research?: ProductResearchRoute[];
     expectedArtifacts?: Array<{
         path: string;
         exists: boolean;
@@ -26,6 +31,9 @@ export interface RunProductCycleReport {
     endedAtStage?: ProductCycleStage;
     stoppedReason: CycleRunnerStopReason;
     pauseInstruction?: string;
+    researchHandoff?: ProductResearchHandoffWriteResult;
+    interventionHandoff?: ProductInterventionHandoffWriteResult;
+    interventionExecutionPlan?: ProductInterventionExecutionPlanWriteResult;
     stagesAdvanced: Array<{
         from: ProductCycleStage;
         to: ProductCycleStage;

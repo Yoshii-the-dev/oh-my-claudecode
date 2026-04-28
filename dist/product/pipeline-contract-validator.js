@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
-import { PRODUCT_ARTIFACT_PATHS, PRODUCT_STANDARD_FOOTER_FIELDS, } from './pipeline-registry.js';
+import { PRODUCT_ARTIFACT_PATHS, } from './pipeline-registry.js';
+import { validateAgentOutput } from './agent-output.js';
 import { CYCLE_DOCUMENT_RELATIVE_PATH, readCycleDocument, renderCycleProjection, validateCycleDocument, } from './cycle-document.js';
 export function validateProductPipelineContracts(options = {}) {
     const root = resolve(options.root ?? process.cwd());
@@ -252,11 +253,11 @@ function validateCapabilityMap(content, result) {
         'Launch Readiness',
         'Backend/Product Split',
     ]);
-    if (hasRequestedNextAgent(content, 'technology-strategist') && !hasRequestedNextAgent(content, 'priority-engine')) {
+    if (hasRequestedNextAgent(content, result.path, 'technology-strategist') && !hasRequestedNextAgent(content, result.path, 'priority-engine')) {
         addIssue(result, 'error', 'technology-before-priority', 'Capability map routes directly to technology-strategist without a priority-engine handoff');
     }
     result.metrics.hasFirstUsableLoop = containsAny(content, ['first usable loop', 'usable loop']);
-    validateHandoffBasics(content, result, false);
+    validateStructuredOutput(result);
 }
 function validateMeaningGraph(content, result) {
     requireTerms(result, content, 'meaning-required-sections', [
@@ -285,7 +286,7 @@ function validateEcosystemMap(content, result) {
         'v2',
         'research gate',
     ]);
-    validateStandardFooter(content, result);
+    validateStructuredOutput(result);
 }
 function validateOpportunities(content, result) {
     const status = extractStatus(content);
@@ -313,7 +314,7 @@ function validateOpportunities(content, result) {
     if (!selectedPortfolioPresent) {
         addIssue(result, 'error', 'missing-cycle-portfolio', 'Missing selected cycle portfolio with core product slice, enabling task, and learning/research task');
     }
-    validateStandardFooter(content, result);
+    validateStructuredOutput(result);
 }
 function validatePortfolioLedgerArtifact(content, result) {
     let parsed;
@@ -440,7 +441,7 @@ function validateRoadmap(content, result) {
     if (/24[ -]?week/i.test(content)) {
         addIssue(result, 'warning', 'fixed-long-roadmap', 'Roadmap mentions 24-week planning; keep product roadmap rolling rather than fixed long-range planning');
     }
-    validateStandardFooter(content, result);
+    validateStructuredOutput(result);
 }
 function validateExperienceGate(content, result) {
     requireTerms(result, content, 'experience-required-sections', [
@@ -456,7 +457,7 @@ function validateExperienceGate(content, result) {
     if (verdict !== 'pass') {
         addIssue(result, 'error', 'experience-gate-not-passed', 'Experience gate UX Verdict must be exactly pass before user-facing build');
     }
-    validateStandardFooter(content, result);
+    validateStructuredOutput(result);
 }
 function validateCycle(content, result) {
     requireTerms(result, content, 'cycle-required-loop-stages', [
@@ -495,7 +496,7 @@ function validateCycle(content, result) {
     if (stage === 'complete' && !containsTerm(content, '.omc/learning/current.md')) {
         addIssue(result, 'error', 'complete-without-learning', 'Completed cycle must reference .omc/learning/current.md');
     }
-    validateStandardFooter(content, result);
+    validateStructuredOutput(result);
 }
 function validateLearning(content, result) {
     requireTerms(result, content, 'learning-required-sections', [
@@ -505,40 +506,54 @@ function validateLearning(content, result) {
         'invalidated assumptions',
         'recommended next cycle',
     ]);
-    validateStandardFooter(content, result);
+    validateStructuredOutput(result);
 }
-function validateStandardFooter(content, result) {
-    const missing = PRODUCT_STANDARD_FOOTER_FIELDS.filter((field) => !hasFooterField(content, field));
-    if (missing.length > 0) {
-        addIssue(result, 'error', 'missing-standard-footer', `Missing standard footer fields: ${missing.join(', ')}`);
+/**
+ * Resolve the `.output.json` sidecar path for a given artifact path.
+ * For `.md` artifacts: replaces `.md` with `.output.json`.
+ * For `.json` artifacts: replaces `.json` with `.output.json`.
+ */
+function resolveSidecarPath(artifactPath) {
+    if (artifactPath.endsWith('.md'))
+        return artifactPath.replace(/\.md$/, '.output.json');
+    if (artifactPath.endsWith('.json'))
+        return artifactPath.replace(/\.json$/, '.output.json');
+    return `${artifactPath}.output.json`;
+}
+/**
+ * Read and parse an agent output sidecar file if it exists.
+ */
+function readAgentOutputSidecar(artifactPath) {
+    const sidecarPath = resolveSidecarPath(artifactPath);
+    if (!existsSync(sidecarPath))
+        return undefined;
+    try {
+        return JSON.parse(readFileSync(sidecarPath, 'utf-8'));
     }
-    const status = readField(content, 'status');
-    const confidence = readField(content, 'confidence');
-    const nextAction = readField(content, 'next_action');
-    const evidence = readListOrInline(content, 'evidence');
-    const artifacts = readListOrInline(content, 'artifacts_written');
-    if (status !== undefined && isPlaceholderValue(status)) {
-        addIssue(result, 'error', 'placeholder-footer-status', 'status must not be empty or placeholder');
-    }
-    if (confidence !== undefined && isPlaceholderValue(confidence)) {
-        addIssue(result, 'error', 'placeholder-footer-confidence', 'confidence must not be empty or placeholder');
-    }
-    if (nextAction !== undefined && isPlaceholderValue(nextAction)) {
-        addIssue(result, 'error', 'placeholder-footer-next-action', 'next_action must not be empty or placeholder');
-    }
-    if (hasFooterField(content, 'evidence:') && evidence.length === 0) {
-        addIssue(result, 'error', 'empty-footer-evidence', 'evidence must include at least one entry');
-    }
-    if (hasFooterField(content, 'artifacts_written:') && artifacts.length === 0) {
-        addIssue(result, 'error', 'empty-footer-artifacts-written', 'artifacts_written must include at least one entry');
+    catch {
+        return undefined;
     }
 }
-function validateHandoffBasics(content, result, required) {
-    const hasHandoff = containsAll(content, ['run_id:', 'agent_role:', 'requested_next_agent:', 'artifacts_produced:']);
-    result.metrics.hasHandoffEnvelope = hasHandoff;
-    if (required && !hasHandoff) {
-        addIssue(result, 'error', 'missing-handoff-envelope', 'Missing minimal handoff envelope fields');
+/**
+ * Validates the structured output JSON sidecar for an artifact.
+ * This replaces both the old validateStandardFooter and validateHandoffBasics.
+ */
+function validateStructuredOutput(result) {
+    const sidecar = readAgentOutputSidecar(result.path);
+    if (!sidecar) {
+        addIssue(result, 'warning', 'missing-structured-output', `No .output.json sidecar found for ${result.artifact}`);
+        result.metrics.hasStructuredOutput = false;
+        return;
     }
+    result.metrics.hasStructuredOutput = true;
+    const validation = validateAgentOutput(sidecar);
+    if (!validation.ok) {
+        for (const issue of validation.issues) {
+            addIssue(result, 'error', `structured-output-${issue.code}`, issue.message);
+        }
+        return;
+    }
+    result.metrics.hasHandoffEnvelope = true;
 }
 function requireTerms(result, content, code, terms) {
     const missing = terms.filter((term) => !containsTerm(content, term));
@@ -563,7 +578,13 @@ function containsAny(content, terms) {
 function containsAll(content, terms) {
     return terms.every((term) => containsTerm(content, term));
 }
-function hasRequestedNextAgent(content, agent) {
+function hasRequestedNextAgent(content, artifactPath, agent) {
+    // Check JSON sidecar first (new standard)
+    const sidecar = readAgentOutputSidecar(artifactPath);
+    if (sidecar?.routing?.next_recommended) {
+        return sidecar.routing.next_recommended.some((rec) => rec.agent.toLowerCase() === agent.toLowerCase());
+    }
+    // Fallback: check Markdown content (legacy)
     return new RegExp(`requested_next_agent:\\s*['"]?${escapeRegExp(agent)}['"]?`, 'i').test(content);
 }
 function extractStatus(content) {

@@ -8,7 +8,7 @@
  * shell hooks system.
  */
 import { getBackgroundManager } from '../../features/background-agent/index.js';
-import { emit } from '../../telemetry/writer.js';
+import { emitHookEvent } from '../../telemetry/emit.js';
 /** Hook name identifier */
 export const HOOK_NAME = 'background-notification';
 /**
@@ -93,7 +93,7 @@ export function checkBackgroundNotifications(sessionId, manager, config) {
  */
 export function processBackgroundNotification(input, config) {
     const sessionId = input.sessionId;
-    void emit({ directory: process.cwd(), stream: 'hook-events', payload: { hook_name: 'background-notification', event: 'fired' } });
+    void emitHookEvent({ directory: process.cwd(), session_id: sessionId, hook_name: 'background-notification', event: 'fired' });
     if (!sessionId) {
         return { continue: true };
     }

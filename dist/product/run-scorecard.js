@@ -109,7 +109,9 @@ function isHandoffArtifact(artifact) {
     const lowerPath = artifact.relativePath.toLowerCase();
     const lower = artifact.content.toLowerCase();
     return lowerPath.includes('.omc/handoffs/')
+        || lowerPath.endsWith('.output.json')
         || lower.includes('requested_next_agent:')
+        || lower.includes('"next_recommended"')
         || lower.includes('handoff-envelope')
         || lower.includes('handoff');
 }
