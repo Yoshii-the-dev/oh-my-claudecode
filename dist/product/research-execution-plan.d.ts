@@ -1,5 +1,5 @@
 import type { ProductResearchHandoff, ProductResearchRoute } from './research-router.js';
-export type ProductResearchExecutionSurface = 'agent-prompt' | 'manual';
+export type ProductResearchExecutionSurface = 'agent-prompt' | 'stack-plan' | 'manual';
 export interface ProductResearchExecutionStep {
     route_id: string;
     agent: ProductResearchRoute['agent'];

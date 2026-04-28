@@ -1,3 +1,4 @@
+import { type ProductResearchArtifactIssue } from './research-artifact-validator.js';
 import type { ProductResearchExecutionPlan, ProductResearchExecutionStep } from './research-execution-plan.js';
 export type ProductResearchRunStatus = 'passed' | 'failed' | 'partial' | 'noop';
 export type ProductResearchRunStepStatus = 'passed' | 'failed' | 'skipped' | 'dry-run';
@@ -17,6 +18,8 @@ export interface ProductResearchRunReport {
     source_plan: string;
     research_artifact: string;
     research_artifact_exists: boolean;
+    research_artifact_valid: boolean;
+    research_validation_issues: ProductResearchArtifactIssue[];
     dry_run: boolean;
     status: ProductResearchRunStatus;
     executed_step_count: number;

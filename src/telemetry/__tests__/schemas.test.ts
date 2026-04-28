@@ -17,6 +17,7 @@ import {
   skillEventsSchema,
   hookEventsSchema,
   llmInteractionSchema,
+  productCycleEventsSchema,
 } from '../schemas.js';
 import type { StreamName } from '../schemas.js';
 
@@ -248,6 +249,27 @@ describe('schemas/validate — llm-interaction', () => {
   });
 });
 
+describe('schemas/validate — product-cycle-events', () => {
+  it('accepts a product-cycle lifecycle event with arbitrary details', () => {
+    const result = validate('product-cycle-events', {
+      event: 'stage_decision',
+      cycle_id: '2026-04-29-loop',
+      cycle_stage: 'build',
+      outcome: 'pause-for-llm',
+      has_research: false,
+      route_ids: ['product-build-pipeline'],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects a product-cycle event without event name', () => {
+    const result = validate('product-cycle-events', {
+      cycle_id: '2026-04-29-loop',
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // validate() — edge cases
 // ---------------------------------------------------------------------------
@@ -330,5 +352,9 @@ describe('schemas/exported Zod schemas', () => {
 
   it('llmInteractionSchema is a valid Zod schema', () => {
     expect(llmInteractionSchema.safeParse).toBeDefined();
+  });
+
+  it('productCycleEventsSchema is a valid Zod schema', () => {
+    expect(productCycleEventsSchema.safeParse).toBeDefined();
   });
 });

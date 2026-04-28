@@ -24,7 +24,6 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
-import type { StreamName } from './schemas.js';
 import type { SelfImproveRawData } from './alias-reader.js';
 import { readSelfImproveRawData } from './alias-reader.js';
 
@@ -59,6 +58,7 @@ export async function aggregate(options: AggregateOptions): Promise<{ digestPath
     const skillEvents = readJsonlStream(join(eventsDir, 'skill-events.jsonl'));
     const hookEvents = readJsonlStream(join(eventsDir, 'hook-events.jsonl'));
     const llmInteractions = readJsonlStream(join(eventsDir, 'llm-interaction.jsonl'));
+    const productCycleEvents = readJsonlStream(join(eventsDir, 'product-cycle-events.jsonl'));
 
     // Filter to session scope if session-end
     const isSessionEnd = trigger === 'session-end';
@@ -71,6 +71,7 @@ export async function aggregate(options: AggregateOptions): Promise<{ digestPath
     const filteredSkills = skillEvents.filter(filterFn);
     const filteredHooks = hookEvents.filter(filterFn);
     const filteredLlm = llmInteractions.filter(filterFn);
+    const filteredProductCycles = productCycleEvents.filter(filterFn);
 
     // Combine all events for shared metrics (e.g. plugin_version_distribution)
     const allEvents = [
@@ -79,13 +80,22 @@ export async function aggregate(options: AggregateOptions): Promise<{ digestPath
       ...filteredSkills,
       ...filteredHooks,
       ...filteredLlm,
+      ...filteredProductCycles,
     ];
 
     // Self-improve data (read-only)
     const selfImproveData = readSelfImproveRawData(directory);
 
     // Compute metrics
-    const metrics = computeMetrics(filteredHandoffs, filteredVerdicts, filteredSkills, filteredHooks, filteredLlm, allEvents);
+    const metrics = computeMetrics(
+      filteredHandoffs,
+      filteredVerdicts,
+      filteredSkills,
+      filteredHooks,
+      filteredLlm,
+      filteredProductCycles,
+      allEvents,
+    );
 
     // Build digest
     const now = new Date();
@@ -159,6 +169,17 @@ interface LlmAgentStats {
   total: number;
 }
 
+interface ProductCycleMetrics {
+  eventCount: number;
+  cycleUnclosedRate: number | null;
+  manualHandoffRate: number | null;
+  researchRouteHitRate: number | null;
+  buildAutoCompletionRate: number | null;
+  teamWaitFailureRate: number | null;
+  avgTimeToBuildCompleteMs: number | null;
+  eventCounts: Record<string, number>;
+}
+
 interface AggregatedMetrics {
   // agent-handoff
   handoffCountByType: Record<string, number>;
@@ -176,6 +197,8 @@ interface AggregatedMetrics {
   llmTokenBurnByAgent: Record<string, LlmAgentStats>;
   llmCacheHitRate: number | null;   // null means n/a (no cache_read data)
   totalLlmInteractions: number;
+  // product-cycle-events
+  productCycle: ProductCycleMetrics;
   // cross-stream
   pluginVersionDistribution: Record<string, number>;
   // top-3
@@ -196,6 +219,7 @@ function computeMetrics(
   skills: Record<string, unknown>[],
   hooks: Record<string, unknown>[],
   llmInteractions: Record<string, unknown>[],
+  productCycleEvents: Record<string, unknown>[],
   allEvents: Record<string, unknown>[],
 ): AggregatedMetrics {
   // Skip legacy envelopes (no plugin_version)
@@ -303,6 +327,8 @@ function computeMetrics(
       ? llmTotalCacheRead / llmTotalTokensIn
       : null;
 
+  const productCycle = computeProductCycleMetrics(productCycleEvents);
+
   // --- top-3
   const top3Agents = top3(handoffCountByType);
   const top3Skills = top3(skillInvocationCount);
@@ -320,6 +346,7 @@ function computeMetrics(
     llmTokenBurnByAgent,
     llmCacheHitRate,
     totalLlmInteractions: llmInteractions.length,
+    productCycle,
     pluginVersionDistribution,
     top3Agents,
     top3Skills,
@@ -330,6 +357,76 @@ function computeMetrics(
     totalHookEvents: hooks.length,
     skippedLegacy,
   };
+}
+
+function computeProductCycleMetrics(events: Record<string, unknown>[]): ProductCycleMetrics {
+  const eventCounts: Record<string, number> = {};
+  for (const event of events) {
+    const name = String(event['event'] ?? 'unknown');
+    eventCounts[name] = (eventCounts[name] ?? 0) + 1;
+  }
+
+  const runStopped = events.filter((event) => event['event'] === 'product_cycle_run_stopped');
+  const unclosed = runStopped.filter((event) => event['stopped_reason'] !== 'complete');
+
+  const manualHandoffs = events.filter((event) => event['event'] === 'manual_handoff');
+  const automationClosures = events.filter((event) => (
+    event['event'] === 'build_auto_completed'
+    || event['event'] === 'research_auto_resumed'
+  ));
+
+  const specBuildDecisions = events.filter((event) => (
+    event['event'] === 'stage_decision'
+    && (event['cycle_stage'] === 'spec' || event['cycle_stage'] === 'build')
+  ));
+  const researchHits = specBuildDecisions.filter((event) => event['has_research'] === true);
+
+  const buildPlanned = events.filter((event) => event['event'] === 'build_intervention_planned');
+  const buildCompleted = events.filter((event) => event['event'] === 'build_auto_completed');
+
+  const teamCompleted = events.filter((event) => event['event'] === 'build_team_completed');
+  const teamFailed = events.filter((event) => event['event'] === 'build_team_failed');
+
+  return {
+    eventCount: events.length,
+    cycleUnclosedRate: ratioOrNull(unclosed.length, runStopped.length),
+    manualHandoffRate: ratioOrNull(manualHandoffs.length, manualHandoffs.length + automationClosures.length),
+    researchRouteHitRate: ratioOrNull(researchHits.length, specBuildDecisions.length),
+    buildAutoCompletionRate: ratioOrNull(buildCompleted.length, buildPlanned.length),
+    teamWaitFailureRate: ratioOrNull(teamFailed.length, teamCompleted.length + teamFailed.length),
+    avgTimeToBuildCompleteMs: averageBuildCompletionMs(events),
+    eventCounts,
+  };
+}
+
+function ratioOrNull(numerator: number, denominator: number): number | null {
+  return denominator > 0 ? numerator / denominator : null;
+}
+
+function averageBuildCompletionMs(events: Record<string, unknown>[]): number | null {
+  const plannedByCycle = new Map<string, number>();
+  const durations: number[] = [];
+
+  for (const event of events) {
+    const name = event['event'];
+    const cycleId = typeof event['cycle_id'] === 'string' && event['cycle_id'].trim()
+      ? event['cycle_id']
+      : undefined;
+    const ts = typeof event['ts'] === 'string' ? Date.parse(event['ts']) : NaN;
+    if (!cycleId || !Number.isFinite(ts)) continue;
+
+    if (name === 'build_intervention_planned') {
+      plannedByCycle.set(cycleId, ts);
+    } else if (name === 'build_auto_completed') {
+      const plannedAt = plannedByCycle.get(cycleId);
+      if (plannedAt != null && ts >= plannedAt) {
+        durations.push(ts - plannedAt);
+      }
+    }
+  }
+
+  if (durations.length === 0) return null;
+  return durations.reduce((sum, value) => sum + value, 0) / durations.length;
 }
 
 function top3(counts: Record<string, number>): Array<[string, number]> {
@@ -344,6 +441,18 @@ function top3(counts: Record<string, number>): Array<[string, number]> {
 
 function toDateString(d: Date): string {
   return d.toISOString().slice(0, 10);
+}
+
+function formatPercentMetric(value: number | null): string {
+  return value === null ? 'n/a' : `${(value * 100).toFixed(1)}%`;
+}
+
+function formatDurationMetric(valueMs: number | null): string {
+  if (valueMs === null) return 'n/a';
+  if (valueMs < 1000) return `${valueMs.toFixed(0)}ms`;
+  const seconds = valueMs / 1000;
+  if (seconds < 60) return `${seconds.toFixed(1)}s`;
+  return `${(seconds / 60).toFixed(1)}m`;
 }
 
 function renderDigest(
@@ -427,6 +536,26 @@ function renderDigest(
       const avgLat = metrics.avgLatencyByHook[h];
       const latStr = avgLat !== undefined ? `${avgLat.toFixed(1)}ms` : '-';
       lines.push(`| ${h} | ${c} | ${latStr} |`);
+    }
+  }
+  lines.push('');
+
+  // Product Cycle Events
+  lines.push('## Product Cycle Events');
+  lines.push('');
+  lines.push(`Total: **${metrics.productCycle.eventCount}**`);
+  lines.push(`Cycle unclosed rate: **${formatPercentMetric(metrics.productCycle.cycleUnclosedRate)}**`);
+  lines.push(`Manual handoff rate: **${formatPercentMetric(metrics.productCycle.manualHandoffRate)}**`);
+  lines.push(`Research route hit rate: **${formatPercentMetric(metrics.productCycle.researchRouteHitRate)}**`);
+  lines.push(`Build auto-completion rate: **${formatPercentMetric(metrics.productCycle.buildAutoCompletionRate)}**`);
+  lines.push(`Team wait failure rate: **${formatPercentMetric(metrics.productCycle.teamWaitFailureRate)}**`);
+  lines.push(`Avg time to build complete: **${formatDurationMetric(metrics.productCycle.avgTimeToBuildCompleteMs)}**`);
+  if (Object.keys(metrics.productCycle.eventCounts).length > 0) {
+    lines.push('');
+    lines.push('| Event | Count |');
+    lines.push('|---|---|');
+    for (const [event, count] of Object.entries(metrics.productCycle.eventCounts).sort((a, b) => b[1] - a[1])) {
+      lines.push(`| ${event} | ${count} |`);
     }
   }
   lines.push('');

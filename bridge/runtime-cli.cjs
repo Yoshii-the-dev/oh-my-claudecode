@@ -8438,12 +8438,19 @@ var llmInteractionSchema = external_exports.object({
   cache_write: external_exports.number().optional(),
   latency_ms: external_exports.number().optional()
 }).strict();
+var productCycleEventsSchema = external_exports.object({
+  event: external_exports.string(),
+  cycle_id: external_exports.string().optional(),
+  cycle_stage: external_exports.string().optional(),
+  cycle_goal: external_exports.string().optional()
+}).passthrough();
 var SCHEMA_MAP = {
   "agent-handoff": agentHandoffSchema,
   "verdict": verdictSchema,
   "skill-events": skillEventsSchema,
   "hook-events": hookEventsSchema,
-  "llm-interaction": llmInteractionSchema
+  "llm-interaction": llmInteractionSchema,
+  "product-cycle-events": productCycleEventsSchema
 };
 function validate(stream, payload) {
   const schema = SCHEMA_MAP[stream];
