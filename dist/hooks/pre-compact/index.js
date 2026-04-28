@@ -13,7 +13,7 @@ import { promises as fsPromises } from "fs";
 import { join } from "path";
 import { getOmcRoot } from '../../lib/worktree-paths.js';
 import { initJobDb, getActiveJobs, getRecentJobs, getJobStats } from '../../lib/job-state-db.js';
-import { emit } from '../../telemetry/writer.js';
+import { emitHookEvent } from '../../telemetry/emit.js';
 // ============================================================================
 // Constants
 // ============================================================================
@@ -335,8 +335,8 @@ export function formatCompactSummary(checkpoint) {
  * Callers must go through processPreCompact which enforces the mutex.
  */
 async function doProcessPreCompact(input) {
+    const t0 = Date.now();
     const directory = input.cwd;
-    void emit({ directory, stream: 'hook-events', payload: { hook_name: 'pre-compact', event: 'fired', trigger: input.trigger } });
     // Create checkpoint
     const checkpoint = await createCompactCheckpoint(directory, input.trigger);
     // Export wisdom
@@ -364,6 +364,14 @@ async function doProcessPreCompact(input) {
     }
     // Format summary for context injection
     const summary = formatCompactSummary(checkpoint);
+    void emitHookEvent({
+        directory,
+        session_id: input.session_id,
+        hook_name: 'pre-compact',
+        event: 'fired',
+        trigger: input.trigger,
+        latency_ms: Date.now() - t0
+    });
     // Note: hookSpecificOutput only supports PreToolUse, UserPromptSubmit, PostToolUse
     // Use systemMessage for custom hook events like PreCompact
     return {

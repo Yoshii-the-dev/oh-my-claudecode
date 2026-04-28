@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
 import { join, relative, resolve } from 'path';
-import { PRODUCT_ARTIFACT_ALLOWED_DIRECTORIES, PRODUCT_ARTIFACT_CURRENT_PATHS, PRODUCT_ARTIFACT_REGISTRY, PRODUCT_STANDARD_FOOTER_FIELDS, getProductArtifactRegistryEntries, } from './pipeline-registry.js';
+import { PRODUCT_ARTIFACT_ALLOWED_DIRECTORIES, PRODUCT_ARTIFACT_CURRENT_PATHS, PRODUCT_ARTIFACT_REGISTRY, getProductArtifactRegistryEntries, } from './pipeline-registry.js';
 const MAX_PRODUCT_ARTIFACT_FILES = 800;
 const STALE_PRESSURE_THRESHOLD = 12;
 export function validateProductArtifactInventory(root = process.cwd()) {
@@ -24,8 +24,8 @@ export function validateProductArtifactInventory(root = process.cwd()) {
         if (isUnregisteredCurrentArtifact(file.relativePath)) {
             issues.push(issue('warning', 'unregistered-current-artifact', file.relativePath, 'Current artifact is not in PRODUCT_ARTIFACT_REGISTRY; add it to the registry or archive it'));
         }
-        if (file.relativePath.endsWith('.md') && shouldRequireFooter(file.relativePath) && !hasStandardFooter(file.content)) {
-            issues.push(issue('warning', 'markdown-missing-contract-footer', file.relativePath, `Markdown product artifact is missing standard footer fields: ${PRODUCT_STANDARD_FOOTER_FIELDS.join(', ')}`));
+        if (file.relativePath.endsWith('.md') && shouldRequireFooter(file.relativePath) && !hasOutputSidecar(file.path)) {
+            issues.push(issue('warning', 'markdown-missing-output-sidecar', file.relativePath, 'Markdown product artifact has no .output.json sidecar — agents must write structured output sidecars per docs/schemas/agent-output.schema.json'));
         }
         if (file.relativePath.endsWith('.json') && PRODUCT_ARTIFACT_CURRENT_PATHS.has(file.relativePath) && !isValidJson(file.content)) {
             issues.push(issue('error', 'invalid-json-artifact', file.relativePath, 'Registered JSON artifact is not valid JSON'));
@@ -77,8 +77,9 @@ function shouldRequireFooter(relativePath) {
         return true;
     return /\b20\d{2}-\d{2}-\d{2}\b/.test(relativePath);
 }
-function hasStandardFooter(content) {
-    return PRODUCT_STANDARD_FOOTER_FIELDS.every((field) => content.includes(field));
+function hasOutputSidecar(artifactPath) {
+    const sidecarPath = artifactPath.replace(/\.md$/, '.output.json');
+    return existsSync(sidecarPath);
 }
 function isValidJson(content) {
     try {
@@ -121,7 +122,7 @@ function makeReport(root, artifactRoot, filesScanned, issues) {
             warnings,
             registeredArtifacts: getProductArtifactRegistryEntries().length,
             unregisteredCurrentArtifacts: issues.filter((entry) => entry.code === 'unregistered-current-artifact').length,
-            markdownWithoutFooter: issues.filter((entry) => entry.code === 'markdown-missing-contract-footer').length,
+            markdownWithoutSidecar: issues.filter((entry) => entry.code === 'markdown-missing-output-sidecar').length,
             stalePressureDirectories: issues.filter((entry) => entry.code === 'stale-artifact-pressure').length,
         },
     };

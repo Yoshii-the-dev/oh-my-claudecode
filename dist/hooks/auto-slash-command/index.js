@@ -12,6 +12,7 @@
 import { detectSlashCommand, extractPromptText, } from './detector.js';
 import { executeSlashCommand, findCommand, listAvailableCommands, } from './executor.js';
 import { HOOK_NAME, AUTO_SLASH_COMMAND_TAG_OPEN, AUTO_SLASH_COMMAND_TAG_CLOSE, } from './constants.js';
+import { emitHookEvent } from '../../telemetry/emit.js';
 import { emit } from '../../telemetry/writer.js';
 // Re-export all submodules
 export * from './types.js';
@@ -33,7 +34,7 @@ export function createAutoSlashCommandHook() {
          * Process a user message to detect and expand slash commands
          */
         processMessage: (input, parts) => {
-            void emit({ directory: process.cwd(), stream: 'hook-events', payload: { hook_name: 'auto-slash-command', event: 'fired' } });
+            void emitHookEvent({ directory: process.cwd(), session_id: input.sessionId, hook_name: 'auto-slash-command', event: 'fired' });
             const promptText = extractPromptText(parts);
             // Skip if already processed (contains our tags)
             if (promptText.includes(AUTO_SLASH_COMMAND_TAG_OPEN) ||
@@ -44,6 +45,8 @@ export function createAutoSlashCommandHook() {
             if (!parsed) {
                 return { detected: false };
             }
+            // Telemetry: Skill detection
+            void emit({ directory: process.cwd(), stream: 'skill-events', payload: { event: 'detected', skill_slug: parsed.command } });
             // Deduplicate within session
             const commandKey = `${input.sessionId}:${input.messageId}:${parsed.command}`;
             if (sessionProcessedCommands.has(commandKey)) {

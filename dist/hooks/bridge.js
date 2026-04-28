@@ -21,6 +21,7 @@ import { formatOmcCliInvocation } from "../utils/omc-cli-rendering.js";
 import { createSwallowedErrorLogger } from "../lib/swallowed-error.js";
 import { readCanonicalTeamStateCandidate } from "./team-canonical-state.js";
 import { emitUserCorrection } from "../telemetry/emit.js";
+import { emit } from "../telemetry/writer.js";
 import { hashFilePath } from "../telemetry/redact.js";
 // Hot-path imports: needed on every/most hook invocations (keyword-detector, pre/post-tool-use)
 import { removeCodeBlocks, getAllKeywordsWithSizeCheck, applyRalplanGate, sanitizeForKeywordDetection, NON_LATIN_SCRIPT_PATTERN, } from "./keyword-detector/index.js";
@@ -768,6 +769,8 @@ async function processKeywordDetector(input) {
     const explicitSlash = parseExplicitWorkflowSlashInvocation(promptText);
     if (explicitSlash) {
         seedWorkflowSlotForSkill(directory, explicitSlash.skill, sessionId, "prompt-submit:explicit-slash");
+        // Telemetry: Skill detection
+        void emit({ directory, stream: 'skill-events', payload: { event: 'detected', skill_slug: explicitSlash.skill, keyword: explicitSlash.raw.trim() } });
         await seedModeStateForExplicitWorkflowSlash(explicitSlash.skill, directory, promptText, sessionId);
         if (explicitSlash.skill === "ralplan") {
             return {

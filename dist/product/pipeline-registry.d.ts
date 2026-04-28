@@ -1,5 +1,9 @@
 export declare const PRODUCT_PIPELINE_CONTRACT_STAGES: readonly ["discovery-handoff", "priority-handoff", "foundation-lite", "technology-handoff", "cycle", "all"];
 export type ProductPipelineContractStage = typeof PRODUCT_PIPELINE_CONTRACT_STAGES[number];
+/**
+ * @deprecated Legacy footer fields — validation now uses `.output.json` sidecar files
+ * per `docs/schemas/agent-output.schema.json`. Retained for backward-compatible rendering only.
+ */
 export declare const PRODUCT_STANDARD_FOOTER_FIELDS: readonly ["status:", "evidence:", "confidence:", "blocking_issues:", "next_action:", "artifacts_written:"];
 export type ProductArtifactFormat = 'markdown' | 'json' | 'jsonc';
 export interface ProductArtifactRegistryEntry {

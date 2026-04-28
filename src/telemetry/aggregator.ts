@@ -168,8 +168,10 @@ interface AggregatedMetrics {
   // skill-events
   skillInvocationCount: Record<string, number>;
   skillKeywordHitRate: number | null;
+  avgLatencyBySkill: Record<string, number>;
   // hook-events
   hookEventVolume: Record<string, number>;
+  avgLatencyByHook: Record<string, number>;
   // llm-interaction (Phase 2)
   llmTokenBurnByAgent: Record<string, LlmAgentStats>;
   llmCacheHitRate: number | null;   // null means n/a (no cache_read data)
@@ -227,21 +229,42 @@ function computeMetrics(
   }
   const avgDurationMs = durationCount > 0 ? durationSum / durationCount : null;
 
-  // --- skill-events
   const skillInvocationCount: Record<string, number> = {};
+  const skillLatencySum: Record<string, number> = {};
+  const skillLatencyCount: Record<string, number> = {};
   let skillWithKeyword = 0;
   for (const e of skills) {
     const slug = String(e['skill_slug'] ?? 'unknown');
     skillInvocationCount[slug] = (skillInvocationCount[slug] ?? 0) + 1;
     if (e['keyword']) skillWithKeyword++;
+    const lat = e['latency_ms'];
+    if (typeof lat === 'number') {
+      skillLatencySum[slug] = (skillLatencySum[slug] ?? 0) + lat;
+      skillLatencyCount[slug] = (skillLatencyCount[slug] ?? 0) + 1;
+    }
   }
   const skillKeywordHitRate = skills.length > 0 ? skillWithKeyword / skills.length : null;
+  const avgLatencyBySkill: Record<string, number> = {};
+  for (const slug in skillLatencyCount) {
+    avgLatencyBySkill[slug] = skillLatencySum[slug] / skillLatencyCount[slug];
+  }
 
   // --- hook-events
   const hookEventVolume: Record<string, number> = {};
+  const hookLatencySum: Record<string, number> = {};
+  const hookLatencyCount: Record<string, number> = {};
   for (const e of hooks) {
     const hn = String(e['hook_name'] ?? 'unknown');
     hookEventVolume[hn] = (hookEventVolume[hn] ?? 0) + 1;
+    const lat = e['latency_ms'];
+    if (typeof lat === 'number') {
+      hookLatencySum[hn] = (hookLatencySum[hn] ?? 0) + lat;
+      hookLatencyCount[hn] = (hookLatencyCount[hn] ?? 0) + 1;
+    }
+  }
+  const avgLatencyByHook: Record<string, number> = {};
+  for (const hn in hookLatencyCount) {
+    avgLatencyByHook[hn] = hookLatencySum[hn] / hookLatencyCount[hn];
   }
 
   // --- plugin_version_distribution (all events)
@@ -291,7 +314,9 @@ function computeMetrics(
     avgDurationMs,
     skillInvocationCount,
     skillKeywordHitRate,
+    avgLatencyBySkill,
     hookEventVolume,
+    avgLatencyByHook,
     llmTokenBurnByAgent,
     llmCacheHitRate,
     totalLlmInteractions: llmInteractions.length,
@@ -380,10 +405,12 @@ function renderDigest(
   }
   if (Object.keys(metrics.skillInvocationCount).length > 0) {
     lines.push('');
-    lines.push('| Skill | Invocations |');
-    lines.push('|---|---|');
+    lines.push('| Skill | Invocations | Avg Latency |');
+    lines.push('|---|---|---|');
     for (const [s, c] of Object.entries(metrics.skillInvocationCount).sort((a, b) => b[1] - a[1])) {
-      lines.push(`| ${s} | ${c} |`);
+      const avgLat = metrics.avgLatencyBySkill[s];
+      const latStr = avgLat !== undefined ? `${avgLat.toFixed(1)}ms` : '-';
+      lines.push(`| ${s} | ${c} | ${latStr} |`);
     }
   }
   lines.push('');
@@ -394,10 +421,12 @@ function renderDigest(
   lines.push(`Total: **${metrics.totalHookEvents}**`);
   if (Object.keys(metrics.hookEventVolume).length > 0) {
     lines.push('');
-    lines.push('| Hook | Events |');
-    lines.push('|---|---|');
+    lines.push('| Hook | Events | Avg Latency |');
+    lines.push('|---|---|---|');
     for (const [h, c] of Object.entries(metrics.hookEventVolume).sort((a, b) => b[1] - a[1])) {
-      lines.push(`| ${h} | ${c} |`);
+      const avgLat = metrics.avgLatencyByHook[h];
+      const latStr = avgLat !== undefined ? `${avgLat.toFixed(1)}ms` : '-';
+      lines.push(`| ${h} | ${c} | ${latStr} |`);
     }
   }
   lines.push('');

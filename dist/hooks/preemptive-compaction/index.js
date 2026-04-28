@@ -14,7 +14,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { tmpdir } from 'os';
 import { DEFAULT_THRESHOLD, CRITICAL_THRESHOLD, COMPACTION_COOLDOWN_MS, MAX_WARNINGS, CLAUDE_DEFAULT_CONTEXT_LIMIT, CHARS_PER_TOKEN, CONTEXT_WARNING_MESSAGE, CONTEXT_CRITICAL_MESSAGE, } from './constants.js';
-import { emit } from '../../telemetry/writer.js';
+import { emitHookEvent } from '../../telemetry/emit.js';
 const DEBUG = process.env.PREEMPTIVE_COMPACTION_DEBUG === '1';
 const DEBUG_FILE = path.join(tmpdir(), 'preemptive-compaction-debug.log');
 /**
@@ -172,14 +172,16 @@ export function createPreemptiveCompactionHook(config) {
          * PostToolUse - Check context usage after large tool outputs
          */
         postToolUse: (input) => {
-            void emit({ directory: process.cwd(), stream: 'hook-events', payload: { hook_name: 'preemptive-compaction', event: 'fired' } });
+            const t0 = Date.now();
             if (!input.tool_response) {
+                void emitHookEvent({ directory: process.cwd(), session_id: input.session_id, hook_name: 'preemptive-compaction', event: 'fired', latency_ms: Date.now() - t0 });
                 return null;
             }
             // Only check after tools that produce large outputs
             const toolLower = input.tool_name.toLowerCase();
             const largeOutputTools = ['read', 'grep', 'glob', 'bash', 'webfetch', 'task'];
             if (!largeOutputTools.includes(toolLower)) {
+                void emitHookEvent({ directory: process.cwd(), session_id: input.session_id, hook_name: 'preemptive-compaction', event: 'fired', latency_ms: Date.now() - t0 });
                 return null;
             }
             // Rapid-fire debounce: skip analysis if another was done very recently
@@ -197,6 +199,7 @@ export function createPreemptiveCompactionHook(config) {
                 const responseTokens = estimateTokens(input.tool_response);
                 const state = getSessionState(input.session_id);
                 state.estimatedTokens += responseTokens;
+                void emitHookEvent({ directory: process.cwd(), session_id: input.session_id, hook_name: 'preemptive-compaction', event: 'fired', latency_ms: Date.now() - t0 });
                 return null;
             }
             lastAnalysisTime.set(input.session_id, now);
@@ -212,6 +215,14 @@ export function createPreemptiveCompactionHook(config) {
             });
             // Check if approaching limit
             const usage = analyzeContextUsage('x'.repeat(state.estimatedTokens * CHARS_PER_TOKEN), config);
+            void emitHookEvent({
+                directory: process.cwd(),
+                session_id: input.session_id,
+                hook_name: 'preemptive-compaction',
+                event: 'fired',
+                latency_ms: Date.now() - t0,
+                usage_ratio: usage.usageRatio
+            });
             if (!usage.isWarning) {
                 return null;
             }

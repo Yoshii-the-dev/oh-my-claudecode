@@ -16,7 +16,7 @@ export interface ProductArtifactInventoryReport {
         warnings: number;
         registeredArtifacts: number;
         unregisteredCurrentArtifacts: number;
-        markdownWithoutFooter: number;
+        markdownWithoutSidecar: number;
         stalePressureDirectories: number;
     };
 }

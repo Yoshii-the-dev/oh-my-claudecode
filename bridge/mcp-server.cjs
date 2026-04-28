@@ -22865,6 +22865,23 @@ async function emit(options, maxFileBytes = DEFAULT_MAX_FILE_BYTES) {
   }
 }
 
+// src/telemetry/emit.ts
+async function emitHookEvent(options) {
+  const { directory, session_id, run_id, agent_id, hook_name, event, ...rest } = options;
+  await emit({
+    directory,
+    stream: "hook-events",
+    payload: {
+      ...session_id !== void 0 ? { session_id } : {},
+      ...run_id !== void 0 ? { run_id } : {},
+      ...agent_id !== void 0 ? { agent_id } : {},
+      hook_name,
+      event,
+      ...rest
+    }
+  });
+}
+
 // src/lib/mode-names.ts
 var MODE_NAMES = {
   AUTOPILOT: "autopilot",
@@ -23044,7 +23061,7 @@ function getActiveModes(cwd, sessionId) {
     }
   }
   if (modes.length > 0) {
-    void emit({ directory: cwd, stream: "hook-events", payload: { hook_name: "mode-registry", event: "modes_detected", active_modes: modes.join(",") } });
+    void emitHookEvent({ directory: cwd, session_id: sessionId, hook_name: "mode-registry", event: "modes_detected", active_modes: modes.join(",") });
   }
   return modes;
 }
@@ -24339,7 +24356,7 @@ ${content}
         updatedMemory
       );
       atomicWriteFileSync(notepadPath, notepadContent);
-      void emit({ directory, stream: "hook-events", payload: { hook_name: "notepad", event: "working_memory_written" } });
+      void emitHookEvent({ directory, hook_name: "notepad", event: "working_memory_written" });
       return true;
     }, { timeoutMs: 5e3 });
   } catch {

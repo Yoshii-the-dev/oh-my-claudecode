@@ -10,6 +10,24 @@ import {
 } from './cycle-fsm.js';
 import { validateProductPipelineContracts } from './pipeline-contract-validator.js';
 import { readPortfolioLedger } from './portfolio-ledger.js';
+import {
+  planProductInterventions,
+  readProductInterventionHandoff,
+  writeProductInterventionHandoff,
+  type ProductInterventionHandoffWriteResult,
+  type ProductInterventionRoute,
+} from './intervention-router.js';
+import {
+  buildProductInterventionExecutionPlan,
+  writeProductInterventionExecutionPlan,
+  type ProductInterventionExecutionPlanWriteResult,
+} from './intervention-execution-plan.js';
+import {
+  planProductResearch,
+  writeProductResearchHandoff,
+  type ProductResearchHandoffWriteResult,
+  type ProductResearchRoute,
+} from './research-router.js';
 
 export type CycleRunnerStopReason =
   | 'complete'
@@ -27,6 +45,8 @@ export interface CycleRunnerStageResult {
   outcome: 'advance' | 'pause-for-llm' | 'pause-for-human' | 'verify-failed' | 'contract-failed';
   reason: string;
   instruction?: string;
+  interventions?: ProductInterventionRoute[];
+  research?: ProductResearchRoute[];
   expectedArtifacts?: Array<{ path: string; exists: boolean }>;
   evidence?: Record<string, unknown>;
 }
@@ -47,6 +67,9 @@ export interface RunProductCycleReport {
   endedAtStage?: ProductCycleStage;
   stoppedReason: CycleRunnerStopReason;
   pauseInstruction?: string;
+  researchHandoff?: ProductResearchHandoffWriteResult;
+  interventionHandoff?: ProductInterventionHandoffWriteResult;
+  interventionExecutionPlan?: ProductInterventionExecutionPlanWriteResult;
   stagesAdvanced: Array<{ from: ProductCycleStage; to: ProductCycleStage; reason: string }>;
   stageResults: CycleRunnerStageResult[];
   issues: ProductCycleIssue[];
@@ -184,6 +207,12 @@ export function runProductCycle(options: RunProductCycleOptions = {}): RunProduc
           : evaluation.outcome === 'pause-for-human'
             ? 'pause-for-human'
             : 'pause-for-llm';
+      const interventionArtifacts = !dryRun && evaluation.interventions && evaluation.interventions.length > 0
+        ? writeInterventionArtifacts(root, snapshot, currentStage, evaluation)
+        : undefined;
+      const researchHandoff = !dryRun && evaluation.research && evaluation.research.length > 0
+        ? writeResearchArtifacts(root, snapshot, currentStage)
+        : undefined;
       return finalize({
         ok: reason === 'pause-for-human' || reason === 'pause-for-llm',
         startedAt,
@@ -191,6 +220,9 @@ export function runProductCycle(options: RunProductCycleOptions = {}): RunProduc
         endedAtStage: currentStage,
         stoppedReason: reason,
         pauseInstruction: evaluation.instruction,
+        researchHandoff,
+        interventionHandoff: interventionArtifacts?.handoff,
+        interventionExecutionPlan: interventionArtifacts?.executionPlan,
         stagesAdvanced,
         stageResults,
         issues,
@@ -253,6 +285,46 @@ export function runProductCycle(options: RunProductCycleOptions = {}): RunProduc
   });
 }
 
+function writeResearchArtifacts(
+  root: string,
+  snapshot: ProductCycleSnapshot,
+  currentStage: ProductCycleStage,
+): ProductResearchHandoffWriteResult | undefined {
+  const plan = planProductResearch({ root, stage: currentStage, snapshot });
+  if (plan.routes.length === 0) return undefined;
+  return writeProductResearchHandoff(root, snapshot, plan);
+}
+
+function writeInterventionArtifacts(
+  root: string,
+  snapshot: ProductCycleSnapshot,
+  currentStage: ProductCycleStage,
+  evaluation: CycleRunnerStageResult,
+): {
+  handoff: ProductInterventionHandoffWriteResult;
+  executionPlan?: ProductInterventionExecutionPlanWriteResult;
+} {
+  const handoff = writeProductInterventionHandoff(
+    root,
+    snapshot,
+    planProductInterventions({
+      root,
+      stage: currentStage,
+      snapshot,
+      failure: evaluation.outcome === 'verify-failed'
+        ? { kind: 'verify-command-failed', command: evaluation.instruction, reason: evaluation.reason }
+        : evaluation.outcome === 'contract-failed'
+          ? { kind: 'contract-failed', command: evaluation.instruction, reason: evaluation.reason }
+          : undefined,
+    }),
+  );
+  const writtenHandoff = readProductInterventionHandoff(root);
+  const executionPlan = writtenHandoff
+    ? writeProductInterventionExecutionPlan(root, buildProductInterventionExecutionPlan(writtenHandoff))
+    : undefined;
+  return { handoff, executionPlan };
+}
+
 function evaluateStage(
   stage: ProductCycleStage,
   snapshot: ProductCycleSnapshot,
@@ -269,7 +341,7 @@ function evaluateStage(
     case 'spec':
       return evaluateSpec(root);
     case 'build':
-      return evaluateBuild(snapshot);
+      return evaluateBuild(root, snapshot);
     case 'verify':
       return evaluateVerify(root, verifyCommand);
     case 'learn':
@@ -402,6 +474,18 @@ function evaluateSelect(root: string, cycleId: string | undefined): CycleRunnerS
 }
 
 function evaluateSpec(root: string): CycleRunnerStageResult {
+  const snapshot = readProductCycle(root);
+  const researchPlan = planProductResearch({ root, stage: 'spec', snapshot });
+  if (researchPlan.blockingRoutes.length > 0) {
+    return {
+      stage: 'spec',
+      outcome: 'pause-for-llm',
+      reason: 'product-cycle research required before spec/build decisions',
+      instruction: researchPlan.nextCommand,
+      research: researchPlan.routes,
+    };
+  }
+
   const cycleReport = validateProductPipelineContracts({ root, stage: 'cycle' });
   if (cycleReport.ok) {
     return {
@@ -416,23 +500,43 @@ function evaluateSpec(root: string): CycleRunnerStageResult {
     outcome: 'contract-failed',
     reason: 'cycle contract failed',
     instruction: 'omc doctor product-contracts --stage cycle',
+    interventions: planProductInterventions({
+      root,
+      stage: 'spec',
+      snapshot,
+      failure: { kind: 'contract-failed', reason: 'cycle contract failed' },
+    }).routes,
     evidence: { issues: cycleReport.issues },
   };
 }
 
-function evaluateBuild(snapshot: ProductCycleSnapshot): CycleRunnerStageResult {
+function evaluateBuild(root: string, snapshot: ProductCycleSnapshot): CycleRunnerStageResult {
   const route = (snapshot.buildRoute ?? '').toLowerCase();
-  const command = route === 'backend-pipeline'
-    ? '/backend-pipeline "<enabling task>"'
-    : route === 'both'
-      ? '/backend-pipeline "<enabling task>" then /product-pipeline "<core product slice>"'
-      : '/product-pipeline "<core product slice>"';
+  const researchPlan = planProductResearch({ root, stage: 'build', snapshot });
+  if (researchPlan.blockingRoutes.length > 0) {
+    return {
+      stage: 'build',
+      outcome: 'pause-for-llm',
+      reason: 'product-cycle research required before build pipeline',
+      instruction: researchPlan.nextCommand,
+      research: researchPlan.routes,
+    };
+  }
+
+  const interventionPlan = planProductInterventions({ root, stage: 'build', snapshot });
+  const command = interventionPlan.nextCommand
+    ?? (route === 'backend-pipeline'
+      ? '/backend-pipeline "<enabling task>"'
+      : route === 'both'
+        ? '/backend-pipeline "<enabling task>" then /product-pipeline "<core product slice>"'
+        : '/product-pipeline "<core product slice>"');
 
   return {
     stage: 'build',
     outcome: 'pause-for-llm',
     reason: `build_route=${route || 'unknown'} requires LLM-driven pipeline`,
     instruction: command,
+    interventions: interventionPlan.routes,
   };
 }
 
@@ -455,11 +559,18 @@ function evaluateVerify(root: string, verifyCommand: string): CycleRunnerStageRe
   });
 
   if (result.error) {
+    const reason = `verify command error: ${result.error.message}`;
     return {
       stage: 'verify',
       outcome: 'verify-failed',
-      reason: `verify command error: ${result.error.message}`,
+      reason,
       instruction: trimmed,
+      interventions: planProductInterventions({
+        root,
+        stage: 'verify',
+        snapshot: readProductCycle(root),
+        failure: { kind: 'verify-command-failed', command: trimmed, reason },
+      }).routes,
       evidence: { command: trimmed, error: String(result.error) },
     };
   }
@@ -473,11 +584,18 @@ function evaluateVerify(root: string, verifyCommand: string): CycleRunnerStageRe
     };
   }
 
+  const reason = `verify failed (${trimmed}, exit ${result.status})`;
   return {
     stage: 'verify',
     outcome: 'verify-failed',
-    reason: `verify failed (${trimmed}, exit ${result.status})`,
+    reason,
     instruction: trimmed,
+    interventions: planProductInterventions({
+      root,
+      stage: 'verify',
+      snapshot: readProductCycle(root),
+      failure: { kind: 'verify-command-failed', command: trimmed, reason },
+    }).routes,
     evidence: {
       command: trimmed,
       exitCode: result.status,
