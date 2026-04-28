@@ -12,7 +12,7 @@ import { join } from 'path';
 
 import { registerBeadsContext } from '../beads-context/index.js';
 import { getClaudeConfigDir } from '../../utils/config-dir.js';
-import { emit } from '../../telemetry/writer.js';
+import { emitHookEvent } from '../../telemetry/emit.js';
 
 // ============================================================================
 // Types
@@ -52,6 +52,8 @@ const REQUIRED_DIRECTORIES = [
   '.omc/notepads',
   '.omc/state/checkpoints',
   '.omc/plans',
+  '.omc/telemetry/events',
+  '.omc/telemetry/digests',
 ];
 
 const CONFIG_FILES = [
@@ -502,13 +504,14 @@ export async function processSetupMaintenance(input: SetupInput): Promise<HookOu
  * Process setup hook based on trigger type
  */
 export async function processSetup(input: SetupInput): Promise<HookOutput> {
-  void emit({ directory: input.cwd, stream: 'hook-events', payload: { hook_name: 'setup', event: 'fired', trigger: input.trigger } });
+  const t0 = Date.now();
+  let result: HookOutput;
   if (input.trigger === 'init') {
-    return processSetupInit(input);
+    result = await processSetupInit(input);
   } else if (input.trigger === 'maintenance') {
-    return processSetupMaintenance(input);
+    result = await processSetupMaintenance(input);
   } else {
-    return {
+    result = {
       continue: true,
       hookSpecificOutput: {
         hookEventName: 'Setup',
@@ -516,4 +519,15 @@ export async function processSetup(input: SetupInput): Promise<HookOutput> {
       },
     };
   }
+  
+  void emitHookEvent({ 
+    directory: input.cwd, 
+    session_id: input.session_id, 
+    hook_name: 'setup', 
+    event: 'fired', 
+    trigger: input.trigger,
+    latency_ms: Date.now() - t0 
+  });
+  
+  return result;
 }

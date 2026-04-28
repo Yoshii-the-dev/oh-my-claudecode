@@ -16,7 +16,7 @@ import {
   saveAgentUsageState,
   clearAgentUsageState,
 } from './storage.js';
-import { emit } from '../../telemetry/writer.js';
+import { emitHookEvent } from '../../telemetry/emit.js';
 import { TARGET_TOOLS, AGENT_TOOLS, REMINDER_MESSAGE } from './constants.js';
 import type { AgentUsageState } from './types.js';
 
@@ -99,7 +99,7 @@ export function createAgentUsageReminderHook() {
     }
 
     // Append reminder message to output
-    void emit({ directory: process.cwd(), stream: 'hook-events', payload: { hook_name: 'agent-usage-reminder', event: 'reminder_appended', tool } });
+    void emitHookEvent({ directory: process.cwd(), session_id: sessionID, hook_name: 'agent-usage-reminder', event: 'reminder_appended', tool });
     output.output += REMINDER_MESSAGE;
     state.reminderCount++;
     state.updatedAt = Date.now();

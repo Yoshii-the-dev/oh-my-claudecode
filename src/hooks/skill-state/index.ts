@@ -43,6 +43,7 @@ import {
 } from '../../lib/worktree-paths.js';
 import { atomicWriteJsonSync } from '../../lib/atomic-write.js';
 import { readTrackingState, getStaleAgents } from '../subagent-tracker/index.js';
+import { emitHookEvent } from '../../telemetry/emit.js';
 import { emit } from '../../telemetry/writer.js';
 
 // ---------------------------------------------------------------------------
@@ -757,7 +758,8 @@ export function checkSkillActiveState(
     `(reinforcement ${incremented.reinforcement_count}/${incremented.max_reinforcements}). ` +
     `Continue working on the skill's instructions. Do not stop until the skill completes its workflow.`;
 
-  void emit({ directory, stream: 'hook-events', payload: { hook_name: 'skill-state', event: 'stop_blocked', skill_name: incremented.skill_name } });
+  void emitHookEvent({ directory, hook_name: 'skill-state', event: 'stop_blocked', skill_name: incremented.skill_name });
+  void emit({ directory, stream: 'skill-events', payload: { event: 'invoked', skill_slug: incremented.skill_name } });
 
   return {
     shouldBlock: true,

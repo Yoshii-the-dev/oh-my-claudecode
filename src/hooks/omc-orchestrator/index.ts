@@ -34,7 +34,7 @@ import {
   setPriorityContext,
 } from '../notepad/index.js';
 import { logAuditEntry } from './audit.js';
-import { emit } from '../../telemetry/writer.js';
+import { emitHookEvent } from '../../telemetry/emit.js';
 
 // Re-export constants
 export * from './constants.js';
@@ -417,7 +417,7 @@ export function processOrchestratorPreTool(input: ToolExecuteInput): ToolExecute
     enforcementLevel,
     sessionId,
   });
-  void emit({ directory, stream: 'hook-events', payload: { hook_name: 'omc-orchestrator', event: enforcementLevel === 'strict' ? 'blocked' : 'warned' } });
+  void emitHookEvent({ directory, session_id: sessionId, hook_name: 'omc-orchestrator', event: enforcementLevel === 'strict' ? 'blocked' : 'warned' });
 
   // Build warning with agent suggestion
   const agentSuggestion = suggestAgentForFile(filePath);

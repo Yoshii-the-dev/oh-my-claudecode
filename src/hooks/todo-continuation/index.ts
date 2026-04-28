@@ -29,7 +29,7 @@ import { existsSync, readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { getOmcRoot } from '../../lib/worktree-paths.js';
 import { getClaudeConfigDir } from '../../utils/config-dir.js';
-import { emit } from '../../telemetry/writer.js';
+import { emitHookEvent } from '../../telemetry/emit.js';
 
 /**
  * Validates that a session ID is safe to use in file paths.
@@ -581,7 +581,7 @@ export async function checkIncompleteTodos(
   directory?: string,
   stopContext?: StopContext
 ): Promise<IncompleteTodosResult> {
-  void emit({ directory: directory ?? process.cwd(), stream: 'hook-events', payload: { hook_name: 'todo-continuation', event: 'fired' } });
+  void emitHookEvent({ directory: directory ?? process.cwd(), hook_name: 'todo-continuation', event: 'fired' });
   // If user aborted, don't force continuation
   if (isUserAbort(stopContext)) {
     return { count: 0, todos: [], total: 0, source: 'none' };

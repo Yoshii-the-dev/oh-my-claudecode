@@ -28,6 +28,7 @@ import type {
   AutoSlashCommandHookInput,
   AutoSlashCommandResult,
 } from './types.js';
+import { emitHookEvent } from '../../telemetry/emit.js';
 import { emit } from '../../telemetry/writer.js';
 
 // Re-export all submodules
@@ -67,7 +68,7 @@ export function createAutoSlashCommandHook() {
       input: AutoSlashCommandHookInput,
       parts: Array<{ type: string; text?: string }>
     ): AutoSlashCommandResult => {
-      void emit({ directory: process.cwd(), stream: 'hook-events', payload: { hook_name: 'auto-slash-command', event: 'fired' } });
+      void emitHookEvent({ directory: process.cwd(), session_id: input.sessionId, hook_name: 'auto-slash-command', event: 'fired' });
       const promptText = extractPromptText(parts);
 
       // Skip if already processed (contains our tags)
@@ -83,6 +84,9 @@ export function createAutoSlashCommandHook() {
       if (!parsed) {
         return { detected: false };
       }
+
+      // Telemetry: Skill detection
+      void emit({ directory: process.cwd(), stream: 'skill-events', payload: { event: 'detected', skill_slug: parsed.command } });
 
       // Deduplicate within session
       const commandKey = `${input.sessionId}:${input.messageId}:${parsed.command}`;

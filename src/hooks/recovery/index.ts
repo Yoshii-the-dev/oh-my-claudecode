@@ -93,7 +93,7 @@ export {
 } from './session-recovery.js';
 
 import type { RecoveryResult, RecoveryConfig, MessageData } from './types.js';
-import { emit } from '../../telemetry/writer.js';
+import { emitHookEvent } from '../../telemetry/emit.js';
 
 /**
  * Unified recovery handler
@@ -114,7 +114,7 @@ export async function handleRecovery(input: {
   message?: MessageData;
   config?: RecoveryConfig;
 }): Promise<RecoveryResult> {
-  void emit({ directory: process.cwd(), stream: 'hook-events', payload: { hook_name: 'recovery', event: 'fired' } });
+  void emitHookEvent({ directory: process.cwd(), hook_name: 'recovery', event: 'fired' });
   const { sessionId, error, toolName, toolOutput, message, config } = input;
 
   // Priority 1: Context Window Limit
