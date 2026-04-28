@@ -1214,6 +1214,8 @@ productCycleCmd
     .option('--stop-at <stage>', 'Stop before processing the given stage')
     .option('--dry-run', 'Plan the run without writing the cycle file or running verify')
     .option('--verify-command <cmd>', 'Shell command to execute during the verify stage', 'npm test')
+    .option('--no-auto-build', 'Do not automatically run eligible build pipeline team jobs')
+    .option('--wait-timeout-ms <ms>', 'Timeout for each auto-build team-start job', (value) => Number.parseInt(value, 10))
     .option('--json', 'Output as JSON')
     .addHelpText('after', `
 Examples:
@@ -1279,6 +1281,7 @@ productCycleCmd
     .description('Run safe executable steps from the latest product-cycle research execution plan')
     .option('--provider <provider>', 'Advisor provider when a plan must be built from the research handoff', 'codex')
     .option('--max-steps <count>', 'Maximum research steps to run', (value) => Number.parseInt(value, 10))
+    .option('--no-resume-cycle', 'Do not resume product-cycle run after a valid research artifact is present')
     .option('--dry-run', 'Show runnable/skipped steps without spawning commands')
     .option('--json', 'Output as JSON')
     .action(async (root, options) => {

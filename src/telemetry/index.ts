@@ -14,6 +14,7 @@ export {
   emitAgentHandoff,
   emitLlmInteraction,
   emitHookEvent,
+  emitProductCycleEvent,
   emitVerdict,
   emitUserCorrection,
 } from './emit.js';
@@ -23,6 +24,7 @@ export type {
   EmitAgentHandoffOptions,
   EmitLlmInteractionOptions,
   EmitHookEventOptions,
+  EmitProductCycleEventOptions,
   EmitVerdictOptions,
   EmitUserCorrectionOptions,
 } from './emit.js';
@@ -35,6 +37,7 @@ export type {
   SkillEventPayload,
   HookEventPayload,
   LlmInteractionPayload,
+  ProductCycleEventPayload,
   TelemetryEnvelope,
 } from './schemas.js';
 export { validatePayload } from './schemas.js';

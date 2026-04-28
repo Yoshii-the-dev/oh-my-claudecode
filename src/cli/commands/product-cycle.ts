@@ -7,6 +7,7 @@ import {
   advanceProductCycle,
   getNextProductCycleAction,
   isProductCycleStage,
+  readProductCycle,
   validateProductCycle,
   type ProductCycleSnapshot,
   type ProductCycleStage,
@@ -35,6 +36,7 @@ import {
   renderProductInterventionRunReport,
   runProductInterventionExecutionPlan,
   writeProductInterventionRunReport,
+  type ProductInterventionCommandRunner,
   type ProductInterventionRunReport,
   type ProductInterventionRunReportWriteResult,
 } from '../../product/intervention-runner.js';
@@ -60,6 +62,7 @@ import {
   type ProductResearchRunReport,
   type ProductResearchRunReportWriteResult,
 } from '../../product/research-runner.js';
+import { emitProductCycleEvent } from '../../telemetry/emit.js';
 
 export interface ProductCycleCommandOptions {
   json?: boolean;
@@ -74,6 +77,19 @@ export interface ProductCycleCommandOptions {
   maxSteps?: number;
   wait?: boolean;
   waitTimeoutMs?: number;
+  resumeCycle?: boolean;
+  autoBuild?: boolean;
+  interventionCommandRunner?: ProductInterventionCommandRunner;
+}
+
+interface ProductCycleAutoBuildResult {
+  status: 'passed' | 'failed' | 'not-run';
+  reason: string;
+  plan?: ProductInterventionExecutionPlan;
+  planWritten?: ProductInterventionExecutionPlanWriteResult;
+  runReport?: ProductInterventionRunReport;
+  runReportWritten?: ProductInterventionRunReportWriteResult;
+  resumedCycleReport?: RunProductCycleReport;
 }
 
 interface LoggerLike {
@@ -168,14 +184,17 @@ export async function productCycleRunCommand(
     dryRun: options.dryRun,
     verifyCommand: options.verifyCommand,
   });
+  const autoBuild = maybeRunBuildInterventionsAndResume(root, report, options);
+  await emitProductCycleRunTelemetry(root, report, options, autoBuild);
 
   if (options.json) {
-    logger.log(JSON.stringify(report, null, 2));
+    logger.log(JSON.stringify({ ...report, autoBuild }, null, 2));
   } else {
-    logger.log(renderRunReport(report));
+    logger.log(renderRunReport(report, autoBuild));
   }
 
-  return report.ok ? 0 : 1;
+  const finalReport = autoBuild?.resumedCycleReport ?? report;
+  return finalReport.ok && autoBuild?.status !== 'failed' ? 0 : 1;
 }
 
 export async function productCycleInterventionsCommand(
@@ -268,6 +287,7 @@ export async function productCycleInterventionsRunCommand(
     sourcePlan: PRODUCT_INTERVENTION_EXECUTION_PLAN_RELATIVE_PATH,
   });
   const written = options.dryRun ? undefined : writeProductInterventionRunReport(root ?? process.cwd(), report);
+  await emitProductInterventionRunTelemetry(root, loaded.plan, report);
 
   if (options.json) {
     logger.log(JSON.stringify({
@@ -281,7 +301,7 @@ export async function productCycleInterventionsRunCommand(
     logger.log(renderInterventionRunReport(report, written, loaded.written));
   }
 
-  return report.failed_step_count > 0 ? 1 : 0;
+  return report.status === 'failed' ? 1 : 0;
 }
 
 export async function productCycleResearchCommand(
@@ -373,6 +393,10 @@ export async function productCycleResearchRunCommand(
     sourcePlan: PRODUCT_RESEARCH_EXECUTION_PLAN_RELATIVE_PATH,
   });
   const written = options.dryRun ? undefined : writeProductResearchRunReport(root ?? process.cwd(), report);
+  const resumedCycleReport = shouldResumeCycleAfterResearch(report, options)
+    ? runProductCycle({ root })
+    : undefined;
+  await emitProductResearchRunTelemetry(root, report, resumedCycleReport);
 
   if (options.json) {
     logger.log(JSON.stringify({
@@ -381,15 +405,320 @@ export async function productCycleResearchRunCommand(
       planWritten: loaded.written ?? null,
       written: written ?? null,
       report,
+      resumedCycleReport: resumedCycleReport ?? null,
     }, null, 2));
   } else {
-    logger.log(renderResearchRunReport(report, written, loaded.written));
+    logger.log(renderResearchRunReport(report, written, loaded.written, resumedCycleReport));
   }
 
-  return report.failed_step_count > 0 ? 1 : 0;
+  return report.status === 'failed' ? 1 : 0;
 }
 
-function renderRunReport(report: RunProductCycleReport): string {
+function shouldResumeCycleAfterResearch(
+  report: ProductResearchRunReport,
+  options: ProductCycleCommandOptions,
+): boolean {
+  return options.resumeCycle !== false
+    && options.dryRun !== true
+    && report.failed_step_count === 0
+    && report.research_artifact_valid;
+}
+
+async function emitProductCycleRunTelemetry(
+  root: string | undefined,
+  report: RunProductCycleReport,
+  options: ProductCycleCommandOptions,
+  autoBuild: ProductCycleAutoBuildResult | undefined,
+): Promise<void> {
+  const context = productCycleTelemetryContext(root);
+  for (const result of report.stageResults) {
+    await emitProductCycleEvent({
+      ...context,
+      event: 'stage_decision',
+      cycle_stage: result.stage,
+      outcome: result.outcome,
+      reason: result.reason,
+      has_interventions: (result.interventions?.length ?? 0) > 0,
+      has_research: (result.research?.length ?? 0) > 0,
+      intervention_route_ids: result.interventions?.map((route) => route.id) ?? [],
+      research_route_ids: result.research?.map((route) => route.id) ?? [],
+    });
+
+    if (result.research && result.research.length > 0) {
+      await emitProductCycleEvent({
+        ...context,
+        event: 'research_blocked',
+        cycle_stage: result.stage,
+        route_count: result.research.length,
+        route_ids: result.research.map((route) => route.id),
+        next_command: result.instruction,
+      });
+      await emitProductCycleEvent({
+        ...context,
+        event: 'manual_handoff',
+        cycle_stage: result.stage,
+        handoff_kind: 'research',
+        reason: result.reason,
+      });
+    }
+  }
+
+  const buildInterventionPlan = report.endedAtStage === 'build'
+    ? report.interventionExecutionPlan
+    : undefined;
+  const hasBuildInterventionPlan = buildInterventionPlan !== undefined
+    && report.stageResults.some((result) => (
+      result.stage === 'build'
+      && (result.interventions?.length ?? 0) > 0
+    ));
+
+  if (hasBuildInterventionPlan) {
+    await emitProductCycleEvent({
+      ...context,
+      event: 'build_intervention_planned',
+      cycle_stage: 'build',
+      path: buildInterventionPlan.jsonPath,
+      auto_build_status: autoBuild?.status ?? 'not-run',
+    });
+  }
+
+  if (autoBuild) {
+    await emitProductCycleEvent({
+      ...context,
+      event: autoBuildEventName(autoBuild.status),
+      cycle_stage: 'build',
+      reason: autoBuild.reason,
+      run_status: autoBuild.runReport?.status,
+    });
+    if (autoBuild.status !== 'passed') {
+      await emitProductCycleEvent({
+        ...context,
+        event: 'manual_handoff',
+        cycle_stage: 'build',
+        handoff_kind: 'build',
+        reason: autoBuild.reason,
+      });
+    }
+    if (autoBuild.runReport) {
+      await emitProductInterventionRunTelemetry(root, autoBuild.plan, autoBuild.runReport);
+    }
+    if (autoBuild.resumedCycleReport) {
+      await emitProductCycleEvent({
+        ...context,
+        event: 'auto_resume',
+        cycle_stage: 'verify',
+        reason: 'build_auto_completed',
+        resumed_stopped_reason: autoBuild.resumedCycleReport.stoppedReason,
+      });
+      await emitProductCycleRunTelemetry(root, autoBuild.resumedCycleReport, options, undefined);
+    }
+  } else if (hasBuildInterventionPlan) {
+    await emitProductCycleEvent({
+      ...context,
+      event: 'manual_handoff',
+      cycle_stage: 'build',
+      handoff_kind: 'build',
+      reason: 'build intervention execution plan was written but not auto-run',
+    });
+  }
+
+  await emitProductCycleEvent({
+    ...context,
+    event: 'product_cycle_run_stopped',
+    cycle_stage: report.endedAtStage,
+    started_from_stage: report.startedFromStage,
+    stopped_reason: report.stoppedReason,
+    ok: report.ok,
+    stop_at: options.stopAt,
+  });
+}
+
+async function emitProductInterventionRunTelemetry(
+  root: string | undefined,
+  plan: ProductInterventionExecutionPlan | undefined,
+  report: ProductInterventionRunReport,
+): Promise<void> {
+  const context = productCycleTelemetryContext(root);
+  await emitProductCycleEvent({
+    ...context,
+    event: 'intervention_run_completed',
+    cycle_stage: plan?.cycle_stage,
+    status: report.status,
+    failed_step_count: report.failed_step_count,
+    executed_step_count: report.executed_step_count,
+    skipped_step_count: report.skipped_step_count,
+  });
+
+  for (const step of report.step_results) {
+    if (step.execution_surface !== 'team-start') continue;
+    await emitProductCycleEvent({
+      ...context,
+      event: 'build_team_started',
+      cycle_stage: plan?.cycle_stage,
+      route_id: step.route_id,
+      child_job_id: step.child_job_id,
+    });
+    await emitProductCycleEvent({
+      ...context,
+      event: step.status === 'passed' ? 'build_team_completed' : 'build_team_failed',
+      cycle_stage: plan?.cycle_stage,
+      route_id: step.route_id,
+      child_job_id: step.child_job_id,
+      child_job_status: step.child_job_status,
+      status: step.status,
+      reason: step.reason,
+    });
+  }
+}
+
+async function emitProductResearchRunTelemetry(
+  root: string | undefined,
+  report: ProductResearchRunReport,
+  resumedCycleReport: RunProductCycleReport | undefined,
+): Promise<void> {
+  const context = productCycleTelemetryContext(root);
+  await emitProductCycleEvent({
+    ...context,
+    event: 'research_run_completed',
+    status: report.status,
+    failed_step_count: report.failed_step_count,
+    research_artifact_valid: report.research_artifact_valid,
+  });
+  if (resumedCycleReport) {
+    await emitProductCycleEvent({
+      ...context,
+      event: 'research_auto_resumed',
+      resumed_stopped_reason: resumedCycleReport.stoppedReason,
+    });
+    await emitProductCycleRunTelemetry(root, resumedCycleReport, {}, undefined);
+  }
+}
+
+function productCycleTelemetryContext(root: string | undefined): {
+  directory: string;
+  cycle_id?: string;
+  cycle_stage?: string;
+  cycle_goal?: string;
+  build_route?: string;
+} {
+  const directory = root ?? process.cwd();
+  const snapshot = readProductCycle(directory);
+  return {
+    directory,
+    cycle_id: snapshot.cycleId,
+    cycle_stage: snapshot.stage,
+    cycle_goal: snapshot.cycleGoal,
+    build_route: snapshot.buildRoute,
+  };
+}
+
+function autoBuildEventName(status: ProductCycleAutoBuildResult['status']): string {
+  if (status === 'passed') return 'build_auto_completed';
+  if (status === 'failed') return 'build_auto_failed';
+  return 'build_auto_not_run';
+}
+
+function maybeRunBuildInterventionsAndResume(
+  root: string | undefined,
+  report: RunProductCycleReport,
+  options: ProductCycleCommandOptions,
+): ProductCycleAutoBuildResult | undefined {
+  if (options.autoBuild === false || options.dryRun === true) return undefined;
+  if (options.stopAt === 'build') return undefined;
+  if (report.stoppedReason !== 'pause-for-llm' || report.endedAtStage !== 'build') return undefined;
+  if (!report.interventionExecutionPlan) return undefined;
+
+  const loaded = loadOrBuildInterventionExecutionPlan(root, options);
+  if (!loaded.plan) {
+    return {
+      status: 'not-run',
+      reason: 'No product-cycle intervention execution plan was available after build routing.',
+    };
+  }
+
+  const eligibility = autoBuildEligibility(loaded.plan);
+  if (!eligibility.ok) {
+    return {
+      status: 'not-run',
+      reason: eligibility.reason,
+      plan: loaded.plan,
+      planWritten: loaded.written,
+    };
+  }
+
+  const runReport = runProductInterventionExecutionPlan(loaded.plan, {
+    root,
+    maxSteps: options.maxSteps,
+    waitForTeamJobs: true,
+    teamWaitTimeoutMs: options.waitTimeoutMs,
+    sourcePlan: PRODUCT_INTERVENTION_EXECUTION_PLAN_RELATIVE_PATH,
+    commandRunner: options.interventionCommandRunner,
+  });
+  const runReportWritten = writeProductInterventionRunReport(root ?? process.cwd(), runReport);
+
+  if (runReport.status !== 'passed') {
+    return {
+      status: 'failed',
+      reason: `Build intervention run ended with status ${runReport.status}.`,
+      plan: loaded.plan,
+      planWritten: loaded.written,
+      runReport,
+      runReportWritten,
+    };
+  }
+
+  const advance = advanceProductCycle({ root, to: 'verify' });
+  if (!advance.ok) {
+    return {
+      status: 'failed',
+      reason: `Build completed, but advancing build -> verify failed: ${advance.issues.map((issue) => issue.code).join(', ')}`,
+      plan: loaded.plan,
+      planWritten: loaded.written,
+      runReport,
+      runReportWritten,
+    };
+  }
+
+  const resumedCycleReport = runProductCycle({
+    root,
+    maxStages: options.maxStages,
+    stopAt: options.stopAt as ProductCycleStage | undefined,
+    verifyCommand: options.verifyCommand,
+  });
+
+  return {
+    status: 'passed',
+    reason: 'Build pipeline team job completed; product cycle advanced to verify and resumed.',
+    plan: loaded.plan,
+    planWritten: loaded.written,
+    runReport,
+    runReportWritten,
+    resumedCycleReport,
+  };
+}
+
+function autoBuildEligibility(plan: ProductInterventionExecutionPlan): { ok: true } | { ok: false; reason: string } {
+  if (plan.cycle_stage !== 'build') {
+    return { ok: false, reason: `Intervention plan is for ${plan.cycle_stage}, not build.` };
+  }
+  if (plan.steps.length === 0) {
+    return { ok: false, reason: 'Intervention plan has no steps.' };
+  }
+  const unsafe = plan.steps.find((step) => (
+    !step.executable
+    || step.execution_surface !== 'team-start'
+    || (step.agent !== 'product-pipeline' && step.agent !== 'backend-pipeline')
+  ));
+  if (unsafe) {
+    return {
+      ok: false,
+      reason: `Auto-build only runs product/backend team-start steps; ${unsafe.route_id} is ${unsafe.execution_surface}.`,
+    };
+  }
+  return { ok: true };
+}
+
+function renderRunReport(report: RunProductCycleReport, autoBuild?: ProductCycleAutoBuildResult): string {
   const lines: string[] = [];
   lines.push(colors.bold(`Product cycle runner — stopped: ${report.stoppedReason}`));
   if (report.startedFromStage) {
@@ -452,6 +781,23 @@ function renderRunReport(report: RunProductCycleReport): string {
     lines.push('');
     lines.push(colors.bold('Intervention execution plan:'));
     lines.push(`  ${report.interventionExecutionPlan.jsonPath}`);
+  }
+
+  if (autoBuild) {
+    lines.push('');
+    lines.push(colors.bold(`Auto build: ${autoBuild.status}`));
+    lines.push(`  ${autoBuild.reason}`);
+    if (autoBuild.runReport) {
+      lines.push('', renderProductInterventionRunReport(autoBuild.runReport).trimEnd());
+    }
+    if (autoBuild.runReportWritten) {
+      lines.push('', colors.bold('Auto build run report written:'));
+      lines.push(`  ${autoBuild.runReportWritten.jsonPath}`);
+      lines.push(`  ${autoBuild.runReportWritten.mdPath}`);
+    }
+    if (autoBuild.resumedCycleReport) {
+      lines.push('', colors.bold('Resumed product cycle after build:'), renderRunReport(autoBuild.resumedCycleReport));
+    }
   }
 
   if (report.issues.length > 0) {
@@ -545,6 +891,7 @@ function renderResearchRunReport(
   report: ProductResearchRunReport,
   written: ProductResearchRunReportWriteResult | undefined,
   planWritten: ProductResearchExecutionPlanWriteResult | undefined,
+  resumedCycleReport: RunProductCycleReport | undefined,
 ): string {
   const lines = [renderProductResearchRunReport(report).trimEnd()];
 
@@ -554,6 +901,10 @@ function renderResearchRunReport(
 
   if (written) {
     lines.push('', colors.bold('Research run report written:'), `  ${written.jsonPath}`, `  ${written.mdPath}`);
+  }
+
+  if (resumedCycleReport) {
+    lines.push('', colors.bold('Resumed product cycle:'), renderRunReport(resumedCycleReport));
   }
 
   return lines.join('\n');

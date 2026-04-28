@@ -18,7 +18,8 @@ export type StreamName =
   | 'verdict'
   | 'skill-events'
   | 'hook-events'
-  | 'llm-interaction';
+  | 'llm-interaction'
+  | 'product-cycle-events';
 
 /**
  * Base envelope — mandatory on every event in every stream.
@@ -99,12 +100,21 @@ export interface LlmInteractionPayload {
   [key: string]: unknown;
 }
 
+export interface ProductCycleEventPayload {
+  event: string;
+  cycle_id?: string;
+  cycle_stage?: string;
+  cycle_goal?: string;
+  [key: string]: unknown;
+}
+
 export type StreamPayload =
   | AgentHandoffPayload
   | VerdictPayload
   | SkillEventPayload
   | HookEventPayload
-  | LlmInteractionPayload;
+  | LlmInteractionPayload
+  | ProductCycleEventPayload;
 
 // Full envelope types for each stream
 export type AgentHandoffEnvelope = BaseEnvelope & AgentHandoffPayload & { stream: 'agent-handoff' };
@@ -112,13 +122,15 @@ export type VerdictEnvelope = BaseEnvelope & VerdictPayload & { stream: 'verdict
 export type SkillEventEnvelope = BaseEnvelope & SkillEventPayload & { stream: 'skill-events' };
 export type HookEventEnvelope = BaseEnvelope & HookEventPayload & { stream: 'hook-events' };
 export type LlmInteractionEnvelope = BaseEnvelope & LlmInteractionPayload & { stream: 'llm-interaction' };
+export type ProductCycleEventEnvelope = BaseEnvelope & ProductCycleEventPayload & { stream: 'product-cycle-events' };
 
 export type TelemetryEnvelope =
   | AgentHandoffEnvelope
   | VerdictEnvelope
   | SkillEventEnvelope
   | HookEventEnvelope
-  | LlmInteractionEnvelope;
+  | LlmInteractionEnvelope
+  | ProductCycleEventEnvelope;
 
 // ---------------------------------------------------------------------------
 // Zod schemas — one per stream, strict mode (rejects unknown fields)
@@ -184,6 +196,18 @@ export const llmInteractionSchema = z.object({
   latency_ms: z.number().optional(),
 }).strict();
 
+/**
+ * product-cycle-events stream.
+ * Allows extra fields because each lifecycle event carries event-specific
+ * routing, scorecard, handoff, team, or verification details.
+ */
+export const productCycleEventsSchema = z.object({
+  event: z.string(),
+  cycle_id: z.string().optional(),
+  cycle_stage: z.string().optional(),
+  cycle_goal: z.string().optional(),
+}).passthrough();
+
 // ---------------------------------------------------------------------------
 // Schema registry
 // ---------------------------------------------------------------------------
@@ -194,6 +218,7 @@ const SCHEMA_MAP: Record<StreamName, z.ZodTypeAny> = {
   'skill-events': skillEventsSchema,
   'hook-events': hookEventsSchema,
   'llm-interaction': llmInteractionSchema,
+  'product-cycle-events': productCycleEventsSchema,
 };
 
 /**

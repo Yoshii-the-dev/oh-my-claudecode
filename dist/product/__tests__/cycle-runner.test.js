@@ -82,7 +82,7 @@ describe('runProductCycle', () => {
     it('routes visual user-facing builds through stack provisioning before product-pipeline', () => {
         const root = createRoot();
         setupCycleAt(root, 'build');
-        writeArtifact(root, '.omc/research/product-cycle/current.md', 'research_verdict: pass\nsources: fixture\n');
+        writeArtifact(root, '.omc/research/product-cycle/current.md', validUserFacingResearchArtifact());
         writeArtifact(root, '.omc/experience/current.md', richExperienceGateArtifact());
         const report = runProductCycle({ root });
         expect(report.stoppedReason).toBe('pause-for-llm');
@@ -115,7 +115,11 @@ pass
         expect(report.stoppedReason).toBe('pause-for-llm');
         const buildResult = report.stageResults.find((entry) => entry.stage === 'build');
         expect(buildResult?.reason).toContain('research required');
-        expect(buildResult?.research?.map((route) => route.id)).toEqual(['user-interaction-research']);
+        expect(buildResult?.research?.map((route) => route.id)).toEqual([
+            'research-skill-provisioning',
+            'user-interaction-research',
+        ]);
+        expect(buildResult?.instruction).toContain('/stack-provision');
         expect(report.researchHandoff?.jsonPath).toContain('.omc/handoffs/product-cycle-research/current.json');
         expect(report.researchHandoff?.jsonPath ? existsSync(report.researchHandoff.jsonPath) : false).toBe(true);
         expect(report.interventionHandoff).toBeUndefined();
@@ -123,7 +127,7 @@ pass
     it('does not request visual skill provisioning when the visual manifest is already present', () => {
         const root = createRoot();
         setupCycleAt(root, 'build');
-        writeArtifact(root, '.omc/research/product-cycle/current.md', 'research_verdict: pass\nsources: fixture\n');
+        writeArtifact(root, '.omc/research/product-cycle/current.md', validUserFacingResearchArtifact());
         writeArtifact(root, '.omc/experience/current.md', richExperienceGateArtifact());
         writeArtifact(root, '.omc/provisioned/current.json', JSON.stringify({
             surfaces: ['visual-creative'],
@@ -137,13 +141,29 @@ pass
     it('blocks user-facing builds when the experience gate is too thin', () => {
         const root = createRoot();
         setupCycleAt(root, 'build');
-        writeArtifact(root, '.omc/research/product-cycle/current.md', 'research_verdict: pass\nsources: fixture\n');
+        writeArtifact(root, '.omc/research/product-cycle/current.md', validUserFacingResearchArtifact());
         writeArtifact(root, '.omc/experience/current.md', 'UX Verdict\npass\n\nScreen flow uses visual QA.\n');
         const report = runProductCycle({ root });
         const buildResult = report.stageResults.find((entry) => entry.stage === 'build');
         expect(buildResult?.instruction).toContain('product-experience-gate');
         expect(buildResult?.interventions?.map((route) => route.id)).toEqual(['prebuild-experience-gate']);
         expect(buildResult?.interventions?.[0]?.trigger).toContain('real passing experience gate');
+    });
+    it('blocks user-facing builds when research artifact has only a thin pass verdict', () => {
+        const root = createRoot();
+        setupCycleAt(root, 'build');
+        writeArtifact(root, '.omc/research/product-cycle/current.md', 'research_verdict: pass\nsources: fixture\n');
+        writeArtifact(root, '.omc/experience/current.md', richExperienceGateArtifact());
+        const report = runProductCycle({ root });
+        expect(report.stoppedReason).toBe('pause-for-llm');
+        const buildResult = report.stageResults.find((entry) => entry.stage === 'build');
+        expect(buildResult?.research?.map((route) => route.id)).toEqual([
+            'research-skill-provisioning',
+            'user-interaction-research',
+        ]);
+        expect(buildResult?.research?.find((route) => route.id === 'user-interaction-research')?.trigger)
+            .toContain('missing-concrete-sources');
+        expect(report.interventionHandoff).toBeUndefined();
     });
     it('respects --dry-run and does not mutate the cycle file', () => {
         const root = createRoot();
@@ -306,6 +326,58 @@ confidence: 0.8
 blocking_issues: []
 next_action: build
 artifacts_written: .omc/experience/current.md
+`;
+}
+function validUserFacingResearchArtifact() {
+    return `# Product Cycle Research
+
+cycle_id: 2026-04-25-first
+cycle_stage: build
+cycle_goal: ship loop
+research_verdict: pass
+
+## Sources
+- official platform documentation for persistent local state behavior
+- design partner observation notes from row-tracking onboarding
+
+## Findings
+Users need a visible current row, a clear saved state, and a low-friction continuation path.
+
+## Applicability
+Applies to the first usable loop for a focused row-tracking reader screen.
+
+## Decision Constraints
+Keep one primary action visible, avoid inactive controls in empty states, and preserve the current row during save failures.
+
+## Risks
+Save failure ambiguity can reduce trust if retry and recovery are not explicit.
+
+## Open Questions
+Whether design partners expect keyboard-first row marking in the first release.
+
+## Pass Reason
+The research is sufficient to choose the build shape because the core interaction states and constraints are explicit.
+
+## User Journey
+The user opens a pattern, marks the current row, sees saved progress, and returns to continue.
+
+## Empty States
+When no pattern is loaded, show one start action and no inactive row controls.
+
+## Failure States
+When saving fails, keep the row visible and offer retry without losing context.
+
+## Loading States
+Show progress restoration while the saved row is loading.
+
+## Return Session
+Resume at the next row with the previous completion state visible.
+
+## Accessibility
+Expose row state changes to assistive technology and keep keyboard focus predictable.
+
+## Perceived Value
+The value is confidence that the next session resumes exactly where the user stopped.
 `;
 }
 function discoveryCapabilityArtifact() {

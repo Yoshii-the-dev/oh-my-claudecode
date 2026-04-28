@@ -2,6 +2,7 @@ import { existsSync } from 'fs';
 import { spawnSync } from 'child_process';
 import { dirname, resolve } from 'path';
 import { atomicWriteFileSync, atomicWriteJsonSync, ensureDirSync } from '../lib/atomic-write.js';
+import { validateProductResearchArtifact, } from './research-artifact-validator.js';
 export const PRODUCT_RESEARCH_RUN_REPORT_RELATIVE_PATH = '.omc/handoffs/product-cycle-research/run-report.json';
 const PRODUCT_RESEARCH_RUN_REPORT_MD_RELATIVE_PATH = '.omc/handoffs/product-cycle-research/run-report.md';
 export function runProductResearchExecutionPlan(plan, options = {}) {
@@ -69,6 +70,15 @@ export function runProductResearchExecutionPlan(plan, options = {}) {
     const executedStepCount = stepResults.filter((step) => step.status === 'passed').length;
     const failedStepCount = stepResults.filter((step) => step.status === 'failed').length;
     const skippedStepCount = stepResults.filter((step) => step.status === 'skipped').length;
+    const routeIds = plan.steps.map((step) => step.route_id);
+    const artifactValidation = validateProductResearchArtifact({
+        root,
+        artifactPath: plan.research_artifact,
+        expectedCycleId: plan.cycle_id,
+        expectedCycleStage: plan.cycle_stage,
+        expectedCycleGoal: plan.cycle_goal,
+        expectedRouteIds: routeIds,
+    });
     const researchArtifactExists = existsSync(resolve(root, plan.research_artifact));
     return {
         schema_version: 1,
@@ -77,8 +87,15 @@ export function runProductResearchExecutionPlan(plan, options = {}) {
         source_plan: options.sourcePlan ?? '.omc/handoffs/product-cycle-research/execution-plan.json',
         research_artifact: plan.research_artifact,
         research_artifact_exists: researchArtifactExists,
+        research_artifact_valid: artifactValidation.ok,
+        research_validation_issues: artifactValidation.issues,
         dry_run: dryRun,
-        status: resolveRunStatus({ dryRun, stepResults, failedStepCount }),
+        status: resolveRunStatus({
+            dryRun,
+            stepResults,
+            failedStepCount,
+            artifactValid: artifactValidation.ok,
+        }),
         executed_step_count: executedStepCount,
         skipped_step_count: skippedStepCount,
         failed_step_count: failedStepCount,
@@ -103,6 +120,7 @@ export function renderProductResearchRunReport(report) {
         `source_plan: ${report.source_plan}`,
         `research_artifact: ${report.research_artifact}`,
         `research_artifact_exists: ${report.research_artifact_exists}`,
+        `research_artifact_valid: ${report.research_artifact_valid}`,
         `executed_step_count: ${report.executed_step_count}`,
         `skipped_step_count: ${report.skipped_step_count}`,
         `failed_step_count: ${report.failed_step_count}`,
@@ -124,6 +142,13 @@ export function renderProductResearchRunReport(report) {
                 lines.push(`  - signal: ${step.signal ?? 'none'}`);
         }
     }
+    if (report.research_validation_issues.length > 0) {
+        lines.push('');
+        lines.push('## Research Validation Issues');
+        for (const issue of report.research_validation_issues) {
+            lines.push(`- ${issue.severity} ${issue.code}: ${issue.message}`);
+        }
+    }
     lines.push('');
     lines.push('artifacts_written:');
     lines.push(`  - ${PRODUCT_RESEARCH_RUN_REPORT_RELATIVE_PATH}`);
@@ -138,6 +163,8 @@ function resolveRunStatus(options) {
         return 'noop';
     if (options.dryRun)
         return 'noop';
+    if (!options.artifactValid)
+        return 'failed';
     const hasPassed = options.stepResults.some((step) => step.status === 'passed');
     const hasSkipped = options.stepResults.some((step) => step.status === 'skipped');
     if (hasPassed && hasSkipped)

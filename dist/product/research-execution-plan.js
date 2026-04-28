@@ -91,6 +91,20 @@ function buildStep(route, provider) {
             argv: ['omc', 'ask', provider, '--agent-prompt', promptRoute.role, '--prompt', promptRoute.prompt],
         };
     }
+    const stackRoute = parseSlashCommand(route.command, '/stack-provision');
+    if (stackRoute) {
+        return {
+            route_id: route.id,
+            agent: route.agent,
+            source_command: route.command,
+            execution_surface: 'stack-plan',
+            executable: true,
+            review_required: true,
+            reason: 'Stack provisioning is planned headlessly first; applying installs remains an explicit reviewed action.',
+            expected_artifact: route.expectedArtifact,
+            argv: ['omc', 'stack', 'plan', ...stackRoute.args],
+        };
+    }
     return {
         route_id: route.id,
         agent: route.agent,
@@ -101,6 +115,12 @@ function buildStep(route, provider) {
         reason: 'The research command is not recognized as a safe automatic execution surface.',
         expected_artifact: route.expectedArtifact,
     };
+}
+function parseSlashCommand(command, commandName) {
+    const tokens = splitCommandLine(command);
+    if (tokens[0] !== commandName)
+        return undefined;
+    return { args: tokens.slice(1) };
 }
 function parsePromptRoute(command) {
     const tokens = splitCommandLine(command);

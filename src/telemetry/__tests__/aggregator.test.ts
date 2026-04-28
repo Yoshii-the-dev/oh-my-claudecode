@@ -115,6 +115,7 @@ describe('telemetry/aggregator', () => {
     expect(content).toMatch(/## Verdicts/);
     expect(content).toMatch(/## Skill Events/);
     expect(content).toMatch(/## Hook Events/);
+    expect(content).toMatch(/## Product Cycle Events/);
     expect(content).toMatch(/## Plugin Version Distribution/);
     expect(content).toMatch(/## Top Volume/);
     expect(content).toMatch(/## LLM Interaction/);
@@ -138,6 +139,66 @@ describe('telemetry/aggregator', () => {
 
     // Plugin version
     expect(content).toMatch(/4\.22\.0/);
+  });
+
+  it('computes product-cycle lifecycle metrics from product-cycle-events', async () => {
+    writeJsonl(join(eventsDir, 'product-cycle-events.jsonl'), [
+      makeBaseEnvelope('product-cycle-events', {
+        ts: '2026-04-29T00:00:00.000Z',
+        event: 'stage_decision',
+        cycle_id: 'cycle-a',
+        cycle_stage: 'build',
+        has_research: true,
+      }),
+      makeBaseEnvelope('product-cycle-events', {
+        ts: '2026-04-29T00:00:01.000Z',
+        event: 'build_intervention_planned',
+        cycle_id: 'cycle-a',
+        cycle_stage: 'build',
+      }),
+      makeBaseEnvelope('product-cycle-events', {
+        ts: '2026-04-29T00:00:02.000Z',
+        event: 'build_team_completed',
+        cycle_id: 'cycle-a',
+        cycle_stage: 'build',
+      }),
+      makeBaseEnvelope('product-cycle-events', {
+        ts: '2026-04-29T00:00:05.000Z',
+        event: 'build_auto_completed',
+        cycle_id: 'cycle-a',
+        cycle_stage: 'build',
+      }),
+      makeBaseEnvelope('product-cycle-events', {
+        event: 'research_auto_resumed',
+        cycle_id: 'cycle-a',
+        cycle_stage: 'build',
+      }),
+      makeBaseEnvelope('product-cycle-events', {
+        event: 'manual_handoff',
+        cycle_id: 'cycle-b',
+        cycle_stage: 'spec',
+      }),
+      makeBaseEnvelope('product-cycle-events', {
+        event: 'product_cycle_run_stopped',
+        cycle_id: 'cycle-a',
+        stopped_reason: 'complete',
+      }),
+      makeBaseEnvelope('product-cycle-events', {
+        event: 'product_cycle_run_stopped',
+        cycle_id: 'cycle-b',
+        stopped_reason: 'pause-for-llm',
+      }),
+    ]);
+
+    const { digestPath } = await aggregate({ directory: testDir, trigger: 'on-demand' });
+    const content = readFileSync(digestPath, 'utf-8');
+
+    expect(content).toMatch(/Cycle unclosed rate: \*\*50\.0%\*\*/);
+    expect(content).toMatch(/Manual handoff rate: \*\*33\.3%\*\*/);
+    expect(content).toMatch(/Research route hit rate: \*\*100\.0%\*\*/);
+    expect(content).toMatch(/Build auto-completion rate: \*\*100\.0%\*\*/);
+    expect(content).toMatch(/Team wait failure rate: \*\*0\.0%\*\*/);
+    expect(content).toMatch(/Avg time to build complete: \*\*4\.0s\*\*/);
   });
 
   // ---------------------------------------------------------------------------

@@ -1,0 +1,1 @@
+{"version":3,"file":"rotator.d.ts","sourceRoot":"","sources":["../../src/telemetry/rotator.ts"],"names":[],"mappings":"AAAA;;;;;;;;;;;;;;;;;GAiBG;AAaH,OAAO,KAAK,EAAE,UAAU,EAAE,MAAM,cAAc,CAAC;AAmC/C;;;;GAIG;AACH,wBAAsB,cAAc,CAAC,SAAS,EAAE,MAAM,EAAE,MAAM,EAAE,UAAU,GAAG,OAAO,CAAC,IAAI,CAAC,CA0BzF;AAED;;;GAGG;AACH,wBAAsB,UAAU,CAAC,SAAS,EAAE,MAAM,GAAG,OAAO,CAAC,IAAI,CAAC,CAuBjE"}

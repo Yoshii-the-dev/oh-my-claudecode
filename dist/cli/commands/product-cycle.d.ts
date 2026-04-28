@@ -1,6 +1,7 @@
 /**
  * `omc product-cycle` — runtime FSM for the product learning loop.
  */
+import { type ProductInterventionCommandRunner } from '../../product/intervention-runner.js';
 export interface ProductCycleCommandOptions {
     json?: boolean;
     to?: string;
@@ -14,6 +15,9 @@ export interface ProductCycleCommandOptions {
     maxSteps?: number;
     wait?: boolean;
     waitTimeoutMs?: number;
+    resumeCycle?: boolean;
+    autoBuild?: boolean;
+    interventionCommandRunner?: ProductInterventionCommandRunner;
 }
 interface LoggerLike {
     log: (message?: unknown) => void;

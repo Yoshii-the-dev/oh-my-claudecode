@@ -136,6 +136,36 @@ export async function emitHookEvent(options: EmitHookEventOptions): Promise<void
 }
 
 // ---------------------------------------------------------------------------
+// emitProductCycleEvent — maps to 'product-cycle-events' stream
+// ---------------------------------------------------------------------------
+
+export interface EmitProductCycleEventOptions extends EmitBaseContext {
+  event: string;
+  cycle_id?: string;
+  cycle_stage?: string;
+  cycle_goal?: string;
+  [key: string]: unknown;
+}
+
+export async function emitProductCycleEvent(options: EmitProductCycleEventOptions): Promise<void> {
+  const { directory, session_id, run_id, agent_id, event, cycle_id, cycle_stage, cycle_goal, ...rest } = options;
+  await emit({
+    directory,
+    stream: 'product-cycle-events',
+    payload: {
+      ...(session_id !== undefined ? { session_id } : {}),
+      ...(run_id !== undefined ? { run_id } : {}),
+      ...(agent_id !== undefined ? { agent_id } : {}),
+      event,
+      ...(cycle_id !== undefined ? { cycle_id } : {}),
+      ...(cycle_stage !== undefined ? { cycle_stage } : {}),
+      ...(cycle_goal !== undefined ? { cycle_goal } : {}),
+      ...rest,
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
 // emitVerdict — maps to 'verdict' stream
 // ---------------------------------------------------------------------------
 

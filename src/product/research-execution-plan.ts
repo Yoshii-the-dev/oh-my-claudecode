@@ -3,7 +3,7 @@ import { dirname, resolve } from 'path';
 import { atomicWriteFileSync, atomicWriteJsonSync, ensureDirSync } from '../lib/atomic-write.js';
 import type { ProductResearchHandoff, ProductResearchRoute } from './research-router.js';
 
-export type ProductResearchExecutionSurface = 'agent-prompt' | 'manual';
+export type ProductResearchExecutionSurface = 'agent-prompt' | 'stack-plan' | 'manual';
 
 export interface ProductResearchExecutionStep {
   route_id: string;
@@ -150,6 +150,21 @@ function buildStep(route: ProductResearchRoute, provider: string): ProductResear
     };
   }
 
+  const stackRoute = parseSlashCommand(route.command, '/stack-provision');
+  if (stackRoute) {
+    return {
+      route_id: route.id,
+      agent: route.agent,
+      source_command: route.command,
+      execution_surface: 'stack-plan',
+      executable: true,
+      review_required: true,
+      reason: 'Stack provisioning is planned headlessly first; applying installs remains an explicit reviewed action.',
+      expected_artifact: route.expectedArtifact,
+      argv: ['omc', 'stack', 'plan', ...stackRoute.args],
+    };
+  }
+
   return {
     route_id: route.id,
     agent: route.agent,
@@ -160,6 +175,12 @@ function buildStep(route: ProductResearchRoute, provider: string): ProductResear
     reason: 'The research command is not recognized as a safe automatic execution surface.',
     expected_artifact: route.expectedArtifact,
   };
+}
+
+function parseSlashCommand(command: string, commandName: string): { args: string[] } | undefined {
+  const tokens = splitCommandLine(command);
+  if (tokens[0] !== commandName) return undefined;
+  return { args: tokens.slice(1) };
 }
 
 function parsePromptRoute(command: string): { role: string; prompt: string } | undefined {
