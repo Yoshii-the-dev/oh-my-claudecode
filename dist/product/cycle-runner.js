@@ -7,6 +7,9 @@ import { readPortfolioLedger } from './portfolio-ledger.js';
 import { planProductInterventions, readProductInterventionHandoff, writeProductInterventionHandoff, } from './intervention-router.js';
 import { buildProductInterventionExecutionPlan, writeProductInterventionExecutionPlan, } from './intervention-execution-plan.js';
 import { planProductResearch, writeProductResearchHandoff, } from './research-router.js';
+import { runRuntimeQa, shouldRunRuntimeQa, writeRuntimeQaRunReport, } from '../runtime-qa/runner.js';
+import { truncateInlineLog } from '../lib/summary-policy.js';
+import { planFeatureGeneration, writeFeatureGenerationPlan } from './feature-generation.js';
 const DEFAULT_VERIFY_COMMAND = 'npm test';
 const DEFAULT_MAX_STAGES = 10;
 const STAGE_ORDER = ['discover', 'rank', 'select', 'spec', 'build', 'verify', 'learn', 'complete'];
@@ -114,7 +117,13 @@ export function runProductCycle(options = {}) {
                 issues,
             });
         }
-        const evaluation = evaluateStage(currentStage, snapshot, root, verifyCommand);
+        const evaluation = evaluateStage(currentStage, snapshot, root, {
+            verifyCommand,
+            runtimeQa: options.runtimeQa !== false,
+            runtimeQaAuto: options.runtimeQaAuto === true,
+            runtimeQaInstallMobileTools: options.runtimeQaInstallMobileTools === true,
+            dryRun,
+        });
         stageResults.push(evaluation);
         if (evaluation.outcome !== 'advance') {
             const reason = evaluation.outcome === 'verify-failed'
@@ -220,12 +229,12 @@ function writeInterventionArtifacts(root, snapshot, currentStage, evaluation) {
         : undefined;
     return { handoff, executionPlan };
 }
-function evaluateStage(stage, snapshot, root, verifyCommand) {
+function evaluateStage(stage, snapshot, root, options) {
     switch (stage) {
         case 'discover':
-            return evaluateDiscover(root);
+            return evaluateDiscover(root, snapshot, options.dryRun);
         case 'rank':
-            return evaluateRank(root);
+            return evaluateRank(root, snapshot, options.dryRun);
         case 'select':
             return evaluateSelect(root, snapshot.cycleId);
         case 'spec':
@@ -233,7 +242,7 @@ function evaluateStage(stage, snapshot, root, verifyCommand) {
         case 'build':
             return evaluateBuild(root, snapshot);
         case 'verify':
-            return evaluateVerify(root, verifyCommand);
+            return evaluateVerify(root, options);
         case 'learn':
             return evaluateLearn(root);
         default:
@@ -244,46 +253,59 @@ function evaluateStage(stage, snapshot, root, verifyCommand) {
             };
     }
 }
-function evaluateDiscover(root) {
+function evaluateDiscover(root, snapshot, dryRun) {
     const capabilityPath = '.omc/product/capability-map/current.md';
     const ecosystemPath = '.omc/ecosystem/current.md';
+    const featurePlan = planFeatureGeneration({ root, goal: snapshot.cycleGoal });
     const expected = [
         { path: capabilityPath, exists: existsSync(resolve(root, capabilityPath)) },
         { path: ecosystemPath, exists: existsSync(resolve(root, ecosystemPath)) },
+        { path: '.omc/feature-generation/current.json', exists: existsSync(resolve(root, '.omc/feature-generation/current.json')) },
     ];
     if (expected[0].exists) {
+        if (!dryRun)
+            writeFeatureGenerationPlan(root, featurePlan);
         return {
             stage: 'discover',
             outcome: 'advance',
             reason: 'capability map present',
             expectedArtifacts: expected,
+            evidence: { featureGeneration: { status: featurePlan.status, sourceScore: featurePlan.source_score, nextAction: featurePlan.next_action } },
         };
     }
+    if (!dryRun)
+        writeFeatureGenerationPlan(root, featurePlan);
     return {
         stage: 'discover',
         outcome: 'pause-for-llm',
         reason: 'capability map missing',
         instruction: '/product-foundation "<cycle goal>" --foundation-lite',
         expectedArtifacts: expected,
+        evidence: { featureGeneration: { status: featurePlan.status, sourceScore: featurePlan.source_score, nextAction: featurePlan.next_action } },
     };
 }
-function evaluateRank(root) {
+function evaluateRank(root, snapshot, dryRun) {
     const opportunities = '.omc/opportunities/current.md';
     const ledger = '.omc/portfolio/current.json';
     const roadmap = '.omc/roadmap/current.md';
+    const featurePlan = planFeatureGeneration({ root, goal: snapshot.cycleGoal });
     const expected = [
         { path: opportunities, exists: existsSync(resolve(root, opportunities)) },
         { path: roadmap, exists: existsSync(resolve(root, roadmap)) },
         { path: ledger, exists: existsSync(resolve(root, ledger)) },
+        { path: '.omc/feature-generation/current.json', exists: existsSync(resolve(root, '.omc/feature-generation/current.json')) },
     ];
     const missing = expected.filter((entry) => !entry.exists).map((entry) => entry.path);
     if (missing.length > 0) {
+        if (!dryRun)
+            writeFeatureGenerationPlan(root, featurePlan);
         return {
             stage: 'rank',
             outcome: 'pause-for-llm',
             reason: `missing: ${missing.join(', ')}`,
-            instruction: '/priority-engine "<cycle goal>"',
+            instruction: `omc feature-generation audit --write --goal ${JSON.stringify(snapshot.cycleGoal ?? '<cycle goal>')} && /priority-engine ${JSON.stringify(snapshot.cycleGoal ?? '<cycle goal>')}`,
             expectedArtifacts: expected,
+            evidence: { featureGeneration: { status: featurePlan.status, sourceScore: featurePlan.source_score, nextAction: featurePlan.next_action } },
         };
     }
     const handoff = validateProductPipelineContracts({ root, stage: 'priority-handoff' });
@@ -414,8 +436,8 @@ function evaluateBuild(root, snapshot) {
         interventions: interventionPlan.routes,
     };
 }
-function evaluateVerify(root, verifyCommand) {
-    const trimmed = verifyCommand.trim();
+function evaluateVerify(root, options) {
+    const trimmed = options.verifyCommand.trim();
     if (!trimmed || trimmed.toLowerCase() === 'skip') {
         return {
             stage: 'verify',
@@ -447,11 +469,41 @@ function evaluateVerify(root, verifyCommand) {
         };
     }
     if (result.status === 0) {
+        const runtimeQa = maybeRunRuntimeQa(root, options);
+        if (runtimeQa && runtimeQa.report.status === 'blocked') {
+            return {
+                stage: 'verify',
+                outcome: 'pause-for-human',
+                reason: `runtime QA blocked (${runtimeQa.report.adapter})`,
+                instruction: runtimeQa.report.install_proposal
+                    ?? 'Configure .omc/runtime-qa.json or rerun with --install-mobile-tools after approving tool provisioning.',
+                runtimeQa,
+                evidence: { command: trimmed, exitCode: 0, runtimeQaStatus: runtimeQa.report.status },
+            };
+        }
+        if (runtimeQa && runtimeQa.report.status === 'failed') {
+            const reason = `runtime QA failed (${runtimeQa.report.adapter})`;
+            return {
+                stage: 'verify',
+                outcome: 'verify-failed',
+                reason,
+                instruction: 'omc runtime-qa run --auto --json',
+                runtimeQa,
+                interventions: planProductInterventions({
+                    root,
+                    stage: 'verify',
+                    snapshot: readProductCycle(root),
+                    failure: { kind: 'verify-command-failed', command: 'omc runtime-qa run --auto --json', reason },
+                }).routes,
+                evidence: { command: trimmed, exitCode: 0, runtimeQaStatus: runtimeQa.report.status },
+            };
+        }
         return {
             stage: 'verify',
             outcome: 'advance',
             reason: `verify passed (${trimmed})`,
-            evidence: { command: trimmed, exitCode: 0 },
+            runtimeQa,
+            evidence: { command: trimmed, exitCode: 0, runtimeQaStatus: runtimeQa?.report.status },
         };
     }
     const reason = `verify failed (${trimmed}, exit ${result.status})`;
@@ -469,10 +521,23 @@ function evaluateVerify(root, verifyCommand) {
         evidence: {
             command: trimmed,
             exitCode: result.status,
-            stderr: truncate(result.stderr ?? ''),
-            stdout: truncate(result.stdout ?? ''),
+            stderr: truncateInlineLog(result.stderr ?? ''),
+            stdout: truncateInlineLog(result.stdout ?? ''),
         },
     };
+}
+function maybeRunRuntimeQa(root, options) {
+    if (!options.runtimeQa || !shouldRunRuntimeQa(root))
+        return undefined;
+    const report = runRuntimeQa({
+        root,
+        auto: options.runtimeQaAuto,
+        dryRun: options.dryRun,
+        installMobileTools: options.runtimeQaInstallMobileTools,
+        writeDetectedConfig: options.runtimeQaAuto,
+    });
+    const written = options.dryRun ? undefined : writeRuntimeQaRunReport(root, report);
+    return { report, written };
 }
 function evaluateLearn(root) {
     const learningPath = resolve(root, '.omc/learning/current.md');
@@ -506,9 +571,6 @@ function evaluateLearn(root) {
         reason: 'learning capture complete',
         expectedArtifacts: expected,
     };
-}
-function truncate(value, max = 600) {
-    return value.length > max ? `${value.slice(0, max)}...` : value;
 }
 function finalize(report) {
     return report;

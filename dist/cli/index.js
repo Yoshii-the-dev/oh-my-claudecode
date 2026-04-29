@@ -29,11 +29,14 @@ import { cycleDocumentMigrateCommand, cycleDocumentProjectCommand, cycleDocument
 import { learningMigrateCommand, learningProjectCommand, learningValidateCommand, } from './commands/learning-document.js';
 import { historicalScorecardCommand } from './commands/historical-scorecard.js';
 import { portfolioMigrateCommand, portfolioProjectCommand, portfolioValidateCommand, } from './commands/portfolio.js';
+import { creativeLoopAuditCommand, creativeLoopInitCommand } from './commands/creative-loop.js';
+import { featureGenerationAuditCommand } from './commands/feature-generation.js';
 import { runScorecardCommand } from './commands/run-scorecard.js';
 import { sessionSearchCommand } from './commands/session-search.js';
 import { teamCommand } from './commands/team.js';
 import { ralphthonCommand } from './commands/ralphthon.js';
 import { telemetryDigestCommand } from './commands/telemetry.js';
+import { runtimeQaInitCommand, runtimeQaRunCommand } from './commands/runtime-qa.js';
 import { teleportCommand, teleportListCommand, teleportRemoveCommand } from './commands/teleport.js';
 import { getRuntimePackageVersion } from '../lib/version.js';
 import { resolvePluginDirArg } from '../lib/plugin-dir.js';
@@ -1214,6 +1217,11 @@ productCycleCmd
     .option('--stop-at <stage>', 'Stop before processing the given stage')
     .option('--dry-run', 'Plan the run without writing the cycle file or running verify')
     .option('--verify-command <cmd>', 'Shell command to execute during the verify stage', 'npm test')
+    .option('--auto', 'Safely continue executable product-cycle handoffs without waiting for manual next_action')
+    .option('--auto-policy <policy>', 'Auto policy: off | safe')
+    .option('--max-auto-attempts <count>', 'Maximum automatic attempts per handoff kind', (value) => Number.parseInt(value, 10), 3)
+    .option('--no-runtime-qa', 'Do not run runtime QA during verify even when configured or declared')
+    .option('--install-mobile-tools', 'Allow runtime QA to install missing Maestro/Detox/Appium tooling')
     .option('--no-auto-build', 'Do not automatically run eligible build pipeline team jobs')
     .option('--wait-timeout-ms <ms>', 'Timeout for each auto-build team-start job', (value) => Number.parseInt(value, 10))
     .option('--json', 'Output as JSON')
@@ -1225,6 +1233,34 @@ Examples:
   $ omc product-cycle run --verify-command "npm run test:cycle"`)
     .action(async (root, options) => {
     const exitCode = await productCycleRunCommand(root, options);
+    process.exit(exitCode);
+});
+/**
+ * Runtime QA command - build/smoke/simulator adapter surface
+ */
+const runtimeQaCmd = program
+    .command('runtime-qa')
+    .description('Run configured build/smoke/simulator checks and write runtime QA evidence');
+runtimeQaCmd
+    .command('init [root]')
+    .description('Detect project runtime QA settings and write .omc/runtime-qa.json')
+    .option('--target <target>', 'Target type: web | cli | service | mobile | project-script')
+    .option('--no-write', 'Detect and print without writing .omc/runtime-qa.json')
+    .option('--force', 'Overwrite an existing .omc/runtime-qa.json')
+    .option('--json', 'Output as JSON')
+    .action(async (root, options) => {
+    const exitCode = await runtimeQaInitCommand(root, options);
+    process.exit(exitCode);
+});
+runtimeQaCmd
+    .command('run [root]')
+    .description('Run runtime QA from .omc/runtime-qa.json or detected project signals')
+    .option('--auto', 'Run in safe autonomous mode')
+    .option('--install-mobile-tools', 'Install missing Maestro/Detox/Appium tooling before mobile runtime QA')
+    .option('--dry-run', 'Show runtime QA steps without running commands')
+    .option('--json', 'Output as JSON')
+    .action(async (root, options) => {
+    const exitCode = await runtimeQaRunCommand(root, options);
     process.exit(exitCode);
 });
 productCycleCmd
@@ -1373,6 +1409,57 @@ Examples:
   $ omc run-scorecard --json`)
     .action(async (root, options) => {
     await runScorecardCommand(root, options);
+});
+/**
+ * Feature generation command - source and MCP readiness for opportunity discovery
+ */
+const featureGenerationCmd = program
+    .command('feature-generation')
+    .description('Audit source and MCP readiness for feature/opportunity generation')
+    .addHelpText('after', `
+Examples:
+  $ omc feature-generation audit --goal "improve activation"
+  $ omc feature-generation audit /path/to/app --write
+  $ omc feature-generation audit --json`);
+featureGenerationCmd
+    .command('audit [root]')
+    .description('Check feature-generation source coverage and MCP setup recommendations')
+    .option('--goal <goal>', 'Product/cycle goal used for recommended handoff commands')
+    .option('--json', 'Output as JSON')
+    .option('--write', 'Write .omc/feature-generation/current.{json,md}')
+    .action(async (root, options) => {
+    const exitCode = await featureGenerationAuditCommand(root, options);
+    process.exit(exitCode);
+});
+/**
+ * Creative loop command - UI/UX divergent creative readiness gate
+ */
+const creativeLoopCmd = program
+    .command('creative-loop')
+    .description('Audit or initialize UI/UX creative-loop artifacts')
+    .addHelpText('after', `
+Examples:
+  $ omc creative-loop audit --goal "build a distinct onboarding surface"
+  $ omc creative-loop audit /path/to/app --write
+  $ omc creative-loop init --goal "row tracking dashboard"`);
+creativeLoopCmd
+    .command('audit [root]')
+    .description('Check creative-loop readiness for user-facing visual work')
+    .option('--goal <goal>', 'Visual/product goal used for recommended handoff commands')
+    .option('--json', 'Output as JSON')
+    .option('--write', 'Write .omc/design/creative-loop/current.{json,md}')
+    .action(async (root, options) => {
+    const exitCode = await creativeLoopAuditCommand(root, options);
+    process.exit(exitCode);
+});
+creativeLoopCmd
+    .command('init [root]')
+    .description('Create missing creative-loop draft artifacts without passing the gate')
+    .option('--goal <goal>', 'Visual/product goal used in draft artifact templates')
+    .option('--json', 'Output as JSON')
+    .action(async (root, options) => {
+    const exitCode = await creativeLoopInitCommand(root, options);
+    process.exit(exitCode);
 });
 /**
  * Portfolio command - Machine-readable product work-item ledger helpers

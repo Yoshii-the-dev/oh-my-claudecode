@@ -134,6 +134,24 @@ export declare const PRODUCT_ARTIFACT_REGISTRY: {
         readonly datedPattern: ".omc/experience/YYYY-MM-DD-<slug>.md";
         readonly purpose: "Pre-build UX gate for journey, empty/failure states, return session, perceived value.";
     };
+    readonly 'creative-loop': {
+        readonly name: "creative-loop";
+        readonly lane: "design";
+        readonly currentPath: ".omc/design/creative-loop/current.json";
+        readonly format: "json";
+        readonly owner: "creative-loop";
+        readonly machineContract: "strict";
+        readonly purpose: "UI/UX creative readiness gate: meaning, inspiration principles, divergent directions, motion, tokens, experiments, and taste verdict.";
+    };
+    readonly 'creative-taste-gate': {
+        readonly name: "creative-taste-gate";
+        readonly lane: "design";
+        readonly currentPath: ".omc/design/taste-gate/current.md";
+        readonly format: "markdown";
+        readonly owner: "creative-loop";
+        readonly machineContract: "footer";
+        readonly purpose: "Human-readable taste verdict for distinctiveness, usability, accessibility, and brand fit before design-system promotion.";
+    };
     readonly cycle: {
         readonly name: "cycle";
         readonly lane: "cycle";
@@ -176,7 +194,7 @@ export declare const PRODUCT_ARTIFACT_REGISTRY: {
 export type ProductPipelineArtifactName = keyof typeof PRODUCT_ARTIFACT_REGISTRY;
 export declare const PRODUCT_ARTIFACT_PATHS: Record<ProductPipelineArtifactName, string>;
 export declare const PRODUCT_ARTIFACT_CURRENT_PATHS: ReadonlySet<string>;
-export declare const PRODUCT_ARTIFACT_ALLOWED_DIRECTORIES: readonly [".omc/ideas/", ".omc/specs/", ".omc/competitors/", ".omc/brand/", ".omc/meaning/", ".omc/product/", ".omc/ecosystem/", ".omc/portfolio/", ".omc/opportunities/", ".omc/roadmap/", ".omc/experience/", ".omc/cycles/", ".omc/learning/", ".omc/decisions/", ".omc/provisioned/", ".omc/handoffs/", ".omc/audits/", ".omc/research/", ".omc/classification/", ".omc/reset/"];
+export declare const PRODUCT_ARTIFACT_ALLOWED_DIRECTORIES: readonly [".omc/ideas/", ".omc/specs/", ".omc/competitors/", ".omc/brand/", ".omc/meaning/", ".omc/product/", ".omc/ecosystem/", ".omc/portfolio/", ".omc/opportunities/", ".omc/roadmap/", ".omc/experience/", ".omc/design/", ".omc/cycles/", ".omc/learning/", ".omc/decisions/", ".omc/provisioned/", ".omc/handoffs/", ".omc/audits/", ".omc/research/", ".omc/classification/", ".omc/reset/"];
 export declare function isProductPipelineContractStage(stage: string): stage is ProductPipelineContractStage;
 export declare function getProductArtifactRegistryEntries(): ProductArtifactRegistryEntry[];
 export declare function renderProductPipelineRegistryMarkdown(): string;

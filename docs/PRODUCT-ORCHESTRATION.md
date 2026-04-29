@@ -19,6 +19,7 @@ Canonical product artifact paths, owners, stages, and contract levels are genera
 | Map product systems and launch capability blocks | `/product-strategist --capability-map "<scope>"` |
 | Rank opportunity portfolio and choose next cycle | `/priority-engine "<cycle goal>"` |
 | Run pre-build UX/experience gate | `/product-experience-gate "<core product slice>"` |
+| Run divergent UI/UX creative loop | `/creative-loop "<core product slice>"` |
 | Decide technology stack for approved capability blocks | `/prompts:technology-strategist "<scope>"` |
 | Provision stack skills | `/stack-provision .omc/decisions/YYYY-MM-DD-technology-<slug>.md` |
 | Build backend/engine capability | `/backend-pipeline "<feature>"` |
@@ -64,7 +65,12 @@ OMC separates product development into eight layers:
    - output: `.omc/experience/current.md`
    - owns: pre-code user journey, empty states, failure states, return session, perceived value, and UX verdict for user-facing work.
 
-7. **Technology/Capability Governance**
+7. **Creative Loop**
+   - `creative-loop`
+   - output: `.omc/design/creative-loop/current.json`, `.omc/design/**`
+   - owns: meaning brief, inspiration ledger, divergent visual hypotheses, motion grammar, design tokens, component experiments, screenshots, visual verdicts, and taste gate before visual implementation.
+
+8. **Technology/Capability Governance**
    - `technology-strategist`
    - researcher alias: `document-specialist`
    - `critic`
@@ -72,7 +78,7 @@ OMC separates product development into eight layers:
    - output: `.omc/decisions/**`, `.omc/provisioned/**`
    - owns: concrete technology choices, weighted scorecards, compatibility, risk, and skill provisioning targets.
 
-8. **Execution Pipelines**
+9. **Execution Pipelines**
    - `backend-pipeline`
    - `product-pipeline`
    - output: source changes, `.omc/handoffs/**`, `.omc/audits/**`
@@ -87,7 +93,7 @@ Lower layers consume upper-layer artifacts. They do not re-invent them.
   rank: priority-engine
   select: one core product slice + one enabling task + one learning task
   spec: cycle spec + product-experience-gate before user-facing build
-  build: product-pipeline and/or backend-pipeline
+  build: creative-loop for visual UI work, then product-pipeline and/or backend-pipeline
   verify: tests, audits, acceptance evidence
   learn: .omc/learning/current.md and next-cycle adjustment
 ```
@@ -116,6 +122,7 @@ Runtime FSM commands:
 omc product-cycle status
 omc product-cycle next
 omc product-cycle validate
+omc feature-generation audit --write --goal "<cycle goal>"
 omc product-cycle advance --to discover --goal "<cycle goal>"
 omc product-cycle advance --to build
 ```
@@ -198,13 +205,14 @@ It must not:
 
 ## Priority Engine Rules
 
-Priority Engine is the living portfolio layer between discovery and execution. It consumes the capability map, meaning graph, ecosystem map, research, competitors, and classifications.
+Priority Engine is the living portfolio layer between discovery and execution. It consumes the capability map, meaning graph, ecosystem map, research, competitors, classifications, and `.omc/feature-generation/current.json`.
 
 It must:
 
 - write `.omc/portfolio/current.json` as the compact source of truth for work items.
 - optionally write `.omc/portfolio/current.md` as a human-readable projection.
 - produce 20-40 candidate moves across product, UX, research, backend, quality, brand/content, and distribution.
+- consume or request `omc feature-generation audit --write --goal "<cycle goal>"` so feature generation is based on explicit source coverage and MCP readiness.
 - give every work item a stable `id`, `lane`, `status`, `confidence`, `dependencies`, `selected_cycle`, and `evidence`.
 - score candidates by user value, evidence, learning value, dependency unlock, ecosystem depth, effort fit, and risk reduction.
 - select exactly one core product slice, one enabling task, and one learning/research task for the next cycle.
@@ -212,6 +220,7 @@ It must:
 - write `.omc/opportunities/current.md`.
 - write `.omc/roadmap/current.md` as a rolling 2/6/12-week roadmap.
 - keep pre-MVP work centered on a first usable loop.
+- keep missing source/MCP setup visible as a selected learning/research task when it affects the selected cycle.
 - pass `omc portfolio validate` before downstream handoff.
 - pass `omc doctor product-contracts --stage priority-handoff` before downstream handoff.
 
@@ -294,8 +303,21 @@ For user-facing surfaces, `product-pipeline` must treat the brand and visual lay
 
 - read `.omc/constitution.md` and `.omc/brand/**`.
 - prefer original visual concepts grounded in brand philosophy, competitor whitespace, and product meaning.
+- run `/creative-loop "<core product slice>"` before implementation when the surface needs distinctive UI/UX, motion, visual language, generated assets, or brand expression.
+- verify `omc creative-loop audit --write --goal "<core product slice>"` reports `ready`.
 - provision visual-creative skills when the feature needs motion, generated imagery, 3D, illustration, iconography, typography exploration, or visual QA.
 - avoid generic UI defaults that contradict the constitution.
+
+Creative loop artifacts:
+
+- `.omc/design/meaning-brief/current.md`
+- `.omc/design/inspiration-ledger/current.md`
+- `.omc/design/directions/current.md`
+- `.omc/design/motion-grammar/current.md`
+- `.omc/design/tokens/current.json`
+- `.omc/design/component-experiments/current.json`
+- `.omc/design/taste-gate/current.md`
+- `.omc/design/system/current.md` only after taste gate pass
 
 ## Handoff And Permissions
 

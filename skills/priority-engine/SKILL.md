@@ -30,6 +30,7 @@ Read compact/current artifacts first:
 - `.omc/classification/features-core-context.md`
 - `.omc/meaning/current.md`
 - `.omc/ecosystem/current.md`
+- `.omc/feature-generation/current.json` and `.omc/feature-generation/current.md`
 - existing `.omc/portfolio/current.json` when refreshing a portfolio
 
 Do not bulk-read archives. Use indexes and explicit pointers.
@@ -37,15 +38,16 @@ Do not bulk-read archives. Use indexes and explicit pointers.
 ## Protocol
 
 1. Determine product stage: `empty | pre-mvp | mvp | post-mvp`.
-2. If `.omc/ecosystem/current.md` is absent, stale, or core features lack depth paths, invoke `product-ecosystem-architect` first. If the current cycle is urgent, continue but mark ecosystem confidence LOW.
-3. Invoke `priority-engine` with the cycle goal and compact artifact digest.
-4. Require the agent to rank 20-40 candidate moves across product, UX, research, backend, quality, brand/content, and distribution.
-5. Require the selected cycle portfolio:
+2. Run or read `omc feature-generation audit --write --goal "<cycle goal>"`. If it reports `needs-input`, `needs-mcp`, or `blocked`, keep the missing source/MCP work visible as research debt instead of silently assuming external discovery happened.
+3. If `.omc/ecosystem/current.md` is absent, stale, or core features lack depth paths, invoke `product-ecosystem-architect` first. If the current cycle is urgent, continue but mark ecosystem confidence LOW.
+4. Invoke `priority-engine` with the cycle goal and compact artifact digest.
+5. Require the agent to rank 20-40 candidate moves across product, UX, research, backend, quality, brand/content, and distribution.
+6. Require the selected cycle portfolio:
    - `1 core product slice`
    - `1 enabling task`
    - `1 learning/research task`
    - if any selected product/enabling task has LOW confidence or weak/proxy evidence, the learning task must be explicit research debt for that uncertainty.
-6. Require `.omc/portfolio/current.json` with one item per candidate:
+7. Require `.omc/portfolio/current.json` with one item per candidate:
    - `id`
    - `title`
    - `lane`
@@ -54,12 +56,12 @@ Do not bulk-read archives. Use indexes and explicit pointers.
    - `dependencies`
    - `selected_cycle`
    - `evidence`
-7. Verify outputs:
+8. Verify outputs:
    - `.omc/portfolio/current.json`
    - `.omc/opportunities/current.md`
    - `.omc/roadmap/current.md`
    - roadmap keeps weak-evidence items as `research debt`, `learning gate`, or `research gate`
-8. Run the ledger and contract gates:
+9. Run the ledger and contract gates:
    - `omc portfolio validate`
    - `omc portfolio project --write`
    - `omc doctor product-contracts --stage priority-handoff`
@@ -89,7 +91,11 @@ If evidence is weak, do not just continue with LOW confidence. Convert the uncer
 - selected_cycle: same cycle id as the weak product/enabling item
 - expected_learning: the decision this research will unlock
 
+For empty/pre-MVP products, do not default to tester recruitment, team onboarding, or a design-partner program. Those moves are valid only when the user explicitly asks for external validation or current artifacts show active users/partners. The default learning task should be executable by the current team now: simulator/runtime smoke, founder dogfood, heuristic UX review, analytics instrumentation check, competitor/source refresh, or a small scripted usability walkthrough.
+
 Then keep it visible in `.omc/roadmap/current.md` as research debt or a learning/research gate.
+
+If `.omc/feature-generation/current.json` reports missing required MCP services, the learning task should include an explicit setup/provisioning proposal. Do not install or mutate MCP configuration without user approval.
 
 ## Outputs
 

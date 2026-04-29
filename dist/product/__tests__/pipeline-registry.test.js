@@ -12,12 +12,15 @@ describe('product pipeline registry', () => {
         ]);
         expect(PRODUCT_ARTIFACT_REGISTRY['portfolio-ledger'].machineContract).toBe('strict');
         expect(PRODUCT_ARTIFACT_REGISTRY['experience-gate'].currentPath).toBe('.omc/experience/current.md');
+        expect(PRODUCT_ARTIFACT_REGISTRY['creative-loop'].currentPath).toBe('.omc/design/creative-loop/current.json');
+        expect(PRODUCT_ARTIFACT_REGISTRY['creative-loop'].machineContract).toBe('strict');
     });
     it('renders generated registry documentation', () => {
         const markdown = renderProductPipelineRegistryMarkdown();
         expect(markdown).toContain('Generated from `src/product/pipeline-registry.ts`');
         expect(markdown).toContain('| portfolio-ledger | portfolio | .omc/portfolio/current.json |');
         expect(markdown).toContain('| experience-gate | experience | .omc/experience/current.md |');
+        expect(markdown).toContain('| creative-loop | design | .omc/design/creative-loop/current.json |');
     });
 });
 //# sourceMappingURL=pipeline-registry.test.js.map

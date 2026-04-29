@@ -76,12 +76,14 @@ import {
   portfolioProjectCommand,
   portfolioValidateCommand,
 } from './commands/portfolio.js';
+import { creativeLoopAuditCommand, creativeLoopInitCommand } from './commands/creative-loop.js';
+import { featureGenerationAuditCommand } from './commands/feature-generation.js';
 import { runScorecardCommand } from './commands/run-scorecard.js';
 import { sessionSearchCommand } from './commands/session-search.js';
 import { teamCommand } from './commands/team.js';
 import { ralphthonCommand } from './commands/ralphthon.js';
 import { telemetryDigestCommand } from './commands/telemetry.js';
-import { runtimeQaRunCommand } from './commands/runtime-qa.js';
+import { runtimeQaInitCommand, runtimeQaRunCommand } from './commands/runtime-qa.js';
 import {
   teleportCommand,
   teleportListCommand,
@@ -1387,6 +1389,18 @@ const runtimeQaCmd = program
   .description('Run configured build/smoke/simulator checks and write runtime QA evidence');
 
 runtimeQaCmd
+  .command('init [root]')
+  .description('Detect project runtime QA settings and write .omc/runtime-qa.json')
+  .option('--target <target>', 'Target type: web | cli | service | mobile | project-script')
+  .option('--no-write', 'Detect and print without writing .omc/runtime-qa.json')
+  .option('--force', 'Overwrite an existing .omc/runtime-qa.json')
+  .option('--json', 'Output as JSON')
+  .action(async (root, options) => {
+    const exitCode = await runtimeQaInitCommand(root, options);
+    process.exit(exitCode);
+  });
+
+runtimeQaCmd
   .command('run [root]')
   .description('Run runtime QA from .omc/runtime-qa.json or detected project signals')
   .option('--auto', 'Run in safe autonomous mode')
@@ -1558,6 +1572,62 @@ Examples:
   $ omc run-scorecard --json`)
   .action(async (root, options) => {
     await runScorecardCommand(root, options);
+  });
+
+/**
+ * Feature generation command - source and MCP readiness for opportunity discovery
+ */
+const featureGenerationCmd = program
+  .command('feature-generation')
+  .description('Audit source and MCP readiness for feature/opportunity generation')
+  .addHelpText('after', `
+Examples:
+  $ omc feature-generation audit --goal "improve activation"
+  $ omc feature-generation audit /path/to/app --write
+  $ omc feature-generation audit --json`);
+
+featureGenerationCmd
+  .command('audit [root]')
+  .description('Check feature-generation source coverage and MCP setup recommendations')
+  .option('--goal <goal>', 'Product/cycle goal used for recommended handoff commands')
+  .option('--json', 'Output as JSON')
+  .option('--write', 'Write .omc/feature-generation/current.{json,md}')
+  .action(async (root, options) => {
+    const exitCode = await featureGenerationAuditCommand(root, options);
+    process.exit(exitCode);
+  });
+
+/**
+ * Creative loop command - UI/UX divergent creative readiness gate
+ */
+const creativeLoopCmd = program
+  .command('creative-loop')
+  .description('Audit or initialize UI/UX creative-loop artifacts')
+  .addHelpText('after', `
+Examples:
+  $ omc creative-loop audit --goal "build a distinct onboarding surface"
+  $ omc creative-loop audit /path/to/app --write
+  $ omc creative-loop init --goal "row tracking dashboard"`);
+
+creativeLoopCmd
+  .command('audit [root]')
+  .description('Check creative-loop readiness for user-facing visual work')
+  .option('--goal <goal>', 'Visual/product goal used for recommended handoff commands')
+  .option('--json', 'Output as JSON')
+  .option('--write', 'Write .omc/design/creative-loop/current.{json,md}')
+  .action(async (root, options) => {
+    const exitCode = await creativeLoopAuditCommand(root, options);
+    process.exit(exitCode);
+  });
+
+creativeLoopCmd
+  .command('init [root]')
+  .description('Create missing creative-loop draft artifacts without passing the gate')
+  .option('--goal <goal>', 'Visual/product goal used in draft artifact templates')
+  .option('--json', 'Output as JSON')
+  .action(async (root, options) => {
+    const exitCode = await creativeLoopInitCommand(root, options);
+    process.exit(exitCode);
   });
 
 /**

@@ -25,6 +25,9 @@ reads:
   - path: ".omc/ecosystem/current.md"
     required: false
     use: "Long-horizon ecosystem loops and depth paths"
+  - path: ".omc/feature-generation/current.json"
+    required: false
+    use: "Source coverage, MCP readiness, and feature-generation gaps before ranking"
 writes:
   - path: ".omc/portfolio/current.json"
     status_field: "schema_version"
@@ -107,7 +110,8 @@ depends_on:
     5. `.omc/classification/features-core-context.md`
     6. `.omc/meaning/current.md`
     7. `.omc/ecosystem/current.md`
-    8. `.omc/provisioned/current.json` only to avoid recommending already-covered enabling work
+    8. `.omc/feature-generation/current.json` and `.omc/feature-generation/current.md`
+    9. `.omc/provisioned/current.json` only to avoid recommending already-covered enabling work
 
     Emit an input digest in the output:
     ```yaml
@@ -117,15 +121,19 @@ depends_on:
     capability_map: present|missing
     meaning_graph: present|missing
     ecosystem_map: present|missing
+    feature_generation_readiness: ready|needs-input|needs-mcp|blocked|missing
+    mcp_readiness: configured|missing-required|not-applicable
     product_stage: empty | pre-mvp | mvp | post-mvp
     ```
+
+    If `.omc/feature-generation/current.json` is missing or reports `needs-input`, `needs-mcp`, or `blocked`, treat the portfolio as evidence-constrained. You may still produce candidates, but must include a source-refresh or MCP setup learning task unless the current cycle goal is explicitly implementation-only.
 
     ## Phase 1 - Candidate Move Inventory
 
     Generate 20-40 candidate moves. Use these lanes:
     - `product`: first usable loops, core workflow slices, retention mechanics
     - `ux`: app shell, navigation, onboarding, reader/editor surfaces, empty/error states
-    - `research`: user interviews, design partner recruitment, competitor probes, usability tests
+    - `research`: founder dogfood, simulator/runtime smoke, heuristic UX review, competitor/source refresh, user interviews/usability tests only when users or partners exist
     - `backend`: domain model, persistence, import/export, background jobs, integration seams
     - `quality`: tests, observability, fixture coverage, accessibility/performance checks
     - `brand-content`: meaning hooks, content angles, sample/demo content, educational assets
@@ -169,6 +177,7 @@ depends_on:
     - If a selected core or enabling item has LOW confidence, proxy-only evidence, unknown user behavior, or missing usability evidence, create a corresponding research/learning candidate.
     - The selected cycle must include that research/learning item unless a stronger evidence source is added before handoff.
     - The rolling roadmap must name the research debt as a learning gate; do not hide it in prose or a generic confidence note.
+    - For empty/pre-MVP products, prefer founder-dogfood, simulator/runtime QA, heuristic UX review, or source/competitor refresh over tester recruitment. External tester/design-partner recruitment is allowed only when the user explicitly requests it or current artifacts show an active partner/user program.
 
     ## Phase 3 - Select The Cycle Portfolio
 
