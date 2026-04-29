@@ -1,30 +1,35 @@
-# oh-my-claudecode v4.26.2: auto orchestration, runtime QA, compact reports
+# oh-my-claudecode v4.28.2: add creative loop, add feature generation, add auto product-cycle
 
 ## Release Notes
 
-### Highlights
-
-- Added safe `product-cycle --auto` orchestration with persistent continuation gates.
-- Added `runtime-qa` build/smoke/simulator evidence with web, CLI, project-script, and mobile adapters.
-- Added explicit mobile simulator provisioning for Maestro, Detox, and Appium through `--install-mobile-tools`.
-- Added compact summary policy controls for bounded agent/stage/final reports.
-
----
-
-# oh-my-claudecode v4.21.1: typed JSON documents,
-
-## Release Notes
-
-Release with **1 new feature** across **0 merged PRs**.
+Release with **5 new features**, **2 bug fixes**, **2 other changes** across **0 merged PRs**.
 
 ### Highlights
 
-- **feat(product): typed JSON documents, cycle runner, historical scorecard, registry-driven docs**
+- **feat: add creative loop gate**
+- **feat: add feature generation readiness audit**
+- **feat: add auto product-cycle runtime QA**
+- **feat(telemetry): update aggregator to surface latency metrics**
+- **feat(telemetry): harden hook observability with typed helpers, session correlation, and latency metrics**
 
 ### New Features
 
-- **feat(product): typed JSON documents, cycle runner, historical scorecard, registry-driven docs**
+- **feat: add creative loop gate**
+- **feat: add feature generation readiness audit**
+- **feat: add auto product-cycle runtime QA**
+- **feat(telemetry): update aggregator to surface latency metrics**
+- **feat(telemetry): harden hook observability with typed helpers, session correlation, and latency metrics**
+
+### Bug Fixes
+
+- **fix: update canonical opus model from claude-opus-4-7 to claude-opus-4-6**
+- **fix: package product-cycle auto runtime QA**
+
+### Other Changes
+
+- **chore: bump version to 4.28.1 and include dist/ artifacts in git**
+- **chore: bump version to 4.26.1 and include dist/ artifacts in git**
 
 ### Stats
 
-- **0 PRs merged** | **1 new feature** | **0 bug fixes** | **0 security/hardening improvements** | **0 other changes**
+- **0 PRs merged** | **5 new features** | **2 bug fixes** | **0 security/hardening improvements** | **2 other changes**
