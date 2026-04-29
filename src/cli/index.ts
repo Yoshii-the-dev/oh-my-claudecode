@@ -81,6 +81,7 @@ import { sessionSearchCommand } from './commands/session-search.js';
 import { teamCommand } from './commands/team.js';
 import { ralphthonCommand } from './commands/ralphthon.js';
 import { telemetryDigestCommand } from './commands/telemetry.js';
+import { runtimeQaRunCommand } from './commands/runtime-qa.js';
 import {
   teleportCommand,
   teleportListCommand,
@@ -1359,6 +1360,11 @@ productCycleCmd
   .option('--stop-at <stage>', 'Stop before processing the given stage')
   .option('--dry-run', 'Plan the run without writing the cycle file or running verify')
   .option('--verify-command <cmd>', 'Shell command to execute during the verify stage', 'npm test')
+  .option('--auto', 'Safely continue executable product-cycle handoffs without waiting for manual next_action')
+  .option('--auto-policy <policy>', 'Auto policy: off | safe')
+  .option('--max-auto-attempts <count>', 'Maximum automatic attempts per handoff kind', (value) => Number.parseInt(value, 10), 3)
+  .option('--no-runtime-qa', 'Do not run runtime QA during verify even when configured or declared')
+  .option('--install-mobile-tools', 'Allow runtime QA to install missing Maestro/Detox/Appium tooling')
   .option('--no-auto-build', 'Do not automatically run eligible build pipeline team jobs')
   .option('--wait-timeout-ms <ms>', 'Timeout for each auto-build team-start job', (value) => Number.parseInt(value, 10))
   .option('--json', 'Output as JSON')
@@ -1370,6 +1376,25 @@ Examples:
   $ omc product-cycle run --verify-command "npm run test:cycle"`)
   .action(async (root, options) => {
     const exitCode = await productCycleRunCommand(root, options);
+    process.exit(exitCode);
+  });
+
+/**
+ * Runtime QA command - build/smoke/simulator adapter surface
+ */
+const runtimeQaCmd = program
+  .command('runtime-qa')
+  .description('Run configured build/smoke/simulator checks and write runtime QA evidence');
+
+runtimeQaCmd
+  .command('run [root]')
+  .description('Run runtime QA from .omc/runtime-qa.json or detected project signals')
+  .option('--auto', 'Run in safe autonomous mode')
+  .option('--install-mobile-tools', 'Install missing Maestro/Detox/Appium tooling before mobile runtime QA')
+  .option('--dry-run', 'Show runtime QA steps without running commands')
+  .option('--json', 'Output as JSON')
+  .action(async (root, options) => {
+    const exitCode = await runtimeQaRunCommand(root, options);
     process.exit(exitCode);
   });
 

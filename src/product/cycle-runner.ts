@@ -28,6 +28,14 @@ import {
   type ProductResearchHandoffWriteResult,
   type ProductResearchRoute,
 } from './research-router.js';
+import {
+  runRuntimeQa,
+  shouldRunRuntimeQa,
+  writeRuntimeQaRunReport,
+  type RuntimeQaRunReport,
+  type RuntimeQaRunReportWriteResult,
+} from '../runtime-qa/runner.js';
+import { truncateInlineLog } from '../lib/summary-policy.js';
 
 export type CycleRunnerStopReason =
   | 'complete'
@@ -49,6 +57,10 @@ export interface CycleRunnerStageResult {
   research?: ProductResearchRoute[];
   expectedArtifacts?: Array<{ path: string; exists: boolean }>;
   evidence?: Record<string, unknown>;
+  runtimeQa?: {
+    report: RuntimeQaRunReport;
+    written?: RuntimeQaRunReportWriteResult;
+  };
 }
 
 export interface RunProductCycleOptions {
@@ -58,6 +70,9 @@ export interface RunProductCycleOptions {
   stopAt?: ProductCycleStage;
   dryRun?: boolean;
   verifyCommand?: string;
+  runtimeQa?: boolean;
+  runtimeQaAuto?: boolean;
+  runtimeQaInstallMobileTools?: boolean;
 }
 
 export interface RunProductCycleReport {
@@ -196,7 +211,13 @@ export function runProductCycle(options: RunProductCycleOptions = {}): RunProduc
       });
     }
 
-    const evaluation = evaluateStage(currentStage, snapshot, root, verifyCommand);
+    const evaluation = evaluateStage(currentStage, snapshot, root, {
+      verifyCommand,
+      runtimeQa: options.runtimeQa !== false,
+      runtimeQaAuto: options.runtimeQaAuto === true,
+      runtimeQaInstallMobileTools: options.runtimeQaInstallMobileTools === true,
+      dryRun,
+    });
     stageResults.push(evaluation);
 
     if (evaluation.outcome !== 'advance') {
@@ -329,7 +350,13 @@ function evaluateStage(
   stage: ProductCycleStage,
   snapshot: ProductCycleSnapshot,
   root: string,
-  verifyCommand: string,
+  options: {
+    verifyCommand: string;
+    runtimeQa: boolean;
+    runtimeQaAuto: boolean;
+    runtimeQaInstallMobileTools: boolean;
+    dryRun: boolean;
+  },
 ): CycleRunnerStageResult {
   switch (stage) {
     case 'discover':
@@ -343,7 +370,7 @@ function evaluateStage(
     case 'build':
       return evaluateBuild(root, snapshot);
     case 'verify':
-      return evaluateVerify(root, verifyCommand);
+      return evaluateVerify(root, options);
     case 'learn':
       return evaluateLearn(root);
     default:
@@ -540,8 +567,17 @@ function evaluateBuild(root: string, snapshot: ProductCycleSnapshot): CycleRunne
   };
 }
 
-function evaluateVerify(root: string, verifyCommand: string): CycleRunnerStageResult {
-  const trimmed = verifyCommand.trim();
+function evaluateVerify(
+  root: string,
+  options: {
+    verifyCommand: string;
+    runtimeQa: boolean;
+    runtimeQaAuto: boolean;
+    runtimeQaInstallMobileTools: boolean;
+    dryRun: boolean;
+  },
+): CycleRunnerStageResult {
+  const trimmed = options.verifyCommand.trim();
   if (!trimmed || trimmed.toLowerCase() === 'skip') {
     return {
       stage: 'verify',
@@ -576,11 +612,42 @@ function evaluateVerify(root: string, verifyCommand: string): CycleRunnerStageRe
   }
 
   if (result.status === 0) {
+    const runtimeQa = maybeRunRuntimeQa(root, options);
+    if (runtimeQa && runtimeQa.report.status === 'blocked') {
+      return {
+        stage: 'verify',
+        outcome: 'pause-for-human',
+        reason: `runtime QA blocked (${runtimeQa.report.adapter})`,
+        instruction: runtimeQa.report.install_proposal
+          ?? 'Configure .omc/runtime-qa.json or rerun with --install-mobile-tools after approving tool provisioning.',
+        runtimeQa,
+        evidence: { command: trimmed, exitCode: 0, runtimeQaStatus: runtimeQa.report.status },
+      };
+    }
+    if (runtimeQa && runtimeQa.report.status === 'failed') {
+      const reason = `runtime QA failed (${runtimeQa.report.adapter})`;
+      return {
+        stage: 'verify',
+        outcome: 'verify-failed',
+        reason,
+        instruction: 'omc runtime-qa run --auto --json',
+        runtimeQa,
+        interventions: planProductInterventions({
+          root,
+          stage: 'verify',
+          snapshot: readProductCycle(root),
+          failure: { kind: 'verify-command-failed', command: 'omc runtime-qa run --auto --json', reason },
+        }).routes,
+        evidence: { command: trimmed, exitCode: 0, runtimeQaStatus: runtimeQa.report.status },
+      };
+    }
+
     return {
       stage: 'verify',
       outcome: 'advance',
       reason: `verify passed (${trimmed})`,
-      evidence: { command: trimmed, exitCode: 0 },
+      runtimeQa,
+      evidence: { command: trimmed, exitCode: 0, runtimeQaStatus: runtimeQa?.report.status },
     };
   }
 
@@ -599,10 +666,30 @@ function evaluateVerify(root: string, verifyCommand: string): CycleRunnerStageRe
     evidence: {
       command: trimmed,
       exitCode: result.status,
-      stderr: truncate(result.stderr ?? ''),
-      stdout: truncate(result.stdout ?? ''),
+      stderr: truncateInlineLog(result.stderr ?? ''),
+      stdout: truncateInlineLog(result.stdout ?? ''),
     },
   };
+}
+
+function maybeRunRuntimeQa(
+  root: string,
+  options: {
+    runtimeQa: boolean;
+    runtimeQaAuto: boolean;
+    runtimeQaInstallMobileTools: boolean;
+    dryRun: boolean;
+  },
+): CycleRunnerStageResult['runtimeQa'] | undefined {
+  if (!options.runtimeQa || !shouldRunRuntimeQa(root)) return undefined;
+  const report = runRuntimeQa({
+    root,
+    auto: options.runtimeQaAuto,
+    dryRun: options.dryRun,
+    installMobileTools: options.runtimeQaInstallMobileTools,
+  });
+  const written = options.dryRun ? undefined : writeRuntimeQaRunReport(root, report);
+  return { report, written };
 }
 
 function evaluateLearn(root: string): CycleRunnerStageResult {
@@ -641,10 +728,6 @@ function evaluateLearn(root: string): CycleRunnerStageResult {
     reason: 'learning capture complete',
     expectedArtifacts: expected,
   };
-}
-
-function truncate(value: string, max = 600): string {
-  return value.length > max ? `${value.slice(0, max)}...` : value;
 }
 
 function finalize(report: Omit<RunProductCycleReport, 'ok'> & { ok: boolean }): RunProductCycleReport {
