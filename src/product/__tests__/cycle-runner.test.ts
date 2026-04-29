@@ -48,6 +48,7 @@ describe('runProductCycle', () => {
     expect(report.stagesAdvanced.map((entry) => `${entry.from}->${entry.to}`)).toContain('discover->rank');
     expect(report.stoppedReason).toBe('pause-for-llm');
     expect(report.pauseInstruction).toContain('priority-engine');
+    expect(existsSync(join(root, '.omc/feature-generation/current.json'))).toBe(true);
   });
 
   it('reports pause-for-human when select stage is missing portfolio trio', () => {

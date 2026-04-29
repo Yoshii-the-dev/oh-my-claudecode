@@ -25,6 +25,9 @@ reads:
   - path: ".omc/ecosystem/current.md"
     required: false
     use: "Long-horizon ecosystem loops and depth paths"
+  - path: ".omc/feature-generation/current.json"
+    required: false
+    use: "Source coverage, MCP readiness, and feature-generation gaps before ranking"
 writes:
   - path: ".omc/portfolio/current.json"
     status_field: "schema_version"
@@ -107,7 +110,8 @@ depends_on:
     5. `.omc/classification/features-core-context.md`
     6. `.omc/meaning/current.md`
     7. `.omc/ecosystem/current.md`
-    8. `.omc/provisioned/current.json` only to avoid recommending already-covered enabling work
+    8. `.omc/feature-generation/current.json` and `.omc/feature-generation/current.md`
+    9. `.omc/provisioned/current.json` only to avoid recommending already-covered enabling work
 
     Emit an input digest in the output:
     ```yaml
@@ -117,8 +121,12 @@ depends_on:
     capability_map: present|missing
     meaning_graph: present|missing
     ecosystem_map: present|missing
+    feature_generation_readiness: ready|needs-input|needs-mcp|blocked|missing
+    mcp_readiness: configured|missing-required|not-applicable
     product_stage: empty | pre-mvp | mvp | post-mvp
     ```
+
+    If `.omc/feature-generation/current.json` is missing or reports `needs-input`, `needs-mcp`, or `blocked`, treat the portfolio as evidence-constrained. You may still produce candidates, but must include a source-refresh or MCP setup learning task unless the current cycle goal is explicitly implementation-only.
 
     ## Phase 1 - Candidate Move Inventory
 

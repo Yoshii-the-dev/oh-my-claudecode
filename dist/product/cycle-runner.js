@@ -9,6 +9,7 @@ import { buildProductInterventionExecutionPlan, writeProductInterventionExecutio
 import { planProductResearch, writeProductResearchHandoff, } from './research-router.js';
 import { runRuntimeQa, shouldRunRuntimeQa, writeRuntimeQaRunReport, } from '../runtime-qa/runner.js';
 import { truncateInlineLog } from '../lib/summary-policy.js';
+import { planFeatureGeneration, writeFeatureGenerationPlan } from './feature-generation.js';
 const DEFAULT_VERIFY_COMMAND = 'npm test';
 const DEFAULT_MAX_STAGES = 10;
 const STAGE_ORDER = ['discover', 'rank', 'select', 'spec', 'build', 'verify', 'learn', 'complete'];
@@ -231,9 +232,9 @@ function writeInterventionArtifacts(root, snapshot, currentStage, evaluation) {
 function evaluateStage(stage, snapshot, root, options) {
     switch (stage) {
         case 'discover':
-            return evaluateDiscover(root);
+            return evaluateDiscover(root, snapshot, options.dryRun);
         case 'rank':
-            return evaluateRank(root);
+            return evaluateRank(root, snapshot, options.dryRun);
         case 'select':
             return evaluateSelect(root, snapshot.cycleId);
         case 'spec':
@@ -252,46 +253,59 @@ function evaluateStage(stage, snapshot, root, options) {
             };
     }
 }
-function evaluateDiscover(root) {
+function evaluateDiscover(root, snapshot, dryRun) {
     const capabilityPath = '.omc/product/capability-map/current.md';
     const ecosystemPath = '.omc/ecosystem/current.md';
+    const featurePlan = planFeatureGeneration({ root, goal: snapshot.cycleGoal });
     const expected = [
         { path: capabilityPath, exists: existsSync(resolve(root, capabilityPath)) },
         { path: ecosystemPath, exists: existsSync(resolve(root, ecosystemPath)) },
+        { path: '.omc/feature-generation/current.json', exists: existsSync(resolve(root, '.omc/feature-generation/current.json')) },
     ];
     if (expected[0].exists) {
+        if (!dryRun)
+            writeFeatureGenerationPlan(root, featurePlan);
         return {
             stage: 'discover',
             outcome: 'advance',
             reason: 'capability map present',
             expectedArtifacts: expected,
+            evidence: { featureGeneration: { status: featurePlan.status, sourceScore: featurePlan.source_score, nextAction: featurePlan.next_action } },
         };
     }
+    if (!dryRun)
+        writeFeatureGenerationPlan(root, featurePlan);
     return {
         stage: 'discover',
         outcome: 'pause-for-llm',
         reason: 'capability map missing',
         instruction: '/product-foundation "<cycle goal>" --foundation-lite',
         expectedArtifacts: expected,
+        evidence: { featureGeneration: { status: featurePlan.status, sourceScore: featurePlan.source_score, nextAction: featurePlan.next_action } },
     };
 }
-function evaluateRank(root) {
+function evaluateRank(root, snapshot, dryRun) {
     const opportunities = '.omc/opportunities/current.md';
     const ledger = '.omc/portfolio/current.json';
     const roadmap = '.omc/roadmap/current.md';
+    const featurePlan = planFeatureGeneration({ root, goal: snapshot.cycleGoal });
     const expected = [
         { path: opportunities, exists: existsSync(resolve(root, opportunities)) },
         { path: roadmap, exists: existsSync(resolve(root, roadmap)) },
         { path: ledger, exists: existsSync(resolve(root, ledger)) },
+        { path: '.omc/feature-generation/current.json', exists: existsSync(resolve(root, '.omc/feature-generation/current.json')) },
     ];
     const missing = expected.filter((entry) => !entry.exists).map((entry) => entry.path);
     if (missing.length > 0) {
+        if (!dryRun)
+            writeFeatureGenerationPlan(root, featurePlan);
         return {
             stage: 'rank',
             outcome: 'pause-for-llm',
             reason: `missing: ${missing.join(', ')}`,
-            instruction: '/priority-engine "<cycle goal>"',
+            instruction: `omc feature-generation audit --write --goal ${JSON.stringify(snapshot.cycleGoal ?? '<cycle goal>')} && /priority-engine ${JSON.stringify(snapshot.cycleGoal ?? '<cycle goal>')}`,
             expectedArtifacts: expected,
+            evidence: { featureGeneration: { status: featurePlan.status, sourceScore: featurePlan.source_score, nextAction: featurePlan.next_action } },
         };
     }
     const handoff = validateProductPipelineContracts({ root, stage: 'priority-handoff' });

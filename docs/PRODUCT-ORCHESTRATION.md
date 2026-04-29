@@ -116,6 +116,7 @@ Runtime FSM commands:
 omc product-cycle status
 omc product-cycle next
 omc product-cycle validate
+omc feature-generation audit --write --goal "<cycle goal>"
 omc product-cycle advance --to discover --goal "<cycle goal>"
 omc product-cycle advance --to build
 ```
@@ -198,13 +199,14 @@ It must not:
 
 ## Priority Engine Rules
 
-Priority Engine is the living portfolio layer between discovery and execution. It consumes the capability map, meaning graph, ecosystem map, research, competitors, and classifications.
+Priority Engine is the living portfolio layer between discovery and execution. It consumes the capability map, meaning graph, ecosystem map, research, competitors, classifications, and `.omc/feature-generation/current.json`.
 
 It must:
 
 - write `.omc/portfolio/current.json` as the compact source of truth for work items.
 - optionally write `.omc/portfolio/current.md` as a human-readable projection.
 - produce 20-40 candidate moves across product, UX, research, backend, quality, brand/content, and distribution.
+- consume or request `omc feature-generation audit --write --goal "<cycle goal>"` so feature generation is based on explicit source coverage and MCP readiness.
 - give every work item a stable `id`, `lane`, `status`, `confidence`, `dependencies`, `selected_cycle`, and `evidence`.
 - score candidates by user value, evidence, learning value, dependency unlock, ecosystem depth, effort fit, and risk reduction.
 - select exactly one core product slice, one enabling task, and one learning/research task for the next cycle.
@@ -212,6 +214,7 @@ It must:
 - write `.omc/opportunities/current.md`.
 - write `.omc/roadmap/current.md` as a rolling 2/6/12-week roadmap.
 - keep pre-MVP work centered on a first usable loop.
+- keep missing source/MCP setup visible as a selected learning/research task when it affects the selected cycle.
 - pass `omc portfolio validate` before downstream handoff.
 - pass `omc doctor product-contracts --stage priority-handoff` before downstream handoff.
 

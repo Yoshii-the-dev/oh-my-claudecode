@@ -29,6 +29,7 @@ import { cycleDocumentMigrateCommand, cycleDocumentProjectCommand, cycleDocument
 import { learningMigrateCommand, learningProjectCommand, learningValidateCommand, } from './commands/learning-document.js';
 import { historicalScorecardCommand } from './commands/historical-scorecard.js';
 import { portfolioMigrateCommand, portfolioProjectCommand, portfolioValidateCommand, } from './commands/portfolio.js';
+import { featureGenerationAuditCommand } from './commands/feature-generation.js';
 import { runScorecardCommand } from './commands/run-scorecard.js';
 import { sessionSearchCommand } from './commands/session-search.js';
 import { teamCommand } from './commands/team.js';
@@ -1407,6 +1408,27 @@ Examples:
   $ omc run-scorecard --json`)
     .action(async (root, options) => {
     await runScorecardCommand(root, options);
+});
+/**
+ * Feature generation command - source and MCP readiness for opportunity discovery
+ */
+const featureGenerationCmd = program
+    .command('feature-generation')
+    .description('Audit source and MCP readiness for feature/opportunity generation')
+    .addHelpText('after', `
+Examples:
+  $ omc feature-generation audit --goal "improve activation"
+  $ omc feature-generation audit /path/to/app --write
+  $ omc feature-generation audit --json`);
+featureGenerationCmd
+    .command('audit [root]')
+    .description('Check feature-generation source coverage and MCP setup recommendations')
+    .option('--goal <goal>', 'Product/cycle goal used for recommended handoff commands')
+    .option('--json', 'Output as JSON')
+    .option('--write', 'Write .omc/feature-generation/current.{json,md}')
+    .action(async (root, options) => {
+    const exitCode = await featureGenerationAuditCommand(root, options);
+    process.exit(exitCode);
 });
 /**
  * Portfolio command - Machine-readable product work-item ledger helpers

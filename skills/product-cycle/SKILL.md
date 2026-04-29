@@ -35,6 +35,7 @@ omc product-cycle status
 omc product-cycle next
 omc product-cycle validate
 omc product-cycle run --auto --auto-policy safe --json
+omc feature-generation audit --write --goal "ship first usable loop"
 omc product-cycle advance --to discover --goal "ship first usable loop"
 omc product-cycle advance --to build
 ```
@@ -63,8 +64,8 @@ It routes existing skills:
 
 | Cycle stage | Route |
 |---|---|
-| discover | `/product-foundation "<goal>" --foundation-lite` or the minimum missing discovery skill |
-| rank | `/priority-engine "<cycle goal>"` |
+| discover | `omc feature-generation audit --write --goal "<goal>"`, then `/product-foundation "<goal>" --foundation-lite` or the minimum missing discovery skill |
+| rank | `omc feature-generation audit --write --goal "<cycle goal>"`, then `/priority-engine "<cycle goal>"` |
 | select | controller confirms the selected-cycle trio from `.omc/portfolio/current.json` |
 | spec | controller writes cycle spec and runs `/product-experience-gate` |
 | build | `/product-pipeline` and/or `/backend-pipeline` |
@@ -79,6 +80,7 @@ It routes existing skills:
 4. Execute only the next valid stage. Do not skip ahead.
    - For autonomous execution, prefer `omc product-cycle run --auto --auto-policy safe --json`.
    - `--auto` may continue safe executable research/build/verify handoffs and must stop at human gates, missing dependency/provisioning approval, repeated failure, or max attempts.
+   - At discover/rank, `omc feature-generation audit --write --goal "<cycle goal>"` records source coverage and MCP setup gaps before priority ranking.
    - Check the stage with `omc product-cycle status`.
    - Ask for the next legal action with `omc product-cycle next`.
    - Use `omc product-cycle advance --to <stage>` only for explicit manual/inspection workflows after the stage exit criteria pass.
