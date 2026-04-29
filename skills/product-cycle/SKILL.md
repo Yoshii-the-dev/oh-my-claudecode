@@ -34,6 +34,7 @@ Runtime FSM commands:
 omc product-cycle status
 omc product-cycle next
 omc product-cycle validate
+omc product-cycle run --auto --auto-policy safe --json
 omc product-cycle advance --to discover --goal "ship first usable loop"
 omc product-cycle advance --to build
 ```
@@ -76,9 +77,11 @@ It routes existing skills:
 2. If an active incomplete cycle exists, resume it unless `--new-cycle` is explicit.
 3. If no active cycle exists, create one with `cycle_stage: discover`.
 4. Execute only the next valid stage. Do not skip ahead.
+   - For autonomous execution, prefer `omc product-cycle run --auto --auto-policy safe --json`.
+   - `--auto` may continue safe executable research/build/verify handoffs and must stop at human gates, missing dependency/provisioning approval, repeated failure, or max attempts.
    - Check the stage with `omc product-cycle status`.
    - Ask for the next legal action with `omc product-cycle next`.
-   - Advance with `omc product-cycle advance --to <stage>` after the stage exit criteria pass.
+   - Use `omc product-cycle advance --to <stage>` only for explicit manual/inspection workflows after the stage exit criteria pass.
 5. After rank, run:
 
 ```bash
@@ -108,6 +111,8 @@ omc doctor product-contracts --stage cycle
 
 9. Build only after the cycle and experience gates pass.
 10. Verify with evidence from tests/audits/acceptance criteria.
+    - When `.omc/runtime-qa.json` exists or the verification plan declares runtime smoke/simulator coverage, run `omc runtime-qa run --auto --json` and include `.omc/handoffs/runtime-qa/current.json` as evidence.
+    - Mobile simulator tooling is explicit opt-in: if Maestro/Detox/Appium is missing, rerun with `omc runtime-qa run --auto --install-mobile-tools --json` only after the user has approved provisioning. Product-cycle may pass the same approval with `omc product-cycle run --auto --install-mobile-tools --json`.
 11. Learn before completion: write `.omc/learning/current.md`, then set `cycle_stage: complete`.
 
 ## Cycle Artifact Contract

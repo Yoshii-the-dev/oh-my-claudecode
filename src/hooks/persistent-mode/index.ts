@@ -58,6 +58,7 @@ import type { TeamPipelinePhase } from '../team-pipeline/types.js';
 import { getActiveAgentSnapshot } from '../subagent-tracker/index.js';
 import type { IdleNotificationRepoState } from './idle-repo-state.js';
 import { truncatePromptForEcho } from '../../lib/truncate-prompt.js';
+import { readProductCycleAutoState } from '../../product/cycle-auto-state.js';
 
 export interface ToolErrorState {
   tool_name: string;
@@ -73,7 +74,7 @@ export interface PersistentModeResult {
   /** Message to inject into context */
   message: string;
   /** Which mode triggered the block */
-  mode: 'ralph' | 'ultrawork' | 'todo-continuation' | 'autopilot' | 'team' | 'ralplan' | 'none';
+  mode: 'ralph' | 'ultrawork' | 'todo-continuation' | 'autopilot' | 'team' | 'ralplan' | 'product-cycle' | 'none';
   /** Additional metadata */
   metadata?: {
     todoCount?: number;
@@ -1123,6 +1124,67 @@ function writeStopBreaker(directory: string, name: string, count: number, sessio
 const TEAM_PIPELINE_STOP_BLOCKER_MAX = 20;
 const TEAM_PIPELINE_STOP_BLOCKER_TTL_MS = 5 * 60 * 1000; // 5 min
 
+const PRODUCT_CYCLE_STOP_BLOCKER_MAX = 20;
+const PRODUCT_CYCLE_STOP_BLOCKER_TTL_MS = 5 * 60 * 1000; // 5 min
+
+async function checkProductCycleAuto(
+  sessionId?: string,
+  directory?: string,
+  cancelInProgress?: boolean
+): Promise<PersistentModeResult | null> {
+  const workingDir = resolveToWorktreeRoot(directory);
+  const state = readProductCycleAutoState(workingDir);
+
+  if (!state || !state.active || state.auto_policy !== 'safe' || isStaleState(state)) {
+    return null;
+  }
+
+  if (state.session_id && sessionId && state.session_id !== sessionId) {
+    return null;
+  }
+
+  if (cancelInProgress) {
+    return { shouldBlock: false, message: '', mode: 'product-cycle' };
+  }
+
+  const breakerCount = readStopBreaker(workingDir, 'product-cycle', sessionId, PRODUCT_CYCLE_STOP_BLOCKER_TTL_MS) + 1;
+  if (breakerCount > PRODUCT_CYCLE_STOP_BLOCKER_MAX) {
+    writeStopBreaker(workingDir, 'product-cycle', 0, sessionId);
+    return {
+      shouldBlock: false,
+      message: `[PRODUCT CYCLE CIRCUIT BREAKER] Stop enforcement exceeded ${PRODUCT_CYCLE_STOP_BLOCKER_MAX} reinforcements. Allowing stop to prevent infinite blocking.`,
+      mode: 'product-cycle',
+    };
+  }
+  writeStopBreaker(workingDir, 'product-cycle', breakerCount, sessionId);
+
+  return {
+    shouldBlock: true,
+    message: `<product-cycle-continuation>
+
+[PRODUCT CYCLE AUTO - STAGE: ${(state.cycle_stage ?? 'unknown').toUpperCase()} | REINFORCEMENT ${breakerCount}/${PRODUCT_CYCLE_STOP_BLOCKER_MAX}]
+
+An autonomous product-cycle run is active with auto_policy=safe.
+Continue it by running:
+
+\`\`\`bash
+omc product-cycle run "${workingDir}" --auto --auto-policy safe --json
+\`\`\`
+
+Do not stop while safe executable handoffs remain. Stop only for complete, human_gate, missing dependency/provisioning approval, repeated failure, or max attempts.
+
+</product-cycle-continuation>
+
+---
+
+`,
+    mode: 'product-cycle',
+    metadata: {
+      phase: state.cycle_stage,
+    },
+  };
+}
+
 /**
  * Check Team Pipeline state for standalone team mode enforcement.
  * When team runs WITHOUT ralph, this provides the stop-hook blocking.
@@ -1768,6 +1830,12 @@ export async function checkPersistentModes(
     if (ralplanResult) {
       return ralplanResult;
     }
+  }
+
+  // Priority 1.75: Product Cycle safe auto mode
+  const productCycleResult = await checkProductCycleAuto(sessionId, workingDir, cancelInProgress);
+  if (productCycleResult) {
+    return productCycleResult;
   }
 
   // Priority 1.8: Team Pipeline (standalone team mode)

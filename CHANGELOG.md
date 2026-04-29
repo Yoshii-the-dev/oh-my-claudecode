@@ -1,3 +1,16 @@
+# oh-my-claudecode v4.26.2: auto orchestration, runtime QA, compact reports
+
+## Release Notes
+
+### Highlights
+
+- Added safe `product-cycle --auto` orchestration with persistent continuation gates.
+- Added `runtime-qa` build/smoke/simulator evidence with web, CLI, project-script, and mobile adapters.
+- Added explicit mobile simulator provisioning for Maestro, Detox, and Appium through `--install-mobile-tools`.
+- Added compact summary policy controls for bounded agent/stage/final reports.
+
+---
+
 # oh-my-claudecode v4.21.1: typed JSON documents,
 
 ## Release Notes
