@@ -36,7 +36,7 @@ describe('product cycle CLI command', () => {
       'research-run',
     ]));
     const runtimeQaCmd = buildProgram().commands.find((command) => command.name() === 'runtime-qa');
-    expect(runtimeQaCmd?.commands.map((command) => command.name())).toContain('run');
+    expect(runtimeQaCmd?.commands.map((command) => command.name())).toEqual(expect.arrayContaining(['init', 'run']));
   });
 
   it('prints pending intervention handoff as JSON', async () => {

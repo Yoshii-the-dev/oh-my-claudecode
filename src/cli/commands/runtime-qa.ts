@@ -1,8 +1,10 @@
 import { colors } from '../utils/formatting.js';
 import {
+  initRuntimeQaConfig,
   renderRuntimeQaRunReport,
   runRuntimeQa,
   writeRuntimeQaRunReport,
+  type RuntimeQaConfig,
   type RuntimeQaCommandRunner,
 } from '../../runtime-qa/runner.js';
 import { loadConfig } from '../../config/loader.js';
@@ -13,6 +15,9 @@ export interface RuntimeQaCommandOptions {
   dryRun?: boolean;
   json?: boolean;
   installMobileTools?: boolean;
+  target?: string;
+  write?: boolean;
+  force?: boolean;
   commandRunner?: RuntimeQaCommandRunner;
 }
 
@@ -33,6 +38,7 @@ export async function runtimeQaRunCommand(
     dryRun: options.dryRun,
     commandRunner: options.commandRunner,
     installMobileTools: options.installMobileTools,
+    writeDetectedConfig: options.auto === true,
     summaryPolicy: config.summaryPolicy,
   });
   const written = options.dryRun ? undefined : writeRuntimeQaRunReport(root ?? process.cwd(), report);
@@ -50,4 +56,55 @@ export async function runtimeQaRunCommand(
   }
 
   return report.status === 'failed' || report.status === 'blocked' ? 1 : 0;
+}
+
+export async function runtimeQaInitCommand(
+  root: string | undefined,
+  options: RuntimeQaCommandOptions,
+  logger: LoggerLike = console,
+): Promise<number> {
+  const target = normalizeTarget(options.target);
+  if (options.target && !target) {
+    logger.error(colors.red(`Invalid --target: ${options.target}`));
+    logger.error(colors.gray('Valid targets: web, cli, service, mobile, project-script'));
+    return 2;
+  }
+
+  const result = initRuntimeQaConfig({
+    root,
+    target,
+    write: options.write !== false,
+    force: options.force === true,
+  });
+
+  if (options.json) {
+    logger.log(JSON.stringify(result, null, 2));
+  } else {
+    logger.log(colors.bold('Runtime QA config'));
+    logger.log(`  path: ${result.path}`);
+    logger.log(`  target: ${result.config.target ?? 'project-script'}`);
+    logger.log(`  adapter: ${result.config.adapter ?? 'project-script'}`);
+    logger.log(`  written: ${result.written}`);
+    logger.log(`  reason: ${result.reason}`);
+    if (!result.config.commands?.smoke && result.config.target === 'mobile') {
+      logger.log(colors.yellow('  mobile smoke command was not detected; set commands.smoke or mobile.command before verify can pass.'));
+    }
+  }
+
+  return result.config.target === 'mobile' && !result.config.commands?.smoke ? 1 : 0;
+}
+
+function normalizeTarget(value: string | undefined): RuntimeQaConfig['target'] | undefined {
+  if (!value) return undefined;
+  const normalized = value.trim().toLowerCase();
+  if (
+    normalized === 'web'
+    || normalized === 'cli'
+    || normalized === 'service'
+    || normalized === 'mobile'
+    || normalized === 'project-script'
+  ) {
+    return normalized;
+  }
+  return undefined;
 }

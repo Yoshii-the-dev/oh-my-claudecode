@@ -11,6 +11,10 @@ import { PRODUCT_RESEARCH_HANDOFF_RELATIVE_PATH, readProductResearchHandoff, } f
 import { buildProductResearchExecutionPlan, PRODUCT_RESEARCH_EXECUTION_PLAN_RELATIVE_PATH, readProductResearchExecutionPlan, renderProductResearchExecutionPlan, writeProductResearchExecutionPlan, } from '../../product/research-execution-plan.js';
 import { PRODUCT_RESEARCH_RUN_REPORT_RELATIVE_PATH, renderProductResearchRunReport, runProductResearchExecutionPlan, writeProductResearchRunReport, } from '../../product/research-runner.js';
 import { emitProductCycleEvent } from '../../telemetry/emit.js';
+import { buildAutoAttemptKey, decideAutoAction, } from '../../product/auto-decision.js';
+import { incrementProductCycleAutoAttempt, readProductCycleAutoState, startProductCycleAutoState, updateProductCycleAutoState, } from '../../product/cycle-auto-state.js';
+import { loadConfig } from '../../config/loader.js';
+import { limitFinalReport } from '../../lib/summary-policy.js';
 export async function productCycleStatusCommand(root, options, logger = console) {
     const snapshot = getNextProductCycleAction(root);
     logger.log(options.json ? JSON.stringify(snapshot, null, 2) : renderSnapshot(snapshot));
@@ -65,6 +69,14 @@ export async function productCycleRunCommand(root, options, logger = console) {
         logger.error(colors.red(`Invalid --stop-at stage: ${stopAt}`));
         return 2;
     }
+    if (options.autoPolicy && !isAutoPolicyValue(options.autoPolicy)) {
+        logger.error(colors.red(`Invalid --auto-policy: ${options.autoPolicy}`));
+        logger.error(colors.gray('Valid auto policies: off, safe'));
+        return 2;
+    }
+    const autoPolicy = resolveAutoPolicy(options);
+    const rootPath = root ?? process.cwd();
+    const config = loadConfig();
     const report = runProductCycle({
         root,
         goal: options.goal,
@@ -72,17 +84,50 @@ export async function productCycleRunCommand(root, options, logger = console) {
         stopAt: stopAt,
         dryRun: options.dryRun,
         verifyCommand: options.verifyCommand,
+        runtimeQa: options.runtimeQa,
+        runtimeQaAuto: autoPolicy === 'safe',
+        runtimeQaInstallMobileTools: options.installMobileTools === true,
     });
-    const autoBuild = maybeRunBuildInterventionsAndResume(root, report, options);
+    if (autoPolicy === 'safe' && options.dryRun !== true) {
+        const snapshot = readProductCycle(rootPath);
+        startProductCycleAutoState({
+            root: rootPath,
+            autoPolicy,
+            cycleId: snapshot.cycleId,
+            cycleGoal: snapshot.cycleGoal,
+            cycleStage: snapshot.stage,
+        });
+    }
+    const autoResult = autoPolicy === 'safe'
+        ? runSafeAutoCycle(root, report, options, autoPolicy)
+        : { finalReport: report, autoRuns: [], autoBuild: undefined };
+    const autoBuild = autoResult.autoBuild;
     await emitProductCycleRunTelemetry(root, report, options, autoBuild);
+    await emitProductCycleAutoRunTelemetry(root, autoResult.autoRuns, autoPolicy);
     if (options.json) {
-        logger.log(JSON.stringify({ ...report, autoBuild }, null, 2));
+        logger.log(JSON.stringify({
+            ...report,
+            autoPolicy,
+            autoBuild,
+            autoRuns: autoResult.autoRuns,
+            finalReport: autoResult.finalReport,
+        }, null, 2));
     }
     else {
-        logger.log(renderRunReport(report, autoBuild));
+        logger.log(limitFinalReport(renderRunReport(report, autoBuild, autoResult.autoRuns), config.summaryPolicy));
     }
-    const finalReport = autoBuild?.resumedCycleReport ?? report;
-    return finalReport.ok && autoBuild?.status !== 'failed' ? 0 : 1;
+    const finalReport = autoResult.finalReport;
+    if (autoPolicy === 'safe' && options.dryRun !== true) {
+        updateProductCycleAutoState(rootPath, {
+            active: false,
+            completed_at: new Date().toISOString(),
+            cycle_stage: finalReport.endedAtStage,
+            stopped_reason: finalReport.stoppedReason,
+        });
+    }
+    const autoFailed = autoResult.autoRuns.some((run) => (run.decision.action === 'block'
+        || run.runReport?.status === 'failed'));
+    return finalReport.ok && !autoFailed && autoBuild?.status !== 'failed' ? 0 : 1;
 }
 export async function productCycleInterventionsCommand(root, options, logger = console) {
     const handoff = readProductInterventionHandoff(root);
@@ -422,6 +467,23 @@ async function emitProductResearchRunTelemetry(root, report, resumedCycleReport)
         await emitProductCycleRunTelemetry(root, resumedCycleReport, {}, undefined);
     }
 }
+async function emitProductCycleAutoRunTelemetry(root, autoRuns, autoPolicy) {
+    const context = productCycleTelemetryContext(root);
+    for (const run of autoRuns) {
+        await emitProductCycleEvent({
+            ...context,
+            event: 'auto_decision',
+            cycle_stage: run.stage,
+            auto_policy: autoPolicy,
+            handoff_kind: run.kind,
+            action: run.decision.action,
+            reason: run.decision.reason,
+            attempt_key: run.attemptKey,
+            attempt_count: run.attemptCount,
+            run_status: run.runReport?.status,
+        });
+    }
+}
 function productCycleTelemetryContext(root) {
     const directory = root ?? process.cwd();
     const snapshot = readProductCycle(directory);
@@ -440,96 +502,209 @@ function autoBuildEventName(status) {
         return 'build_auto_failed';
     return 'build_auto_not_run';
 }
-function maybeRunBuildInterventionsAndResume(root, report, options) {
-    if (options.autoBuild === false || options.dryRun === true)
-        return undefined;
-    if (options.stopAt === 'build')
-        return undefined;
-    if (report.stoppedReason !== 'pause-for-llm' || report.endedAtStage !== 'build')
-        return undefined;
-    if (!report.interventionExecutionPlan)
-        return undefined;
-    const loaded = loadOrBuildInterventionExecutionPlan(root, options);
-    if (!loaded.plan) {
-        return {
-            status: 'not-run',
-            reason: 'No product-cycle intervention execution plan was available after build routing.',
-        };
+function runSafeAutoCycle(root, initialReport, options, autoPolicy) {
+    const rootPath = root ?? process.cwd();
+    const maxAttempts = options.maxAutoAttempts ?? 3;
+    const autoRuns = [];
+    let report = initialReport;
+    let autoBuild;
+    for (let loop = 0; loop < maxAttempts * 3; loop += 1) {
+        if (report.stoppedReason === 'complete' || report.stoppedReason === 'pause-for-human' || report.stoppedReason === 'blocked') {
+            break;
+        }
+        if (report.researchHandoff) {
+            const loaded = loadOrBuildResearchExecutionPlan(root, options);
+            if (!loaded.plan)
+                break;
+            const attemptKey = buildAutoAttemptKey(report.endedAtStage, 'research');
+            const attemptCount = readProductCycleAutoState(rootPath)?.attempt_counts[attemptKey] ?? 0;
+            const decision = decideAutoAction({
+                policy: autoPolicy,
+                stage: report.endedAtStage,
+                handoffKind: 'research',
+                plan: loaded.plan,
+                missingDependency: loaded.plan.steps.some((step) => step.execution_surface === 'stack-plan'),
+                attemptCount,
+                maxAttempts,
+                safeStepPredicate: (step) => step.execution_surface === 'agent-prompt'
+                    && step.executable
+                    && Boolean(step.argv?.length),
+            });
+            updateProductCycleAutoState(rootPath, {
+                cycle_stage: report.endedAtStage,
+                stopped_reason: report.stoppedReason,
+                last_decision: decision,
+            });
+            if (decision.action !== 'run') {
+                autoRuns.push({ kind: 'research', stage: report.endedAtStage, decision, attemptKey, attemptCount });
+                break;
+            }
+            const nextAttemptCount = incrementProductCycleAutoAttempt(rootPath, attemptKey);
+            const runReport = runProductResearchExecutionPlan(loaded.plan, {
+                root,
+                dryRun: options.dryRun,
+                maxSteps: options.maxSteps,
+                sourcePlan: PRODUCT_RESEARCH_EXECUTION_PLAN_RELATIVE_PATH,
+            });
+            const written = options.dryRun ? undefined : writeProductResearchRunReport(rootPath, runReport);
+            const resumedCycleReport = shouldResumeCycleAfterResearch(runReport, options)
+                ? runProductCycle({
+                    root,
+                    maxStages: options.maxStages,
+                    stopAt: options.stopAt,
+                    verifyCommand: options.verifyCommand,
+                    runtimeQa: options.runtimeQa,
+                    runtimeQaAuto: true,
+                    runtimeQaInstallMobileTools: options.installMobileTools === true,
+                })
+                : undefined;
+            autoRuns.push({
+                kind: 'research',
+                stage: report.endedAtStage,
+                decision,
+                attemptKey,
+                attemptCount: nextAttemptCount,
+                runReport,
+                written,
+                resumedCycleReport,
+            });
+            if (!resumedCycleReport || runReport.status === 'failed')
+                break;
+            report = resumedCycleReport;
+            continue;
+        }
+        if (report.interventionExecutionPlan) {
+            const loaded = loadOrBuildInterventionExecutionPlan(root, options);
+            if (!loaded.plan)
+                break;
+            const attemptKey = buildAutoAttemptKey(report.endedAtStage, 'intervention');
+            const attemptCount = readProductCycleAutoState(rootPath)?.attempt_counts[attemptKey] ?? 0;
+            const decision = decideAutoAction({
+                policy: autoPolicy,
+                stage: report.endedAtStage,
+                handoffKind: 'intervention',
+                plan: loaded.plan,
+                humanGate: loaded.plan.cycle_stage === 'build' && options.autoBuild === false,
+                missingDependency: loaded.plan.steps.some((step) => step.execution_surface === 'stack-plan'),
+                attemptCount,
+                maxAttempts,
+                safeStepPredicate: (step) => isSafeAutoInterventionStep(loaded.plan.cycle_stage, step),
+            });
+            updateProductCycleAutoState(rootPath, {
+                cycle_stage: report.endedAtStage,
+                stopped_reason: report.stoppedReason,
+                last_decision: decision,
+            });
+            if (decision.action !== 'run') {
+                autoRuns.push({ kind: 'intervention', stage: report.endedAtStage, decision, attemptKey, attemptCount });
+                break;
+            }
+            const nextAttemptCount = incrementProductCycleAutoAttempt(rootPath, attemptKey);
+            const runReport = runProductInterventionExecutionPlan(loaded.plan, {
+                root,
+                maxSteps: options.maxSteps,
+                waitForTeamJobs: loaded.plan.steps.some((step) => step.execution_surface === 'team-start'),
+                teamWaitTimeoutMs: options.waitTimeoutMs,
+                sourcePlan: PRODUCT_INTERVENTION_EXECUTION_PLAN_RELATIVE_PATH,
+                commandRunner: options.interventionCommandRunner,
+            });
+            const written = options.dryRun ? undefined : writeProductInterventionRunReport(rootPath, runReport);
+            let resumedCycleReport;
+            if (runReport.status === 'passed' && loaded.plan.cycle_stage === 'build') {
+                const advance = advanceProductCycle({ root, to: 'verify' });
+                if (!advance.ok) {
+                    autoBuild = {
+                        status: 'failed',
+                        reason: `Build completed, but advancing build -> verify failed: ${advance.issues.map((issue) => issue.code).join(', ')}`,
+                        plan: loaded.plan,
+                        planWritten: loaded.written,
+                        runReport,
+                        runReportWritten: written,
+                    };
+                }
+                else {
+                    resumedCycleReport = runProductCycle({
+                        root,
+                        maxStages: options.maxStages,
+                        stopAt: options.stopAt,
+                        verifyCommand: options.verifyCommand,
+                        runtimeQa: options.runtimeQa,
+                        runtimeQaAuto: true,
+                        runtimeQaInstallMobileTools: options.installMobileTools === true,
+                    });
+                    autoBuild = {
+                        status: 'passed',
+                        reason: 'Build pipeline team job completed; product cycle advanced to verify and resumed.',
+                        plan: loaded.plan,
+                        planWritten: loaded.written,
+                        runReport,
+                        runReportWritten: written,
+                        resumedCycleReport,
+                    };
+                }
+            }
+            else if (runReport.status === 'passed') {
+                resumedCycleReport = runProductCycle({
+                    root,
+                    maxStages: options.maxStages,
+                    stopAt: options.stopAt,
+                    verifyCommand: options.verifyCommand,
+                    runtimeQa: options.runtimeQa,
+                    runtimeQaAuto: true,
+                    runtimeQaInstallMobileTools: options.installMobileTools === true,
+                });
+            }
+            else if (loaded.plan.cycle_stage === 'build') {
+                autoBuild = {
+                    status: 'failed',
+                    reason: `Build intervention run ended with status ${runReport.status}.`,
+                    plan: loaded.plan,
+                    planWritten: loaded.written,
+                    runReport,
+                    runReportWritten: written,
+                };
+            }
+            autoRuns.push({
+                kind: 'intervention',
+                stage: report.endedAtStage,
+                decision,
+                attemptKey,
+                attemptCount: nextAttemptCount,
+                runReport,
+                written,
+                resumedCycleReport,
+            });
+            if (!resumedCycleReport || runReport.status !== 'passed')
+                break;
+            report = resumedCycleReport;
+            continue;
+        }
+        break;
     }
-    const eligibility = autoBuildEligibility(loaded.plan);
-    if (!eligibility.ok) {
-        return {
-            status: 'not-run',
-            reason: eligibility.reason,
-            plan: loaded.plan,
-            planWritten: loaded.written,
-        };
-    }
-    const runReport = runProductInterventionExecutionPlan(loaded.plan, {
-        root,
-        maxSteps: options.maxSteps,
-        waitForTeamJobs: true,
-        teamWaitTimeoutMs: options.waitTimeoutMs,
-        sourcePlan: PRODUCT_INTERVENTION_EXECUTION_PLAN_RELATIVE_PATH,
-        commandRunner: options.interventionCommandRunner,
-    });
-    const runReportWritten = writeProductInterventionRunReport(root ?? process.cwd(), runReport);
-    if (runReport.status !== 'passed') {
-        return {
-            status: 'failed',
-            reason: `Build intervention run ended with status ${runReport.status}.`,
-            plan: loaded.plan,
-            planWritten: loaded.written,
-            runReport,
-            runReportWritten,
-        };
-    }
-    const advance = advanceProductCycle({ root, to: 'verify' });
-    if (!advance.ok) {
-        return {
-            status: 'failed',
-            reason: `Build completed, but advancing build -> verify failed: ${advance.issues.map((issue) => issue.code).join(', ')}`,
-            plan: loaded.plan,
-            planWritten: loaded.written,
-            runReport,
-            runReportWritten,
-        };
-    }
-    const resumedCycleReport = runProductCycle({
-        root,
-        maxStages: options.maxStages,
-        stopAt: options.stopAt,
-        verifyCommand: options.verifyCommand,
-    });
-    return {
-        status: 'passed',
-        reason: 'Build pipeline team job completed; product cycle advanced to verify and resumed.',
-        plan: loaded.plan,
-        planWritten: loaded.written,
-        runReport,
-        runReportWritten,
-        resumedCycleReport,
-    };
+    return { finalReport: report, autoRuns, autoBuild };
 }
-function autoBuildEligibility(plan) {
-    if (plan.cycle_stage !== 'build') {
-        return { ok: false, reason: `Intervention plan is for ${plan.cycle_stage}, not build.` };
+function isSafeAutoInterventionStep(stage, step) {
+    if (!step.executable || !step.argv || step.argv.length === 0)
+        return false;
+    if (stage === 'build') {
+        return step.execution_surface === 'team-start'
+            && (step.agent === 'product-pipeline' || step.agent === 'backend-pipeline');
     }
-    if (plan.steps.length === 0) {
-        return { ok: false, reason: 'Intervention plan has no steps.' };
-    }
-    const unsafe = plan.steps.find((step) => (!step.executable
-        || step.execution_surface !== 'team-start'
-        || (step.agent !== 'product-pipeline' && step.agent !== 'backend-pipeline')));
-    if (unsafe) {
-        return {
-            ok: false,
-            reason: `Auto-build only runs product/backend team-start steps; ${unsafe.route_id} is ${unsafe.execution_surface}.`,
-        };
-    }
-    return { ok: true };
+    return step.execution_surface === 'agent-prompt';
 }
-function renderRunReport(report, autoBuild) {
+function resolveAutoPolicy(options) {
+    const raw = options.autoPolicy?.trim().toLowerCase();
+    if (raw === 'safe')
+        return 'safe';
+    if (raw === 'off')
+        return 'off';
+    return options.auto === true ? 'safe' : 'off';
+}
+function isAutoPolicyValue(value) {
+    const normalized = value.trim().toLowerCase();
+    return normalized === 'off' || normalized === 'safe';
+}
+function renderRunReport(report, autoBuild, autoRuns = []) {
     const lines = [];
     lines.push(colors.bold(`Product cycle runner — stopped: ${report.stoppedReason}`));
     if (report.startedFromStage) {
@@ -564,6 +739,19 @@ function renderRunReport(report, autoBuild) {
                     const marker = route.required ? 'required research' : 'recommended research';
                     lines.push(`    ${colors.gray(marker)} ${route.agent}: ${route.command}`);
                 }
+            }
+            if (result.runtimeQa) {
+                lines.push(`    ${colors.gray('runtime-qa')} ${result.runtimeQa.report.status}: ${result.runtimeQa.report.adapter}`);
+            }
+        }
+    }
+    if (autoRuns.length > 0) {
+        lines.push('');
+        lines.push(colors.bold('Auto runs:'));
+        for (const run of autoRuns) {
+            lines.push(`  ${run.kind} ${run.stage ?? '-'}: ${run.decision.action}/${run.decision.reason}`);
+            if (run.runReport) {
+                lines.push(`    status: ${run.runReport.status}`);
             }
         }
     }

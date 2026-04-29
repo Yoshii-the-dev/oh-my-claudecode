@@ -97,6 +97,14 @@ describe('product/agent pipeline contracts', () => {
         expect(skill).toContain('omc portfolio validate');
         expect(skill).toContain('product, UX, research, backend, quality, brand/content, and distribution');
     });
+    it('does not default pre-MVP learning work to tester recruitment', () => {
+        const agent = readRepoFile('agents/priority-engine.md');
+        const skill = readRepoFile('skills/priority-engine/SKILL.md');
+        expect(agent).toContain('External tester/design-partner recruitment is allowed only when the user explicitly requests it');
+        expect(agent).toContain('simulator/runtime QA');
+        expect(skill).toContain('do not default to tester recruitment');
+        expect(skill).toContain('simulator/runtime smoke');
+    });
     it('keeps the knitting replay fixture focused on product-surface debt before backend packages', () => {
         const agent = readRepoFile('agents/priority-engine.md');
         expect(agent).toContain('Knitting regression rule');

@@ -125,7 +125,7 @@ depends_on:
     Generate 20-40 candidate moves. Use these lanes:
     - `product`: first usable loops, core workflow slices, retention mechanics
     - `ux`: app shell, navigation, onboarding, reader/editor surfaces, empty/error states
-    - `research`: user interviews, design partner recruitment, competitor probes, usability tests
+    - `research`: founder dogfood, simulator/runtime smoke, heuristic UX review, competitor/source refresh, user interviews/usability tests only when users or partners exist
     - `backend`: domain model, persistence, import/export, background jobs, integration seams
     - `quality`: tests, observability, fixture coverage, accessibility/performance checks
     - `brand-content`: meaning hooks, content angles, sample/demo content, educational assets
@@ -169,6 +169,7 @@ depends_on:
     - If a selected core or enabling item has LOW confidence, proxy-only evidence, unknown user behavior, or missing usability evidence, create a corresponding research/learning candidate.
     - The selected cycle must include that research/learning item unless a stronger evidence source is added before handoff.
     - The rolling roadmap must name the research debt as a learning gate; do not hide it in prose or a generic confidence note.
+    - For empty/pre-MVP products, prefer founder-dogfood, simulator/runtime QA, heuristic UX review, or source/competitor refresh over tester recruitment. External tester/design-partner recruitment is allowed only when the user explicitly requests it or current artifacts show an active partner/user program.
 
     ## Phase 3 - Select The Cycle Portfolio
 

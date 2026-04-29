@@ -17,6 +17,11 @@ export interface ProductCycleCommandOptions {
     waitTimeoutMs?: number;
     resumeCycle?: boolean;
     autoBuild?: boolean;
+    auto?: boolean;
+    autoPolicy?: string;
+    maxAutoAttempts?: number;
+    runtimeQa?: boolean;
+    installMobileTools?: boolean;
     interventionCommandRunner?: ProductInterventionCommandRunner;
 }
 interface LoggerLike {

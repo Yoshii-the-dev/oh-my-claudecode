@@ -687,6 +687,7 @@ function maybeRunRuntimeQa(
     auto: options.runtimeQaAuto,
     dryRun: options.dryRun,
     installMobileTools: options.runtimeQaInstallMobileTools,
+    writeDetectedConfig: options.runtimeQaAuto,
   });
   const written = options.dryRun ? undefined : writeRuntimeQaRunReport(root, report);
   return { report, written };

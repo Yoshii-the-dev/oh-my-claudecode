@@ -30,6 +30,8 @@ describe('product cycle CLI command', () => {
             'research-plan',
             'research-run',
         ]));
+        const runtimeQaCmd = buildProgram().commands.find((command) => command.name() === 'runtime-qa');
+        expect(runtimeQaCmd?.commands.map((command) => command.name())).toEqual(expect.arrayContaining(['init', 'run']));
     });
     it('prints pending intervention handoff as JSON', async () => {
         const root = mkdtempSync(join(tmpdir(), 'omc-product-cycle-cli-'));
@@ -261,6 +263,7 @@ describe('product cycle CLI command', () => {
             const { productCycleRunCommand } = await import('../commands/product-cycle.js');
             const exitCode = await productCycleRunCommand(root, {
                 json: true,
+                auto: true,
                 verifyCommand: 'true',
                 interventionCommandRunner: commandRunner,
             }, logger);
@@ -268,6 +271,7 @@ describe('product cycle CLI command', () => {
             expect(commandRunner).toHaveBeenCalledTimes(2);
             expect(existsSync(join(root, '.omc/handoffs/product-cycle-interventions/run-report.json'))).toBe(true);
             const output = JSON.parse(String(logger.log.mock.calls[0]?.[0] ?? '{}'));
+            expect(output.autoPolicy).toBe('safe');
             expect(output.autoBuild?.status).toBe('passed');
             expect(output.autoBuild?.runReport?.status).toBe('passed');
             expect(output.autoBuild?.resumedCycleReport?.stoppedReason).toBe('pause-for-llm');
@@ -279,6 +283,33 @@ describe('product cycle CLI command', () => {
             expect(telemetry).toContain('"event":"build_team_completed"');
             expect(telemetry).toContain('"event":"build_auto_completed"');
             expect(telemetry).toContain('"event":"auto_resume"');
+        }
+        finally {
+            rmSync(root, { recursive: true, force: true });
+        }
+    });
+    it('does not auto-run build interventions unless --auto is enabled', async () => {
+        const root = mkdtempSync(join(tmpdir(), 'omc-product-cycle-auto-opt-in-cli-'));
+        try {
+            writeBuildCycle(root);
+            writeBackendResearch(root);
+            const commandRunner = vi.fn(() => ({ status: 0, stdout: JSON.stringify({ jobId: 'team-job-1' }), stderr: '' }));
+            const logger = {
+                log: vi.fn(),
+                error: vi.fn(),
+            };
+            const { productCycleRunCommand } = await import('../commands/product-cycle.js');
+            const exitCode = await productCycleRunCommand(root, {
+                json: true,
+                verifyCommand: 'true',
+                interventionCommandRunner: commandRunner,
+            }, logger);
+            expect(exitCode).toBe(0);
+            expect(commandRunner).not.toHaveBeenCalled();
+            const output = JSON.parse(String(logger.log.mock.calls[0]?.[0] ?? '{}'));
+            expect(output.autoPolicy).toBe('off');
+            expect(output.autoRuns).toEqual([]);
+            expect(output.stoppedReason).toBe('pause-for-llm');
         }
         finally {
             rmSync(root, { recursive: true, force: true });

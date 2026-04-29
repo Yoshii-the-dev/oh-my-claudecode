@@ -1813,6 +1813,14 @@ function buildDefaultConfig() {
       },
       blockingTools: ["Edit", "MultiEdit", "Write", "Agent", "Task"],
       executionKeywords: ["ralph", "ultrawork", "autopilot"]
+    },
+    summaryPolicy: {
+      mode: "compact",
+      agentResultMaxWords: 120,
+      stageReportMaxLines: 20,
+      finalReportMaxLines: 35,
+      inlineLogMaxChars: 800,
+      jsonSidecarRequired: true
     }
   };
 }

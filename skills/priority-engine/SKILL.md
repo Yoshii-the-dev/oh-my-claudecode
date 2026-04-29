@@ -89,6 +89,8 @@ If evidence is weak, do not just continue with LOW confidence. Convert the uncer
 - selected_cycle: same cycle id as the weak product/enabling item
 - expected_learning: the decision this research will unlock
 
+For empty/pre-MVP products, do not default to tester recruitment, team onboarding, or a design-partner program. Those moves are valid only when the user explicitly asks for external validation or current artifacts show active users/partners. The default learning task should be executable by the current team now: simulator/runtime smoke, founder dogfood, heuristic UX review, analytics instrumentation check, competitor/source refresh, or a small scripted usability walkthrough.
+
 Then keep it visible in `.omc/roadmap/current.md` as research debt or a learning/research gate.
 
 ## Outputs

@@ -199,6 +199,14 @@ export function buildDefaultConfig() {
             blockingTools: ["Edit", "MultiEdit", "Write", "Agent", "Task"],
             executionKeywords: ["ralph", "ultrawork", "autopilot"],
         },
+        summaryPolicy: {
+            mode: "compact",
+            agentResultMaxWords: 120,
+            stageReportMaxLines: 20,
+            finalReportMaxLines: 35,
+            inlineLogMaxChars: 800,
+            jsonSidecarRequired: true,
+        },
     };
 }
 export const DEFAULT_CONFIG = buildDefaultConfig();
@@ -844,6 +852,18 @@ export function generateConfigSchema() {
                         default: "warn",
                         description: "How prompt workflows should react when the configured company-context tool call fails",
                     },
+                },
+            },
+            summaryPolicy: {
+                type: "object",
+                description: "Compact reporting and token budget policy",
+                properties: {
+                    mode: { type: "string", enum: ["compact", "normal", "verbose"], default: "compact" },
+                    agentResultMaxWords: { type: "integer", default: 120, minimum: 1 },
+                    stageReportMaxLines: { type: "integer", default: 20, minimum: 1 },
+                    finalReportMaxLines: { type: "integer", default: 35, minimum: 1 },
+                    inlineLogMaxChars: { type: "integer", default: 800, minimum: 1 },
+                    jsonSidecarRequired: { type: "boolean", default: true },
                 },
             },
             permissions: {

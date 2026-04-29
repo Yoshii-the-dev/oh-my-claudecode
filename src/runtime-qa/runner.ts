@@ -104,8 +104,18 @@ export interface RunRuntimeQaOptions {
   config?: RuntimeQaConfig;
   commandRunner?: RuntimeQaCommandRunner;
   installMobileTools?: boolean;
+  writeDetectedConfig?: boolean;
   toolDetector?: RuntimeQaToolDetector;
   summaryPolicy?: Partial<SummaryPolicy>;
+}
+
+export interface RuntimeQaInitResult {
+  root: string;
+  path: string;
+  config: RuntimeQaConfig;
+  existed: boolean;
+  written: boolean;
+  reason: string;
 }
 
 export const RUNTIME_QA_CONFIG_RELATIVE_PATH = '.omc/runtime-qa.json';
@@ -132,11 +142,82 @@ export function readRuntimeQaConfig(root = process.cwd()): RuntimeQaConfig | und
   return JSON.parse(readFileSync(path, 'utf-8')) as RuntimeQaConfig;
 }
 
+export function detectRuntimeQaConfig(
+  root = process.cwd(),
+  target?: RuntimeQaConfig['target'],
+): RuntimeQaConfig {
+  const resolvedRoot = resolve(root);
+  const inferredTarget = target ?? inferRuntimeQaTarget(resolvedRoot);
+  if (inferredTarget === 'mobile') {
+    const adapter = inferMobileAdapter(resolvedRoot);
+    const smoke = detectMobileSmokeCommand(adapter, resolvedRoot);
+    return {
+      schema_version: 1,
+      target: 'mobile',
+      adapter,
+      commands: smoke ? { smoke } : undefined,
+      mobile: { tool: mobileToolForAdapter(adapter, undefined) },
+    };
+  }
+
+  if (inferredTarget === 'web') {
+    const smoke = detectWebSmokeCommand(resolvedRoot);
+    return {
+      schema_version: 1,
+      target: 'web',
+      adapter: 'web-playwright',
+      commands: smoke ? { smoke } : undefined,
+    };
+  }
+
+  const smoke = detectProjectSmokeCommand(resolvedRoot);
+  return {
+    schema_version: 1,
+    target: inferredTarget ?? 'project-script',
+    adapter: inferredTarget === 'cli' || inferredTarget === 'service' ? 'cli-tmux' : 'project-script',
+    commands: smoke ? { smoke } : undefined,
+  };
+}
+
+export function initRuntimeQaConfig(options: {
+  root?: string;
+  target?: RuntimeQaConfig['target'];
+  write?: boolean;
+  force?: boolean;
+} = {}): RuntimeQaInitResult {
+  const root = resolve(options.root ?? process.cwd());
+  const path = resolve(root, RUNTIME_QA_CONFIG_RELATIVE_PATH);
+  const existed = existsSync(path);
+  const config = existed && !options.force
+    ? readRuntimeQaConfig(root) ?? detectRuntimeQaConfig(root, options.target)
+    : detectRuntimeQaConfig(root, options.target);
+  const written = options.write === true && (!existed || options.force === true);
+  if (written) {
+    ensureDirSync(dirname(path));
+    atomicWriteJsonSync(path, config);
+  }
+  return {
+    root,
+    path,
+    config,
+    existed,
+    written,
+    reason: existed && !options.force
+      ? 'Existing runtime QA config preserved.'
+      : 'Runtime QA config detected from project files and scripts.',
+  };
+}
+
 export function runRuntimeQa(options: RunRuntimeQaOptions = {}): RuntimeQaRunReport {
   const root = resolve(options.root ?? process.cwd());
   const configPath = resolve(root, RUNTIME_QA_CONFIG_RELATIVE_PATH);
-  const config = options.config ?? readRuntimeQaConfig(root);
-  const configExists = Boolean(config || existsSync(configPath));
+  const explicitConfig = options.config ?? readRuntimeQaConfig(root);
+  const configExists = Boolean(options.config || existsSync(configPath));
+  const config = explicitConfig ?? detectRuntimeQaConfig(root);
+  if (!configExists && options.writeDetectedConfig === true && config.commands && options.dryRun !== true) {
+    ensureDirSync(dirname(configPath));
+    atomicWriteJsonSync(configPath, config);
+  }
   const runId = new Date().toISOString().replace(/[:.]/g, '-');
   const artifactDir = resolve(root, config?.artifacts_dir ?? `.omc/artifacts/runtime-qa/${runId}`);
   const adapterResolution = resolveAdapter(root, config, {
@@ -402,6 +483,35 @@ function defaultAdapterForTarget(target: RuntimeQaConfig['target']): RuntimeQaAd
   return 'project-script';
 }
 
+function inferRuntimeQaTarget(root: string): RuntimeQaConfig['target'] {
+  const cycle = readRelative(root, '.omc/cycles/current.md')?.toLowerCase() ?? '';
+  const pkg = readPackageJson(root);
+  const scriptText = Object.entries(pkg?.scripts ?? {})
+    .map(([name, command]) => `${name} ${command}`)
+    .join('\n')
+    .toLowerCase();
+
+  if (
+    existsSync(resolve(root, '.maestro'))
+    || /\b(maestro|detox|appium|ios|android|simulator|emulator|react-native|expo)\b/i.test(`${cycle}\n${scriptText}`)
+  ) {
+    return 'mobile';
+  }
+  if (hasPlaywright(root) || /\b(playwright|browser|e2e:web|test:e2e)\b/i.test(`${cycle}\n${scriptText}`)) {
+    return 'web';
+  }
+  if (/\b(cli|terminal|command-line|tmux)\b/i.test(cycle)) return 'cli';
+  if (/\b(service|server|api smoke)\b/i.test(cycle)) return 'service';
+  return 'project-script';
+}
+
+function inferMobileAdapter(root: string): RuntimeQaAdapter {
+  const scriptText = Object.values(readPackageJson(root)?.scripts ?? {}).join('\n').toLowerCase();
+  if (scriptText.includes('detox')) return 'mobile-detox';
+  if (scriptText.includes('appium')) return 'mobile-appium';
+  return 'mobile-maestro';
+}
+
 function commandsForAdapter(
   adapter: RuntimeQaAdapter,
   config: RuntimeQaConfig | undefined,
@@ -411,7 +521,7 @@ function commandsForAdapter(
   if (configured.length > 0) return configured;
 
   if (adapter === 'web-playwright') {
-    return [{ name: 'smoke', command: 'npx playwright test --trace retain-on-failure' }];
+    return [{ name: 'smoke', command: detectWebSmokeCommand(root) ?? 'npx playwright test --trace retain-on-failure' }];
   }
 
   if (config?.mobile?.command) {
@@ -423,6 +533,35 @@ function commandsForAdapter(
   }
 
   return [];
+}
+
+function detectWebSmokeCommand(root: string): string | undefined {
+  const pkg = readPackageJson(root);
+  if (!pkg?.scripts) {
+    return hasPlaywright(root) ? 'npx playwright test --trace retain-on-failure' : undefined;
+  }
+  const names = ['test:e2e', 'e2e', 'playwright:test', 'test:playwright', 'smoke:web', 'smoke'];
+  for (const name of names) {
+    const script = pkg.scripts[name];
+    if (script && /\b(playwright|browser|e2e|smoke)\b/i.test(script)) {
+      return `${packageRunCommand(root)} ${name}`;
+    }
+  }
+  const fallback = Object.entries(pkg.scripts).find(([name, script]) => (
+    /\b(e2e|smoke|playwright)\b/i.test(name) || /\bplaywright\b/i.test(script)
+  ));
+  return fallback ? `${packageRunCommand(root)} ${fallback[0]}` : hasPlaywright(root) ? 'npx playwright test --trace retain-on-failure' : undefined;
+}
+
+function detectProjectSmokeCommand(root: string): string | undefined {
+  const pkg = readPackageJson(root);
+  if (!pkg?.scripts) return undefined;
+  const names = ['smoke', 'test:smoke', 'test:e2e', 'e2e', 'test:integration', 'test'];
+  for (const name of names) {
+    if (pkg.scripts[name]) return `${packageRunCommand(root)} ${name}`;
+  }
+  const fallback = Object.keys(pkg.scripts).find((name) => /\b(smoke|e2e|integration)\b/i.test(name));
+  return fallback ? `${packageRunCommand(root)} ${fallback}` : undefined;
 }
 
 function flattenConfiguredCommands(commands: RuntimeQaCommandSet | undefined): Array<{ name: string; command: string }> {
@@ -636,6 +775,16 @@ function readPackageJson(root: string): {
       dependencies?: Record<string, string>;
       devDependencies?: Record<string, string>;
     };
+  } catch {
+    return undefined;
+  }
+}
+
+function readRelative(root: string, relativePath: string): string | undefined {
+  const path = resolve(root, relativePath);
+  if (!existsSync(path)) return undefined;
+  try {
+    return readFileSync(path, 'utf-8');
   } catch {
     return undefined;
   }

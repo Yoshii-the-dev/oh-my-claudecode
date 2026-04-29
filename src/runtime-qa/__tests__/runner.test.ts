@@ -3,6 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  initRuntimeQaConfig,
   runRuntimeQa,
   shouldRunRuntimeQa,
   writeRuntimeQaRunReport,
@@ -161,6 +162,37 @@ describe('runtime QA runner', () => {
     writeArtifact(root, '.omc/cycles/current.md', 'verification_plan:\n  - simulator smoke on iOS\n');
 
     expect(shouldRunRuntimeQa(root)).toBe(true);
+  });
+
+  it('blocks simulator verification when cycle asks for mobile smoke but no config or command exists', () => {
+    const root = createRoot();
+    writeArtifact(root, '.omc/cycles/current.md', 'verification_plan:\n  - iOS simulator smoke\n');
+    const toolDetector: RuntimeQaToolDetector = (tool) => ({
+      tool,
+      detected: false,
+      method: 'test',
+    });
+
+    const report = runRuntimeQa({ root, auto: true, toolDetector, commandRunner: vi.fn() });
+
+    expect(report.status).toBe('blocked');
+    expect(report.config_exists).toBe(false);
+    expect(report.adapter).toBe('mobile-maestro');
+    expect(report.install_proposal).toContain('commands.smoke');
+  });
+
+  it('initializes runtime QA config from detected mobile scripts', () => {
+    const root = createRoot();
+    writeArtifact(root, 'package.json', JSON.stringify({
+      scripts: { 'detox:test': 'detox test --configuration ios.sim.debug' },
+    }));
+
+    const result = initRuntimeQaConfig({ root, target: 'mobile', write: true });
+
+    expect(result.written).toBe(true);
+    expect(result.config.adapter).toBe('mobile-detox');
+    expect(result.config.commands?.smoke).toBe('npm run detox:test');
+    expect(existsSync(result.path)).toBe(true);
   });
 });
 

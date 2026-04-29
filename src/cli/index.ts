@@ -81,7 +81,7 @@ import { sessionSearchCommand } from './commands/session-search.js';
 import { teamCommand } from './commands/team.js';
 import { ralphthonCommand } from './commands/ralphthon.js';
 import { telemetryDigestCommand } from './commands/telemetry.js';
-import { runtimeQaRunCommand } from './commands/runtime-qa.js';
+import { runtimeQaInitCommand, runtimeQaRunCommand } from './commands/runtime-qa.js';
 import {
   teleportCommand,
   teleportListCommand,
@@ -1385,6 +1385,18 @@ Examples:
 const runtimeQaCmd = program
   .command('runtime-qa')
   .description('Run configured build/smoke/simulator checks and write runtime QA evidence');
+
+runtimeQaCmd
+  .command('init [root]')
+  .description('Detect project runtime QA settings and write .omc/runtime-qa.json')
+  .option('--target <target>', 'Target type: web | cli | service | mobile | project-script')
+  .option('--no-write', 'Detect and print without writing .omc/runtime-qa.json')
+  .option('--force', 'Overwrite an existing .omc/runtime-qa.json')
+  .option('--json', 'Output as JSON')
+  .action(async (root, options) => {
+    const exitCode = await runtimeQaInitCommand(root, options);
+    process.exit(exitCode);
+  });
 
 runtimeQaCmd
   .command('run [root]')

@@ -276,6 +276,15 @@ export interface PluginConfig {
         /** Execution keywords that activate the gate. */
         executionKeywords?: string[];
     };
+    summaryPolicy?: SummaryPolicyConfig;
+}
+export interface SummaryPolicyConfig {
+    mode?: "compact" | "normal" | "verbose";
+    agentResultMaxWords?: number;
+    stageReportMaxLines?: number;
+    finalReportMaxLines?: number;
+    inlineLogMaxChars?: number;
+    jsonSidecarRequired?: boolean;
 }
 export interface SessionState {
     sessionId?: string;
