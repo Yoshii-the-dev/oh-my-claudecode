@@ -7,7 +7,7 @@ import { cyan } from '../colors.js';
 import { truncateToWidth } from '../../utils/string-width.js';
 /**
  * Extract version from a model ID string.
- * E.g., 'claude-opus-4-7-20260416' -> '4.7'
+ * E.g., 'claude-opus-4-6-20260416' -> '4.6'
  *       'claude-sonnet-4-6-20260217' -> '4.6'
  *       'claude-haiku-4-5-20251001' -> '4.5'
  */
