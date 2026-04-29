@@ -29,6 +29,7 @@ import { cycleDocumentMigrateCommand, cycleDocumentProjectCommand, cycleDocument
 import { learningMigrateCommand, learningProjectCommand, learningValidateCommand, } from './commands/learning-document.js';
 import { historicalScorecardCommand } from './commands/historical-scorecard.js';
 import { portfolioMigrateCommand, portfolioProjectCommand, portfolioValidateCommand, } from './commands/portfolio.js';
+import { creativeLoopAuditCommand, creativeLoopInitCommand } from './commands/creative-loop.js';
 import { featureGenerationAuditCommand } from './commands/feature-generation.js';
 import { runScorecardCommand } from './commands/run-scorecard.js';
 import { sessionSearchCommand } from './commands/session-search.js';
@@ -1428,6 +1429,36 @@ featureGenerationCmd
     .option('--write', 'Write .omc/feature-generation/current.{json,md}')
     .action(async (root, options) => {
     const exitCode = await featureGenerationAuditCommand(root, options);
+    process.exit(exitCode);
+});
+/**
+ * Creative loop command - UI/UX divergent creative readiness gate
+ */
+const creativeLoopCmd = program
+    .command('creative-loop')
+    .description('Audit or initialize UI/UX creative-loop artifacts')
+    .addHelpText('after', `
+Examples:
+  $ omc creative-loop audit --goal "build a distinct onboarding surface"
+  $ omc creative-loop audit /path/to/app --write
+  $ omc creative-loop init --goal "row tracking dashboard"`);
+creativeLoopCmd
+    .command('audit [root]')
+    .description('Check creative-loop readiness for user-facing visual work')
+    .option('--goal <goal>', 'Visual/product goal used for recommended handoff commands')
+    .option('--json', 'Output as JSON')
+    .option('--write', 'Write .omc/design/creative-loop/current.{json,md}')
+    .action(async (root, options) => {
+    const exitCode = await creativeLoopAuditCommand(root, options);
+    process.exit(exitCode);
+});
+creativeLoopCmd
+    .command('init [root]')
+    .description('Create missing creative-loop draft artifacts without passing the gate')
+    .option('--goal <goal>', 'Visual/product goal used in draft artifact templates')
+    .option('--json', 'Output as JSON')
+    .action(async (root, options) => {
+    const exitCode = await creativeLoopInitCommand(root, options);
     process.exit(exitCode);
 });
 /**

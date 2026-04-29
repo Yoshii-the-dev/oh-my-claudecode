@@ -36,6 +36,7 @@ omc product-cycle next
 omc product-cycle validate
 omc product-cycle run --auto --auto-policy safe --json
 omc feature-generation audit --write --goal "ship first usable loop"
+omc creative-loop audit --write --goal "ship first usable loop"
 omc product-cycle advance --to discover --goal "ship first usable loop"
 omc product-cycle advance --to build
 ```
@@ -68,7 +69,7 @@ It routes existing skills:
 | rank | `omc feature-generation audit --write --goal "<cycle goal>"`, then `/priority-engine "<cycle goal>"` |
 | select | controller confirms the selected-cycle trio from `.omc/portfolio/current.json` |
 | spec | controller writes cycle spec and runs `/product-experience-gate` |
-| build | `/product-pipeline` and/or `/backend-pipeline` |
+| build | `/creative-loop` for visual UI work, then `/product-pipeline` and/or `/backend-pipeline` |
 | verify | relevant tests, audits, verifier |
 | learn | controller writes `.omc/learning/current.md` and marks cycle complete |
 
@@ -105,17 +106,26 @@ omc portfolio project --write
 
 It must write `.omc/experience/current.md` with user journey, empty states, failure states, return session, perceived value, and a pass/block verdict.
 
-8. After spec, run:
+8. For user-facing visual work, run the creative loop before implementation:
+
+```bash
+/creative-loop "<core product slice>"
+omc creative-loop audit --write --goal "<core product slice>"
+```
+
+It must prove meaning brief, inspiration ledger, 3-5 divergent design directions, motion grammar, tokens, component experiments/screenshots, visual verdict, and taste gate. Draft placeholders from `omc creative-loop init` do not pass.
+
+9. After spec, run:
 
 ```bash
 omc doctor product-contracts --stage cycle
 ```
 
-9. Build only after the cycle and experience gates pass.
-10. Verify with evidence from tests/audits/acceptance criteria.
+10. Build only after the cycle, experience, and required creative gates pass.
+11. Verify with evidence from tests/audits/acceptance criteria.
     - When `.omc/runtime-qa.json` exists or the verification plan declares runtime smoke/simulator coverage, run `omc runtime-qa run --auto --json` and include `.omc/handoffs/runtime-qa/current.json` as evidence.
     - Mobile simulator tooling is explicit opt-in: if Maestro/Detox/Appium is missing, rerun with `omc runtime-qa run --auto --install-mobile-tools --json` only after the user has approved provisioning. Product-cycle may pass the same approval with `omc product-cycle run --auto --install-mobile-tools --json`.
-11. Learn before completion: write `.omc/learning/current.md`, then set `cycle_stage: complete`.
+12. Learn before completion: write `.omc/learning/current.md`, then set `cycle_stage: complete`.
 
 ## Cycle Artifact Contract
 
@@ -143,6 +153,7 @@ omc doctor product-contracts --stage cycle
 - Empty/pre-MVP cycles must keep the first usable loop visible in the selected core slice.
 - Backend work can be selected as the enabling task, but not as a substitute for the core product slice when no usable loop exists.
 - User-facing work cannot enter build until `.omc/experience/current.md` passes the user journey, empty states, failure states, return session, and perceived value checks.
+- Visual user-facing work cannot enter implementation until the creative-loop audit is ready and `.omc/design/taste-gate/current.md` has a real `verdict: pass`.
 - Weak evidence must create a selected learning/research task and remain visible as research debt in the roadmap.
 - A cycle is not done until learning is captured.
 

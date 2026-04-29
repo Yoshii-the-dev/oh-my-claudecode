@@ -2,11 +2,17 @@ import { existsSync, readFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { atomicWriteFileSync, atomicWriteJsonSync, ensureDirSync } from '../lib/atomic-write.js';
 import type { ProductCycleSnapshot, ProductCycleStage } from './cycle-fsm.js';
+import {
+  CREATIVE_LOOP_JSON_RELATIVE_PATH,
+  CREATIVE_LOOP_MD_RELATIVE_PATH,
+  planCreativeLoop,
+} from './creative-loop.js';
 
 export type ProductInterventionAgent =
   | 'product-foundation'
   | 'priority-engine'
   | 'product-experience-gate'
+  | 'creative-loop'
   | 'stack-provision'
   | 'backend-pipeline'
   | 'product-pipeline'
@@ -211,6 +217,12 @@ function planBuildInterventions(root: string, snapshot: ProductCycleSnapshot): P
     return routes;
   }
 
+  const creativeLoopRoute = planCreativeLoopIntervention(root, snapshot);
+  if (creativeLoopRoute) {
+    routes.push(creativeLoopRoute);
+    return routes;
+  }
+
   if (PRODUCT_BUILD_ROUTES.has(route) && needsVisualCreativeProvisioning(root, snapshot)) {
     const intent = coreSliceOrGoal(snapshot);
     routes.push({
@@ -252,6 +264,39 @@ function planBuildInterventions(root: string, snapshot: ProductCycleSnapshot): P
   }
 
   return routes;
+}
+
+function planCreativeLoopIntervention(
+  root: string,
+  snapshot: ProductCycleSnapshot,
+): ProductInterventionRoute | undefined {
+  if (!isUserFacingCycle(snapshot)) return undefined;
+  if (!hasVisualCreativeSignal(root, snapshot)) return undefined;
+
+  const goal = coreSliceOrGoal(snapshot);
+  const plan = planCreativeLoop({ root, goal });
+  if (plan.status === 'ready') return undefined;
+
+  return {
+    id: 'creative-loop-gate',
+    agent: 'creative-loop',
+    trigger: `user-facing visual build requires creative-loop readiness; status=${plan.status}`,
+    purpose: 'Run meaning brief, inspiration ledger, divergent visual hypotheses, motion grammar, tokens, component experiments, screenshots, visual verdict, and taste gate before implementation.',
+    required: true,
+    command: `/creative-loop "${quoteArg(goal)}"`,
+    blocksStage: true,
+    evidence: [
+      CREATIVE_LOOP_JSON_RELATIVE_PATH,
+      CREATIVE_LOOP_MD_RELATIVE_PATH,
+      '.omc/design/meaning-brief/current.md',
+      '.omc/design/inspiration-ledger/current.md',
+      '.omc/design/directions/current.md',
+      '.omc/design/motion-grammar/current.md',
+      '.omc/design/tokens/current.json',
+      '.omc/design/component-experiments/current.json',
+      '.omc/design/taste-gate/current.md',
+    ],
+  };
 }
 
 function planVerifyRepairInterventions(failure: NonNullable<PlanProductInterventionsOptions['failure']>): ProductInterventionRoute[] {

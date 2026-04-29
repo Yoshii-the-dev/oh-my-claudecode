@@ -1,5 +1,5 @@
 import type { ProductCycleSnapshot, ProductCycleStage } from './cycle-fsm.js';
-export type ProductInterventionAgent = 'product-foundation' | 'priority-engine' | 'product-experience-gate' | 'stack-provision' | 'backend-pipeline' | 'product-pipeline' | 'debugger' | 'executor' | 'test-engineer' | 'verifier' | 'ux-architect' | 'designer' | 'qa-tester';
+export type ProductInterventionAgent = 'product-foundation' | 'priority-engine' | 'product-experience-gate' | 'creative-loop' | 'stack-provision' | 'backend-pipeline' | 'product-pipeline' | 'debugger' | 'executor' | 'test-engineer' | 'verifier' | 'ux-architect' | 'designer' | 'qa-tester';
 export interface ProductInterventionRoute {
     id: string;
     agent: ProductInterventionAgent;

@@ -39,6 +39,8 @@ describe('product cycle CLI command', () => {
     expect(runtimeQaCmd?.commands.map((command) => command.name())).toEqual(expect.arrayContaining(['init', 'run']));
     const featureGenerationCmd = buildProgram().commands.find((command) => command.name() === 'feature-generation');
     expect(featureGenerationCmd?.commands.map((command) => command.name())).toContain('audit');
+    const creativeLoopCmd = buildProgram().commands.find((command) => command.name() === 'creative-loop');
+    expect(creativeLoopCmd?.commands.map((command) => command.name())).toEqual(expect.arrayContaining(['audit', 'init']));
   });
 
   it('prints pending intervention handoff as JSON', async () => {
@@ -517,6 +519,7 @@ describe('product cycle CLI command', () => {
         installed: ['meaning-driven-ui-builder', 'visual-verdict'],
       }));
       writeArtifact(root, '.omc/research/product-cycle/current.md', validUserFacingResearchArtifact());
+      writePassingCreativeLoop(root);
       writeArtifact(root, '.omc/handoffs/product-cycle-research/execution-plan.json', JSON.stringify({
         schema_version: 1,
         produced_at: '2026-04-28T00:00:00.000Z',
@@ -729,4 +732,55 @@ Expose row state changes to assistive technology and keep keyboard focus predict
 ## Perceived Value
 The value is confidence that the next session resumes exactly where the user stopped.
 `;
+}
+
+function writePassingCreativeLoop(root: string): void {
+  writeArtifact(root, '.omc/design/meaning-brief/current.md', [
+    '# Meaning Brief',
+    'Feeling: calm progress confidence.',
+    'Understanding: next action and saved state are obvious.',
+    'User State: before uncertain, during focused, after confident.',
+    'Product Meaning: row progress is a trusted companion.',
+  ].join('\n'));
+  writeArtifact(root, '.omc/design/inspiration-ledger/current.md', [
+    '# Inspiration Ledger',
+    '- source: craft workbench',
+    '  - principle: tools stay close to the work surface.',
+    '  - what not to copy: decorative clutter.',
+  ].join('\n'));
+  writeArtifact(root, '.omc/design/directions/current.md', [
+    '# Directions',
+    '## Direction 1',
+    'hypothesis: quiet ledger with tactile row markers.',
+    '## Direction 2',
+    'hypothesis: focused stage with progress rail.',
+    '## Direction 3',
+    'hypothesis: compact dashboard with craft-coded status.',
+  ].join('\n'));
+  writeArtifact(root, '.omc/design/motion-grammar/current.md', [
+    '# Motion Grammar',
+    '- state: row saved',
+    '  - why: confirm persistence without stealing focus.',
+    '  - duration: 160ms',
+    '  - easing: ease-out',
+  ].join('\n'));
+  writeArtifact(root, '.omc/design/tokens/current.json', `${JSON.stringify({
+    color: {},
+    type: {},
+    spacing: {},
+    radius: {},
+    motion: {},
+  }, null, 2)}\n`);
+  writeArtifact(root, '.omc/design/component-experiments/current.json', `${JSON.stringify({
+    experiment: ['row marker'],
+    screenshot: ['.omc/artifacts/creative-loop/row-marker.png'],
+    visual_verdict: ['pass'],
+  }, null, 2)}\n`);
+  writeArtifact(root, '.omc/design/taste-gate/current.md', [
+    'verdict: pass',
+    'Distinctiveness: passes with a craft-led workbench direction.',
+    'Usability: passes because primary row action stays visible.',
+    'Accessibility: passes with focus, contrast, and reduced motion notes.',
+    'Brand Fit: passes because product meaning and visual language align.',
+  ].join('\n'));
 }

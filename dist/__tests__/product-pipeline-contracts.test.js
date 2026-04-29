@@ -20,6 +20,7 @@ describe('product/agent pipeline contracts', () => {
     it('resolves product-route oh-my-claudecode references to an installed skill or agent', () => {
         const routeFiles = [
             'skills/ideate/SKILL.md',
+            'skills/creative-loop/SKILL.md',
             'skills/product-cycle/SKILL.md',
             'skills/product-strategist/SKILL.md',
             'skills/product-foundation/SKILL.md',
@@ -82,7 +83,24 @@ describe('product/agent pipeline contracts', () => {
         expect(agent).toContain('1 learning/research task');
         expect(skill).toContain('omc doctor product-contracts --stage cycle');
         expect(skill).toContain('/product-experience-gate');
+        expect(skill).toContain('omc creative-loop audit');
         expect(docs).toContain('/product-cycle "<cycle goal>"');
+        expect(docs).toContain('/creative-loop "<core product slice>"');
+    });
+    it('defines creative-loop as a divergent UI/UX gate before visual implementation', () => {
+        const skill = readRepoFile('skills/creative-loop/SKILL.md');
+        const productPipeline = readRepoFile('skills/product-pipeline/SKILL.md');
+        const docs = readRepoFile('docs/PRODUCT-ORCHESTRATION.md');
+        expect(skill).toContain('Meaning brief');
+        expect(skill).toContain('Inspiration ledger');
+        expect(skill).toContain('3-5 distinct design directions');
+        expect(skill).toContain('Motion grammar');
+        expect(skill).toContain('Token system');
+        expect(skill).toContain('Component experiments');
+        expect(skill).toContain('Taste gate');
+        expect(skill).toContain('Do not copy references');
+        expect(productPipeline).toContain('omc creative-loop audit');
+        expect(docs).toContain('.omc/design/creative-loop/current.json');
     });
     it('defines priority-engine as a broad portfolio layer, not a short feature shortlist', () => {
         const agent = readRepoFile('agents/priority-engine.md');
