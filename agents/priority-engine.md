@@ -78,6 +78,7 @@ depends_on:
     - Every candidate includes evidence, confidence, expected learning, dependency unlock, rough effort, and lane.
     - Weak evidence becomes first-class research debt: create a learning/research candidate, select it when it affects the chosen cycle, and carry it into the roadmap learning gate.
     - `.omc/portfolio/current.json` is written with stable ids, lane, status, confidence, dependencies, selected_cycle, and evidence for every candidate.
+    - Selected core product slices include a feature expectation contract: user job, first meaningful use, useless-if conditions, v0/v1/v2 maturity ladder, and not-done-until signals.
     - Empty/pre-MVP products prioritize a first usable loop before infrastructure depth.
     - Next cycle selection includes exactly:
       - 1 core product slice
@@ -152,6 +153,17 @@ depends_on:
     evidence: [<compact source pointers>]
     expected_learning: <what becomes known after this move>
     dependency_unlock: <what this unlocks next>
+    feature_expectation: # required for selected core-product-slice
+      user_job: <what the user is trying to accomplish>
+      first_meaningful_use: <first complete loop that would feel useful>
+      useless_if:
+        - <condition where implementation would be present but meaningless>
+      maturity_ladder:
+        v0: <seed capability>
+        v1: <context-aware usable capability>
+        v2: <deeper repeat-use/scaled capability>
+      not_done_until:
+        - <observable learning gate before calling the capability done>
     confidence: HIGH|MEDIUM|LOW
     effort: XS|S|M|L
     ```
@@ -170,6 +182,7 @@ depends_on:
     Apply penalties:
     - `-3` if the move is pure infrastructure and no selected core loop depends on it.
     - `-3` if the move is a "naked feature" with no deeper-version path.
+    - `-3` if the core move can pass acceptance criteria without a user completing a meaningful loop.
     - `-2` if it expands surface area before the first usable loop exists.
     - `-2` if evidence is only founder preference and no research/proxy is planned.
 
@@ -188,6 +201,8 @@ depends_on:
 
     For empty/pre-MVP products, prefer a first usable loop. Generic pattern:
     `open/import sample -> perform the core job -> persist progress/state -> return next session`.
+
+    Do not select noun-only core slices like `row counter`, `photo journal`, or `settings` unless the title and `feature_expectation` define the user job and first meaningful use. If only v0 can ship, mark it as a seeded capability and carry v1/v2 as roadmap depth, not as done.
 
     Mark the three selected work items in `.omc/portfolio/current.json` with the same `selected_cycle` value. Keep all other candidates as `selected_cycle: null`.
 
@@ -231,7 +246,18 @@ depends_on:
           "selected_cycle": "YYYY-MM-DD-first-loop",
           "evidence": [".omc/product/capability-map/current.md#First Usable Loop"],
           "expected_learning": "Whether the core reader loop creates repeat-session value",
-          "dependency_unlock": "Reader/editor depth and retention instrumentation"
+          "dependency_unlock": "Reader/editor depth and retention instrumentation",
+          "feature_expectation": {
+            "user_job": "Resume a pattern-reading session without losing place",
+            "first_meaningful_use": "Open a sample pattern, track rows, close the app, and resume on the next row",
+            "useless_if": ["The loop can pass tests without showing where the user is in the pattern"],
+            "maturity_ladder": {
+              "v0": "Counter state persists",
+              "v1": "Counter is tied to pattern section/context",
+              "v2": "Repeat-aware and multi-section tracking supports a full session"
+            },
+            "not_done_until": ["Return-session dogfood or runtime QA proves the loop is meaningful"]
+          }
         }
       ]
     }
@@ -299,6 +325,7 @@ depends_on:
     - Overweighting competitor summaries that do not translate into action.
     - Writing long brand essays instead of compact meaning hooks and content angles.
     - Selecting a core feature that has no next layer, no retention implication, and no research loop.
+    - Calling a seeded v0 control a complete feature when v1/v2 product context is still required.
     - Producing a roadmap without a concrete next cycle portfolio.
   </Failure_Modes_To_Avoid>
 </Agent_Prompt>

@@ -93,6 +93,8 @@ describe('product/agent pipeline contracts', () => {
         const docs = readRepoFile('docs/PRODUCT-ORCHESTRATION.md');
         expect(skill).toContain('Meaning brief');
         expect(skill).toContain('Inspiration ledger');
+        expect(skill).toContain('Visual expectation contract');
+        expect(skill).toContain('visual_expectation_contract');
         expect(skill).toContain('3-5 distinct design directions');
         expect(skill).toContain('Motion grammar');
         expect(skill).toContain('Token system');
@@ -100,7 +102,9 @@ describe('product/agent pipeline contracts', () => {
         expect(skill).toContain('Taste gate');
         expect(skill).toContain('Do not copy references');
         expect(productPipeline).toContain('omc creative-loop audit');
+        expect(productPipeline).toContain('.omc/design/visual-expectation/current.json');
         expect(docs).toContain('.omc/design/creative-loop/current.json');
+        expect(docs).toContain('.omc/design/visual-expectation/current.json');
     });
     it('defines priority-engine as a broad portfolio layer, not a short feature shortlist', () => {
         const agent = readRepoFile('agents/priority-engine.md');

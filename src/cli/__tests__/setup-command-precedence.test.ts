@@ -93,7 +93,7 @@ async function runSetup(extraArgs: string[]): Promise<void> {
   vi.resetModules();
   const { buildProgram } = await import('../index.js');
   const program = buildProgram();
-  await program.parseAsync(['setup', ...extraArgs], { from: 'user' });
+  await program.parseAsync(['setup', ...extraArgs, '--skip-project-checks'], { from: 'user' });
 }
 
 function lastInstallOptions(): Record<string, unknown> {

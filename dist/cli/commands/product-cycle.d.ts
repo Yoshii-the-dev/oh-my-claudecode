@@ -22,6 +22,7 @@ export interface ProductCycleCommandOptions {
     maxAutoAttempts?: number;
     runtimeQa?: boolean;
     installMobileTools?: boolean;
+    safe?: boolean;
     interventionCommandRunner?: ProductInterventionCommandRunner;
 }
 interface LoggerLike {
@@ -31,6 +32,7 @@ interface LoggerLike {
 export declare function productCycleStatusCommand(root: string | undefined, options: ProductCycleCommandOptions, logger?: LoggerLike): Promise<number>;
 export declare function productCycleNextCommand(root: string | undefined, options: ProductCycleCommandOptions, logger?: LoggerLike): Promise<number>;
 export declare function productCycleValidateCommand(root: string | undefined, options: ProductCycleCommandOptions, logger?: LoggerLike): Promise<number>;
+export declare function productCycleRepairCommand(root: string | undefined, options: ProductCycleCommandOptions, logger?: LoggerLike): Promise<number>;
 export declare function productCycleAdvanceCommand(root: string | undefined, options: ProductCycleCommandOptions, logger?: LoggerLike): Promise<number>;
 export declare function productCycleRunCommand(root: string | undefined, options: ProductCycleCommandOptions, logger?: LoggerLike): Promise<number>;
 export declare function productCycleInterventionsCommand(root: string | undefined, options: ProductCycleCommandOptions, logger?: LoggerLike): Promise<number>;

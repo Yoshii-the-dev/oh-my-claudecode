@@ -1,7 +1,9 @@
 import { colors } from '../utils/formatting.js';
-import { initRuntimeQaConfig, renderRuntimeQaRunReport, runRuntimeQa, writeRuntimeQaRunReport, } from '../../runtime-qa/runner.js';
+import { initRuntimeQaConfig, migrateRuntimeQaConfig, renderRuntimeQaRunReport, runRuntimeQa, writeRuntimeQaRunReport, } from '../../runtime-qa/runner.js';
 import { loadConfig } from '../../config/loader.js';
 import { limitFinalReport } from '../../lib/summary-policy.js';
+import { provisionRuntimeQaFixture, teardownRuntimeQaFixture, } from '../../runtime-qa/fixture-providers.js';
+import { setupRuntimeQaPrerequisites } from '../../runtime-qa/setup.js';
 export async function runtimeQaRunCommand(root, options, logger = console) {
     const config = loadConfig();
     const report = runRuntimeQa({
@@ -57,6 +59,69 @@ export async function runtimeQaInitCommand(root, options, logger = console) {
     }
     return result.config.target === 'mobile' && !result.config.commands?.smoke ? 1 : 0;
 }
+export async function runtimeQaMigrateCommand(root, options, logger = console) {
+    const result = migrateRuntimeQaConfig({
+        root,
+        write: options.write === true,
+        force: options.force === true,
+    });
+    if (options.json) {
+        logger.log(JSON.stringify(result, null, 2));
+    }
+    else {
+        logger.log(colors.bold('Runtime QA migration'));
+        logger.log(`  path: ${result.path}`);
+        logger.log(`  existed: ${result.existed}`);
+        logger.log(`  changed: ${result.changed}`);
+        logger.log(`  written: ${result.written}`);
+        logger.log(`  reason: ${result.reason}`);
+        if (!result.written && result.changed) {
+            logger.log(colors.yellow('  re-run with --write to update .omc/runtime-qa.json'));
+        }
+    }
+    return 0;
+}
+export async function runtimeQaSetupCommand(root, options, logger = console) {
+    const report = setupRuntimeQaPrerequisites(root, {
+        apply: options.apply === true,
+        commandRunner: options.commandRunner,
+    });
+    if (options.json) {
+        logger.log(JSON.stringify(report, null, 2));
+    }
+    else {
+        logger.log(renderRuntimeQaSetupReport(report));
+    }
+    return report.summary.failed > 0 ? 1 : 0;
+}
+export async function runtimeQaFixtureCommand(action, fixtureName, root, options, logger = console) {
+    const backend = normalizeFixtureBackend(options.backend);
+    if (options.backend && !backend) {
+        logger.error(colors.red(`Invalid --backend: ${options.backend}`));
+        logger.error(colors.gray('Valid backends: auto, env, mcp'));
+        return 2;
+    }
+    const result = action === 'provision'
+        ? await provisionRuntimeQaFixture({ root, fixtureName, backend })
+        : await teardownRuntimeQaFixture({ root, fixtureName, backend });
+    if (options.json) {
+        logger.log(JSON.stringify(result, null, 2));
+    }
+    else {
+        logger.log(colors.bold(`Runtime QA fixture ${action}`));
+        logger.log(`  fixture: ${result.fixture}`);
+        logger.log(`  provider: ${result.provider}`);
+        logger.log(`  backend: ${result.backend}`);
+        logger.log(`  ok: ${result.ok}`);
+        logger.log(`  reason: ${result.reason}`);
+        logger.log(`  state: ${result.statePath}`);
+        logger.log(`  env: ${result.envPath}`);
+        if (result.agent_action) {
+            logger.log(colors.yellow('  agent action: run this fixture through the Claude/OMC runtime-qa skill.'));
+        }
+    }
+    return result.ok ? 0 : 1;
+}
 function normalizeTarget(value) {
     if (!value)
         return undefined;
@@ -69,5 +134,45 @@ function normalizeTarget(value) {
         return normalized;
     }
     return undefined;
+}
+function normalizeFixtureBackend(value) {
+    if (!value)
+        return undefined;
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'auto' || normalized === 'env' || normalized === 'mcp')
+        return normalized;
+    return undefined;
+}
+function renderRuntimeQaSetupReport(report) {
+    const lines = [
+        colors.bold('Runtime QA setup'),
+        `root: ${report.root}`,
+        `applied: ${report.applied}`,
+    ];
+    if (report.steps.length === 0) {
+        lines.push(colors.green('No runtime QA prerequisite setup steps are needed.'));
+        return lines.join('\n');
+    }
+    for (const step of report.steps) {
+        const status = step.status === 'failed'
+            ? colors.red(step.status)
+            : step.status === 'passed'
+                ? colors.green(step.status)
+                : step.status;
+        lines.push('');
+        lines.push(`${colors.bold(step.title)} [${step.kind}] ${status}`);
+        lines.push(`  reason: ${step.reason}`);
+        if (step.command)
+            lines.push(`  command: ${step.command}`);
+        if (step.exit_code !== undefined)
+            lines.push(`  exit_code: ${step.exit_code}`);
+        if (step.stderr_preview)
+            lines.push(`  stderr: ${step.stderr_preview}`);
+    }
+    if (!report.applied) {
+        lines.push('');
+        lines.push(colors.yellow('Re-run with --apply to execute command steps. Manual steps are always reported, not executed.'));
+    }
+    return lines.join('\n');
 }
 //# sourceMappingURL=runtime-qa.js.map

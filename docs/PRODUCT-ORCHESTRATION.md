@@ -68,7 +68,7 @@ OMC separates product development into eight layers:
 7. **Creative Loop**
    - `creative-loop`
    - output: `.omc/design/creative-loop/current.json`, `.omc/design/**`
-   - owns: meaning brief, inspiration ledger, divergent visual hypotheses, motion grammar, design tokens, component experiments, screenshots, visual verdicts, and taste gate before visual implementation.
+   - owns: meaning brief, inspiration ledger, visual expectation contract, divergent visual hypotheses, motion grammar, design tokens, component experiments, screenshots, visual verdicts, and taste gate before visual implementation.
 
 8. **Technology/Capability Governance**
    - `technology-strategist`
@@ -150,7 +150,7 @@ It must:
 - route discovery gaps to `product-foundation --foundation-lite` or the minimum missing discovery skill.
 - route ranking to `priority-engine`.
 - select exactly one core product slice, one enabling task, and one learning/research task from `.omc/portfolio/current.json`.
-- write a cycle spec with acceptance criteria, build route, verification plan, and learning plan before build.
+- write a cycle spec with acceptance criteria, build route, verification plan, learning plan, and feature expectation contract before build.
 - run `/product-experience-gate` for user-facing work and require `.omc/experience/current.md` before build.
 - run `omc doctor product-contracts --stage cycle` before build.
 - write `.omc/learning/current.md` before marking the cycle complete.
@@ -176,6 +176,18 @@ It must produce `.omc/experience/current.md` with:
 - UX verdict: `pass`, `blocked`, or `needs-research`.
 
 The cycle contract blocks build when this artifact is missing or does not pass.
+
+## Feature Expectation Contract Rules
+
+User-facing core slices must also declare what the feature is expected to become, not just what control will be implemented first. The selected core item in `.omc/portfolio/current.json` must include `feature_expectation`, and `.omc/cycles/current.md` must include `feature_expectation_contract` with:
+
+- `user_job`
+- `first_meaningful_use`
+- `useless_if`
+- `maturity_ladder.v0`, `maturity_ladder.v1`, and `maturity_ladder.v2`
+- `not_done_until`
+
+This prevents a seeded v0 control from being treated as a finished feature. If the next build only ships `v0`, the roadmap must keep `v1/v2` as capability depth rather than marking the capability done.
 
 ## Product Capability Map Rules
 
@@ -214,6 +226,7 @@ It must:
 - produce 20-40 candidate moves across product, UX, research, backend, quality, brand/content, and distribution.
 - consume or request `omc feature-generation audit --write --goal "<cycle goal>"` so feature generation is based on explicit source coverage and MCP readiness.
 - give every work item a stable `id`, `lane`, `status`, `confidence`, `dependencies`, `selected_cycle`, and `evidence`.
+- give the selected core product slice a `feature_expectation` contract with first meaningful use, useless-if conditions, maturity ladder, and not-done-until gates.
 - score candidates by user value, evidence, learning value, dependency unlock, ecosystem depth, effort fit, and risk reduction.
 - select exactly one core product slice, one enabling task, and one learning/research task for the next cycle.
 - treat weak evidence as research debt: create a selected learning/research item and keep it in the rolling roadmap as a learning gate.
@@ -312,12 +325,15 @@ Creative loop artifacts:
 
 - `.omc/design/meaning-brief/current.md`
 - `.omc/design/inspiration-ledger/current.md`
+- `.omc/design/visual-expectation/current.json`
 - `.omc/design/directions/current.md`
 - `.omc/design/motion-grammar/current.md`
 - `.omc/design/tokens/current.json`
 - `.omc/design/component-experiments/current.json`
 - `.omc/design/taste-gate/current.md`
 - `.omc/design/system/current.md` only after taste gate pass
+
+The visual expectation contract is the bridge between art direction and implementation. It must name desired perception, category codes to avoid, selected direction, token rationale, component proofs, screenshot evidence, and `not_ready_if` conditions. This prevents token extraction or a single attractive mock from being treated as a complete external look.
 
 ## Handoff And Permissions
 

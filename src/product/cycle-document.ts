@@ -33,6 +33,19 @@ export interface CycleSpec {
   verification_plan: string[];
   learning_plan: string[];
   experience_gate?: string;
+  feature_expectation_contract?: CycleFeatureExpectationContract;
+}
+
+export interface CycleFeatureExpectationContract {
+  user_job: string;
+  first_meaningful_use: string;
+  useless_if: string[];
+  maturity_ladder: {
+    v0: string;
+    v1: string;
+    v2: string;
+  };
+  not_done_until: string[];
 }
 
 export interface CycleStageEvent {
@@ -157,6 +170,7 @@ export function renderCycleProjection(doc: CycleDocument): string {
   const acceptance = doc.spec.acceptance_criteria.map((entry) => `  - ${entry}`).join('\n');
   const verification = doc.spec.verification_plan.map((entry) => `  - ${entry}`).join('\n');
   const learning = doc.spec.learning_plan.map((entry) => `  - ${entry}`).join('\n');
+  const expectation = renderFeatureExpectationContract(doc.spec.feature_expectation_contract);
   const evidence = doc.footer.evidence.map((entry) => `  - ${entry}`).join('\n');
   const blocking = doc.footer.blocking_issues.length === 0
     ? '  - []'
@@ -192,6 +206,7 @@ ${verification}
 learning_plan:
 ${learning}
 experience_gate: ${doc.spec.experience_gate ?? '.omc/experience/current.md'}
+${expectation}
 
 ## History
 ${history}
@@ -206,6 +221,23 @@ next_action: ${doc.footer.next_action}
 artifacts_written:
 ${artifacts}
 `;
+}
+
+function renderFeatureExpectationContract(contract: CycleFeatureExpectationContract | undefined): string {
+  if (!contract) return '';
+  const uselessIf = contract.useless_if.map((entry) => `    - ${entry}`).join('\n');
+  const notDoneUntil = contract.not_done_until.map((entry) => `    - ${entry}`).join('\n');
+  return `feature_expectation_contract:
+  user_job: ${contract.user_job}
+  first_meaningful_use: ${contract.first_meaningful_use}
+  useless_if:
+${uselessIf}
+  maturity_ladder:
+    v0: ${contract.maturity_ladder.v0}
+    v1: ${contract.maturity_ladder.v1}
+    v2: ${contract.maturity_ladder.v2}
+  not_done_until:
+${notDoneUntil}`;
 }
 
 export function migrateCycleMarkdownToJson(root = process.cwd(), options: CycleMigrationOptions = {}): CycleMigrationReport {
@@ -315,6 +347,32 @@ function parseSpecSection(content: string, fields: Record<string, string>): Cycl
     verification_plan: parseList(section, 'verification_plan'),
     learning_plan: parseList(section, 'learning_plan'),
     experience_gate: matchValue(section, 'experience_gate') ?? fields.experience_gate,
+    feature_expectation_contract: parseFeatureExpectationContract(section),
+  };
+}
+
+function parseFeatureExpectationContract(section: string): CycleFeatureExpectationContract | undefined {
+  const contractSection = sectionContent(section, /Feature Expectation Contract/i) ?? section;
+  const userJob = matchValue(contractSection, 'user_job');
+  const firstMeaningfulUse = matchValue(contractSection, 'first_meaningful_use');
+  const v0 = matchValue(contractSection, 'v0');
+  const v1 = matchValue(contractSection, 'v1');
+  const v2 = matchValue(contractSection, 'v2');
+  const uselessIf = parseList(contractSection, 'useless_if');
+  const notDoneUntil = parseList(contractSection, 'not_done_until');
+  if (!userJob && !firstMeaningfulUse && !v0 && !v1 && !v2 && uselessIf.length === 0 && notDoneUntil.length === 0) {
+    return undefined;
+  }
+  return {
+    user_job: userJob ?? '',
+    first_meaningful_use: firstMeaningfulUse ?? '',
+    useless_if: uselessIf,
+    maturity_ladder: {
+      v0: v0 ?? '',
+      v1: v1 ?? '',
+      v2: v2 ?? '',
+    },
+    not_done_until: notDoneUntil,
   };
 }
 
@@ -427,6 +485,9 @@ function validateDocumentShape(path: string, document: CycleDocument, issues: Cy
   if (!document.spec || !VALID_BUILD_ROUTES.has(document.spec.build_route)) {
     issues.push({ severity: 'error', code: 'invalid-build-route', path, message: 'spec.build_route must be a valid route' });
   }
+  if (document.spec?.feature_expectation_contract && !isValidFeatureExpectationContract(document.spec.feature_expectation_contract)) {
+    issues.push({ severity: 'error', code: 'invalid-feature-expectation-contract', path, message: 'spec.feature_expectation_contract must include user_job, first_meaningful_use, useless_if, v0/v1/v2, and not_done_until' });
+  }
   if (!document.selected_portfolio
     || typeof document.selected_portfolio.core_product_slice !== 'string'
     || typeof document.selected_portfolio.enabling_task !== 'string'
@@ -446,4 +507,22 @@ function validateDocumentShape(path: string, document: CycleDocument, issues: Cy
   if (document.cycle_stage === 'complete' && !document.history.some((entry) => entry.stage === 'learn')) {
     issues.push({ severity: 'warning', code: 'complete-without-learn-event', path, message: 'cycle_stage=complete with no learn event in history' });
   }
+}
+
+function isValidFeatureExpectationContract(contract: CycleFeatureExpectationContract): boolean {
+  return hasMeaningfulString(contract.user_job)
+    && hasMeaningfulString(contract.first_meaningful_use)
+    && Array.isArray(contract.useless_if)
+    && contract.useless_if.some(hasMeaningfulString)
+    && hasMeaningfulString(contract.maturity_ladder?.v0)
+    && hasMeaningfulString(contract.maturity_ladder?.v1)
+    && hasMeaningfulString(contract.maturity_ladder?.v2)
+    && Array.isArray(contract.not_done_until)
+    && contract.not_done_until.some(hasMeaningfulString);
+}
+
+function hasMeaningfulString(value: unknown): value is string {
+  return typeof value === 'string'
+    && value.trim().length > 0
+    && !/^(?:tbd|todo|placeholder|pending|none|\[\])$/i.test(value.trim());
 }

@@ -12,6 +12,7 @@ export type CreativeLoopStatus =
 export type CreativeLoopArtifactId =
   | 'meaning-brief'
   | 'inspiration-ledger'
+  | 'visual-expectation'
   | 'design-directions'
   | 'motion-grammar'
   | 'token-system'
@@ -47,6 +48,7 @@ export interface CreativeLoopOptions {
 
 export const CREATIVE_LOOP_JSON_RELATIVE_PATH = '.omc/design/creative-loop/current.json';
 export const CREATIVE_LOOP_MD_RELATIVE_PATH = '.omc/design/creative-loop/current.md';
+export const VISUAL_EXPECTATION_RELATIVE_PATH = '.omc/design/visual-expectation/current.json';
 
 const ARTIFACTS: Array<{
   id: CreativeLoopArtifactId;
@@ -64,25 +66,31 @@ const ARTIFACTS: Array<{
     id: 'inspiration-ledger',
     path: '.omc/design/inspiration-ledger/current.md',
     required: true,
-    passTerms: ['principle', 'what not to copy', 'source'],
+    passTerms: ['principle', 'what not to copy', 'source', 'constraint'],
+  },
+  {
+    id: 'visual-expectation',
+    path: VISUAL_EXPECTATION_RELATIVE_PATH,
+    required: true,
+    passTerms: [],
   },
   {
     id: 'design-directions',
     path: '.omc/design/directions/current.md',
     required: true,
-    passTerms: ['direction 1', 'direction 2', 'direction 3', 'hypothesis'],
+    passTerms: ['direction 1', 'direction 2', 'direction 3', 'hypothesis', 'tradeoff'],
   },
   {
     id: 'motion-grammar',
     path: '.omc/design/motion-grammar/current.md',
     required: true,
-    passTerms: ['state', 'why', 'duration', 'easing'],
+    passTerms: ['state', 'why', 'duration', 'easing', 'reduced motion'],
   },
   {
     id: 'token-system',
     path: '.omc/design/tokens/current.json',
     required: true,
-    passTerms: ['color', 'type', 'spacing', 'radius', 'motion'],
+    passTerms: ['color', 'type', 'spacing', 'radius', 'elevation', 'motion'],
   },
   {
     id: 'component-experiments',
@@ -213,7 +221,46 @@ function inspectArtifact(
     };
   }
 
+  if (artifact.id === 'visual-expectation') {
+    const validation = validateVisualExpectationContract(root, rawContent);
+    return {
+      id: artifact.id,
+      path: artifact.path,
+      required: artifact.required,
+      exists: true,
+      passed: validation.passed,
+      reason: validation.reason,
+    };
+  }
+
+  if (artifact.id === 'token-system') {
+    const validation = validateTokenSystem(rawContent);
+    return {
+      id: artifact.id,
+      path: artifact.path,
+      required: artifact.required,
+      exists: true,
+      passed: validation.passed,
+      reason: validation.reason,
+    };
+  }
+
+  if (artifact.id === 'component-experiments') {
+    const validation = validateComponentExperiments(root, rawContent);
+    return {
+      id: artifact.id,
+      path: artifact.path,
+      required: artifact.required,
+      exists: true,
+      passed: validation.passed,
+      reason: validation.reason,
+    };
+  }
+
   const missingTerms = artifact.passTerms.filter((term) => !content.includes(term));
+  if (artifact.id === 'taste-gate' && missingTerms.length === 0 && !/\b(screenshot|visual_verdict|visual verdict|evidence)\b/i.test(rawContent)) {
+    missingTerms.push('visual evidence');
+  }
   return {
     id: artifact.id,
     path: artifact.path,
@@ -230,8 +277,166 @@ function isDraftPlaceholder(content: string): boolean {
     || /<[^>\n]+>/.test(content);
 }
 
+function validateVisualExpectationContract(root: string, rawContent: string): { passed: boolean; reason: string } {
+  const parsed = parseJsonObject(rawContent);
+  if (!parsed) return { passed: false, reason: 'invalid json' };
+  const contract = objectValue(parsed.visual_expectation_contract) ?? parsed;
+  const missing: string[] = [];
+
+  requireMeaningfulList(contract, 'desired_perception', missing);
+  requireMeaningfulList(contract, 'category_codes_to_avoid', missing);
+  requireMeaningfulList(contract, 'not_ready_if', missing);
+  requireStringFields(objectValue(contract.selected_direction), 'selected_direction', ['name', 'rationale', 'tradeoffs'], missing);
+
+  const inspirationPrinciples = arrayValue(contract.inspiration_principles);
+  if (!inspirationPrinciples || inspirationPrinciples.length === 0) {
+    missing.push('inspiration_principles');
+  } else {
+    for (const [index, entry] of inspirationPrinciples.entries()) {
+      requireStringFields(objectValue(entry), `inspiration_principles[${index}]`, ['source', 'principle', 'what_not_to_copy'], missing);
+    }
+  }
+
+  const tokenRationale = arrayValue(contract.token_rationale);
+  if (!tokenRationale || tokenRationale.length === 0) {
+    missing.push('token_rationale');
+  } else {
+    for (const [index, entry] of tokenRationale.entries()) {
+      requireStringFields(objectValue(entry), `token_rationale[${index}]`, ['token', 'decision', 'reason'], missing);
+    }
+  }
+
+  const componentProofs = arrayValue(contract.component_proofs);
+  if (!componentProofs || componentProofs.length === 0) {
+    missing.push('component_proofs');
+  } else {
+    for (const [index, entry] of componentProofs.entries()) {
+      const proof = objectValue(entry);
+      requireStringFields(proof, `component_proofs[${index}]`, ['component', 'state', 'screenshot', 'visual_verdict'], missing);
+      if (proof && hasMeaningfulString(proof.screenshot) && !pathExists(root, proof.screenshot)) {
+        missing.push(`component_proofs[${index}].screenshot file`);
+      }
+      if (proof && hasMeaningfulString(proof.visual_verdict) && !/\bpass\b/i.test(proof.visual_verdict)) {
+        missing.push(`component_proofs[${index}].visual_verdict pass`);
+      }
+    }
+  }
+
+  const screenshots = stringArrayValue(contract.screenshot_evidence);
+  if (screenshots.length === 0) {
+    missing.push('screenshot_evidence');
+  } else {
+    for (const [index, screenshot] of screenshots.entries()) {
+      if (!pathExists(root, screenshot)) missing.push(`screenshot_evidence[${index}] file`);
+    }
+  }
+
+  return missing.length === 0
+    ? { passed: true, reason: 'visual expectation contract passed' }
+    : { passed: false, reason: `missing or invalid: ${missing.join(', ')}` };
+}
+
+function validateTokenSystem(rawContent: string): { passed: boolean; reason: string } {
+  const parsed = parseJsonObject(rawContent);
+  if (!parsed) return { passed: false, reason: 'invalid json' };
+  const required = ['color', 'type', 'spacing', 'radius', 'elevation', 'motion'];
+  const missing = required.filter((field) => !hasNonEmptyStructuredValue(parsed[field]));
+  return missing.length === 0
+    ? { passed: true, reason: 'token system has meaningful required token groups' }
+    : { passed: false, reason: `missing or empty token groups: ${missing.join(', ')}` };
+}
+
+function validateComponentExperiments(root: string, rawContent: string): { passed: boolean; reason: string } {
+  const parsed = parseJsonObject(rawContent);
+  if (!parsed) return { passed: false, reason: 'invalid json' };
+  const missing: string[] = [];
+  const experiments = stringArrayValue(parsed.experiment);
+  const screenshots = stringArrayValue(parsed.screenshot);
+  const verdicts = stringArrayValue(parsed.visual_verdict);
+  if (experiments.length === 0) missing.push('experiment');
+  if (screenshots.length === 0) {
+    missing.push('screenshot');
+  } else {
+    for (const [index, screenshot] of screenshots.entries()) {
+      if (!pathExists(root, screenshot)) missing.push(`screenshot[${index}] file`);
+    }
+  }
+  if (verdicts.length === 0 || !verdicts.some((verdict) => /\bpass\b/i.test(verdict))) {
+    missing.push('visual_verdict pass');
+  }
+  return missing.length === 0
+    ? { passed: true, reason: 'component experiments include screenshot evidence and passing visual verdict' }
+    : { passed: false, reason: `missing or invalid: ${missing.join(', ')}` };
+}
+
+function parseJsonObject(rawContent: string): Record<string, unknown> | undefined {
+  try {
+    const parsed = JSON.parse(rawContent);
+    return objectValue(parsed);
+  } catch {
+    return undefined;
+  }
+}
+
+function requireMeaningfulList(record: Record<string, unknown>, field: string, missing: string[]): void {
+  if (stringArrayValue(record[field]).length === 0) missing.push(field);
+}
+
+function requireStringFields(
+  record: Record<string, unknown> | undefined,
+  prefix: string,
+  fields: string[],
+  missing: string[],
+): void {
+  if (!record) {
+    missing.push(prefix);
+    return;
+  }
+  for (const field of fields) {
+    if (!hasMeaningfulString(record[field])) missing.push(`${prefix}.${field}`);
+  }
+}
+
+function objectValue(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : undefined;
+}
+
+function arrayValue(value: unknown): unknown[] | undefined {
+  return Array.isArray(value) ? value : undefined;
+}
+
+function stringArrayValue(value: unknown): string[] {
+  if (Array.isArray(value)) return value.filter(hasMeaningfulString);
+  return hasMeaningfulString(value) ? [value] : [];
+}
+
+function hasMeaningfulString(value: unknown): value is string {
+  return typeof value === 'string'
+    && value.trim().length > 0
+    && !/^(?:tbd|todo|placeholder|pending|none|\[\])$/i.test(value.trim());
+}
+
+function hasNonEmptyStructuredValue(value: unknown): boolean {
+  if (hasMeaningfulString(value)) return true;
+  if (typeof value === 'number') return Number.isFinite(value);
+  if (typeof value === 'boolean') return true;
+  if (Array.isArray(value)) return value.some(hasNonEmptyStructuredValue);
+  const record = objectValue(value);
+  return record ? Object.values(record).some(hasNonEmptyStructuredValue) : false;
+}
+
+function pathExists(root: string, path: string): boolean {
+  return existsSync(resolve(root, path));
+}
+
 function creativeStatus(missingRequired: CreativeLoopArtifactId[]): CreativeLoopStatus {
-  if (missingRequired.includes('meaning-brief') || missingRequired.includes('inspiration-ledger')) {
+  if (
+    missingRequired.includes('meaning-brief')
+    || missingRequired.includes('inspiration-ledger')
+    || missingRequired.includes('visual-expectation')
+  ) {
     return 'needs-brief';
   }
   if (
@@ -261,7 +466,7 @@ function recommendedCommands(goal: string | undefined, status: CreativeLoopStatu
 
 function templateFor(id: CreativeLoopArtifactId, goal: string | undefined): string {
   const title = goal ?? '<visual goal>';
-  if (id === 'token-system' || id === 'component-experiments') {
+  if (id === 'visual-expectation' || id === 'token-system' || id === 'component-experiments') {
     return `${JSON.stringify(templateJsonFor(id), null, 2)}\n`;
   }
 
@@ -276,6 +481,26 @@ function templateFor(id: CreativeLoopArtifactId, goal: string | undefined): stri
 }
 
 function templateJsonFor(id: CreativeLoopArtifactId): Record<string, unknown> {
+  if (id === 'visual-expectation') {
+    return {
+      schema_version: 1,
+      status: 'draft',
+      visual_expectation_contract: {
+        desired_perception: [],
+        category_codes_to_avoid: [],
+        inspiration_principles: [],
+        selected_direction: {
+          name: '',
+          rationale: '',
+          tradeoffs: '',
+        },
+        token_rationale: [],
+        component_proofs: [],
+        screenshot_evidence: [],
+        not_ready_if: [],
+      },
+    };
+  }
   if (id === 'token-system') {
     return {
       schema_version: 1,
@@ -318,18 +543,22 @@ function templateBodyFor(id: CreativeLoopArtifactId): string {
         '## Sources',
         '- source: <reference>',
         '  - principle: <what to extract>',
+        '  - constraint: <where this principle applies>',
         '  - what not to copy: <signature details to avoid>',
       ].join('\n');
     case 'design-directions':
       return [
         '## Direction 1',
         'hypothesis: <visual hypothesis>',
+        'tradeoff: <what this direction gains and loses>',
         '',
         '## Direction 2',
         'hypothesis: <visual hypothesis>',
+        'tradeoff: <what this direction gains and loses>',
         '',
         '## Direction 3',
         'hypothesis: <visual hypothesis>',
+        'tradeoff: <what this direction gains and loses>',
       ].join('\n');
     case 'motion-grammar':
       return [
@@ -338,6 +567,7 @@ function templateBodyFor(id: CreativeLoopArtifactId): string {
         '  - why: <user/product reason>',
         '  - duration: <ms>',
         '  - easing: <curve>',
+        '  - reduced motion: <fallback>',
       ].join('\n');
     case 'taste-gate':
       return [

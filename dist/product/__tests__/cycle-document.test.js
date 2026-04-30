@@ -19,6 +19,7 @@ describe('cycle-document', () => {
         expect(document.spec.build_route).toBe('product-pipeline');
         expect(document.selected_portfolio.core_product_slice).toContain('row track');
         expect(document.spec.acceptance_criteria).toContain('user can resume the next row after reopening the app');
+        expect(document.spec.feature_expectation_contract?.maturity_ladder.v1).toContain('pattern context');
         expect(document.footer.evidence).toContain('fixture');
         expect(document.footer.confidence).toBe(0.6);
         expect(document.stage_checklist.spec).toBe(false);
@@ -38,6 +39,7 @@ describe('cycle-document', () => {
         expect(projection).toContain('schema_source: .omc/cycles/current.json');
         expect(projection).toContain('## Stage Checklist');
         expect(projection).toContain('build_route: product-pipeline');
+        expect(projection).toContain('feature_expectation_contract:');
     });
     it('validates a written document and rejects malformed JSON', () => {
         const root = createRoot();
@@ -104,6 +106,17 @@ verification_plan:
 learning_plan:
   - observe one design partner using the reader loop
 experience_gate: .omc/experience/current.md
+feature_expectation_contract:
+  user_job: resume a real pattern-reading session without losing place
+  first_meaningful_use: open a sample pattern, advance rows, close, and resume on the next row
+  useless_if:
+    - the loop can pass tests without showing where the user is in the pattern
+  maturity_ladder:
+    v0: row count persists across restart
+    v1: row count is tied to pattern context and section
+    v2: multi-section/repeat-aware tracking supports a full knitting session
+  not_done_until:
+    - a user can complete the return-session loop and learning captures whether it mattered
 
 status: ok
 evidence:

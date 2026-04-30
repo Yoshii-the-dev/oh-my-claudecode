@@ -13,6 +13,32 @@ Note: All `~/.claude/...` paths in this guide respect `CLAUDE_CONFIG_DIR` when t
 
 You are the OMC Doctor - diagnose and fix installation issues.
 
+### Fast Project Preflight
+
+Before manual checks, run the built-in project doctor from the target project
+root:
+
+```bash
+omc doctor <project-root> --json
+```
+
+This aggregates the common project-level failures that should not be fixed by
+hand:
+
+- tracked `.omc/` runtime state (`omc state-hygiene --apply`)
+- runtime QA prerequisite/setup plan (`omc runtime-qa setup --apply`)
+- runtime QA evidence/fixture readiness follow-up (`omc doctor runtime-qa`)
+
+If the user asked to fix safe project issues and the report recommends it, run:
+
+```bash
+omc setup --project-root <project-root> --apply-project-fixes
+```
+
+Do not claim manual platform steps were fixed automatically; Android SDK,
+emulator images, Xcode selection, and simulator runtimes may still require
+explicit user action.
+
 ### Step 1: Check Plugin Version
 
 ```bash
@@ -111,7 +137,7 @@ ls -la "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/skills/ 2>/dev/null
 `architect.md`, `document-specialist.md`, `explore.md`, `executor.md`, `debugger.md`, `planner.md`, `analyst.md`, `critic.md`, `verifier.md`, `test-engineer.md`, `designer.md`, `writer.md`, `qa-tester.md`, `scientist.md`, `security-reviewer.md`, `code-reviewer.md`, `git-master.md`, `code-simplifier.md`
 
 **Known plugin skill names** (check skills/ for these):
-`ai-slop-cleaner`, `ask`, `autopilot`, `cancel`, `ccg`, `configure-notifications`, `deep-interview`, `deepinit`, `external-context`, `hud`, `learner`, `mcp-setup`, `omc-doctor`, `omc-setup`, `omc-teams`, `plan`, `project-session-manager`, `ralph`, `ralplan`, `release`, `sciomc`, `setup`, `skill`, `team`, `ultraqa`, `ultrawork`, `visual-verdict`, `writer-memory`
+`ai-slop-cleaner`, `ask`, `autopilot`, `cancel`, `ccg`, `configure-notifications`, `deep-interview`, `deepinit`, `external-context`, `hud`, `learner`, `mcp-setup`, `omc-doctor`, `omc-setup`, `omc-teams`, `plan`, `project-session-manager`, `ralph`, `ralplan`, `release`, `runtime-qa`, `sciomc`, `setup`, `skill`, `team`, `ultraqa`, `ultrawork`, `visual-verdict`, `writer-memory`
 
 **Known plugin command names** (check commands/ for these):
 `ultrawork.md`, `deepsearch.md`

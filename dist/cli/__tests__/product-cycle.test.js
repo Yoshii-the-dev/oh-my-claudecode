@@ -22,6 +22,7 @@ describe('product cycle CLI command', () => {
             'status',
             'next',
             'validate',
+            'repair',
             'advance',
             'interventions',
             'interventions-plan',
@@ -36,6 +37,68 @@ describe('product cycle CLI command', () => {
         expect(featureGenerationCmd?.commands.map((command) => command.name())).toContain('audit');
         const creativeLoopCmd = buildProgram().commands.find((command) => command.name() === 'creative-loop');
         expect(creativeLoopCmd?.commands.map((command) => command.name())).toEqual(expect.arrayContaining(['audit', 'init']));
+    });
+    it('previews safe product-cycle repairs without writing projections', async () => {
+        const root = mkdtempSync(join(tmpdir(), 'omc-product-cycle-repair-preview-'));
+        try {
+            writeArtifact(root, '.omc/cycles/current.md', cycleArtifactForRepair('spec'));
+            const { migrateCycleMarkdownToJson } = await import('../../product/cycle-document.js');
+            const { migrateLearningMarkdownToJson } = await import('../../product/learning-document.js');
+            migrateCycleMarkdownToJson(root, { write: true });
+            writeArtifact(root, '.omc/learning/current.md', learningArtifactForRepair());
+            migrateLearningMarkdownToJson(root, { write: true, cycleId: '2026-04-25-first-loop' });
+            writeArtifact(root, '.omc/cycles/current.md', 'stale cycle projection\n');
+            writeArtifact(root, '.omc/learning/current.md', 'stale learning projection\n');
+            writeArtifact(root, '.omc/portfolio/current.json', portfolioLedgerForRepair());
+            writeArtifact(root, '.omc/portfolio/current.md', 'stale portfolio projection\n');
+            const logger = { log: vi.fn(), error: vi.fn() };
+            const { productCycleRepairCommand } = await import('../commands/product-cycle.js');
+            const exitCode = await productCycleRepairCommand(root, { json: true }, logger);
+            const report = JSON.parse(String(logger.log.mock.calls[0]?.[0]));
+            expect(exitCode).toBe(0);
+            expect(report.ok).toBe(true);
+            expect(report.actions).toEqual(expect.arrayContaining([
+                expect.objectContaining({ id: 'cycle-projection', status: 'needed' }),
+                expect.objectContaining({ id: 'learning-projection', status: 'needed' }),
+                expect.objectContaining({ id: 'portfolio-projection', status: 'needed' }),
+            ]));
+            expect(readFileSync(join(root, '.omc/cycles/current.md'), 'utf-8')).toBe('stale cycle projection\n');
+        }
+        finally {
+            rmSync(root, { recursive: true, force: true });
+        }
+    });
+    it('repairs safe product-cycle projections when --safe is set', async () => {
+        const root = mkdtempSync(join(tmpdir(), 'omc-product-cycle-repair-safe-'));
+        try {
+            writeArtifact(root, '.omc/cycles/current.md', cycleArtifactForRepair('spec'));
+            const { migrateCycleMarkdownToJson } = await import('../../product/cycle-document.js');
+            const { migrateLearningMarkdownToJson } = await import('../../product/learning-document.js');
+            migrateCycleMarkdownToJson(root, { write: true });
+            writeArtifact(root, '.omc/learning/current.md', learningArtifactForRepair());
+            migrateLearningMarkdownToJson(root, { write: true, cycleId: '2026-04-25-first-loop' });
+            writeArtifact(root, '.omc/cycles/current.md', 'stale cycle projection\n');
+            writeArtifact(root, '.omc/learning/current.md', 'stale learning projection\n');
+            writeArtifact(root, '.omc/portfolio/current.json', portfolioLedgerForRepair());
+            writeArtifact(root, '.omc/portfolio/current.md', 'stale portfolio projection\n');
+            const logger = { log: vi.fn(), error: vi.fn() };
+            const { productCycleRepairCommand } = await import('../commands/product-cycle.js');
+            const exitCode = await productCycleRepairCommand(root, { safe: true, json: true }, logger);
+            const report = JSON.parse(String(logger.log.mock.calls[0]?.[0]));
+            expect(exitCode).toBe(0);
+            expect(report.ok).toBe(true);
+            expect(report.actions).toEqual(expect.arrayContaining([
+                expect.objectContaining({ id: 'cycle-projection', status: 'changed' }),
+                expect.objectContaining({ id: 'learning-projection', status: 'changed' }),
+                expect.objectContaining({ id: 'portfolio-projection', status: 'changed' }),
+            ]));
+            expect(readFileSync(join(root, '.omc/cycles/current.md'), 'utf-8')).toContain('schema_source: .omc/cycles/current.json');
+            expect(readFileSync(join(root, '.omc/learning/current.md'), 'utf-8')).toContain('schema_source: .omc/learning/current.json');
+            expect(readFileSync(join(root, '.omc/portfolio/current.md'), 'utf-8')).toContain('# Portfolio Ledger');
+        }
+        finally {
+            rmSync(root, { recursive: true, force: true });
+        }
     });
     it('prints pending intervention handoff as JSON', async () => {
         const root = mkdtempSync(join(tmpdir(), 'omc-product-cycle-cli-'));
@@ -502,6 +565,131 @@ function writeArtifact(root, relativePath, content) {
     mkdirSync(join(path, '..'), { recursive: true });
     writeFileSync(path, content, 'utf-8');
 }
+function cycleArtifactForRepair(stage) {
+    return `# Product Cycle: first usable loop
+
+cycle_id: 2026-04-25-first-loop
+cycle_goal: first usable loop
+cycle_stage: ${stage}
+product_stage: pre-mvp
+
+## Stage Checklist
+- [x] discover
+- [x] rank
+- [x] select
+- [x] spec
+- [ ] build
+- [ ] verify
+- [ ] learn
+
+## Selected Cycle Portfolio
+core_product_slice: import/open sample pattern -> row track -> persist progress -> resume next session
+enabling_task: local progress persistence
+learning_task: design partner row-tracking session
+
+## Cycle Spec
+acceptance_criteria:
+  - user can resume the next row after reopening the app
+build_route: product-pipeline
+verification_plan:
+  - npm test
+learning_plan:
+  - observe one design partner using the reader loop
+experience_gate: .omc/experience/current.md
+feature_expectation_contract:
+  user_job: resume a real pattern-reading session without losing place
+  first_meaningful_use: open a sample pattern, advance rows, close, and resume on the next row
+  useless_if:
+    - the loop can pass tests without showing where the user is in the pattern
+  maturity_ladder:
+    v0: row count persists across restart
+    v1: row count is tied to pattern context and section
+    v2: multi-section/repeat-aware tracking supports a full knitting session
+  not_done_until:
+    - a user can complete the return-session loop and learning captures whether it mattered
+
+status: ok
+evidence:
+  - fixture
+confidence: 0.7
+blocking_issues:
+  - []
+next_action: continue
+artifacts_written:
+  - .omc/cycles/current.md
+`;
+}
+function learningArtifactForRepair() {
+    return `# Learning: 2026-04-25-first-loop
+
+cycle_id: 2026-04-25-first-loop
+
+## Shipped outcome
+First usable loop shipped.
+
+## Evidence collected
+- fixture
+
+## User/product learning
+- Users need resume state.
+
+## Invalidated assumptions
+- none
+
+## Recommended next cycle
+Improve reader precision.
+
+## Next candidate adjustments
+- keep reader precision visible
+
+status: ok
+evidence:
+  - fixture
+confidence: 0.7
+blocking_issues:
+  - []
+next_action: plan next cycle
+artifacts_written:
+  - .omc/learning/current.md
+`;
+}
+function portfolioLedgerForRepair() {
+    const lanes = ['product', 'ux', 'research', 'backend', 'quality', 'brand-content', 'distribution'];
+    const items = Array.from({ length: 20 }, (_, index) => ({
+        id: `move-${index + 1}`,
+        title: index === 0 ? 'First reader loop' : `Move ${index + 1}`,
+        lane: lanes[index % lanes.length],
+        type: index === 0 ? 'core-product-slice' : index === 1 ? 'enabling' : index === 2 ? 'learning' : 'quality',
+        status: index < 3 ? 'selected' : 'candidate',
+        user_visible: index === 0,
+        confidence: index % 2 === 0 ? 'HIGH' : 'MEDIUM',
+        dependencies: index === 1 ? ['move-1'] : [],
+        selected_cycle: index < 3 ? '2026-04-25-first-loop' : null,
+        evidence: ['fixture'],
+        expected_learning: 'Fixture learning',
+        dependency_unlock: 'Fixture unlock',
+        ...(index === 0 ? { feature_expectation: featureExpectationForRepair() } : {}),
+    }));
+    return `${JSON.stringify({
+        schema_version: 1,
+        updated_at: '2026-04-25T00:00:00.000Z',
+        source_artifacts: ['.omc/opportunities/current.md'],
+        items,
+    }, null, 2)}\n`;
+}
+function featureExpectationForRepair() {
+    return {
+        user_job: 'resume a real pattern-reading session without losing place',
+        first_meaningful_use: 'open a sample pattern, advance rows, close, and resume on the next row',
+        useless_if: ['the loop can pass tests without showing where the user is in the pattern'],
+        maturity_ladder: {
+            v0: 'row count persists across restart',
+            v1: 'row count is tied to pattern context and section',
+            v2: 'multi-section/repeat-aware tracking supports a full knitting session',
+        },
+        not_done_until: ['a user can complete the return-session loop and learning captures whether it mattered'],
+    };
+}
 function writeBuildCycle(root) {
     writeArtifact(root, '.omc/cycles/current.md', `# Product Cycle: ship backend auth api
 
@@ -594,6 +782,17 @@ verification_plan:
   - npm test
 learning_plan:
   - observe one design partner
+feature_expectation_contract:
+  user_job: resume a real pattern-reading session without losing place
+  first_meaningful_use: open a sample pattern, advance rows, close, and resume on the next row
+  useless_if:
+    - the loop can pass tests without showing where the user is in the pattern
+  maturity_ladder:
+    v0: row count persists across restart
+    v1: row count is tied to pattern context and section
+    v2: multi-section/repeat-aware tracking supports a full knitting session
+  not_done_until:
+    - a user can complete the return-session loop and learning captures whether it mattered
 `;
 }
 function richExperienceGateArtifact() {
@@ -671,6 +870,7 @@ The value is confidence that the next session resumes exactly where the user sto
 `;
 }
 function writePassingCreativeLoop(root) {
+    writeArtifact(root, '.omc/artifacts/creative-loop/row-marker.png', 'fake screenshot');
     writeArtifact(root, '.omc/design/meaning-brief/current.md', [
         '# Meaning Brief',
         'Feeling: calm progress confidence.',
@@ -682,16 +882,46 @@ function writePassingCreativeLoop(root) {
         '# Inspiration Ledger',
         '- source: craft workbench',
         '  - principle: tools stay close to the work surface.',
+        '  - constraint: applies to row actions and project cards.',
         '  - what not to copy: decorative clutter.',
     ].join('\n'));
+    writeArtifact(root, '.omc/design/visual-expectation/current.json', `${JSON.stringify({
+        schema_version: 1,
+        visual_expectation_contract: {
+            desired_perception: ['calm progress confidence'],
+            category_codes_to_avoid: ['generic spreadsheet tracker'],
+            inspiration_principles: [{
+                    source: 'craft workbench',
+                    principle: 'tools stay close to the work surface',
+                    what_not_to_copy: 'decorative clutter',
+                }],
+            selected_direction: {
+                name: 'quiet ledger with tactile row markers',
+                rationale: 'keeps row progress dominant and calm',
+                tradeoffs: 'less expressive but stronger for repeat use',
+            },
+            token_rationale: [{ token: 'color.primary', decision: 'near-black controls', reason: 'high contrast tap target' }],
+            component_proofs: [{
+                    component: 'RowCounter',
+                    state: 'row saved',
+                    screenshot: '.omc/artifacts/creative-loop/row-marker.png',
+                    visual_verdict: 'pass',
+                }],
+            screenshot_evidence: ['.omc/artifacts/creative-loop/row-marker.png'],
+            not_ready_if: ['the screen reads as a generic counter'],
+        },
+    }, null, 2)}\n`);
     writeArtifact(root, '.omc/design/directions/current.md', [
         '# Directions',
         '## Direction 1',
         'hypothesis: quiet ledger with tactile row markers.',
+        'tradeoff: less expressive, more durable for daily sessions.',
         '## Direction 2',
         'hypothesis: focused stage with progress rail.',
+        'tradeoff: clearer sequence, more visual weight.',
         '## Direction 3',
         'hypothesis: compact dashboard with craft-coded status.',
+        'tradeoff: dense scanning, weaker emotional feel.',
     ].join('\n'));
     writeArtifact(root, '.omc/design/motion-grammar/current.md', [
         '# Motion Grammar',
@@ -699,13 +929,15 @@ function writePassingCreativeLoop(root) {
         '  - why: confirm persistence without stealing focus.',
         '  - duration: 160ms',
         '  - easing: ease-out',
+        '  - reduced motion: static saved label.',
     ].join('\n'));
     writeArtifact(root, '.omc/design/tokens/current.json', `${JSON.stringify({
-        color: {},
-        type: {},
-        spacing: {},
-        radius: {},
-        motion: {},
+        color: { primary: '#111827' },
+        type: { body: 16 },
+        spacing: { md: 8 },
+        radius: { card: 8 },
+        elevation: { card: 1 },
+        motion: { saved: '160ms ease-out' },
     }, null, 2)}\n`);
     writeArtifact(root, '.omc/design/component-experiments/current.json', `${JSON.stringify({
         experiment: ['row marker'],
@@ -718,6 +950,7 @@ function writePassingCreativeLoop(root) {
         'Usability: passes because primary row action stays visible.',
         'Accessibility: passes with focus, contrast, and reduced motion notes.',
         'Brand Fit: passes because product meaning and visual language align.',
+        'Evidence: screenshot .omc/artifacts/creative-loop/row-marker.png and visual verdict pass.',
     ].join('\n'));
 }
 //# sourceMappingURL=product-cycle.test.js.map

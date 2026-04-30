@@ -21,6 +21,16 @@ describe('portfolio ledger', () => {
         expect(report.summary.selected).toBe(3);
         expect(report.summary.lanes).toBe(7);
         expect(projection).toContain('| move-1 | product | selected | HIGH | 2026-04-25-first-loop |');
+        expect(projection).toContain('## Selected Feature Expectations');
+    });
+    it('warns when a selected user-visible core slice lacks feature expectation metadata', () => {
+        const root = createRoot();
+        const data = ledger();
+        delete data.items[0].feature_expectation;
+        writeLedger(root, data);
+        const report = validatePortfolioLedger(root);
+        expect(report.ok).toBe(true);
+        expect(report.issues.map((issue) => issue.code)).toContain('missing-feature-expectation');
     });
     it('flags invalid ids, duplicate ids, invalid confidence, and missing evidence', () => {
         const root = createRoot();
@@ -38,6 +48,21 @@ describe('portfolio ledger', () => {
             'invalid-confidence',
             'missing-evidence',
         ]));
+    });
+    it('enforces the compact 20-40 item portfolio budget', () => {
+        const root = createRoot();
+        const oversized = ledger();
+        oversized.items = Array.from({ length: 41 }, (_, index) => ({
+            ...oversized.items[index % oversized.items.length],
+            id: `move-${index + 1}`,
+            selected_cycle: index < 3 ? '2026-04-25-first-loop' : null,
+            status: index < 3 ? 'selected' : 'candidate',
+            type: index === 0 ? 'core-product-slice' : index === 1 ? 'enabling' : index === 2 ? 'learning' : 'quality',
+        }));
+        writeLedger(root, oversized);
+        const report = validatePortfolioLedger(root);
+        expect(report.ok).toBe(false);
+        expect(report.issues.map((issue) => issue.code)).toContain('portfolio-too-large');
     });
     it('enforces selected cycle trio shape and active cycle id', () => {
         const root = createRoot();
@@ -131,7 +156,21 @@ function ledger() {
             evidence: ['fixture'],
             expected_learning: 'Fixture learning',
             dependency_unlock: 'Fixture unlock',
+            ...(index === 0 ? { feature_expectation: featureExpectation() } : {}),
         })),
+    };
+}
+function featureExpectation() {
+    return {
+        user_job: 'resume a real pattern-reading session without losing place',
+        first_meaningful_use: 'open a sample pattern, advance rows, close, and resume on the next row',
+        useless_if: ['the loop can pass tests without showing where the user is in the pattern'],
+        maturity_ladder: {
+            v0: 'row count persists across restart',
+            v1: 'row count is tied to pattern context and section',
+            v2: 'multi-section/repeat-aware tracking supports a full knitting session',
+        },
+        not_done_until: ['a user can complete the return-session loop and learning captures whether it mattered'],
     };
 }
 function opportunitiesArtifact() {

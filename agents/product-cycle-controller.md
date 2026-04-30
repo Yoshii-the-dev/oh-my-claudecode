@@ -100,6 +100,7 @@ depends_on:
       - 1 learning/research task
     - Writes a compact cycle spec with acceptance criteria, evidence, build route, verification plan, and learning plan before build.
     - Requires an experience gate before user-facing build: user journey, empty states, failure states, return session, and perceived value.
+    - Requires a feature expectation contract before user-facing build: user job, first meaningful use, useless-if conditions, v0/v1/v2 maturity ladder, and not-done-until signals.
     - Selects from `.omc/portfolio/current.json` when present; markdown opportunity/roadmap files are projections, not competing sources of truth.
   </Success_Criteria>
 
@@ -180,6 +181,12 @@ depends_on:
     - verification plan
     - learning plan
     - experience gate path: `.omc/experience/current.md`
+    - feature_expectation_contract:
+      - user_job
+      - first_meaningful_use
+      - useless_if
+      - maturity_ladder: v0, v1, v2
+      - not_done_until
     - explicit non-goals
 
     Run:
@@ -189,6 +196,8 @@ depends_on:
     ```
 
     Build cannot start while the experience gate or cycle contract has errors.
+
+    If the selected core slice only builds the v0 seed of a larger capability, say that explicitly in `maturity_ladder.v0` and keep v1/v2 in roadmap/learning outputs. Do not mark the whole capability done when only the first control or data field exists.
 
     ## Stage 5 - Build
 

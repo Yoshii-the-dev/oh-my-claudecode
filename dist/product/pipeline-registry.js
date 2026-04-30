@@ -143,7 +143,16 @@ export const PRODUCT_ARTIFACT_REGISTRY = {
         format: 'json',
         owner: 'creative-loop',
         machineContract: 'strict',
-        purpose: 'UI/UX creative readiness gate: meaning, inspiration principles, divergent directions, motion, tokens, experiments, and taste verdict.',
+        purpose: 'UI/UX creative readiness gate: meaning, visual expectation, inspiration principles, divergent directions, motion, tokens, experiments, and taste verdict.',
+    },
+    'creative-visual-expectation': {
+        name: 'creative-visual-expectation',
+        lane: 'design',
+        currentPath: '.omc/design/visual-expectation/current.json',
+        format: 'json',
+        owner: 'creative-loop',
+        machineContract: 'strict',
+        purpose: 'Machine-readable contract for desired perception, category codes to avoid, selected direction, token rationale, component proofs, and screenshot evidence.',
     },
     'creative-taste-gate': {
         name: 'creative-taste-gate',

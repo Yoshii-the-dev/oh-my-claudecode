@@ -173,6 +173,29 @@ export function runProductCycle(options: RunProductCycleOptions = {}): RunProduc
     const currentStage = snapshot.stage;
 
     if (currentStage === 'complete') {
+      const cycleReport = validateProductPipelineContracts({ root, stage: 'cycle' });
+      if (!cycleReport.ok) {
+        const evaluation: CycleRunnerStageResult = {
+          stage: 'complete',
+          outcome: 'contract-failed',
+          reason: 'completed cycle contract failed',
+          instruction: 'omc product-cycle validate --json',
+          evidence: { issues: cycleReport.issues },
+        };
+        stageResults.push(evaluation);
+        return finalize({
+          ok: false,
+          startedAt,
+          startedFromStage,
+          endedAtStage: currentStage,
+          stoppedReason: 'contract-failed',
+          pauseInstruction: evaluation.instruction,
+          stagesAdvanced,
+          stageResults,
+          issues,
+        });
+      }
+
       return finalize({
         ok: true,
         startedAt,
@@ -598,6 +621,30 @@ function evaluateVerify(
     };
   }
 
+  if (options.dryRun) {
+    const runtimeQa = maybeRunRuntimeQa(root, options);
+    const runtimeQaBlock = runtimeQa && (runtimeQa.report.status === 'blocked' || runtimeQa.report.status === 'noop');
+    if (runtimeQaBlock) {
+      return {
+        stage: 'verify',
+        outcome: 'pause-for-human',
+        reason: `dry-run: runtime QA would not produce executable evidence (${runtimeQa.report.status}, ${runtimeQa.report.adapter})`,
+        instruction: runtimeQa.report.install_proposal
+          ?? 'Configure .omc/runtime-qa.json with executable build/smoke/cleanup commands before verify can pass.',
+        runtimeQa,
+        evidence: { command: trimmed, dryRun: true, runtimeQaStatus: runtimeQa.report.status },
+      };
+    }
+
+    return {
+      stage: 'verify',
+      outcome: 'advance',
+      reason: `dry-run: would run verify (${trimmed})`,
+      runtimeQa,
+      evidence: { command: trimmed, dryRun: true, runtimeQaStatus: runtimeQa?.report.status },
+    };
+  }
+
   const result = spawnSync(trimmed, {
     cwd: root,
     shell: true,
@@ -624,13 +671,15 @@ function evaluateVerify(
 
   if (result.status === 0) {
     const runtimeQa = maybeRunRuntimeQa(root, options);
-    if (runtimeQa && runtimeQa.report.status === 'blocked') {
+    if (runtimeQa && (runtimeQa.report.status === 'blocked' || runtimeQa.report.status === 'noop')) {
       return {
         stage: 'verify',
         outcome: 'pause-for-human',
-        reason: `runtime QA blocked (${runtimeQa.report.adapter})`,
+        reason: runtimeQa.report.status === 'noop'
+          ? `runtime QA produced no executable evidence (${runtimeQa.report.adapter})`
+          : `runtime QA blocked (${runtimeQa.report.adapter})`,
         instruction: runtimeQa.report.install_proposal
-          ?? 'Configure .omc/runtime-qa.json or rerun with --install-mobile-tools after approving tool provisioning.',
+          ?? 'Configure .omc/runtime-qa.json with executable build/smoke/cleanup commands or rerun with --install-mobile-tools after approving tool provisioning.',
         runtimeQa,
         evidence: { command: trimmed, exitCode: 0, runtimeQaStatus: runtimeQa.report.status },
       };

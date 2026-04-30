@@ -1,10 +1,11 @@
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'fs';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   portfolioMigrateCommand,
   portfolioProjectCommand,
+  portfolioTrimCommand,
   portfolioValidateCommand,
 } from '../commands/portfolio.js';
 
@@ -53,6 +54,34 @@ describe('portfolio CLI commands', () => {
     expect(logger.logs.join('\n')).toContain('Wrote migrated portfolio ledger');
     expect(logger.logs.join('\n')).toContain(join(root, '.omc/portfolio/current.json'));
   });
+
+  it('trims an oversized ledger while preserving selected work', async () => {
+    const root = createRoot();
+    writeLedger(root, 45);
+    const previewLogger = captureLogger();
+    const writeLogger = captureLogger();
+
+    const previewExit = await portfolioTrimCommand(root, { to: 40, json: true }, previewLogger);
+    const preview = JSON.parse(previewLogger.logs.join('\n')) as {
+      wrote: boolean;
+      trimmedCount: number;
+      removedCount: number;
+      ledger: { items: Array<{ id: string; selected_cycle: string | null }> };
+    };
+    const writeExit = await portfolioTrimCommand(root, { to: '40', write: true, json: true }, writeLogger);
+    const written = JSON.parse(readFileSync(join(root, '.omc/portfolio/current.json'), 'utf-8')) as {
+      items: Array<{ id: string; selected_cycle: string | null }>;
+    };
+
+    expect(previewExit).toBe(0);
+    expect(writeExit).toBe(0);
+    expect(preview.wrote).toBe(false);
+    expect(preview.trimmedCount).toBe(40);
+    expect(preview.removedCount).toBe(5);
+    expect(preview.ledger.items.filter((item) => item.selected_cycle)).toHaveLength(3);
+    expect(written.items).toHaveLength(40);
+    expect(written.items.filter((item) => item.selected_cycle)).toHaveLength(3);
+  });
 });
 
 function createRoot(): string {
@@ -72,14 +101,14 @@ function captureLogger(): { logs: string[]; errors: string[]; log: (message?: un
   };
 }
 
-function writeLedger(root: string): void {
+function writeLedger(root: string, count = 20): void {
   const lanes = ['product', 'ux', 'research', 'backend', 'quality', 'brand-content', 'distribution'];
-  const items = Array.from({ length: 20 }, (_, index) => ({
+  const items = Array.from({ length: count }, (_, index) => ({
     id: `move-${index + 1}`,
     title: `Move ${index + 1}`,
     lane: lanes[index % lanes.length],
     type: index === 0 ? 'core-product-slice' : index === 1 ? 'enabling' : index === 2 ? 'learning' : 'quality',
-    status: index < 3 ? 'selected' : 'candidate',
+    status: index < 3 ? 'selected' : index >= 40 ? 'rejected' : 'candidate',
     user_visible: index === 0,
     confidence: index % 2 === 0 ? 'HIGH' : 'MEDIUM',
     dependencies: index === 1 ? ['move-1'] : [],

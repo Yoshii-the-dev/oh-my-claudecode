@@ -22,6 +22,8 @@ const VALID_STATUSES = new Set([
     'deferred',
     'rejected',
 ]);
+const MIN_PORTFOLIO_ITEMS = 20;
+const MAX_PORTFOLIO_ITEMS = 40;
 export function getPortfolioLedgerPath(root = process.cwd()) {
     return resolve(root, PORTFOLIO_LEDGER_RELATIVE_PATH);
 }
@@ -76,6 +78,7 @@ export function renderPortfolioProjection(ledger) {
         item.dependencies.join(', '),
         item.title,
     ]);
+    const selectedExpectations = rows.filter((item) => item.selected_cycle && item.feature_expectation);
     return [
         '# Portfolio Ledger',
         '',
@@ -86,6 +89,21 @@ export function renderPortfolioProjection(ledger) {
         '| --- | --- | --- | --- | --- | --- | --- |',
         ...table.map((row) => `| ${row.map(escapeCell).join(' | ')} |`),
         '',
+        ...(selectedExpectations.length > 0
+            ? [
+                '## Selected Feature Expectations',
+                '',
+                ...selectedExpectations.flatMap((item) => [
+                    `### ${item.id}`,
+                    `- user_job: ${item.feature_expectation?.user_job ?? ''}`,
+                    `- first_meaningful_use: ${item.feature_expectation?.first_meaningful_use ?? ''}`,
+                    `- useless_if: ${(item.feature_expectation?.useless_if ?? []).join('; ')}`,
+                    `- maturity_ladder: v0=${item.feature_expectation?.maturity_ladder.v0 ?? ''}; v1=${item.feature_expectation?.maturity_ladder.v1 ?? ''}; v2=${item.feature_expectation?.maturity_ladder.v2 ?? ''}`,
+                    `- not_done_until: ${(item.feature_expectation?.not_done_until ?? []).join('; ')}`,
+                    '',
+                ]),
+            ]
+            : []),
         '## Source Artifacts',
         ...ledger.source_artifacts.map((source) => `- ${source}`),
         '',
@@ -149,6 +167,51 @@ export function migrateOpportunitiesToPortfolioLedger(root = process.cwd(), opti
         issues,
     };
 }
+export function trimPortfolioLedger(root = process.cwd(), options = {}) {
+    const resolvedRoot = resolve(root);
+    const path = getPortfolioLedgerPath(resolvedRoot);
+    const target = options.to ?? MAX_PORTFOLIO_ITEMS;
+    const issues = [];
+    if (!Number.isInteger(target) || target < MIN_PORTFOLIO_ITEMS || target > MAX_PORTFOLIO_ITEMS) {
+        issues.push(issue(path, 'error', 'invalid-trim-target', `Trim target must be an integer between ${MIN_PORTFOLIO_ITEMS} and ${MAX_PORTFOLIO_ITEMS}`));
+        return trimReport(path, target, 0, undefined, [], false, undefined, issues);
+    }
+    const validation = validatePortfolioLedger(resolvedRoot);
+    if (!validation.ledger) {
+        return trimReport(path, target, 0, undefined, [], false, undefined, validation.issues);
+    }
+    const ledger = validation.ledger;
+    const originalCount = ledger.items.length;
+    if (originalCount <= target) {
+        return trimReport(path, target, originalCount, {
+            ...ledger,
+            items: [...ledger.items],
+        }, [], false, undefined, validation.issues);
+    }
+    const trimmedItems = selectTrimmedPortfolioItems(ledger.items, target);
+    const keptIds = new Set(trimmedItems.map((item) => item.id));
+    const removedItems = ledger.items
+        .filter((item) => !keptIds.has(item.id))
+        .map(({ id, title, lane, status }) => ({ id, title, lane, status }));
+    const trimmedLedger = {
+        ...ledger,
+        updated_at: options.now ?? new Date().toISOString(),
+        items: trimmedItems,
+    };
+    const trimIssues = [...validation.issues.filter((entry) => entry.code !== 'portfolio-too-large')];
+    validateLedgerShape(path, trimmedLedger, trimIssues, readActiveCycleId(resolvedRoot));
+    const errors = trimIssues.filter((entry) => entry.severity === 'error');
+    if (errors.length > 0) {
+        return trimReport(path, target, originalCount, trimmedLedger, removedItems, false, undefined, trimIssues);
+    }
+    let projectionPath;
+    if (options.write) {
+        mkdirSync(dirname(path), { recursive: true });
+        writeFileSync(path, `${JSON.stringify(trimmedLedger, null, 2)}\n`, 'utf-8');
+        projectionPath = writePortfolioProjection(resolvedRoot);
+    }
+    return trimReport(path, target, originalCount, trimmedLedger, removedItems, Boolean(options.write), projectionPath, trimIssues);
+}
 function extractPortfolioItemsFromOpportunities(content, sourceArtifact) {
     const fromTables = extractItemsFromTables(content, sourceArtifact);
     const fromBlocks = extractItemsFromIdBlocks(content, sourceArtifact);
@@ -198,6 +261,7 @@ function extractItemsFromIdBlocks(content, sourceArtifact) {
             expected_learning: values.expectedlearning ?? values.learning,
             dependency_unlock: values.dependencyunlock ?? values.unlock,
             user_visible: values.uservisible,
+            feature_expectation: parseFeatureExpectation(values.featureexpectation),
         }, sourceArtifact);
     })
         .filter((item) => Boolean(item));
@@ -228,6 +292,7 @@ function itemFromCells(headers, cells, sourceArtifact) {
         expected_learning: get('expectedlearning', 'learning'),
         dependency_unlock: get('dependencyunlock', 'unlock'),
         user_visible: get('uservisible'),
+        feature_expectation: parseFeatureExpectation(get('featureexpectation')),
     }, sourceArtifact);
 }
 function normalizeWorkItem(input, sourceArtifact) {
@@ -262,6 +327,9 @@ function normalizeWorkItem(input, sourceArtifact) {
         dependency_unlock: typeof input.dependency_unlock === 'string' && input.dependency_unlock.trim()
             ? input.dependency_unlock.trim()
             : 'Migrated from opportunities artifact; refine dependency unlock on next priority-engine pass.',
+        ...(isFeatureExpectation(input.feature_expectation)
+            ? { feature_expectation: input.feature_expectation }
+            : {}),
     };
 }
 function applySelectedCycle(content, items, cycleId) {
@@ -332,6 +400,108 @@ function dedupeItems(items) {
             return item;
         return { ...item, id: `${item.id}-${count + 1}` };
     });
+}
+function selectTrimmedPortfolioItems(items, target) {
+    const byId = new Map(items.map((item) => [item.id, item]));
+    const protectedIds = new Set();
+    for (const item of items) {
+        if (item.selected_cycle || item.status === 'selected' || item.status === 'in_progress') {
+            protectItemAndDependencies(item, byId, protectedIds);
+        }
+    }
+    const ranked = [...items].sort((a, b) => portfolioTrimScore(b, protectedIds) - portfolioTrimScore(a, protectedIds)
+        || a.lane.localeCompare(b.lane)
+        || a.id.localeCompare(b.id));
+    const selected = [];
+    const selectedIds = new Set();
+    for (const item of ranked) {
+        if (selected.length >= target)
+            break;
+        selected.push(item);
+        selectedIds.add(item.id);
+    }
+    if (new Set(selected.map((item) => item.lane)).size < 5) {
+        for (const lane of [...VALID_LANES]) {
+            if (selected.some((item) => item.lane === lane))
+                continue;
+            const replacement = ranked.find((item) => item.lane === lane && !selectedIds.has(item.id));
+            if (!replacement)
+                continue;
+            const replaceIndex = findTrimReplacementIndex(selected, protectedIds);
+            if (replaceIndex === -1)
+                break;
+            selectedIds.delete(selected[replaceIndex].id);
+            selected[replaceIndex] = replacement;
+            selectedIds.add(replacement.id);
+            if (new Set(selected.map((item) => item.lane)).size >= 5)
+                break;
+        }
+    }
+    return selected.sort((a, b) => items.indexOf(a) - items.indexOf(b));
+}
+function protectItemAndDependencies(item, byId, protectedIds) {
+    if (protectedIds.has(item.id))
+        return;
+    protectedIds.add(item.id);
+    for (const dependency of item.dependencies) {
+        const dependencyItem = byId.get(dependency);
+        if (dependencyItem)
+            protectItemAndDependencies(dependencyItem, byId, protectedIds);
+    }
+}
+function portfolioTrimScore(item, protectedIds) {
+    return (protectedIds.has(item.id) ? 10_000 : 0)
+        + statusTrimWeight(item.status)
+        + typeTrimWeight(item.type)
+        + confidenceTrimWeight(item.confidence)
+        + Math.min(item.evidence.length, 5)
+        + (item.user_visible ? 2 : 0);
+}
+function statusTrimWeight(status) {
+    switch (status) {
+        case 'selected': return 900;
+        case 'in_progress': return 800;
+        case 'candidate': return 500;
+        case 'blocked': return 300;
+        case 'deferred': return 200;
+        case 'done': return 100;
+        case 'rejected': return 0;
+    }
+}
+function typeTrimWeight(type) {
+    switch (type) {
+        case 'core-product-slice': return 70;
+        case 'enabling': return 60;
+        case 'learning':
+        case 'research': return 50;
+        case 'quality': return 40;
+        case 'distribution': return 30;
+        default: return 20;
+    }
+}
+function confidenceTrimWeight(confidence) {
+    if (typeof confidence === 'number')
+        return Math.round(confidence * 30);
+    const normalized = confidence.toLowerCase();
+    if (normalized === 'high')
+        return 30;
+    if (normalized === 'medium')
+        return 20;
+    return 10;
+}
+function findTrimReplacementIndex(items, protectedIds) {
+    let candidateIndex = -1;
+    let candidateScore = Number.POSITIVE_INFINITY;
+    for (const [index, item] of items.entries()) {
+        if (protectedIds.has(item.id))
+            continue;
+        const score = portfolioTrimScore(item, protectedIds);
+        if (score < candidateScore) {
+            candidateIndex = index;
+            candidateScore = score;
+        }
+    }
+    return candidateIndex;
 }
 function splitMarkdownRow(line) {
     return line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((cell) => cell.trim());
@@ -414,6 +584,42 @@ function splitList(value) {
         .map((entry) => entry.replace(/^["'\s-]+|["'\s]+$/g, '').trim())
         .filter(Boolean);
 }
+function parseFeatureExpectation(value) {
+    if (isFeatureExpectation(value))
+        return value;
+    if (typeof value !== 'string' || !value.trim())
+        return undefined;
+    try {
+        const parsed = JSON.parse(value);
+        return isFeatureExpectation(parsed) ? parsed : undefined;
+    }
+    catch {
+        return undefined;
+    }
+}
+export function isFeatureExpectation(value) {
+    if (!value || typeof value !== 'object')
+        return false;
+    const rec = value;
+    const ladder = rec.maturity_ladder;
+    if (!ladder || typeof ladder !== 'object')
+        return false;
+    const ladderRec = ladder;
+    return hasMeaningfulString(rec.user_job)
+        && hasMeaningfulString(rec.first_meaningful_use)
+        && Array.isArray(rec.useless_if)
+        && rec.useless_if.some(hasMeaningfulString)
+        && hasMeaningfulString(ladderRec.v0)
+        && hasMeaningfulString(ladderRec.v1)
+        && hasMeaningfulString(ladderRec.v2)
+        && Array.isArray(rec.not_done_until)
+        && rec.not_done_until.some(hasMeaningfulString);
+}
+function hasMeaningfulString(value) {
+    return typeof value === 'string'
+        && value.trim().length > 0
+        && !/^(?:tbd|todo|placeholder|pending|none|\[\])$/i.test(value.trim());
+}
 function slugify(value) {
     return value
         .toLowerCase()
@@ -441,6 +647,12 @@ function validateLedgerShape(path, ledger, issues, activeCycleId) {
     if (!Array.isArray(ledger.items)) {
         issues.push(issue(path, 'error', 'invalid-items', 'items must be an array'));
         return;
+    }
+    if (ledger.items.length < MIN_PORTFOLIO_ITEMS) {
+        issues.push(issue(path, 'error', 'portfolio-too-small', `Expected at least ${MIN_PORTFOLIO_ITEMS} portfolio items, found ${ledger.items.length}`));
+    }
+    if (ledger.items.length > MAX_PORTFOLIO_ITEMS) {
+        issues.push(issue(path, 'error', 'portfolio-too-large', `Expected at most ${MAX_PORTFOLIO_ITEMS} portfolio items, found ${ledger.items.length}`));
     }
     const ids = new Set();
     const selectedByCycle = new Map();
@@ -507,6 +719,12 @@ function validateItem(path, item, issues) {
     if (!Array.isArray(item.evidence) || item.evidence.length === 0) {
         issues.push(issue(path, 'error', 'missing-evidence', 'evidence must be a non-empty array'));
     }
+    if (item.selected_cycle
+        && item.type === 'core-product-slice'
+        && item.user_visible !== false
+        && !isFeatureExpectation(item.feature_expectation)) {
+        issues.push(issue(path, 'warning', 'missing-feature-expectation', 'selected user-visible core-product-slice should include feature_expectation with user_job, first_meaningful_use, useless_if, v0/v1/v2 maturity ladder, and not_done_until'));
+    }
 }
 function isValidConfidence(value) {
     if (typeof value === 'number')
@@ -551,6 +769,22 @@ function report(path, ledger, issues) {
             errors,
             warnings,
         },
+    };
+}
+function trimReport(path, target, originalCount, ledger, removedItems, wrote, projectionPath, issues) {
+    const errors = issues.filter((entry) => entry.severity === 'error');
+    return {
+        ok: errors.length === 0,
+        path,
+        projectionPath,
+        wrote,
+        target,
+        originalCount,
+        trimmedCount: ledger?.items.length ?? 0,
+        removedCount: removedItems.length,
+        removedItems,
+        ledger,
+        issues,
     };
 }
 function issue(path, severity, code, message) {

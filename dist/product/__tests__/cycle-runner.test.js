@@ -80,6 +80,102 @@ describe('runProductCycle', () => {
         expect(handoff.routes.map((route) => route.agent)).toEqual(['debugger', 'executor', 'test-engineer', 'verifier']);
         expect(handoff.next_command).toContain('/prompts:debugger');
     });
+    it('does not execute the verify command during dry-run', () => {
+        const root = createRoot();
+        setupCycleAt(root, 'verify');
+        const sideEffectPath = join(root, 'verify-side-effect.txt');
+        const command = `${process.execPath} -e "require('fs').writeFileSync(${JSON.stringify(sideEffectPath)}, 'ran')"`;
+        const report = runProductCycle({
+            root,
+            dryRun: true,
+            maxStages: 1,
+            verifyCommand: command,
+        });
+        const verifyResult = report.stageResults.find((entry) => entry.stage === 'verify');
+        expect(verifyResult?.outcome).toBe('advance');
+        expect(verifyResult?.reason).toContain('dry-run: would run verify');
+        expect(existsSync(sideEffectPath)).toBe(false);
+    });
+    it('does not advance verify when runtime QA produces no executable evidence', () => {
+        const root = createRoot();
+        setupCycleAt(root, 'verify');
+        writeArtifact(root, '.omc/runtime-qa.json', JSON.stringify({
+            target: 'project-script',
+            adapter: 'project-script',
+        }));
+        const report = runProductCycle({ root, verifyCommand: 'true' });
+        expect(report.stoppedReason).toBe('pause-for-human');
+        const verifyResult = report.stageResults.find((entry) => entry.stage === 'verify');
+        expect(verifyResult?.outcome).toBe('pause-for-human');
+        expect(verifyResult?.runtimeQa?.report.status).toBe('noop');
+        expect(report.stagesAdvanced.map((entry) => `${entry.from}->${entry.to}`)).not.toContain('verify->learn');
+    });
+    it('validates a complete cycle before reporting completion', () => {
+        const root = createRoot();
+        writeArtifact(root, '.omc/cycles/current.md', `# Product Cycle: invalid complete
+
+cycle_id: 2026-04-25-first
+cycle_stage: complete
+product_stage: pre-mvp
+
+## Stage Checklist
+- [x] discover
+- [x] rank
+- [x] select
+- [x] spec
+- [x] build
+- [ ] verify
+- [ ] learn
+
+## Selected Cycle Portfolio
+core_product_slice: first loop
+enabling_task: persistence
+learning_task: design partner session
+
+## Cycle Spec
+acceptance_criteria:
+  - user can resume
+build_route: product-pipeline
+verification_plan:
+  - npm test
+learning_plan:
+  - observe one design partner
+
+status: ok
+evidence: fixture
+confidence: 0.6
+blocking_issues: none
+next_action: complete
+artifacts_written: .omc/cycles/current.md
+`);
+        const report = runProductCycle({ root });
+        expect(report.ok).toBe(false);
+        expect(report.stoppedReason).toBe('contract-failed');
+        expect(report.stageResults[0]?.stage).toBe('complete');
+        expect(report.stageResults[0]?.evidence).toMatchObject({
+            issues: expect.arrayContaining([
+                expect.objectContaining({ code: 'complete-with-open-checklist' }),
+            ]),
+        });
+    });
+    it('blocks learn -> complete when runtime QA evidence belongs to an older cycle', () => {
+        const root = createRoot();
+        setupCycleAt(root, 'learn', '2026-04-25-first');
+        writeArtifact(root, '.omc/learning/current.md', learningArtifact());
+        writeArtifact(root, '.omc/runtime-qa.json', JSON.stringify({
+            target: 'project-script',
+            commands: { smoke: 'npm run smoke' },
+        }));
+        writeArtifact(root, '.omc/handoffs/runtime-qa/current.json', JSON.stringify({
+            status: 'passed',
+            dry_run: false,
+            cycle_id: '2026-04-24-previous',
+        }));
+        const result = advanceProductCycle({ root, to: 'complete' });
+        expect(result.ok).toBe(false);
+        expect(result.issues.map((issue) => issue.code)).toContain('runtime-qa-handoff-stale-cycle');
+        expect(readProductCycle(root).stage).toBe('learn');
+    });
     it('routes visual user-facing builds through stack provisioning before product-pipeline', () => {
         const root = createRoot();
         setupCycleAt(root, 'build');
@@ -399,6 +495,7 @@ The value is confidence that the next session resumes exactly where the user sto
 `;
 }
 function writePassingCreativeLoop(root) {
+    writeArtifact(root, '.omc/artifacts/creative-loop/row-marker.png', 'fake screenshot');
     writeArtifact(root, '.omc/design/meaning-brief/current.md', [
         '# Meaning Brief',
         'Feeling: calm progress confidence.',
@@ -410,16 +507,46 @@ function writePassingCreativeLoop(root) {
         '# Inspiration Ledger',
         '- source: craft workbench',
         '  - principle: tools stay close to the work surface.',
+        '  - constraint: applies to row actions and project cards.',
         '  - what not to copy: decorative clutter.',
     ].join('\n'));
+    writeArtifact(root, '.omc/design/visual-expectation/current.json', `${JSON.stringify({
+        schema_version: 1,
+        visual_expectation_contract: {
+            desired_perception: ['calm progress confidence'],
+            category_codes_to_avoid: ['generic spreadsheet tracker'],
+            inspiration_principles: [{
+                    source: 'craft workbench',
+                    principle: 'tools stay close to the work surface',
+                    what_not_to_copy: 'decorative clutter',
+                }],
+            selected_direction: {
+                name: 'quiet ledger with tactile row markers',
+                rationale: 'keeps row progress dominant and calm',
+                tradeoffs: 'less expressive but stronger for repeat use',
+            },
+            token_rationale: [{ token: 'color.primary', decision: 'near-black controls', reason: 'high contrast tap target' }],
+            component_proofs: [{
+                    component: 'RowCounter',
+                    state: 'row saved',
+                    screenshot: '.omc/artifacts/creative-loop/row-marker.png',
+                    visual_verdict: 'pass',
+                }],
+            screenshot_evidence: ['.omc/artifacts/creative-loop/row-marker.png'],
+            not_ready_if: ['the screen reads as a generic counter'],
+        },
+    }, null, 2)}\n`);
     writeArtifact(root, '.omc/design/directions/current.md', [
         '# Directions',
         '## Direction 1',
         'hypothesis: quiet ledger with tactile row markers.',
+        'tradeoff: less expressive, more durable for daily sessions.',
         '## Direction 2',
         'hypothesis: focused stage with progress rail.',
+        'tradeoff: clearer sequence, more visual weight.',
         '## Direction 3',
         'hypothesis: compact dashboard with craft-coded status.',
+        'tradeoff: dense scanning, weaker emotional feel.',
     ].join('\n'));
     writeArtifact(root, '.omc/design/motion-grammar/current.md', [
         '# Motion Grammar',
@@ -427,13 +554,15 @@ function writePassingCreativeLoop(root) {
         '  - why: confirm persistence without stealing focus.',
         '  - duration: 160ms',
         '  - easing: ease-out',
+        '  - reduced motion: static saved label.',
     ].join('\n'));
     writeArtifact(root, '.omc/design/tokens/current.json', `${JSON.stringify({
-        color: {},
-        type: {},
-        spacing: {},
-        radius: {},
-        motion: {},
+        color: { primary: '#111827' },
+        type: { body: 16 },
+        spacing: { md: 8 },
+        radius: { card: 8 },
+        elevation: { card: 1 },
+        motion: { saved: '160ms ease-out' },
     }, null, 2)}\n`);
     writeArtifact(root, '.omc/design/component-experiments/current.json', `${JSON.stringify({
         experiment: ['row marker'],
@@ -446,6 +575,7 @@ function writePassingCreativeLoop(root) {
         'Usability: passes because primary row action stays visible.',
         'Accessibility: passes with focus, contrast, and reduced motion notes.',
         'Brand Fit: passes because product meaning and visual language align.',
+        'Evidence: screenshot .omc/artifacts/creative-loop/row-marker.png and visual verdict pass.',
     ].join('\n'));
 }
 function discoveryCapabilityArtifact() {

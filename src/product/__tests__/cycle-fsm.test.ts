@@ -203,6 +203,17 @@ verification_plan:
 learning_plan:
   - observe one design partner using the reader loop
 experience_gate: .omc/experience/current.md
+feature_expectation_contract:
+  user_job: resume a real pattern-reading session without losing place
+  first_meaningful_use: open a sample pattern, advance rows, close, and resume on the next row
+  useless_if:
+    - the loop can pass tests without showing where the user is in the pattern
+  maturity_ladder:
+    v0: row count persists across restart
+    v1: row count is tied to pattern context and section
+    v2: multi-section/repeat-aware tracking supports a full knitting session
+  not_done_until:
+    - a user can complete the return-session loop and learning captures whether it mattered
 
 ## Completion Evidence
 - .omc/learning/current.md
@@ -328,6 +339,7 @@ function portfolioLedgerArtifact(): string {
     evidence: ['fixture'],
     expected_learning: 'Fixture learning',
     dependency_unlock: 'Fixture unlock',
+    ...(index === 0 ? { feature_expectation: featureExpectation() } : {}),
   }));
   return JSON.stringify({
     schema_version: 1,
@@ -335,6 +347,20 @@ function portfolioLedgerArtifact(): string {
     source_artifacts: ['.omc/opportunities/current.md'],
     items,
   }, null, 2);
+}
+
+function featureExpectation(): Record<string, unknown> {
+  return {
+    user_job: 'resume a real pattern-reading session without losing place',
+    first_meaningful_use: 'open a sample pattern, advance rows, close, and resume on the next row',
+    useless_if: ['the loop can pass tests without showing where the user is in the pattern'],
+    maturity_ladder: {
+      v0: 'row count persists across restart',
+      v1: 'row count is tied to pattern context and section',
+      v2: 'multi-section/repeat-aware tracking supports a full knitting session',
+    },
+    not_done_until: ['a user can complete the return-session loop and learning captures whether it mattered'],
+  };
 }
 
 function opportunitiesArtifact(): string {

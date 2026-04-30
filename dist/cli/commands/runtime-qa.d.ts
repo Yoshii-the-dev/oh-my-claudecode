@@ -7,6 +7,8 @@ export interface RuntimeQaCommandOptions {
     target?: string;
     write?: boolean;
     force?: boolean;
+    backend?: string;
+    apply?: boolean;
     commandRunner?: RuntimeQaCommandRunner;
 }
 interface LoggerLike {
@@ -15,5 +17,8 @@ interface LoggerLike {
 }
 export declare function runtimeQaRunCommand(root: string | undefined, options: RuntimeQaCommandOptions, logger?: LoggerLike): Promise<number>;
 export declare function runtimeQaInitCommand(root: string | undefined, options: RuntimeQaCommandOptions, logger?: LoggerLike): Promise<number>;
+export declare function runtimeQaMigrateCommand(root: string | undefined, options: RuntimeQaCommandOptions, logger?: LoggerLike): Promise<number>;
+export declare function runtimeQaSetupCommand(root: string | undefined, options: RuntimeQaCommandOptions, logger?: LoggerLike): Promise<number>;
+export declare function runtimeQaFixtureCommand(action: 'provision' | 'teardown', fixtureName: string, root: string | undefined, options: RuntimeQaCommandOptions, logger?: LoggerLike): Promise<number>;
 export {};
 //# sourceMappingURL=runtime-qa.d.ts.map

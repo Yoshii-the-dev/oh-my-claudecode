@@ -141,7 +141,16 @@ export declare const PRODUCT_ARTIFACT_REGISTRY: {
         readonly format: "json";
         readonly owner: "creative-loop";
         readonly machineContract: "strict";
-        readonly purpose: "UI/UX creative readiness gate: meaning, inspiration principles, divergent directions, motion, tokens, experiments, and taste verdict.";
+        readonly purpose: "UI/UX creative readiness gate: meaning, visual expectation, inspiration principles, divergent directions, motion, tokens, experiments, and taste verdict.";
+    };
+    readonly 'creative-visual-expectation': {
+        readonly name: "creative-visual-expectation";
+        readonly lane: "design";
+        readonly currentPath: ".omc/design/visual-expectation/current.json";
+        readonly format: "json";
+        readonly owner: "creative-loop";
+        readonly machineContract: "strict";
+        readonly purpose: "Machine-readable contract for desired perception, category codes to avoid, selected direction, token rationale, component proofs, and screenshot evidence.";
     };
     readonly 'creative-taste-gate': {
         readonly name: "creative-taste-gate";
