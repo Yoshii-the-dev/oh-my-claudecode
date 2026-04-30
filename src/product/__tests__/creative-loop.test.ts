@@ -39,6 +39,7 @@ describe('creative loop', () => {
     expect(plan.status).toBe('needs-brief');
     expect(plan.artifacts.find((artifact) => artifact.id === 'meaning-brief')?.reason).toBe('draft placeholder');
     expect(existsSync(join(root, '.omc/design/meaning-brief/current.md'))).toBe(true);
+    expect(existsSync(join(root, '.omc/design/visual-expectation/current.json'))).toBe(true);
     expect(existsSync(join(root, '.omc/design/component-experiments/current.json'))).toBe(true);
     expect(existsSync(join(root, CREATIVE_LOOP_JSON_RELATIVE_PATH))).toBe(true);
     expect(existsSync(join(root, CREATIVE_LOOP_MD_RELATIVE_PATH))).toBe(true);
@@ -58,6 +59,18 @@ describe('creative loop', () => {
     expect(markdown).toContain('status: ready');
     expect(markdown).toContain('.omc/design/taste-gate/current.md');
   });
+
+  it('blocks readiness when visual evidence references missing screenshots', () => {
+    const root = createRoot();
+    writePassingCreativeLoop(root);
+    rmSync(join(root, '.omc/artifacts/creative-loop/row-marker.png'));
+
+    const plan = planCreativeLoop({ root, goal: 'row tracking dashboard' });
+
+    expect(plan.status).toBe('needs-brief');
+    expect(plan.artifacts.find((artifact) => artifact.id === 'visual-expectation')?.reason).toContain('screenshot');
+    expect(plan.artifacts.find((artifact) => artifact.id === 'component-experiments')?.reason).toContain('screenshot');
+  });
 });
 
 function createRoot(): string {
@@ -73,6 +86,7 @@ function writeArtifact(root: string, relativePath: string, content: string): voi
 }
 
 function writePassingCreativeLoop(root: string): void {
+  writeArtifact(root, '.omc/artifacts/creative-loop/row-marker.png', 'fake screenshot');
   writeArtifact(root, '.omc/design/meaning-brief/current.md', [
     '# Meaning Brief',
     'Feeling: calm progress confidence.',
@@ -84,16 +98,49 @@ function writePassingCreativeLoop(root: string): void {
     '# Inspiration Ledger',
     '- source: craft workbench',
     '  - principle: tools stay close to the work surface.',
+    '  - constraint: applies to primary row actions and project cards.',
     '  - what not to copy: skeuomorphic ornament.',
   ].join('\n'));
+  writeArtifact(root, '.omc/design/visual-expectation/current.json', `${JSON.stringify({
+    schema_version: 1,
+    visual_expectation_contract: {
+      desired_perception: ['calm progress confidence'],
+      category_codes_to_avoid: ['generic spreadsheet tracker'],
+      inspiration_principles: [{
+        source: 'craft workbench',
+        principle: 'tools stay close to the work surface',
+        what_not_to_copy: 'literal skeuomorphic wood texture',
+      }],
+      selected_direction: {
+        name: 'quiet ledger with tactile row markers',
+        rationale: 'keeps the current row visually dominant without making the app feel like a spreadsheet',
+        tradeoffs: 'less decorative than an editorial craft look, stronger for repeat use',
+      },
+      token_rationale: [
+        { token: 'color.primary', decision: 'near-black primary controls', reason: 'maximum contrast for mid-knit tapping' },
+        { token: 'spacing.4xl', decision: 'wide counter spacing', reason: 'keeps accidental taps low' },
+      ],
+      component_proofs: [{
+        component: 'RowCounter',
+        state: 'row saved',
+        screenshot: '.omc/artifacts/creative-loop/row-marker.png',
+        visual_verdict: 'pass',
+      }],
+      screenshot_evidence: ['.omc/artifacts/creative-loop/row-marker.png'],
+      not_ready_if: ['the screen can pass implementation tests while reading as a generic counter'],
+    },
+  }, null, 2)}\n`);
   writeArtifact(root, '.omc/design/directions/current.md', [
     '# Directions',
     '## Direction 1',
     'hypothesis: quiet ledger with tactile row markers.',
+    'tradeoff: less expressive, more durable for daily sessions.',
     '## Direction 2',
     'hypothesis: focused stage with progress rail.',
+    'tradeoff: clearer sequence, more visual weight.',
     '## Direction 3',
     'hypothesis: compact dashboard with craft-coded status.',
+    'tradeoff: dense scanning, weaker emotional feel.',
   ].join('\n'));
   writeArtifact(root, '.omc/design/motion-grammar/current.md', [
     '# Motion Grammar',
@@ -101,13 +148,15 @@ function writePassingCreativeLoop(root: string): void {
     '  - why: confirm persistence without stealing focus.',
     '  - duration: 160ms',
     '  - easing: ease-out',
+    '  - reduced motion: static saved label.',
   ].join('\n'));
   writeArtifact(root, '.omc/design/tokens/current.json', `${JSON.stringify({
-    color: {},
-    type: {},
-    spacing: {},
-    radius: {},
-    motion: {},
+    color: { primary: '#111827' },
+    type: { body: 16 },
+    spacing: { md: 8 },
+    radius: { card: 8 },
+    elevation: { card: 1 },
+    motion: { saved: '160ms ease-out' },
   }, null, 2)}\n`);
   writeArtifact(root, '.omc/design/component-experiments/current.json', `${JSON.stringify({
     experiment: ['row marker'],
@@ -120,5 +169,6 @@ function writePassingCreativeLoop(root: string): void {
     'Usability: passes because primary row action stays visible.',
     'Accessibility: passes with focus, contrast, and reduced motion notes.',
     'Brand Fit: passes because product meaning and visual language align.',
+    'Evidence: screenshot .omc/artifacts/creative-loop/row-marker.png and visual verdict pass.',
   ].join('\n'));
 }

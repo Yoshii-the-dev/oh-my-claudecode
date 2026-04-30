@@ -1,5 +1,5 @@
 export type CreativeLoopStatus = 'ready' | 'needs-brief' | 'needs-divergence' | 'needs-experiments' | 'needs-taste-gate';
-export type CreativeLoopArtifactId = 'meaning-brief' | 'inspiration-ledger' | 'design-directions' | 'motion-grammar' | 'token-system' | 'component-experiments' | 'taste-gate' | 'design-system';
+export type CreativeLoopArtifactId = 'meaning-brief' | 'inspiration-ledger' | 'visual-expectation' | 'design-directions' | 'motion-grammar' | 'token-system' | 'component-experiments' | 'taste-gate' | 'design-system';
 export interface CreativeLoopArtifact {
     id: CreativeLoopArtifactId;
     path: string;
@@ -25,6 +25,7 @@ export interface CreativeLoopOptions {
 }
 export declare const CREATIVE_LOOP_JSON_RELATIVE_PATH = ".omc/design/creative-loop/current.json";
 export declare const CREATIVE_LOOP_MD_RELATIVE_PATH = ".omc/design/creative-loop/current.md";
+export declare const VISUAL_EXPECTATION_RELATIVE_PATH = ".omc/design/visual-expectation/current.json";
 export declare function planCreativeLoop(options?: CreativeLoopOptions): CreativeLoopPlan;
 export declare function initCreativeLoop(options?: CreativeLoopOptions): CreativeLoopPlan;
 export declare function writeCreativeLoopPlan(root: string | undefined, plan: CreativeLoopPlan): {

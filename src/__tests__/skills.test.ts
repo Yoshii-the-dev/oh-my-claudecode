@@ -168,6 +168,7 @@ describe('Builtin Skills', () => {
         'ralph',
         'ralplan',
         'release',
+        'runtime-qa',
         'sciomc',
         'self-improve',
         'setup',
@@ -252,8 +253,16 @@ describe('Builtin Skills', () => {
       expect(template).toContain('Recommended starter setup');
       expect(template).toContain('Individual popular server');
       expect(template).toContain('More server choices');
+      expect(template).toContain('Supabase Configuration');
       expect(template).not.toContain('5. **All of the above**');
       expect(template).not.toContain('6. **Custom**');
+    });
+
+    it('should include runtime QA Supabase MCP safety guidance', () => {
+      const skill = getBuiltinSkill('runtime-qa');
+      expect(skill).toBeDefined();
+      expect(skill?.template).toContain('runtime-qa-fixture-agent-mcp-required');
+      expect(skill?.template).toContain('Do not insert, update, or delete rows directly in `auth.users`');
     });
 
     it('should emphasize process-first install routing in the setup skill', () => {

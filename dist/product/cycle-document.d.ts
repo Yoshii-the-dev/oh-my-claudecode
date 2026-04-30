@@ -18,6 +18,18 @@ export interface CycleSpec {
     verification_plan: string[];
     learning_plan: string[];
     experience_gate?: string;
+    feature_expectation_contract?: CycleFeatureExpectationContract;
+}
+export interface CycleFeatureExpectationContract {
+    user_job: string;
+    first_meaningful_use: string;
+    useless_if: string[];
+    maturity_ladder: {
+        v0: string;
+        v1: string;
+        v2: string;
+    };
+    not_done_until: string[];
 }
 export interface CycleStageEvent {
     stage: CycleStage;

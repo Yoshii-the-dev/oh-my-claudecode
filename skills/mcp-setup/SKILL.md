@@ -65,6 +65,9 @@ Skip directly to the **Custom MCP Server** section below.
 
 ## Step 2: Gather Required Information
 
+If the user explicitly asks for Supabase MCP, skip the generic menus and use
+the Supabase section below.
+
 ### For Ref:
 Ask for API key:
 ```
@@ -96,6 +99,14 @@ Do you have a GitHub Personal Access Token?
 - Create one at: https://github.com/settings/tokens
 - Recommended scopes: repo, read:org
 - Enter your token, or type 'skip' to configure later
+```
+
+### For Supabase:
+Ask which Supabase project scope to use:
+```
+Which Supabase project should this MCP server access?
+- Enter a project ref to scope the server, or press Enter to configure account-level access
+- For runtime QA fixture provisioning, use a development/test project, not production
 ```
 
 ## Step 3: Add MCP Servers Using CLI
@@ -131,6 +142,26 @@ claude mcp add --transport http github https://api.githubcopilot.com/mcp/
 
 > Note: Docker option requires Docker installed. HTTP option is simpler but may have different capabilities.
 
+### Supabase Configuration:
+
+Hosted Supabase MCP server:
+```bash
+claude mcp add --transport http supabase https://mcp.supabase.com/mcp
+```
+
+Project-scoped hosted Supabase MCP server:
+```bash
+claude mcp add --transport http supabase "https://mcp.supabase.com/mcp?project_ref=<PROJECT_REF>"
+```
+
+For CI or non-interactive environments with a Supabase access token:
+```bash
+claude mcp add --transport http --header "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" supabase "https://mcp.supabase.com/mcp?project_ref=${SUPABASE_PROJECT_REF}"
+```
+
+After adding Supabase MCP, restart Claude Code and complete the OAuth prompt if
+the client opens one.
+
 ## Step 4: Verify Installation
 
 After configuration, verify the MCP servers are properly set up:
@@ -160,6 +191,8 @@ USAGE TIPS:
 - Linkup: Use for web searches (e.g., "Search the web for latest TypeScript features")
 - Filesystem: Extended file operations beyond the working directory
 - GitHub: Interact with GitHub repos, issues, and PRs
+- Supabase: Query/manage development Supabase projects through MCP; keep runtime
+  QA fixture provisioning scoped to development/test projects
 
 TROUBLESHOOTING:
 - If MCP servers don't appear, run `claude mcp list` to check status

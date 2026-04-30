@@ -115,6 +115,7 @@ const SKILL_PROTECTION = {
     'omc-setup': 'medium',
     setup: 'medium',
     'mcp-setup': 'medium',
+    'runtime-qa': 'medium',
     'project-session-manager': 'medium',
     psm: 'medium',
     'writer-memory': 'medium',

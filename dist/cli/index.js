@@ -24,19 +24,22 @@ import { doctorConflictsCommand } from './commands/doctor-conflicts.js';
 import { doctorTeamRoutingCommand } from './commands/doctor-team-routing.js';
 import { productArtifactsCommand } from './commands/product-artifacts.js';
 import { productContractsCommand } from './commands/product-contracts.js';
-import { productCycleAdvanceCommand, productCycleInterventionsCommand, productCycleInterventionsPlanCommand, productCycleInterventionsRunCommand, productCycleNextCommand, productCycleResearchCommand, productCycleResearchPlanCommand, productCycleResearchRunCommand, productCycleRunCommand, productCycleStatusCommand, productCycleValidateCommand, } from './commands/product-cycle.js';
+import { projectDoctorCommand, inspectProjectDoctor, renderProjectDoctorReport } from './commands/project-doctor.js';
+import { productCycleAdvanceCommand, productCycleInterventionsCommand, productCycleInterventionsPlanCommand, productCycleInterventionsRunCommand, productCycleNextCommand, productCycleResearchCommand, productCycleResearchPlanCommand, productCycleResearchRunCommand, productCycleRepairCommand, productCycleRunCommand, productCycleStatusCommand, productCycleValidateCommand, } from './commands/product-cycle.js';
 import { cycleDocumentMigrateCommand, cycleDocumentProjectCommand, cycleDocumentValidateCommand, } from './commands/cycle-document.js';
 import { learningMigrateCommand, learningProjectCommand, learningValidateCommand, } from './commands/learning-document.js';
 import { historicalScorecardCommand } from './commands/historical-scorecard.js';
-import { portfolioMigrateCommand, portfolioProjectCommand, portfolioValidateCommand, } from './commands/portfolio.js';
+import { portfolioMigrateCommand, portfolioProjectCommand, portfolioTrimCommand, portfolioValidateCommand, } from './commands/portfolio.js';
 import { creativeLoopAuditCommand, creativeLoopInitCommand } from './commands/creative-loop.js';
 import { featureGenerationAuditCommand } from './commands/feature-generation.js';
 import { runScorecardCommand } from './commands/run-scorecard.js';
 import { sessionSearchCommand } from './commands/session-search.js';
+import { stateHygieneCommand } from './commands/state-hygiene.js';
+import { runtimeQaDoctorCommand } from './commands/runtime-qa-doctor.js';
 import { teamCommand } from './commands/team.js';
 import { ralphthonCommand } from './commands/ralphthon.js';
 import { telemetryDigestCommand } from './commands/telemetry.js';
-import { runtimeQaInitCommand, runtimeQaRunCommand } from './commands/runtime-qa.js';
+import { runtimeQaFixtureCommand, runtimeQaInitCommand, runtimeQaMigrateCommand, runtimeQaRunCommand, runtimeQaSetupCommand, } from './commands/runtime-qa.js';
 import { teleportCommand, teleportListCommand, teleportRemoveCommand } from './commands/teleport.js';
 import { getRuntimePackageVersion } from '../lib/version.js';
 import { resolvePluginDirArg } from '../lib/plugin-dir.js';
@@ -1084,7 +1087,7 @@ sessionCmd
  * Doctor command - Diagnostic tools
  */
 const doctorCmd = program
-    .command('doctor')
+    .command('doctor [root]')
     .description('Diagnostic tools for troubleshooting OMC installation')
     .option('--plugin-dir <path>', 'Override OMC plugin root directory (sets OMC_PLUGIN_ROOT)')
     .option('--team-routing', 'Probe CLI presence for every provider referenced by team.roleRouting')
@@ -1093,20 +1096,34 @@ const doctorCmd = program
 Examples:
   $ omc doctor conflicts                        Check for plugin conflicts
   $ omc doctor team-routing                     Probe /team role-routing provider CLIs
+  $ omc doctor /path/to/app                     Run project setup/runtime hygiene checks
   $ omc doctor product-artifacts                Validate .omc product artifact inventory
   $ omc doctor product-contracts                Validate product pipeline artifacts
+  $ omc doctor runtime-qa                       Validate runtime QA readiness and evidence
   $ omc doctor --team-routing                   Same as above (flag form)
   $ omc doctor --plugin-dir /path/to/plugin     Run diagnostics against a specific plugin dir`)
     .hook('preAction', (thisCommand) => {
     applyPluginDirOption(thisCommand.opts().pluginDir);
 })
-    .action(async (options) => {
+    .action(async (root, options) => {
     if (options.teamRouting) {
         const exitCode = await doctorTeamRoutingCommand({ json: options.json ?? false });
         process.exit(exitCode);
     }
-    // Without --team-routing, show help text for the parent command.
-    doctorCmd.help();
+    const exitCode = await projectDoctorCommand(root, { json: options.json ?? false });
+    process.exit(exitCode);
+});
+doctorCmd
+    .command('project [root]')
+    .description('Run project setup/runtime hygiene checks')
+    .option('--json', 'Output as JSON')
+    .addHelpText('after', `
+Examples:
+  $ omc doctor project
+  $ omc doctor project /path/to/app --json`)
+    .action(async (root, options) => {
+    const exitCode = await projectDoctorCommand(root, options);
+    process.exit(exitCode);
 });
 doctorCmd
     .command('team-routing')
@@ -1162,6 +1179,23 @@ Examples:
     const exitCode = await productContractsCommand(root, options);
     process.exit(exitCode);
 });
+doctorCmd
+    .command('runtime-qa [root]')
+    .description('Validate runtime QA readiness, simulator evidence freshness, and destructive-flow fixtures')
+    .option('--json', 'Output as JSON')
+    .addHelpText('after', `
+Examples:
+  $ omc doctor runtime-qa
+  $ omc doctor runtime-qa /path/to/app --json`)
+    .action(async (root, options) => {
+    const opts = typeof options.opts === 'function' ? options.opts() : options;
+    const parentOpts = typeof options.parent?.opts === 'function' ? options.parent.opts() : {};
+    const exitCode = await runtimeQaDoctorCommand(root, {
+        ...opts,
+        json: opts.json ?? parentOpts.json ?? process.argv.includes('--json'),
+    });
+    process.exit(exitCode);
+});
 /**
  * Product cycle command - Runtime FSM for the product learning loop
  */
@@ -1173,6 +1207,7 @@ Examples:
   $ omc product-cycle status
   $ omc product-cycle next
   $ omc product-cycle advance --to discover --goal "ship first usable loop"
+  $ omc product-cycle repair --safe
   $ omc product-cycle validate`);
 productCycleCmd
     .command('status [root]')
@@ -1196,6 +1231,15 @@ productCycleCmd
     .option('--json', 'Output as JSON')
     .action(async (root, options) => {
     const exitCode = await productCycleValidateCommand(root, options);
+    process.exit(exitCode);
+});
+productCycleCmd
+    .command('repair [root]')
+    .description('Repair safe product-cycle projections and report non-mechanical fixes')
+    .option('--safe', 'Write only safe mechanical projection repairs')
+    .option('--json', 'Output as JSON')
+    .action(async (root, options) => {
+    const exitCode = await productCycleRepairCommand(root, options);
     process.exit(exitCode);
 });
 productCycleCmd
@@ -1250,6 +1294,51 @@ runtimeQaCmd
     .option('--json', 'Output as JSON')
     .action(async (root, options) => {
     const exitCode = await runtimeQaInitCommand(root, options);
+    process.exit(exitCode);
+});
+runtimeQaCmd
+    .command('migrate [root]')
+    .description('Migrate .omc/runtime-qa.json to the canonical schema without dropping flow metadata')
+    .option('--write', 'Write the migrated .omc/runtime-qa.json instead of previewing it')
+    .option('--force', 'Write even when the config is already canonical')
+    .option('--json', 'Output as JSON')
+    .action(async (root, options) => {
+    const exitCode = await runtimeQaMigrateCommand(root, options);
+    process.exit(exitCode);
+});
+runtimeQaCmd
+    .command('setup [root]')
+    .description('Plan or apply runtime QA prerequisite setup for this project')
+    .option('--apply', 'Execute safe command setup steps; manual steps are never executed')
+    .option('--json', 'Output as JSON')
+    .addHelpText('after', `
+Examples:
+  $ omc runtime-qa setup
+  $ omc runtime-qa setup /path/to/app --json
+  $ omc runtime-qa setup /path/to/app --apply`)
+    .action(async (root, options) => {
+    const exitCode = await runtimeQaSetupCommand(root, options);
+    process.exit(exitCode);
+});
+const runtimeQaFixtureCmd = runtimeQaCmd
+    .command('fixture')
+    .description('Provision or tear down runtime QA fixtures from .omc/runtime-qa.json providers');
+runtimeQaFixtureCmd
+    .command('provision <fixtureName> [root]')
+    .description('Provision a runtime QA fixture, such as a disposable Supabase auth user')
+    .option('--backend <backend>', 'Provider backend: auto | env | mcp')
+    .option('--json', 'Output as JSON')
+    .action(async (fixtureName, root, options) => {
+    const exitCode = await runtimeQaFixtureCommand('provision', fixtureName, root, options);
+    process.exit(exitCode);
+});
+runtimeQaFixtureCmd
+    .command('teardown <fixtureName> [root]')
+    .description('Tear down a runtime QA fixture provisioned for a run')
+    .option('--backend <backend>', 'Provider backend: auto | env | mcp')
+    .option('--json', 'Output as JSON')
+    .action(async (fixtureName, root, options) => {
+    const exitCode = await runtimeQaFixtureCommand('teardown', fixtureName, root, options);
     process.exit(exitCode);
 });
 runtimeQaCmd
@@ -1410,6 +1499,20 @@ Examples:
     .action(async (root, options) => {
     await runScorecardCommand(root, options);
 });
+program
+    .command('state-hygiene [root]')
+    .description('Find or untrack OMC runtime state files that were accidentally added to git')
+    .option('--apply', 'Run git rm --cached for tracked runtime state files')
+    .option('--json', 'Output as JSON')
+    .addHelpText('after', `
+Examples:
+  $ omc state-hygiene
+  $ omc state-hygiene /path/to/app --json
+  $ omc state-hygiene /path/to/app --apply`)
+    .action(async (root, options) => {
+    const exitCode = await stateHygieneCommand(root, options);
+    process.exit(exitCode);
+});
 /**
  * Feature generation command - source and MCP readiness for opportunity discovery
  */
@@ -1472,6 +1575,7 @@ Examples:
   $ omc portfolio validate
   $ omc portfolio validate /path/to/app --json
   $ omc portfolio migrate --write
+  $ omc portfolio trim --to 40 --write
   $ omc portfolio project
   $ omc portfolio project --write`);
 portfolioCmd
@@ -1491,6 +1595,16 @@ portfolioCmd
     .option('--source <path>', 'Source opportunities markdown path, relative to root unless absolute')
     .action(async (root, options) => {
     const exitCode = await portfolioMigrateCommand(root, options);
+    process.exit(exitCode);
+});
+portfolioCmd
+    .command('trim [root]')
+    .description('Trim .omc/portfolio/current.json to the guardrail size while preserving selected work')
+    .option('--to <count>', 'Maximum portfolio item count to keep', '40')
+    .option('--write', 'Write .omc/portfolio/current.json and refresh the projection')
+    .option('--json', 'Output as JSON')
+    .action(async (root, options) => {
+    const exitCode = await portfolioTrimCommand(root, options);
     process.exit(exitCode);
 });
 portfolioCmd
@@ -1516,6 +1630,9 @@ program
     .description('Run OMC setup to sync all components (hooks, agents, skills)')
     .option('-f, --force', 'Force reinstall even if already up to date')
     .option('-q, --quiet', 'Suppress output except for errors')
+    .option('--project-root <path>', 'Project root for post-setup OMC project checks', process.cwd())
+    .option('--skip-project-checks', 'Skip post-setup project hygiene/runtime QA checks')
+    .option('--apply-project-fixes', 'Apply safe project fixes: untrack OMC runtime state and run command-based runtime QA setup steps')
     .option('--no-plugin', 'Install bundled skills from the current package instead of relying on plugin-provided skills')
     .option('--plugin-dir-mode', 'Treat OMC as launched via --plugin-dir at runtime (skip agent/skill copy; HUD + hooks + CLAUDE.md still installed)')
     .option('--skip-hooks', 'Skip hook installation')
@@ -1526,6 +1643,8 @@ Examples:
   $ omc setup --force             Force reinstall everything
   $ omc setup --no-plugin         Force local bundled skill installation
   $ omc setup --plugin-dir-mode   Skip agent/skill copy (used with claude --plugin-dir)
+  $ omc setup --project-root /path/to/app
+  $ omc setup --apply-project-fixes
   $ omc setup --quiet             Silent setup for scripts
   $ omc setup --skip-hooks        Install without hooks
   $ omc setup --force-hooks       Force reinstall hooks`)
@@ -1574,6 +1693,12 @@ Examples:
         }
         process.exit(1);
     }
+    const projectReport = options.skipProjectChecks
+        ? undefined
+        : inspectProjectDoctor(options.projectRoot, {
+            applyStateHygiene: !!options.applyProjectFixes,
+            applyRuntimeQaSetup: !!options.applyProjectFixes,
+        });
     // Step 2: Show summary
     if (!options.quiet) {
         console.log('');
@@ -1597,6 +1722,10 @@ Examples:
             result.hookConflicts.forEach(c => {
                 console.log(chalk.yellow(`    - ${c.eventType}: ${c.existingCommand}`));
             });
+        }
+        if (projectReport) {
+            console.log('');
+            console.log(renderProjectDoctorReport(projectReport));
         }
         const installed = getInstalledVersion();
         const reportedVersion = installed?.version ?? version;

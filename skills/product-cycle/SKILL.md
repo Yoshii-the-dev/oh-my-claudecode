@@ -98,6 +98,16 @@ omc doctor product-contracts --stage priority-handoff
 omc portfolio project --write
 ```
 
+For mechanical projection drift across cycle, learning, and portfolio artifacts,
+prefer the repair command instead of hand-editing generated Markdown:
+
+```bash
+omc product-cycle repair --safe
+```
+
+This may re-render Markdown projections from typed JSON, but it must not change
+cycle stage, selected work, acceptance criteria, or runtime QA evidence.
+
 7. For user-facing work, run the pre-code experience gate:
 
 ```bash
@@ -106,6 +116,16 @@ omc portfolio project --write
 
 It must write `.omc/experience/current.md` with user journey, empty states, failure states, return session, perceived value, and a pass/block verdict.
 
+Before build, the cycle spec must also include `feature_expectation_contract`:
+
+- `user_job`
+- `first_meaningful_use`
+- `useless_if`
+- `maturity_ladder` with `v0`, `v1`, and `v2`
+- `not_done_until`
+
+If the build only delivers `v0`, call the result a seeded capability and keep `v1/v2` visible in the roadmap instead of marking the whole feature done.
+
 8. For user-facing visual work, run the creative loop before implementation:
 
 ```bash
@@ -113,7 +133,7 @@ It must write `.omc/experience/current.md` with user journey, empty states, fail
 omc creative-loop audit --write --goal "<core product slice>"
 ```
 
-It must prove meaning brief, inspiration ledger, 3-5 divergent design directions, motion grammar, tokens, component experiments/screenshots, visual verdict, and taste gate. Draft placeholders from `omc creative-loop init` do not pass.
+It must prove meaning brief, inspiration ledger, visual expectation contract, 3-5 divergent design directions, motion grammar, tokens, component experiments/screenshots, visual verdict, and taste gate. Draft placeholders from `omc creative-loop init` do not pass.
 
 9. After spec, run:
 
@@ -124,6 +144,7 @@ omc doctor product-contracts --stage cycle
 10. Build only after the cycle, experience, and required creative gates pass.
 11. Verify with evidence from tests/audits/acceptance criteria.
     - When `.omc/runtime-qa.json` exists or the verification plan declares runtime smoke/simulator coverage, run `omc runtime-qa run --auto --json` and include `.omc/handoffs/runtime-qa/current.json` as evidence.
+    - If `omc doctor runtime-qa --json` reports `runtime-qa-fixture-agent-mcp-required`, invoke the `runtime-qa` skill to prepare the Supabase MCP disposable fixture before running destructive simulator flows.
     - Mobile simulator tooling is explicit opt-in: if Maestro/Detox/Appium is missing, rerun with `omc runtime-qa run --auto --install-mobile-tools --json` only after the user has approved provisioning. Product-cycle may pass the same approval with `omc product-cycle run --auto --install-mobile-tools --json`.
 12. Learn before completion: write `.omc/learning/current.md`, then set `cycle_stage: complete`.
 
@@ -144,6 +165,7 @@ omc doctor product-contracts --stage cycle
 - verification plan
 - learning plan
 - experience gate path: `.omc/experience/current.md`
+- feature expectation contract: `user_job`, `first_meaningful_use`, `useless_if`, `maturity_ladder.v0/v1/v2`, `not_done_until`
 - standard footer fields: `status`, `evidence`, `confidence`, `blocking_issues`, `next_action`, `artifacts_written`
 
 ## Rules
@@ -153,6 +175,8 @@ omc doctor product-contracts --stage cycle
 - Empty/pre-MVP cycles must keep the first usable loop visible in the selected core slice.
 - Backend work can be selected as the enabling task, but not as a substitute for the core product slice when no usable loop exists.
 - User-facing work cannot enter build until `.omc/experience/current.md` passes the user journey, empty states, failure states, return session, and perceived value checks.
+- User-facing core slices cannot enter build until `feature_expectation_contract` names the first meaningful use, what would make the implementation useless, and the v0/v1/v2 maturity ladder.
+- Visual user-facing work cannot enter build until `.omc/design/visual-expectation/current.json` names desired perception, category codes to avoid, selected direction, token rationale, component proofs, screenshot evidence, and not-ready-if conditions.
 - Visual user-facing work cannot enter implementation until the creative-loop audit is ready and `.omc/design/taste-gate/current.md` has a real `verdict: pass`.
 - Weak evidence must create a selected learning/research task and remain visible as research debt in the roadmap.
 - A cycle is not done until learning is captured.

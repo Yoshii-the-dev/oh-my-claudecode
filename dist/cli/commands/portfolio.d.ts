@@ -7,6 +7,7 @@ export interface PortfolioCommandOptions {
     output?: string;
     source?: string;
     force?: boolean;
+    to?: string | number;
 }
 interface LoggerLike {
     log: (message?: unknown) => void;
@@ -15,5 +16,6 @@ interface LoggerLike {
 export declare function portfolioValidateCommand(root: string | undefined, options: PortfolioCommandOptions, logger?: LoggerLike): Promise<number>;
 export declare function portfolioProjectCommand(root: string | undefined, options: PortfolioCommandOptions, logger?: LoggerLike): Promise<number>;
 export declare function portfolioMigrateCommand(root: string | undefined, options: PortfolioCommandOptions, logger?: LoggerLike): Promise<number>;
+export declare function portfolioTrimCommand(root: string | undefined, options: PortfolioCommandOptions, logger?: LoggerLike): Promise<number>;
 export {};
 //# sourceMappingURL=portfolio.d.ts.map

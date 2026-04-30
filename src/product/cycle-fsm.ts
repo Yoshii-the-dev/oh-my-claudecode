@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { validateProductPipelineContracts } from './pipeline-contract-validator.js';
+import { diagnoseRuntimeQa } from '../runtime-qa/diagnostics.js';
 import {
   CYCLE_DOCUMENT_RELATIVE_PATH,
   CYCLE_PROJECTION_RELATIVE_PATH,
@@ -279,6 +280,20 @@ function transitionGuardIssues(root: string, from: ProductCycleStage, to: Produc
       code: 'learning-missing',
       message: `Cannot complete before ${LEARNING_RELATIVE_PATH} exists`,
     });
+  }
+
+  if (from === 'learn' && to === 'complete') {
+    const report = diagnoseRuntimeQa(root);
+    const runtimeQaApplies = report.shouldRun || report.configExists || report.handoffExists;
+    if (runtimeQaApplies) {
+      for (const issue of report.issues.filter((entry) => entry.severity === 'error')) {
+        issues.push({
+          severity: 'error',
+          code: issue.code,
+          message: `Cannot complete while runtime QA is not current: ${issue.message}`,
+        });
+      }
+    }
   }
 
   return issues;

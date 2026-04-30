@@ -69,7 +69,7 @@ This skill makes every gate non-skippable. Each stage's output becomes the next 
 
 **HARD STOP:** User-facing cycle work lacks a passing `.omc/experience/current.md` with user journey, empty states, failure states, return session, and perceived value.
 
-**HARD STOP:** Visual UI work lacks a ready creative-loop audit with meaning brief, inspiration ledger, divergent directions, motion grammar, token system, component experiments/screenshots, visual verdict, and `verdict: pass` taste gate.
+**HARD STOP:** Visual UI work lacks a ready creative-loop audit with meaning brief, inspiration ledger, visual expectation contract, divergent directions, motion grammar, token system, component experiments/screenshots, visual verdict, and `verdict: pass` taste gate.
 
 ---
 
@@ -154,13 +154,13 @@ This skill makes every gate non-skippable. Each stage's output becomes the next 
 ## Stage 5 — Implementation
 
 **Agents:** copywriter (pre-pass, user-facing strings only) + designer (component-level) + executor (wiring + state management)
-**Input:** `.omc/ux/YYYY-MM-DD-<feature>.md` + `.omc/constitution.md` + `.omc/strategy/YYYY-MM-DD-<slug>.md`
+**Input:** `.omc/ux/YYYY-MM-DD-<feature>.md` + `.omc/constitution.md` + `.omc/strategy/YYYY-MM-DD-<slug>.md` + `.omc/design/visual-expectation/current.json` when visual UI work is in scope
 **Output:** Modified/created source files (paths documented in handoff)
 
 **Protocol:**
 1. **Pre-pass (copywriter):** If the feature is user-facing (any screen or notification text), invoke `oh-my-claudecode:copywriter` first to produce in-app string drafts aligned with the constitution's tone of voice. Strings are passed to designer as inputs, not left to implementation-time improvisation.
 2. **Coordinated implementation:** Use the current OMC `/team` surface or CLI-first `omc team ...` runtime to run designer and executor in one coordinated session. Do not use deprecated MCP team-runtime calls.
-   - designer: implements component-level UI for all states documented in the UX flow spec
+   - designer: implements component-level UI for all states documented in the UX flow spec and must cite the selected direction, token rationale, component proofs, and screenshot evidence from `.omc/design/visual-expectation/current.json` for visual UI work
    - executor: wires state management, routing, auth guards, API calls, and data flow
    - dependencies: designer produces component contracts first; executor wires only against those contracts
 3. Stage handoff written to `.omc/handoffs/product-pipeline-stage5.md` (files created/modified, known gaps).

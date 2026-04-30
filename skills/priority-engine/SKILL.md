@@ -56,6 +56,7 @@ Do not bulk-read archives. Use indexes and explicit pointers.
    - `dependencies`
    - `selected_cycle`
    - `evidence`
+   - for selected `core-product-slice`: `feature_expectation`
 8. Verify outputs:
    - `.omc/portfolio/current.json`
    - `.omc/opportunities/current.md`
@@ -63,6 +64,7 @@ Do not bulk-read archives. Use indexes and explicit pointers.
    - roadmap keeps weak-evidence items as `research debt`, `learning gate`, or `research gate`
 9. Run the ledger and contract gates:
    - `omc portfolio validate`
+   - if validation reports `portfolio-too-large`, run `omc portfolio trim --to 40 --write` instead of editing the JSON by hand
    - `omc portfolio project --write`
    - `omc doctor product-contracts --stage priority-handoff`
    - Fix any errors before handing off to `product-pipeline`, `backend-pipeline`, or `technology-strategist`.
@@ -96,6 +98,26 @@ For empty/pre-MVP products, do not default to tester recruitment, team onboardin
 Then keep it visible in `.omc/roadmap/current.md` as research debt or a learning/research gate.
 
 If `.omc/feature-generation/current.json` reports missing required MCP services, the learning task should include an explicit setup/provisioning proposal. Do not install or mutate MCP configuration without user approval.
+
+## Feature Expectation Contract Rule
+
+Selected core product slices must include a `feature_expectation` object in `.omc/portfolio/current.json`:
+
+```json
+{
+  "user_job": "what the user is trying to accomplish",
+  "first_meaningful_use": "the first complete loop that would feel useful",
+  "useless_if": ["conditions where the built feature would be technically present but product-meaningless"],
+  "maturity_ladder": {
+    "v0": "seed capability",
+    "v1": "context-aware usable capability",
+    "v2": "deeper repeat-use or scaled capability"
+  },
+  "not_done_until": ["observable signal or learning gate required before calling the capability done"]
+}
+```
+
+Prefer job-loop titles over noun-only feature titles. For example, use `resume a pattern-reading session without losing place` instead of `row counter`. If the next cycle can only ship `v0`, mark the capability as seeded in the expectation and keep `v1/v2` in the roadmap.
 
 ## Outputs
 

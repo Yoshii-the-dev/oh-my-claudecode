@@ -3,6 +3,7 @@
  */
 import { colors, renderTable } from '../utils/formatting.js';
 import { advanceProductCycle, getNextProductCycleAction, isProductCycleStage, readProductCycle, validateProductCycle, } from '../../product/cycle-fsm.js';
+import { repairProductCycle, } from '../../product/cycle-repair.js';
 import { runProductCycle, } from '../../product/cycle-runner.js';
 import { PRODUCT_INTERVENTION_HANDOFF_RELATIVE_PATH, readProductInterventionHandoff, } from '../../product/intervention-router.js';
 import { buildProductInterventionExecutionPlan, PRODUCT_INTERVENTION_EXECUTION_PLAN_RELATIVE_PATH, readProductInterventionExecutionPlan, renderProductInterventionExecutionPlan, writeProductInterventionExecutionPlan, } from '../../product/intervention-execution-plan.js';
@@ -34,6 +35,11 @@ export async function productCycleValidateCommand(root, options, logger = consol
     const snapshot = validateProductCycle(root);
     logger.log(options.json ? JSON.stringify(snapshot, null, 2) : renderSnapshot(snapshot));
     return snapshot.issues.some((issue) => issue.severity === 'error') ? 1 : 0;
+}
+export async function productCycleRepairCommand(root, options, logger = console) {
+    const report = repairProductCycle(root, { safe: options.safe === true });
+    logger.log(options.json ? JSON.stringify(report, null, 2) : renderRepairReport(report));
+    return report.ok ? 0 : 1;
 }
 export async function productCycleAdvanceCommand(root, options, logger = console) {
     const to = options.to;
@@ -954,5 +960,43 @@ function renderSnapshot(snapshot) {
         }
     }
     return lines.join('\n');
+}
+function renderRepairReport(report) {
+    const lines = [
+        colors.bold('Product cycle repair'),
+        `root: ${report.root}`,
+        `safe: ${report.safe}`,
+    ];
+    lines.push('');
+    lines.push(renderTable(report.actions.map((action) => ({
+        action: action.id,
+        status: statusColor(action.status),
+        message: action.message,
+        command: action.command ?? '-',
+    })), [
+        { header: 'action', field: 'action', width: 22 },
+        { header: 'status', field: 'status', width: 10 },
+        { header: 'message', field: 'message', width: 82 },
+        { header: 'command', field: 'command', width: 52 },
+    ]));
+    lines.push('');
+    if (!report.safe) {
+        lines.push(colors.green(`Repair preview: ${report.summary.needed} needed, ${report.summary.blocked} blocked, ${report.summary.skipped} skipped.`));
+    }
+    else {
+        lines.push(report.ok
+            ? colors.green(`Repair ok: ${report.summary.changed} changed, ${report.summary.passed} passed.`)
+            : colors.red(`Repair incomplete: ${report.summary.needed} needed, ${report.summary.blocked} blocked.`));
+    }
+    return lines.join('\n');
+}
+function statusColor(status) {
+    if (status === 'passed' || status === 'changed')
+        return colors.green(status);
+    if (status === 'blocked')
+        return colors.red(status);
+    if (status === 'needed')
+        return colors.yellow(status);
+    return status;
 }
 //# sourceMappingURL=product-cycle.js.map

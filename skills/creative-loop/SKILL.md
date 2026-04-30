@@ -25,6 +25,7 @@ Run the phases in order and write the artifacts listed here:
 |---|---|
 | Meaning brief | `.omc/design/meaning-brief/current.md` |
 | Inspiration ledger | `.omc/design/inspiration-ledger/current.md` |
+| Visual expectation contract | `.omc/design/visual-expectation/current.json` |
 | Design directions | `.omc/design/directions/current.md` |
 | Motion grammar | `.omc/design/motion-grammar/current.md` |
 | Token system | `.omc/design/tokens/current.json` |
@@ -41,21 +42,64 @@ Run the phases in order and write the artifacts listed here:
    - the product meaning that should shape the interface.
 2. Build an inspiration ledger from references as principles, not as copy targets.
    - Capture the source, extracted principle, applicable constraint, and what not to copy.
-3. Produce 3-5 distinct design directions.
+3. Write the visual expectation contract.
+   - Required fields: `desired_perception`, `category_codes_to_avoid`, `inspiration_principles`, `selected_direction`, `token_rationale`, `component_proofs`, `screenshot_evidence`, and `not_ready_if`.
+   - Component proofs must reference screenshot files that exist and a passing visual verdict.
+   - `not_ready_if` must name concrete conditions where the implementation would be technically present but visually meaningless or generic.
+4. Produce 3-5 distinct design directions.
    - Each direction must be a visual hypothesis with tradeoffs, not a style adjective.
    - Keep at least one direction meaningfully unusual for the category.
-4. Define motion grammar.
+5. Define motion grammar.
    - List which states animate, why the animation helps, duration, easing, and reduced-motion fallback.
-5. Define a token system.
+6. Define a token system.
    - Cover color, type, spacing, radius, elevation, and motion.
    - Tokens are hypotheses until experiments pass.
-6. Build small component experiments.
+7. Build small component experiments.
    - Produce screenshots or screenshot paths.
    - Run `visual-verdict` or equivalent visual review and record the verdict in `.omc/design/component-experiments/current.json`.
-7. Run the taste gate.
+8. Run the taste gate.
    - Score distinctiveness, usability, accessibility, and brand fit.
    - `verdict: pass` is allowed only when evidence exists from experiments/screenshots/verdicts.
-8. Promote into `.omc/design/system/current.md` only after the taste gate passes.
+9. Promote into `.omc/design/system/current.md` only after the taste gate passes.
+
+## Visual Expectation Contract
+
+`.omc/design/visual-expectation/current.json` must use this shape:
+
+```json
+{
+  "schema_version": 1,
+  "visual_expectation_contract": {
+    "desired_perception": ["what the user should perceive or feel"],
+    "category_codes_to_avoid": ["generic SaaS dashboard", "spreadsheet tracker"],
+    "inspiration_principles": [
+      {
+        "source": "specific reference",
+        "principle": "extractable principle",
+        "what_not_to_copy": "signature details to avoid"
+      }
+    ],
+    "selected_direction": {
+      "name": "chosen visual hypothesis",
+      "rationale": "why this direction fits the product meaning",
+      "tradeoffs": "what it gains and loses"
+    },
+    "token_rationale": [
+      { "token": "color.primary", "decision": "chosen value/use", "reason": "meaning and usability reason" }
+    ],
+    "component_proofs": [
+      {
+        "component": "component or screen",
+        "state": "tested state",
+        "screenshot": ".omc/artifacts/creative-loop/example.png",
+        "visual_verdict": "pass"
+      }
+    ],
+    "screenshot_evidence": [".omc/artifacts/creative-loop/example.png"],
+    "not_ready_if": ["condition that proves the visual work is still generic or meaningless"]
+  }
+}
+```
 
 ## CLI Contract
 
@@ -78,6 +122,7 @@ Drafts do not pass the gate. Replace placeholders with real design reasoning, ex
 - Creative output is generated from the tension between product meaning, users, market/category codes, constraints, and unusual visual language.
 - Do not copy references. Convert references into principles and anti-copy notes.
 - Do not collapse divergent work into one direction too early.
+- Do not accept noun-only or style-only visual directions. The selected direction must say what perception it creates, what category code it avoids, and which component proof shows it.
 - Do not let implementation start for a visual user-facing surface while the creative-loop audit reports `needs-brief`, `needs-divergence`, `needs-experiments`, or `needs-taste-gate`.
 - Do not promote tokens or components into the design system until the taste gate passes.
 
@@ -86,6 +131,7 @@ Drafts do not pass the gate. Replace placeholders with real design reasoning, ex
 Before handing off to `/product-pipeline`, include only:
 
 - selected direction and why;
+- visual expectation contract summary;
 - token changes;
 - component experiments and screenshot paths;
 - visual verdict/taste-gate evidence;

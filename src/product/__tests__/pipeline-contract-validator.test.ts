@@ -129,6 +129,36 @@ describe('validateProductPipelineContracts', () => {
     expect(codes(report)).toContain('missing-experience-gate');
   });
 
+  it('blocks user-facing cycle build when the feature expectation contract is missing', () => {
+    const root = createRoot();
+    writeFoundationLiteArtifacts(root);
+    writeArtifact(root, '.omc/cycles/current.md', stripFeatureExpectation(cycleArtifact('spec')));
+    writeArtifact(root, '.omc/experience/current.md', experienceGateArtifact());
+
+    const report = validateProductPipelineContracts({ root, stage: 'cycle' });
+
+    expect(report.ok).toBe(false);
+    expect(codes(report)).toContain('missing-feature-expectation-contract');
+  });
+
+  it('blocks user-facing cycle build when the feature expectation contract is only placeholder text', () => {
+    const root = createRoot();
+    writeFoundationLiteArtifacts(root);
+    writeArtifact(root, '.omc/cycles/current.md', cycleArtifact('spec')
+      .replace('resume a real pattern-reading session without losing place', 'TBD')
+      .replace('open a sample pattern, advance rows, close, and resume on the next row', 'placeholder')
+      .replace('the loop can pass tests without showing where the user is in the pattern', 'todo')
+      .replace('row count is tied to pattern context and section', 'pending')
+      .replace('a user can complete the return-session loop and learning captures whether it mattered', 'TBD'));
+    writeArtifact(root, '.omc/experience/current.md', experienceGateArtifact());
+
+    const report = validateProductPipelineContracts({ root, stage: 'cycle' });
+
+    expect(report.ok).toBe(false);
+    expect(codes(report)).toContain('incomplete-feature-expectation-contract');
+    expect(codes(report)).toContain('incomplete-feature-maturity-ladder');
+  });
+
   it('blocks cycle build when the cycle spec still contains placeholders', () => {
     const root = createRoot();
     writeFoundationLiteArtifacts(root);
@@ -180,6 +210,20 @@ describe('validateProductPipelineContracts', () => {
     expect(codes(report)).toContain('invalid-selected-cycle-trio');
   });
 
+  it('requires selected core product slices to carry feature expectation metadata', () => {
+    const root = createRoot();
+    const broken = JSON.parse(portfolioLedgerArtifact()) as { items: Array<Record<string, unknown>> };
+    delete broken.items[0]!.feature_expectation;
+    writeFoundationLiteArtifacts(root, {
+      portfolio: JSON.stringify(broken, null, 2),
+    });
+
+    const report = validateProductPipelineContracts({ root, stage: 'priority-handoff' });
+
+    expect(report.ok).toBe(false);
+    expect(codes(report)).toContain('missing-selected-core-feature-expectation');
+  });
+
   it('blocks a completed cycle that does not reference learning capture', () => {
     const root = createRoot();
     writeFoundationLiteArtifacts(root);
@@ -190,6 +234,52 @@ describe('validateProductPipelineContracts', () => {
 
     expect(report.ok).toBe(false);
     expect(codes(report)).toContain('complete-without-learning');
+  });
+
+  it('blocks a completed cycle with open human-gate checklist items', () => {
+    const root = createRoot();
+    writeFoundationLiteArtifacts(root);
+    writeArtifact(root, '.omc/cycles/current.md', cycleArtifact('complete', true));
+    writeArtifact(root, '.omc/experience/current.md', experienceGateArtifact());
+
+    const report = validateProductPipelineContracts({ root, stage: 'cycle' });
+
+    expect(report.ok).toBe(false);
+    expect(codes(report)).toContain('complete-with-open-checklist');
+  });
+
+  it('blocks a complete learning artifact that still declares pending learning gates', () => {
+    const root = createRoot();
+    writeFoundationLiteArtifacts(root);
+    writeArtifact(root, '.omc/cycles/current.md', cycleArtifact('complete', true).replace('- [ ] build', '- [x] build').replace('- [ ] verify', '- [x] verify').replace('- [ ] learn', '- [x] learn'));
+    writeArtifact(root, '.omc/experience/current.md', experienceGateArtifact());
+    writeArtifact(root, '.omc/learning/current.md', learningArtifactWithPendingGate());
+
+    const report = validateProductPipelineContracts({ root, stage: 'cycle' });
+
+    expect(report.ok).toBe(false);
+    expect(codes(report)).toContain('learning-complete-with-pending-gate');
+  });
+
+  it('blocks cycle contracts when runtime QA evidence is not passed', () => {
+    const root = createRoot();
+    writeFoundationLiteArtifacts(root);
+    writeArtifact(root, '.omc/cycles/current.md', cycleArtifact('spec'));
+    writeArtifact(root, '.omc/experience/current.md', experienceGateArtifact());
+    writeArtifact(root, '.omc/runtime-qa.json', JSON.stringify({
+      target: 'project-script',
+      commands: { smoke: 'npm run smoke' },
+    }));
+    writeArtifact(root, '.omc/handoffs/runtime-qa/current.json', JSON.stringify({
+      status: 'failed',
+      dry_run: false,
+      cycle_id: '2026-04-25-first',
+    }));
+
+    const report = validateProductPipelineContracts({ root, stage: 'cycle' });
+
+    expect(report.ok).toBe(false);
+    expect(codes(report)).toContain('runtime-qa-handoff-not-passed');
   });
 });
 
@@ -303,6 +393,7 @@ function portfolioLedgerArtifact(count = 20): string {
       evidence: ['fixture'],
       expected_learning: 'Fixture learning',
       dependency_unlock: 'Fixture unlock',
+      ...(index === 0 ? { feature_expectation: featureExpectation() } : {}),
     };
   });
   return JSON.stringify({
@@ -427,6 +518,17 @@ verification_plan:
 learning_plan:
   - observe one design partner using the reader loop
 experience_gate: .omc/experience/current.md
+feature_expectation_contract:
+  user_job: resume a real pattern-reading session without losing place
+  first_meaningful_use: open a sample pattern, advance rows, close, and resume on the next row
+  useless_if:
+    - the loop can pass tests without showing where the user is in the pattern
+  maturity_ladder:
+    v0: row count persists across restart
+    v1: row count is tied to pattern context and section
+    v2: multi-section/repeat-aware tracking supports a full knitting session
+  not_done_until:
+    - a user can complete the return-session loop and learning captures whether it mattered
 
 ## Completion Evidence
 ${learningReference}
@@ -437,6 +539,51 @@ confidence: medium
 blocking_issues: none
 next_action: start build route
 artifacts_written: .omc/cycles/current.md
+`;
+}
+
+function stripFeatureExpectation(content: string): string {
+  return content.replace(/\nfeature_expectation_contract:[\s\S]*?(?=\n\n## Completion Evidence)/, '');
+}
+
+function featureExpectation(): Record<string, unknown> {
+  return {
+    user_job: 'resume a real pattern-reading session without losing place',
+    first_meaningful_use: 'open a sample pattern, advance rows, close, and resume on the next row',
+    useless_if: ['the loop can pass tests without showing where the user is in the pattern'],
+    maturity_ladder: {
+      v0: 'row count persists across restart',
+      v1: 'row count is tied to pattern context and section',
+      v2: 'multi-section/repeat-aware tracking supports a full knitting session',
+    },
+    not_done_until: ['a user can complete the return-session loop and learning captures whether it mattered'],
+  };
+}
+
+function learningArtifactWithPendingGate(): string {
+  return `# Learning
+
+## Shipped outcome
+Feature shipped.
+
+## Evidence collected
+Tests passed.
+
+## User/product learning
+Founder dogfood protocol PENDING — learn stage gate.
+
+## Invalidated assumptions
+None yet.
+
+## Recommended next cycle
+Do not start until the friction log is complete.
+
+status: complete
+evidence: fixture
+confidence: medium
+blocking_issues: none
+next_action: start next cycle
+artifacts_written: .omc/learning/current.md
 `;
 }
 

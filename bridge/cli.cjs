@@ -5943,15 +5943,15 @@ var init_parseUtil = __esm({
           message: issueData.message
         };
       }
-      let errorMessage = "";
+      let errorMessage2 = "";
       const maps = errorMaps.filter((m) => !!m).slice().reverse();
       for (const map of maps) {
-        errorMessage = map(fullIssue, { data, defaultError: errorMessage }).message;
+        errorMessage2 = map(fullIssue, { data, defaultError: errorMessage2 }).message;
       }
       return {
         ...issueData,
         path: fullPath,
-        message: errorMessage
+        message: errorMessage2
       };
     };
     EMPTY_PATH = [];
@@ -5968,15 +5968,15 @@ var init_parseUtil = __esm({
           this.value = "aborted";
       }
       static mergeArray(status, results) {
-        const arrayValue = [];
+        const arrayValue2 = [];
         for (const s of results) {
           if (s.status === "aborted")
             return INVALID2;
           if (s.status === "dirty")
             status.dirty();
-          arrayValue.push(s.value);
+          arrayValue2.push(s.value);
         }
-        return { status: status.value, value: arrayValue };
+        return { status: status.value, value: arrayValue2 };
       }
       static async mergeObjectAsync(status, pairs) {
         const syncPairs = [];
@@ -10837,7 +10837,7 @@ async function removeFileIfExists(filePath) {
   }
 }
 function sleep2(ms) {
-  return new Promise((resolve44) => setTimeout(resolve44, ms));
+  return new Promise((resolve50) => setTimeout(resolve50, ms));
 }
 var import_child_process9, fs5, fsPromises2, path5, import_url6, import_child_process10, import_util6, execFileAsync3, BRIDGE_SPAWN_TIMEOUT_MS, DEFAULT_GRACE_PERIOD_MS, SIGTERM_GRACE_MS, ownedBridgeSessionIds, USE_TCP_FALLBACK;
 var init_bridge_manager = __esm({
@@ -12266,7 +12266,7 @@ function withFileLockSync(lockPath, fn, opts) {
   }
 }
 function sleep3(ms) {
-  return new Promise((resolve44) => setTimeout(resolve44, ms));
+  return new Promise((resolve50) => setTimeout(resolve50, ms));
 }
 async function acquireFileLock(lockPath, opts) {
   const staleLockMs = opts?.staleLockMs ?? DEFAULT_STALE_LOCK_MS;
@@ -14937,9 +14937,9 @@ function install(options = {}) {
     result.success = true;
     result.message = `Successfully installed ${result.installedAgents.length} agents, ${result.installedCommands.length} commands, ${result.installedSkills.length} skills`;
   } catch (error2) {
-    const errorMessage = error2 instanceof Error ? error2.message : String(error2);
-    result.errors.push(errorMessage);
-    result.message = `Installation failed: ${errorMessage}`;
+    const errorMessage2 = error2 instanceof Error ? error2.message : String(error2);
+    result.errors.push(errorMessage2);
+    result.message = `Installation failed: ${errorMessage2}`;
   }
   return result;
 }
@@ -15545,13 +15545,13 @@ Error: ${npmError instanceof Error ? npmError.message : npmError}`
       );
     }
   } catch (error2) {
-    const errorMessage = error2 instanceof Error ? error2.message : String(error2);
+    const errorMessage2 = error2 instanceof Error ? error2.message : String(error2);
     return {
       success: false,
       previousVersion,
       newVersion: "unknown",
-      message: `Update failed: ${errorMessage}`,
-      errors: [errorMessage]
+      message: `Update failed: ${errorMessage2}`,
+      errors: [errorMessage2]
     };
   }
 }
@@ -15727,16 +15727,16 @@ async function silentAutoUpdate(config2 = {}) {
       return result;
     }
   } catch (error2) {
-    const errorMessage = error2 instanceof Error ? error2.message : String(error2);
-    silentLog(`Update check error: ${errorMessage}`, logFile);
+    const errorMessage2 = error2 instanceof Error ? error2.message : String(error2);
+    silentLog(`Update check error: ${errorMessage2}`, logFile);
     state.consecutiveFailures++;
     saveSilentUpdateState(state);
     return {
       success: false,
       previousVersion: null,
       newVersion: "unknown",
-      message: `Silent update failed: ${errorMessage}`,
-      errors: [errorMessage]
+      message: `Silent update failed: ${errorMessage2}`,
+      errors: [errorMessage2]
     };
   }
 }
@@ -20797,6 +20797,7 @@ var init_skill_state = __esm({
       "omc-setup": "medium",
       setup: "medium",
       "mcp-setup": "medium",
+      "runtime-qa": "medium",
       "project-session-manager": "medium",
       psm: "medium",
       "writer-memory": "medium",
@@ -27164,7 +27165,7 @@ async function sendTelegram(config2, payload) {
       text: payload.message,
       parse_mode: config2.parseMode || "Markdown"
     });
-    const result = await new Promise((resolve44) => {
+    const result = await new Promise((resolve50) => {
       const req = (0, import_https.request)(
         {
           hostname: "api.telegram.org",
@@ -27191,9 +27192,9 @@ async function sendTelegram(config2, payload) {
                 }
               } catch {
               }
-              resolve44({ platform: "telegram", success: true, messageId });
+              resolve50({ platform: "telegram", success: true, messageId });
             } else {
-              resolve44({
+              resolve50({
                 platform: "telegram",
                 success: false,
                 error: `HTTP ${res.statusCode}`
@@ -27203,11 +27204,11 @@ async function sendTelegram(config2, payload) {
         }
       );
       req.on("error", (e) => {
-        resolve44({ platform: "telegram", success: false, error: e.message });
+        resolve50({ platform: "telegram", success: false, error: e.message });
       });
       req.on("timeout", () => {
         req.destroy();
-        resolve44({
+        resolve50({
           platform: "telegram",
           success: false,
           error: "Request timeout"
@@ -27453,9 +27454,9 @@ async function dispatchNotifications(config2, event, payload, platformMessages) 
           }
         )
       ),
-      new Promise((resolve44) => {
+      new Promise((resolve50) => {
         timer = setTimeout(
-          () => resolve44([
+          () => resolve50([
             {
               platform: "unknown",
               success: false,
@@ -30009,7 +30010,7 @@ async function pollTelegram(config2, state, rateLimiter) {
   try {
     const offset = state.telegramLastUpdateId ? state.telegramLastUpdateId + 1 : 0;
     const path23 = `/bot${config2.telegramBotToken}/getUpdates?offset=${offset}&timeout=0`;
-    const updates = await new Promise((resolve44, reject) => {
+    const updates = await new Promise((resolve50, reject) => {
       const req = (0, import_https2.request)(
         {
           hostname: "api.telegram.org",
@@ -30026,7 +30027,7 @@ async function pollTelegram(config2, state, rateLimiter) {
             try {
               const body = JSON.parse(Buffer.concat(chunks).toString("utf-8"));
               if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
-                resolve44(body.result || []);
+                resolve50(body.result || []);
               } else {
                 reject(new Error(`HTTP ${res.statusCode}`));
               }
@@ -30090,7 +30091,7 @@ async function pollTelegram(config2, state, rateLimiter) {
             text: "Injected into Claude Code session.",
             reply_to_message_id: msg.message_id
           });
-          await new Promise((resolve44) => {
+          await new Promise((resolve50) => {
             const replyReq = (0, import_https2.request)(
               {
                 hostname: "api.telegram.org",
@@ -30105,13 +30106,13 @@ async function pollTelegram(config2, state, rateLimiter) {
               },
               (res) => {
                 res.resume();
-                resolve44();
+                resolve50();
               }
             );
-            replyReq.on("error", () => resolve44());
+            replyReq.on("error", () => resolve50());
             replyReq.on("timeout", () => {
               replyReq.destroy();
-              resolve44();
+              resolve50();
             });
             replyReq.write(replyBody);
             replyReq.end();
@@ -30248,13 +30249,13 @@ async function pollLoop() {
         }
       }
       writeDaemonState(state);
-      await new Promise((resolve44) => setTimeout(resolve44, config2.pollIntervalMs));
+      await new Promise((resolve50) => setTimeout(resolve50, config2.pollIntervalMs));
     } catch (error2) {
       state.errors++;
       state.lastError = redactTokens(error2 instanceof Error ? error2.message : String(error2));
       log(`Poll error: ${state.lastError}`);
       writeDaemonState(state);
-      await new Promise((resolve44) => setTimeout(resolve44, config2.pollIntervalMs * 2));
+      await new Promise((resolve50) => setTimeout(resolve50, config2.pollIntervalMs * 2));
     }
   }
   log("Poll loop ended");
@@ -31461,7 +31462,7 @@ async function triggerStopCallbacks(metrics, _input, options = {}) {
   try {
     await Promise.race([
       Promise.allSettled(promises),
-      new Promise((resolve44) => setTimeout(resolve44, 5e3))
+      new Promise((resolve50) => setTimeout(resolve50, 5e3))
     ]);
   } catch (error2) {
     console.error("[stop-callback] Callback execution error:", error2);
@@ -32402,7 +32403,7 @@ async function withMailboxLock(teamName, workerName2, cwd2, fn) {
   while (Date.now() < deadline) {
     const result = await withLock(lockDir, fn);
     if (result.ok) return result.value;
-    await new Promise((resolve44) => setTimeout(resolve44, delayMs));
+    await new Promise((resolve50) => setTimeout(resolve50, delayMs));
     delayMs = Math.min(delayMs * 2, 200);
   }
   throw new Error(`Failed to acquire mailbox lock for ${workerName2} after ${timeoutMs}ms`);
@@ -32507,7 +32508,7 @@ async function teamCreateTask(teamName, task, cwd2) {
       return created;
     });
     if (result.ok) return result.value;
-    await new Promise((resolve44) => setTimeout(resolve44, delayMs));
+    await new Promise((resolve50) => setTimeout(resolve50, delayMs));
     delayMs = Math.min(delayMs * 2, 200);
   }
   throw new Error(`Failed to acquire task creation lock for team ${teamName} after ${timeoutMs}ms`);
@@ -32547,7 +32548,7 @@ async function teamUpdateTask(teamName, taskId, updates, cwd2) {
       return merged;
     });
     if (result.ok) return result.value;
-    await new Promise((resolve44) => setTimeout(resolve44, delayMs));
+    await new Promise((resolve50) => setTimeout(resolve50, delayMs));
     delayMs = Math.min(delayMs * 2, 200);
   }
   throw new Error(`Failed to acquire task update lock for task ${taskId} in team ${teamName} after ${timeoutMs}ms`);
@@ -34581,7 +34582,7 @@ async function withDispatchLock(teamName, cwd2, fn) {
         );
       }
       const jitter = 0.5 + Math.random() * 0.5;
-      await new Promise((resolve44) => setTimeout(resolve44, Math.floor(pollMs * jitter)));
+      await new Promise((resolve50) => setTimeout(resolve50, Math.floor(pollMs * jitter)));
       pollMs = Math.min(pollMs * 2, DISPATCH_LOCK_MAX_POLL_MS);
     }
   }
@@ -35782,7 +35783,7 @@ async function waitForWorkerStartupEvidence(teamName, workerName2, taskId, cwd2,
       return true;
     }
     if (attempt < attempts) {
-      await new Promise((resolve44) => setTimeout(resolve44, delayMs));
+      await new Promise((resolve50) => setTimeout(resolve50, delayMs));
     }
   }
   return false;
@@ -36243,10 +36244,10 @@ async function requeueDeadWorkerTasks(teamName, deadWorkerNames, cwd2) {
     await writeFile9(sidecarPath, JSON.stringify(sidecar, null, 2), "utf-8");
     const taskPath2 = absPath(cwd2, TeamPaths.taskFile(sanitized, task.id));
     try {
-      const { readFileSync: readFileSync115, writeFileSync: writeFileSync47 } = await import("fs");
+      const { readFileSync: readFileSync118, writeFileSync: writeFileSync47 } = await import("fs");
       const { withFileLockSync: withFileLockSync2 } = await Promise.resolve().then(() => (init_file_lock(), file_lock_exports));
       withFileLockSync2(taskPath2 + ".lock", () => {
-        const raw = readFileSync115(taskPath2, "utf-8");
+        const raw = readFileSync118(taskPath2, "utf-8");
         const taskData = JSON.parse(raw);
         if (taskData.status === "in_progress") {
           taskData.status = "pending";
@@ -36276,7 +36277,7 @@ async function processCliWorkerVerdicts(teamName, cwd2) {
     "team.runtime-v2.processCliWorkerVerdicts appendTeamEvent failed"
   );
   const { rename: rename3 } = await import("fs/promises");
-  const { readFileSync: readFileSync115, writeFileSync: writeFileSync47, existsSync: fsExistsSync } = await import("fs");
+  const { readFileSync: readFileSync118, writeFileSync: writeFileSync47, existsSync: fsExistsSync } = await import("fs");
   const { withFileLockSync: withFileLockSync2 } = await Promise.resolve().then(() => (init_file_lock(), file_lock_exports));
   for (const worker of config2.workers) {
     const outputFile = worker.output_file;
@@ -36310,7 +36311,7 @@ async function processCliWorkerVerdicts(teamName, cwd2) {
       const taskPath2 = absPath(cwd2, TeamPaths.taskFile(sanitized, taskId));
       if (!fsExistsSync(taskPath2)) continue;
       try {
-        const taskRaw = readFileSync115(taskPath2, "utf-8");
+        const taskRaw = readFileSync118(taskPath2, "utf-8");
         const taskData = JSON.parse(taskRaw);
         if (taskData.owner === worker.name && taskData.status === "in_progress") {
           targetTaskId = taskId;
@@ -36338,7 +36339,7 @@ async function processCliWorkerVerdicts(teamName, cwd2) {
     let transitionOk = false;
     try {
       withFileLockSync2(targetTaskPath + ".lock", () => {
-        const raw = readFileSync115(targetTaskPath, "utf-8");
+        const raw = readFileSync118(targetTaskPath, "utf-8");
         const taskData = JSON.parse(raw);
         if (taskData.status !== "in_progress" || taskData.owner !== worker.name) {
           return;
@@ -36965,7 +36966,7 @@ async function readJsonSafe5(filePath) {
         return null;
       }
     }
-    await new Promise((resolve44) => setTimeout(resolve44, 25));
+    await new Promise((resolve50) => setTimeout(resolve50, 25));
   }
   return null;
 }
@@ -37083,7 +37084,7 @@ async function nextPendingTaskIndex(runtime) {
     let task = await readTask(root2, taskId);
     if (!task) {
       for (let attempt = 1; attempt < transientReadRetryAttempts; attempt++) {
-        await new Promise((resolve44) => setTimeout(resolve44, transientReadRetryDelayMs));
+        await new Promise((resolve50) => setTimeout(resolve50, transientReadRetryDelayMs));
         task = await readTask(root2, taskId);
         if (task) break;
       }
@@ -38239,10 +38240,10 @@ async function initJobDb(cwd2) {
         const betterSqlite3 = await import("better-sqlite3");
         Database = betterSqlite3.default;
       } catch (importError) {
-        const errorMessage = importError instanceof Error ? importError.message : String(importError);
+        const errorMessage2 = importError instanceof Error ? importError.message : String(importError);
         console.error(
           "[job-state-db] Failed to load better-sqlite3:",
-          errorMessage
+          errorMessage2
         );
         console.error(
           "[job-state-db] Install with: npm install better-sqlite3"
@@ -45262,7 +45263,7 @@ function validateCredentials(creds) {
   return !isCredentialExpired(creds);
 }
 function refreshAccessToken(refreshToken) {
-  return new Promise((resolve44) => {
+  return new Promise((resolve50) => {
     const clientId = process.env.CLAUDE_CODE_OAUTH_CLIENT_ID || DEFAULT_OAUTH_CLIENT_ID;
     const body = new URLSearchParams({
       grant_type: "refresh_token",
@@ -45290,7 +45291,7 @@ function refreshAccessToken(refreshToken) {
             try {
               const parsed = JSON.parse(data);
               if (parsed.access_token) {
-                resolve44({
+                resolve50({
                   accessToken: parsed.access_token,
                   refreshToken: parsed.refresh_token || refreshToken,
                   expiresAt: parsed.expires_in ? Date.now() + parsed.expires_in * 1e3 : parsed.expires_at
@@ -45303,20 +45304,20 @@ function refreshAccessToken(refreshToken) {
           if (process.env.OMC_DEBUG) {
             console.error(`[usage-api] Token refresh failed: HTTP ${res.statusCode}`);
           }
-          resolve44(null);
+          resolve50(null);
         });
       }
     );
-    req.on("error", () => resolve44(null));
+    req.on("error", () => resolve50(null));
     req.on("timeout", () => {
       req.destroy();
-      resolve44(null);
+      resolve50(null);
     });
     req.end(body);
   });
 }
 function fetchUsageFromApi(accessToken) {
-  return new Promise((resolve44) => {
+  return new Promise((resolve50) => {
     const req = import_https3.default.request(
       {
         hostname: "api.anthropic.com",
@@ -45337,41 +45338,41 @@ function fetchUsageFromApi(accessToken) {
         res.on("end", () => {
           if (res.statusCode === 200) {
             try {
-              resolve44({ data: JSON.parse(data) });
+              resolve50({ data: JSON.parse(data) });
             } catch {
-              resolve44({ data: null });
+              resolve50({ data: null });
             }
           } else if (res.statusCode === 429) {
             if (process.env.OMC_DEBUG) {
               console.error(`[usage-api] Anthropic API returned 429 (rate limited)`);
             }
-            resolve44({ data: null, rateLimited: true });
+            resolve50({ data: null, rateLimited: true });
           } else {
-            resolve44({ data: null });
+            resolve50({ data: null });
           }
         });
       }
     );
-    req.on("error", () => resolve44({ data: null }));
+    req.on("error", () => resolve50({ data: null }));
     req.on("timeout", () => {
       req.destroy();
-      resolve44({ data: null });
+      resolve50({ data: null });
     });
     req.end();
   });
 }
 function fetchUsageFromZai() {
-  return new Promise((resolve44) => {
+  return new Promise((resolve50) => {
     const baseUrl = process.env.ANTHROPIC_BASE_URL;
     const authToken = process.env.ANTHROPIC_AUTH_TOKEN;
     if (!baseUrl || !authToken) {
-      resolve44({ data: null });
+      resolve50({ data: null });
       return;
     }
     const validation = validateAnthropicBaseUrl(baseUrl);
     if (!validation.allowed) {
       console.error(`[SSRF Guard] Blocking usage API call: ${validation.reason}`);
-      resolve44({ data: null });
+      resolve50({ data: null });
       return;
     }
     try {
@@ -45399,29 +45400,29 @@ function fetchUsageFromZai() {
           res.on("end", () => {
             if (res.statusCode === 200) {
               try {
-                resolve44({ data: JSON.parse(data) });
+                resolve50({ data: JSON.parse(data) });
               } catch {
-                resolve44({ data: null });
+                resolve50({ data: null });
               }
             } else if (res.statusCode === 429) {
               if (process.env.OMC_DEBUG) {
                 console.error(`[usage-api] z.ai API returned 429 (rate limited)`);
               }
-              resolve44({ data: null, rateLimited: true });
+              resolve50({ data: null, rateLimited: true });
             } else {
-              resolve44({ data: null });
+              resolve50({ data: null });
             }
           });
         }
       );
-      req.on("error", () => resolve44({ data: null }));
+      req.on("error", () => resolve50({ data: null }));
       req.on("timeout", () => {
         req.destroy();
-        resolve44({ data: null });
+        resolve50({ data: null });
       });
       req.end();
     } catch {
-      resolve44({ data: null });
+      resolve50({ data: null });
     }
   });
 }
@@ -45562,16 +45563,16 @@ function parseZaiResponse(response) {
   return result;
 }
 function fetchUsageFromMinimax(apiKey) {
-  return new Promise((resolve44) => {
+  return new Promise((resolve50) => {
     const baseUrl = process.env.ANTHROPIC_BASE_URL;
     if (!baseUrl) {
-      resolve44({ data: null });
+      resolve50({ data: null });
       return;
     }
     const validation = validateAnthropicBaseUrl(baseUrl);
     if (!validation.allowed) {
       console.error(`[SSRF Guard] Blocking usage API call: ${validation.reason}`);
-      resolve44({ data: null });
+      resolve50({ data: null });
       return;
     }
     try {
@@ -45598,29 +45599,29 @@ function fetchUsageFromMinimax(apiKey) {
           res.on("end", () => {
             if (res.statusCode === 200) {
               try {
-                resolve44({ data: JSON.parse(data) });
+                resolve50({ data: JSON.parse(data) });
               } catch {
-                resolve44({ data: null });
+                resolve50({ data: null });
               }
             } else if (res.statusCode === 429) {
               if (process.env.OMC_DEBUG) {
                 console.error(`[usage-api] MiniMax API returned 429 (rate limited)`);
               }
-              resolve44({ data: null, rateLimited: true });
+              resolve50({ data: null, rateLimited: true });
             } else {
-              resolve44({ data: null });
+              resolve50({ data: null });
             }
           });
         }
       );
-      req.on("error", () => resolve44({ data: null }));
+      req.on("error", () => resolve50({ data: null }));
       req.on("timeout", () => {
         req.destroy();
-        resolve44({ data: null });
+        resolve50({ data: null });
       });
       req.end();
     } catch {
-      resolve44({ data: null });
+      resolve50({ data: null });
     }
   });
 }
@@ -45920,26 +45921,26 @@ var init_leader_nudge_guidance = __esm({
 // src/hud/stdin.ts
 function getStdinCachePath() {
   const root2 = getWorktreeRoot() || process.cwd();
-  return (0, import_path148.join)(root2, ".omc", "state", "hud-stdin-cache.json");
+  return (0, import_path154.join)(root2, ".omc", "state", "hud-stdin-cache.json");
 }
 function writeStdinCache(stdin) {
   try {
     const root2 = getWorktreeRoot() || process.cwd();
-    const cacheDir = (0, import_path148.join)(root2, ".omc", "state");
-    if (!(0, import_fs127.existsSync)(cacheDir)) {
-      (0, import_fs127.mkdirSync)(cacheDir, { recursive: true });
+    const cacheDir = (0, import_path154.join)(root2, ".omc", "state");
+    if (!(0, import_fs131.existsSync)(cacheDir)) {
+      (0, import_fs131.mkdirSync)(cacheDir, { recursive: true });
     }
-    (0, import_fs127.writeFileSync)(getStdinCachePath(), JSON.stringify(stdin));
+    (0, import_fs131.writeFileSync)(getStdinCachePath(), JSON.stringify(stdin));
   } catch {
   }
 }
 function readStdinCache() {
   try {
     const cachePath = getStdinCachePath();
-    if (!(0, import_fs127.existsSync)(cachePath)) {
+    if (!(0, import_fs131.existsSync)(cachePath)) {
       return null;
     }
-    return JSON.parse((0, import_fs127.readFileSync)(cachePath, "utf-8"));
+    return JSON.parse((0, import_fs131.readFileSync)(cachePath, "utf-8"));
   } catch {
     return null;
   }
@@ -46056,12 +46057,12 @@ function getRateLimitsFromStdin(stdin) {
 function getModelName(stdin) {
   return stdin.model?.display_name ?? stdin.model?.id ?? "Unknown";
 }
-var import_fs127, import_path148, TRANSIENT_CONTEXT_PERCENT_TOLERANCE;
+var import_fs131, import_path154, TRANSIENT_CONTEXT_PERCENT_TOLERANCE;
 var init_stdin = __esm({
   "src/hud/stdin.ts"() {
     "use strict";
-    import_fs127 = require("fs");
-    import_path148 = require("path");
+    import_fs131 = require("fs");
+    import_path154 = require("path");
     init_worktree_paths();
     TRANSIENT_CONTEXT_PERCENT_TOLERANCE = 3;
   }
@@ -46079,12 +46080,12 @@ async function parseTranscript(transcriptPath, options) {
     skillCallCount: 0,
     lastToolName: null
   };
-  if (!transcriptPath || !(0, import_fs128.existsSync)(transcriptPath)) {
+  if (!transcriptPath || !(0, import_fs132.existsSync)(transcriptPath)) {
     return result;
   }
   let cacheKey = null;
   try {
-    const stat3 = (0, import_fs128.statSync)(transcriptPath);
+    const stat3 = (0, import_fs132.statSync)(transcriptPath);
     cacheKey = `${transcriptPath}:${stat3.size}:${stat3.mtimeMs}`;
     const cached2 = transcriptCache.get(transcriptPath);
     if (cached2?.cacheKey === cacheKey) {
@@ -46104,7 +46105,7 @@ async function parseTranscript(transcriptPath, options) {
   let sessionTotalsReliable = false;
   const observedSessionIds = /* @__PURE__ */ new Set();
   try {
-    const stat3 = (0, import_fs128.statSync)(transcriptPath);
+    const stat3 = (0, import_fs132.statSync)(transcriptPath);
     const fileSize = stat3.size;
     if (fileSize > MAX_TAIL_BYTES) {
       const lines = readTailLines(transcriptPath, fileSize, MAX_TAIL_BYTES);
@@ -46127,7 +46128,7 @@ async function parseTranscript(transcriptPath, options) {
       }
       sessionTotalsReliable = sessionTokenTotals.seenUsage;
     } else {
-      const fileStream = (0, import_fs128.createReadStream)(transcriptPath);
+      const fileStream = (0, import_fs132.createReadStream)(transcriptPath);
       const rl = (0, import_readline3.createInterface)({
         input: fileStream,
         crlfDelay: Infinity
@@ -46243,12 +46244,12 @@ function finalizeTranscriptResult(result, options, pendingPermissions) {
 function readTailLines(filePath, fileSize, maxBytes) {
   const startOffset = Math.max(0, fileSize - maxBytes);
   const bytesToRead = fileSize - startOffset;
-  const fd = (0, import_fs128.openSync)(filePath, "r");
+  const fd = (0, import_fs132.openSync)(filePath, "r");
   const buffer = Buffer.alloc(bytesToRead);
   try {
-    (0, import_fs128.readSync)(fd, buffer, 0, bytesToRead, startOffset);
+    (0, import_fs132.readSync)(fd, buffer, 0, bytesToRead, startOffset);
   } finally {
-    (0, import_fs128.closeSync)(fd);
+    (0, import_fs132.closeSync)(fd);
   }
   const content = buffer.toString("utf8");
   const lines = content.split("\n");
@@ -46282,7 +46283,7 @@ function extractTargetSummary(input, toolName) {
   if (toolName.includes("Edit") || toolName.includes("Write")) {
     const filePath = inp.file_path;
     if (filePath) {
-      return (0, import_path149.basename)(filePath) || filePath;
+      return (0, import_path155.basename)(filePath) || filePath;
     }
   }
   if (toolName.includes("Bash")) {
@@ -46470,13 +46471,13 @@ function extractLastRequestTokenUsage(usage) {
 function getNumericUsageValue(value) {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
-var import_fs128, import_readline3, import_path149, MAX_TAIL_BYTES, MAX_AGENT_MAP_SIZE, PERMISSION_TOOLS, PERMISSION_THRESHOLD_MS, pendingPermissionMap, THINKING_PART_TYPES2, THINKING_RECENCY_MS, transcriptCache, TRANSCRIPT_CACHE_MAX_SIZE;
+var import_fs132, import_readline3, import_path155, MAX_TAIL_BYTES, MAX_AGENT_MAP_SIZE, PERMISSION_TOOLS, PERMISSION_THRESHOLD_MS, pendingPermissionMap, THINKING_PART_TYPES2, THINKING_RECENCY_MS, transcriptCache, TRANSCRIPT_CACHE_MAX_SIZE;
 var init_transcript = __esm({
   "src/hud/transcript.ts"() {
     "use strict";
-    import_fs128 = require("fs");
+    import_fs132 = require("fs");
     import_readline3 = require("readline");
-    import_path149 = require("path");
+    import_path155 = require("path");
     MAX_TAIL_BYTES = 4 * 1024 * 1024;
     MAX_AGENT_MAP_SIZE = 100;
     PERMISSION_TOOLS = [
@@ -46499,7 +46500,7 @@ var init_transcript = __esm({
 // src/hud/omc-state.ts
 function isStateFileStale(filePath) {
   try {
-    const stat3 = (0, import_fs129.statSync)(filePath);
+    const stat3 = (0, import_fs133.statSync)(filePath);
     const age = Date.now() - stat3.mtimeMs;
     return age > MAX_STATE_AGE_MS2;
   } catch {
@@ -46509,21 +46510,21 @@ function isStateFileStale(filePath) {
 function resolveStatePath2(directory, filename, sessionId) {
   const omcRoot = getOmcRoot(directory);
   if (sessionId) {
-    const sessionPath = (0, import_path150.join)(omcRoot, "state", "sessions", sessionId, filename);
-    return (0, import_fs129.existsSync)(sessionPath) ? sessionPath : null;
+    const sessionPath = (0, import_path156.join)(omcRoot, "state", "sessions", sessionId, filename);
+    return (0, import_fs133.existsSync)(sessionPath) ? sessionPath : null;
   }
   let bestPath = null;
   let bestMtime = 0;
-  const sessionsDir = (0, import_path150.join)(omcRoot, "state", "sessions");
-  if ((0, import_fs129.existsSync)(sessionsDir)) {
+  const sessionsDir = (0, import_path156.join)(omcRoot, "state", "sessions");
+  if ((0, import_fs133.existsSync)(sessionsDir)) {
     try {
-      const entries = (0, import_fs129.readdirSync)(sessionsDir, { withFileTypes: true });
+      const entries = (0, import_fs133.readdirSync)(sessionsDir, { withFileTypes: true });
       for (const entry of entries) {
         if (!entry.isDirectory()) continue;
-        const sessionFile = (0, import_path150.join)(sessionsDir, entry.name, filename);
-        if ((0, import_fs129.existsSync)(sessionFile)) {
+        const sessionFile = (0, import_path156.join)(sessionsDir, entry.name, filename);
+        if ((0, import_fs133.existsSync)(sessionFile)) {
           try {
-            const mtime = (0, import_fs129.statSync)(sessionFile).mtimeMs;
+            const mtime = (0, import_fs133.statSync)(sessionFile).mtimeMs;
             if (mtime > bestMtime) {
               bestMtime = mtime;
               bestPath = sessionFile;
@@ -46535,10 +46536,10 @@ function resolveStatePath2(directory, filename, sessionId) {
     } catch {
     }
   }
-  const newPath = (0, import_path150.join)(omcRoot, "state", filename);
-  if ((0, import_fs129.existsSync)(newPath)) {
+  const newPath = (0, import_path156.join)(omcRoot, "state", filename);
+  if ((0, import_fs133.existsSync)(newPath)) {
     try {
-      const mtime = (0, import_fs129.statSync)(newPath).mtimeMs;
+      const mtime = (0, import_fs133.statSync)(newPath).mtimeMs;
       if (mtime > bestMtime) {
         bestMtime = mtime;
         bestPath = newPath;
@@ -46547,10 +46548,10 @@ function resolveStatePath2(directory, filename, sessionId) {
       if (!bestPath) bestPath = newPath;
     }
   }
-  const legacyPath = (0, import_path150.join)(omcRoot, filename);
-  if ((0, import_fs129.existsSync)(legacyPath)) {
+  const legacyPath = (0, import_path156.join)(omcRoot, filename);
+  if ((0, import_fs133.existsSync)(legacyPath)) {
     try {
-      const mtime = (0, import_fs129.statSync)(legacyPath).mtimeMs;
+      const mtime = (0, import_fs133.statSync)(legacyPath).mtimeMs;
       if (mtime > bestMtime) {
         bestPath = legacyPath;
       }
@@ -46569,7 +46570,7 @@ function readRalphStateForHud(directory, sessionId) {
     return null;
   }
   try {
-    const content = (0, import_fs129.readFileSync)(stateFile, "utf-8");
+    const content = (0, import_fs133.readFileSync)(stateFile, "utf-8");
     const state = JSON.parse(content);
     if (!state.active) {
       return null;
@@ -46591,7 +46592,7 @@ function readUltraworkStateForHud(directory, sessionId) {
     return null;
   }
   try {
-    const content = (0, import_fs129.readFileSync)(localFile, "utf-8");
+    const content = (0, import_fs133.readFileSync)(localFile, "utf-8");
     const state = JSON.parse(content);
     if (!state.active) {
       return null;
@@ -46605,15 +46606,15 @@ function readUltraworkStateForHud(directory, sessionId) {
   }
 }
 function readPrdStateForHud(directory) {
-  let prdPath = (0, import_path150.join)(directory, "prd.json");
-  if (!(0, import_fs129.existsSync)(prdPath)) {
-    prdPath = (0, import_path150.join)(getOmcRoot(directory), "prd.json");
-    if (!(0, import_fs129.existsSync)(prdPath)) {
+  let prdPath = (0, import_path156.join)(directory, "prd.json");
+  if (!(0, import_fs133.existsSync)(prdPath)) {
+    prdPath = (0, import_path156.join)(getOmcRoot(directory), "prd.json");
+    if (!(0, import_fs133.existsSync)(prdPath)) {
       return null;
     }
   }
   try {
-    const content = (0, import_fs129.readFileSync)(prdPath, "utf-8");
+    const content = (0, import_fs133.readFileSync)(prdPath, "utf-8");
     const prd = JSON.parse(content);
     if (!prd.userStories || !Array.isArray(prd.userStories)) {
       return null;
@@ -46640,7 +46641,7 @@ function readAutopilotStateForHud(directory, sessionId) {
     return null;
   }
   try {
-    const content = (0, import_fs129.readFileSync)(stateFile, "utf-8");
+    const content = (0, import_fs133.readFileSync)(stateFile, "utf-8");
     const state = JSON.parse(content);
     if (!state.active) {
       return null;
@@ -46662,12 +46663,12 @@ function readAutopilotStateForHud(directory, sessionId) {
     return null;
   }
 }
-var import_fs129, import_path150, MAX_STATE_AGE_MS2;
+var import_fs133, import_path156, MAX_STATE_AGE_MS2;
 var init_omc_state = __esm({
   "src/hud/omc-state.ts"() {
     "use strict";
-    import_fs129 = require("fs");
-    import_path150 = require("path");
+    import_fs133 = require("fs");
+    import_path156 = require("path");
     init_worktree_paths();
     MAX_STATE_AGE_MS2 = 2 * 60 * 60 * 1e3;
   }
@@ -46675,7 +46676,7 @@ var init_omc_state = __esm({
 
 // src/hud/custom-rate-provider.ts
 function getCachePath2() {
-  return (0, import_path151.join)(
+  return (0, import_path157.join)(
     getClaudeConfigDir(),
     "plugins",
     "oh-my-claudecode",
@@ -46685,8 +46686,8 @@ function getCachePath2() {
 function readCache2() {
   try {
     const p = getCachePath2();
-    if (!(0, import_fs130.existsSync)(p)) return null;
-    return JSON.parse((0, import_fs130.readFileSync)(p, "utf-8"));
+    if (!(0, import_fs134.existsSync)(p)) return null;
+    return JSON.parse((0, import_fs134.readFileSync)(p, "utf-8"));
   } catch {
     return null;
   }
@@ -46694,10 +46695,10 @@ function readCache2() {
 function writeCache2(buckets) {
   try {
     const p = getCachePath2();
-    const dir = (0, import_path151.dirname)(p);
-    if (!(0, import_fs130.existsSync)(dir)) (0, import_fs130.mkdirSync)(dir, { recursive: true });
+    const dir = (0, import_path157.dirname)(p);
+    if (!(0, import_fs134.existsSync)(dir)) (0, import_fs134.mkdirSync)(dir, { recursive: true });
     const cache = { timestamp: Date.now(), buckets };
-    (0, import_fs130.writeFileSync)(p, JSON.stringify(cache, null, 2));
+    (0, import_fs134.writeFileSync)(p, JSON.stringify(cache, null, 2));
   } catch {
   }
 }
@@ -46705,9 +46706,9 @@ function isCacheValid2(cache) {
   return Date.now() - cache.timestamp < CACHE_TTL_MS2;
 }
 function spawnWithTimeout(cmd, timeoutMs) {
-  return new Promise((resolve44, reject) => {
+  return new Promise((resolve50, reject) => {
     const [executable, ...args] = Array.isArray(cmd) ? cmd : ["sh", "-c", cmd];
-    const child = (0, import_child_process43.spawn)(executable, args, { stdio: ["ignore", "pipe", "pipe"] });
+    const child = (0, import_child_process46.spawn)(executable, args, { stdio: ["ignore", "pipe", "pipe"] });
     let stdout = "";
     child.stdout.on("data", (chunk) => {
       stdout += chunk.toString();
@@ -46728,7 +46729,7 @@ function spawnWithTimeout(cmd, timeoutMs) {
       clearTimeout(timer);
       if (!timedOut) {
         if (code === 0) {
-          resolve44(stdout);
+          resolve50(stdout);
         } else {
           reject(new Error(`Command exited with code ${code}`));
         }
@@ -46795,13 +46796,13 @@ async function executeCustomProvider(config2) {
     return { buckets: [], stale: false, error: "command failed" };
   }
 }
-var import_child_process43, import_fs130, import_path151, CACHE_TTL_MS2, DEFAULT_TIMEOUT_MS3;
+var import_child_process46, import_fs134, import_path157, CACHE_TTL_MS2, DEFAULT_TIMEOUT_MS3;
 var init_custom_rate_provider = __esm({
   "src/hud/custom-rate-provider.ts"() {
     "use strict";
-    import_child_process43 = require("child_process");
-    import_fs130 = require("fs");
-    import_path151 = require("path");
+    import_child_process46 = require("child_process");
+    import_fs134 = require("fs");
+    import_path157 = require("path");
     init_config_dir();
     CACHE_TTL_MS2 = 3e4;
     DEFAULT_TIMEOUT_MS3 = 800;
@@ -48141,8 +48142,8 @@ var init_model = __esm({
 // src/hud/elements/api-key-source.ts
 function settingsFileHasApiKey(filePath) {
   try {
-    if (!(0, import_fs131.existsSync)(filePath)) return false;
-    const content = (0, import_fs131.readFileSync)(filePath, "utf-8");
+    if (!(0, import_fs135.existsSync)(filePath)) return false;
+    const content = (0, import_fs135.readFileSync)(filePath, "utf-8");
     const settings = JSON.parse(content);
     const env2 = settings?.env;
     if (typeof env2 !== "object" || env2 === null) return false;
@@ -48153,10 +48154,10 @@ function settingsFileHasApiKey(filePath) {
 }
 function detectApiKeySource(cwd2) {
   if (cwd2) {
-    const projectSettings = (0, import_path152.join)(cwd2, ".claude", "settings.local.json");
+    const projectSettings = (0, import_path158.join)(cwd2, ".claude", "settings.local.json");
     if (settingsFileHasApiKey(projectSettings)) return "project";
   }
-  const globalSettings = (0, import_path152.join)(getClaudeConfigDir(), "settings.json");
+  const globalSettings = (0, import_path158.join)(getClaudeConfigDir(), "settings.json");
   if (settingsFileHasApiKey(globalSettings)) return "global";
   if (process.env.ANTHROPIC_API_KEY) return "env";
   return null;
@@ -48165,12 +48166,12 @@ function renderApiKeySource(source) {
   if (!source) return null;
   return `${dim("key:")}${cyan(source)}`;
 }
-var import_fs131, import_path152;
+var import_fs135, import_path158;
 var init_api_key_source = __esm({
   "src/hud/elements/api-key-source.ts"() {
     "use strict";
-    import_fs131 = require("fs");
-    import_path152 = require("path");
+    import_fs135 = require("fs");
+    import_path158 = require("path");
     init_colors();
     init_config_dir();
   }
@@ -48692,10 +48693,10 @@ function extractSessionIdFromPath(transcriptPath) {
   return match ? match[1] : null;
 }
 function readSessionSummary(stateDir, sessionId) {
-  const statePath = (0, import_path153.join)(stateDir, `session-summary-${sessionId}.json`);
-  if (!(0, import_fs132.existsSync)(statePath)) return null;
+  const statePath = (0, import_path159.join)(stateDir, `session-summary-${sessionId}.json`);
+  if (!(0, import_fs136.existsSync)(statePath)) return null;
   try {
-    return JSON.parse((0, import_fs132.readFileSync)(statePath, "utf-8"));
+    return JSON.parse((0, import_fs136.readFileSync)(statePath, "utf-8"));
   } catch {
     return null;
   }
@@ -48721,22 +48722,22 @@ function spawnSessionSummaryScript(transcriptPath, stateDir, sessionId) {
     return;
   }
   lastSummarySpawnTimestamp = now;
-  const thisDir = (0, import_path153.dirname)((0, import_url17.fileURLToPath)(importMetaUrl));
-  const scriptPath = (0, import_path153.join)(
+  const thisDir = (0, import_path159.dirname)((0, import_url17.fileURLToPath)(importMetaUrl));
+  const scriptPath = (0, import_path159.join)(
     thisDir,
     "..",
     "..",
     "scripts",
     "session-summary.mjs"
   );
-  if (!(0, import_fs132.existsSync)(scriptPath)) {
+  if (!(0, import_fs136.existsSync)(scriptPath)) {
     if (process.env.OMC_DEBUG) {
       console.error("[HUD] session-summary script not found:", scriptPath);
     }
     return;
   }
   try {
-    const child = (0, import_child_process44.spawn)(
+    const child = (0, import_child_process47.spawn)(
       "node",
       [scriptPath, transcriptPath, stateDir, sessionId],
       {
@@ -48768,12 +48769,12 @@ async function calculateSessionHealth(sessionStart, contextPercent) {
 function showDiagnostic() {
   const version3 = getRuntimePackageVersion();
   const configDir = getClaudeConfigDir();
-  const hudScript = (0, import_path153.join)(configDir, "hud", "omc-hud.mjs");
-  const settingsFile = (0, import_path153.join)(configDir, "settings.json");
-  const hudExists = (0, import_fs132.existsSync)(hudScript);
+  const hudScript = (0, import_path159.join)(configDir, "hud", "omc-hud.mjs");
+  const settingsFile = (0, import_path159.join)(configDir, "settings.json");
+  const hudExists = (0, import_fs136.existsSync)(hudScript);
   let statusLineOk = false;
   try {
-    const settings = JSON.parse((0, import_fs132.readFileSync)(settingsFile, "utf-8"));
+    const settings = JSON.parse((0, import_fs136.readFileSync)(settingsFile, "utf-8"));
     const sl = settings.statusLine;
     if (sl && typeof sl === "object" && typeof sl.command === "string") {
       statusLineOk = sl.command.includes("omc-hud");
@@ -48878,7 +48879,7 @@ async function main2(watchMode = false, skipInit = false) {
       }
     }
     try {
-      const updateCacheFile = (0, import_path153.join)((0, import_os23.homedir)(), ".omc", "update-check.json");
+      const updateCacheFile = (0, import_path159.join)((0, import_os24.homedir)(), ".omc", "update-check.json");
       await (0, import_promises23.access)(updateCacheFile);
       const content = await (0, import_promises23.readFile)(updateCacheFile, "utf-8");
       const cached2 = JSON.parse(content);
@@ -48896,7 +48897,7 @@ async function main2(watchMode = false, skipInit = false) {
     let sessionSummary = null;
     const sessionSummaryEnabled = config2.elements.sessionSummary ?? false;
     if (sessionSummaryEnabled && resolvedTranscriptPath && currentSessionId) {
-      const omcStateDir = (0, import_path153.join)(getOmcRoot(cwd2), "state");
+      const omcStateDir = (0, import_path159.join)(getOmcRoot(cwd2), "state");
       sessionSummary = readSessionSummary(omcStateDir, currentSessionId);
       const shouldSpawn = !sessionSummary?.generatedAt || Date.now() - new Date(sessionSummary.generatedAt).getTime() > 6e4;
       if (shouldSpawn) {
@@ -48938,7 +48939,7 @@ async function main2(watchMode = false, skipInit = false) {
       skillCallCount: transcriptData.skillCallCount,
       promptTime: hudState?.lastPromptTimestamp ? new Date(hudState.lastPromptTimestamp) : null,
       apiKeySource: config2.elements.apiKeySource ? detectApiKeySource(cwd2) : null,
-      profileName: process.env.CLAUDE_CONFIG_DIR ? (0, import_path153.basename)(process.env.CLAUDE_CONFIG_DIR).replace(/^\./, "") : null,
+      profileName: process.env.CLAUDE_CONFIG_DIR ? (0, import_path159.basename)(process.env.CLAUDE_CONFIG_DIR).replace(/^\./, "") : null,
       sessionSummary,
       lastToolName: transcriptData.lastToolName
     };
@@ -48954,10 +48955,10 @@ async function main2(watchMode = false, skipInit = false) {
     }
     if (config2.contextLimitWarning.autoCompact && context.contextPercent >= config2.contextLimitWarning.threshold) {
       try {
-        const omcStateDir = (0, import_path153.join)(getOmcRoot(cwd2), "state");
-        (0, import_fs132.mkdirSync)(omcStateDir, { recursive: true });
-        const triggerFile = (0, import_path153.join)(omcStateDir, "compact-requested.json");
-        (0, import_fs132.writeFileSync)(
+        const omcStateDir = (0, import_path159.join)(getOmcRoot(cwd2), "state");
+        (0, import_fs136.mkdirSync)(omcStateDir, { recursive: true });
+        const triggerFile = (0, import_path159.join)(omcStateDir, "compact-requested.json");
+        (0, import_fs136.writeFileSync)(
           triggerFile,
           JSON.stringify({
             requestedAt: (/* @__PURE__ */ new Date()).toISOString(),
@@ -48996,7 +48997,7 @@ async function main2(watchMode = false, skipInit = false) {
     }
   }
 }
-var import_fs132, import_promises23, import_path153, import_os23, import_child_process44, import_url17, lastSummarySpawnTimestamp, summaryProcessPid;
+var import_fs136, import_promises23, import_path159, import_os24, import_child_process47, import_url17, lastSummarySpawnTimestamp, summaryProcessPid;
 var init_hud = __esm({
   "src/hud/index.ts"() {
     "use strict";
@@ -49013,11 +49014,11 @@ var init_hud = __esm({
     init_version();
     init_auto_update();
     init_worktree_paths();
-    import_fs132 = require("fs");
+    import_fs136 = require("fs");
     import_promises23 = require("fs/promises");
-    import_path153 = require("path");
-    import_os23 = require("os");
-    import_child_process44 = require("child_process");
+    import_path159 = require("path");
+    import_os24 = require("os");
+    import_child_process47 = require("child_process");
     import_url17 = require("url");
     init_worktree_paths();
     init_config_dir();
@@ -49548,8 +49549,8 @@ var chalkStderr = createChalk({ level: stderrColor ? stderrColor.level : 0 });
 var source_default = chalk;
 
 // src/cli/index.ts
-var import_path154 = require("path");
-var import_fs133 = require("fs");
+var import_path160 = require("path");
+var import_fs137 = require("fs");
 init_config_dir();
 
 // src/lib/env-vars.ts
@@ -52473,7 +52474,7 @@ var require_compile = __commonJS2((exports2) => {
     const schOrFunc = root2.refs[ref];
     if (schOrFunc)
       return schOrFunc;
-    let _sch = resolve44.call(this, root2, ref);
+    let _sch = resolve50.call(this, root2, ref);
     if (_sch === void 0) {
       const schema = (_a = root2.localRefs) === null || _a === void 0 ? void 0 : _a[ref];
       const { schemaId } = this.opts;
@@ -52500,7 +52501,7 @@ var require_compile = __commonJS2((exports2) => {
   function sameSchemaEnv(s1, s2) {
     return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
   }
-  function resolve44(root2, ref) {
+  function resolve50(root2, ref) {
     let sch;
     while (typeof (sch = this.refs[ref]) == "string")
       ref = sch;
@@ -52998,7 +52999,7 @@ var require_fast_uri = __commonJS2((exports2, module2) => {
     }
     return uri;
   }
-  function resolve44(baseURI, relativeURI, options) {
+  function resolve50(baseURI, relativeURI, options) {
     const schemelessOptions = Object.assign({ scheme: "null" }, options);
     const resolved = resolveComponents(parse62(baseURI, schemelessOptions), parse62(relativeURI, schemelessOptions), schemelessOptions, true);
     return serialize(resolved, { ...schemelessOptions, skipEscape: true });
@@ -53231,7 +53232,7 @@ var require_fast_uri = __commonJS2((exports2, module2) => {
   var fastUri = {
     SCHEMES,
     normalize: normalize12,
-    resolve: resolve44,
+    resolve: resolve50,
     resolveComponents,
     equal,
     serialize,
@@ -57129,15 +57130,15 @@ var makeIssue = (params) => {
       message: issueData.message
     };
   }
-  let errorMessage = "";
+  let errorMessage2 = "";
   const maps = errorMaps.filter((m) => !!m).slice().reverse();
   for (const map of maps) {
-    errorMessage = map(fullIssue, { data, defaultError: errorMessage }).message;
+    errorMessage2 = map(fullIssue, { data, defaultError: errorMessage2 }).message;
   }
   return {
     ...issueData,
     path: fullPath,
-    message: errorMessage
+    message: errorMessage2
   };
 };
 function addIssueToContext(ctx, issueData) {
@@ -57168,15 +57169,15 @@ var ParseStatus = class _ParseStatus {
       this.value = "aborted";
   }
   static mergeArray(status, results) {
-    const arrayValue = [];
+    const arrayValue2 = [];
     for (const s of results) {
       if (s.status === "aborted")
         return INVALID;
       if (s.status === "dirty")
         status.dirty();
-      arrayValue.push(s.value);
+      arrayValue2.push(s.value);
     }
-    return { status: status.value, value: arrayValue };
+    return { status: status.value, value: arrayValue2 };
   }
   static async mergeObjectAsync(status, pairs) {
     const syncPairs = [];
@@ -65988,19 +65989,19 @@ var getRefs = (options) => {
     ]))
   };
 };
-function addErrorMessage(res, key, errorMessage, refs) {
+function addErrorMessage(res, key, errorMessage2, refs) {
   if (!refs?.errorMessages)
     return;
-  if (errorMessage) {
+  if (errorMessage2) {
     res.errorMessage = {
       ...res.errorMessage,
-      [key]: errorMessage
+      [key]: errorMessage2
     };
   }
 }
-function setResponseValueAndErrors(res, key, value, errorMessage, refs) {
+function setResponseValueAndErrors(res, key, value, errorMessage2, refs) {
   res[key] = value;
-  addErrorMessage(res, key, errorMessage, refs);
+  addErrorMessage(res, key, errorMessage2, refs);
 }
 var getRelativePath = (pathA, pathB) => {
   let i = 0;
@@ -67197,8 +67198,8 @@ var Protocol = class {
                   if (queuedMessage.type === "response") {
                     resolver(message);
                   } else {
-                    const errorMessage = message;
-                    const error2 = new McpError(errorMessage.error.code, errorMessage.error.message, errorMessage.error.data);
+                    const errorMessage2 = message;
+                    const error2 = new McpError(errorMessage2.error.code, errorMessage2.error.message, errorMessage2.error.data);
                     resolver(error2);
                   }
                 } else {
@@ -67598,7 +67599,7 @@ var Protocol = class {
           return;
         }
         const pollInterval = (_c = (_a = task2.pollInterval) !== null && _a !== void 0 ? _a : (_b = this._options) === null || _b === void 0 ? void 0 : _b.defaultTaskPollInterval) !== null && _c !== void 0 ? _c : 1e3;
-        await new Promise((resolve44) => setTimeout(resolve44, pollInterval));
+        await new Promise((resolve50) => setTimeout(resolve50, pollInterval));
         (_d = options === null || options === void 0 ? void 0 : options.signal) === null || _d === void 0 || _d.throwIfAborted();
       }
     } catch (error2) {
@@ -67610,7 +67611,7 @@ var Protocol = class {
   }
   request(request, resultSchema, options) {
     const { relatedRequestId, resumptionToken, onresumptiontoken, task, relatedTask } = options !== null && options !== void 0 ? options : {};
-    return new Promise((resolve44, reject) => {
+    return new Promise((resolve50, reject) => {
       var _a, _b, _c, _d, _e, _f, _g;
       const earlyReject = (error2) => {
         reject(error2);
@@ -67691,7 +67692,7 @@ var Protocol = class {
           if (!parseResult.success) {
             reject(parseResult.error);
           } else {
-            resolve44(parseResult.data);
+            resolve50(parseResult.data);
           }
         } catch (error2) {
           reject(error2);
@@ -67888,12 +67889,12 @@ var Protocol = class {
       }
     } catch (_d) {
     }
-    return new Promise((resolve44, reject) => {
+    return new Promise((resolve50, reject) => {
       if (signal2.aborted) {
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
         return;
       }
-      const timeoutId = setTimeout(resolve44, interval);
+      const timeoutId = setTimeout(resolve50, interval);
       signal2.addEventListener("abort", () => {
         clearTimeout(timeoutId);
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
@@ -68149,23 +68150,23 @@ var Server = class extends Protocol {
       const wrappedHandler = async (request, extra) => {
         const validatedRequest = safeParse2(CallToolRequestSchema, request);
         if (!validatedRequest.success) {
-          const errorMessage = validatedRequest.error instanceof Error ? validatedRequest.error.message : String(validatedRequest.error);
-          throw new McpError(ErrorCode.InvalidParams, `Invalid tools/call request: ${errorMessage}`);
+          const errorMessage2 = validatedRequest.error instanceof Error ? validatedRequest.error.message : String(validatedRequest.error);
+          throw new McpError(ErrorCode.InvalidParams, `Invalid tools/call request: ${errorMessage2}`);
         }
         const { params } = validatedRequest.data;
         const result = await Promise.resolve(handler(request, extra));
         if (params.task) {
           const taskValidationResult = safeParse2(CreateTaskResultSchema, result);
           if (!taskValidationResult.success) {
-            const errorMessage = taskValidationResult.error instanceof Error ? taskValidationResult.error.message : String(taskValidationResult.error);
-            throw new McpError(ErrorCode.InvalidParams, `Invalid task creation result: ${errorMessage}`);
+            const errorMessage2 = taskValidationResult.error instanceof Error ? taskValidationResult.error.message : String(taskValidationResult.error);
+            throw new McpError(ErrorCode.InvalidParams, `Invalid task creation result: ${errorMessage2}`);
           }
           return taskValidationResult.data;
         }
         const validationResult = safeParse2(CallToolResultSchema, result);
         if (!validationResult.success) {
-          const errorMessage = validationResult.error instanceof Error ? validationResult.error.message : String(validationResult.error);
-          throw new McpError(ErrorCode.InvalidParams, `Invalid tools/call result: ${errorMessage}`);
+          const errorMessage2 = validationResult.error instanceof Error ? validationResult.error.message : String(validationResult.error);
+          throw new McpError(ErrorCode.InvalidParams, `Invalid tools/call result: ${errorMessage2}`);
         }
         return validationResult.data;
       };
@@ -68609,12 +68610,12 @@ var McpServer = class {
     });
     this._toolHandlersInitialized = true;
   }
-  createToolError(errorMessage) {
+  createToolError(errorMessage2) {
     return {
       content: [
         {
           type: "text",
-          text: errorMessage
+          text: errorMessage2
         }
       ],
       isError: true
@@ -68629,8 +68630,8 @@ var McpServer = class {
     const parseResult = await safeParseAsync2(schemaToParse, args);
     if (!parseResult.success) {
       const error2 = "error" in parseResult ? parseResult.error : "Unknown error";
-      const errorMessage = getParseErrorMessage(error2);
-      throw new McpError(ErrorCode.InvalidParams, `Input validation error: Invalid arguments for tool ${toolName}: ${errorMessage}`);
+      const errorMessage2 = getParseErrorMessage(error2);
+      throw new McpError(ErrorCode.InvalidParams, `Input validation error: Invalid arguments for tool ${toolName}: ${errorMessage2}`);
     }
     return parseResult.data;
   }
@@ -68651,8 +68652,8 @@ var McpServer = class {
     const parseResult = await safeParseAsync2(outputObj, result.structuredContent);
     if (!parseResult.success) {
       const error2 = "error" in parseResult ? parseResult.error : "Unknown error";
-      const errorMessage = getParseErrorMessage(error2);
-      throw new McpError(ErrorCode.InvalidParams, `Output validation error: Invalid structured content for tool ${toolName}: ${errorMessage}`);
+      const errorMessage2 = getParseErrorMessage(error2);
+      throw new McpError(ErrorCode.InvalidParams, `Output validation error: Invalid structured content for tool ${toolName}: ${errorMessage2}`);
     }
   }
   async executeToolHandler(tool2, args, extra) {
@@ -68692,7 +68693,7 @@ var McpServer = class {
     let task = createTaskResult.task;
     const pollInterval = (_a = task.pollInterval) !== null && _a !== void 0 ? _a : 5e3;
     while (task.status !== "completed" && task.status !== "failed" && task.status !== "cancelled") {
-      await new Promise((resolve44) => setTimeout(resolve44, pollInterval));
+      await new Promise((resolve50) => setTimeout(resolve50, pollInterval));
       const updatedTask = await extra.taskStore.getTask(taskId);
       if (!updatedTask) {
         throw new McpError(ErrorCode.InternalError, `Task ${taskId} not found during polling`);
@@ -68856,8 +68857,8 @@ var McpServer = class {
         const parseResult = await safeParseAsync2(argsObj, request.params.arguments);
         if (!parseResult.success) {
           const error2 = "error" in parseResult ? parseResult.error : "Unknown error";
-          const errorMessage = getParseErrorMessage(error2);
-          throw new McpError(ErrorCode.InvalidParams, `Invalid arguments for prompt ${request.params.name}: ${errorMessage}`);
+          const errorMessage2 = getParseErrorMessage(error2);
+          throw new McpError(ErrorCode.InvalidParams, `Invalid arguments for prompt ${request.params.name}: ${errorMessage2}`);
         }
         const args = parseResult.data;
         const cb = prompt.callback;
@@ -69723,7 +69724,7 @@ var LspClient = class _LspClient {
 Install with: ${this.serverConfig.installHint}`
       );
     }
-    return new Promise((resolve44, reject) => {
+    return new Promise((resolve50, reject) => {
       const command = this.devContainerContext ? "docker" : this.serverConfig.command;
       const args = this.devContainerContext ? ["exec", "-i", "-w", this.devContainerContext.containerWorkspaceRoot, this.devContainerContext.containerId, this.serverConfig.command, ...this.serverConfig.args] : this.serverConfig.args;
       this.process = (0, import_child_process4.spawn)(command, args, {
@@ -69750,7 +69751,7 @@ Install with: ${this.serverConfig.installHint}`
       });
       this.initialize().then(() => {
         this.initialized = true;
-        resolve44();
+        resolve50();
       }).catch(reject);
     });
   }
@@ -69894,13 +69895,13 @@ Install with: ${this.serverConfig.installHint}`
     const message = `Content-Length: ${Buffer.byteLength(content)}\r
 \r
 ${content}`;
-    return new Promise((resolve44, reject) => {
+    return new Promise((resolve50, reject) => {
       const timeoutHandle = setTimeout(() => {
         this.pendingRequests.delete(id);
         reject(new Error(`LSP request '${method}' timed out after ${effectiveTimeout}ms`));
       }, effectiveTimeout);
       this.pendingRequests.set(id, {
-        resolve: resolve44,
+        resolve: resolve50,
         reject,
         timeout: timeoutHandle
       });
@@ -69976,7 +69977,7 @@ ${content}`;
       }
     });
     this.openDocuments.add(hostUri);
-    await new Promise((resolve44) => setTimeout(resolve44, 100));
+    await new Promise((resolve50) => setTimeout(resolve50, 100));
   }
   /**
    * Close a document
@@ -70137,13 +70138,13 @@ ${content}`;
     if (this.diagnostics.has(uri)) {
       return Promise.resolve();
     }
-    return new Promise((resolve44) => {
+    return new Promise((resolve50) => {
       let resolved = false;
       const timer = setTimeout(() => {
         if (!resolved) {
           resolved = true;
           this.diagnosticWaiters.delete(uri);
-          resolve44();
+          resolve50();
         }
       }, timeoutMs);
       const existing = this.diagnosticWaiters.get(uri) || [];
@@ -70151,7 +70152,7 @@ ${content}`;
         if (!resolved) {
           resolved = true;
           clearTimeout(timer);
-          resolve44();
+          resolve50();
         }
       });
       this.diagnosticWaiters.set(uri, existing);
@@ -70645,8 +70646,8 @@ function formatWorkspaceEdit(edit) {
       lines.push(`File: ${path23}`);
       for (const change of changes) {
         const range = formatRange(change.range);
-        const preview = change.newText.length > 50 ? change.newText.slice(0, 50) + "..." : change.newText;
-        lines.push(`  ${range}: "${preview}"`);
+        const preview2 = change.newText.length > 50 ? change.newText.slice(0, 50) + "..." : change.newText;
+        lines.push(`  ${range}: "${preview2}"`);
       }
     }
   }
@@ -70656,8 +70657,8 @@ function formatWorkspaceEdit(edit) {
       lines.push(`File: ${path23}`);
       for (const change of docChange.edits) {
         const range = formatRange(change.range);
-        const preview = change.newText.length > 50 ? change.newText.slice(0, 50) + "..." : change.newText;
-        lines.push(`  ${range}: "${preview}"`);
+        const preview2 = change.newText.length > 50 ? change.newText.slice(0, 50) + "..." : change.newText;
+        lines.push(`  ${range}: "${preview2}"`);
       }
     }
   }
@@ -72050,7 +72051,7 @@ var SessionLock = class {
   }
 };
 function sleep(ms) {
-  return new Promise((resolve44) => setTimeout(resolve44, ms));
+  return new Promise((resolve50) => setTimeout(resolve50, ms));
 }
 
 // src/tools/python-repl/socket-client.ts
@@ -72080,7 +72081,7 @@ var JsonRpcError = class extends Error {
   }
 };
 async function sendSocketRequest(socketPath, method, params, timeout = 6e4) {
-  return new Promise((resolve44, reject) => {
+  return new Promise((resolve50, reject) => {
     const id = (0, import_crypto5.randomUUID)();
     const request = {
       jsonrpc: "2.0",
@@ -72170,7 +72171,7 @@ async function sendSocketRequest(socketPath, method, params, timeout = 6e4) {
           }
           if (!settled) {
             settled = true;
-            resolve44(response.result);
+            resolve50(response.result);
           }
         } catch (e) {
           if (!settled) {
@@ -74515,7 +74516,7 @@ function mergeArrays(fieldName, base, incoming) {
       return mergeScalarArray(base, incoming);
   }
 }
-function mergeByKey(base, incoming, keyFn, resolve44) {
+function mergeByKey(base, incoming, keyFn, resolve50) {
   const seen = /* @__PURE__ */ new Map();
   for (const item of base) {
     seen.set(keyFn(item), item);
@@ -74524,7 +74525,7 @@ function mergeByKey(base, incoming, keyFn, resolve44) {
     const key = keyFn(item);
     const existing = seen.get(key);
     if (existing) {
-      seen.set(key, resolve44(existing, item));
+      seen.set(key, resolve50(existing, item));
     } else {
       seen.set(key, item);
     }
@@ -83938,7 +83939,7 @@ async function pollLoop2(config2) {
       log2(`Poll error: ${state.lastError}`, config2);
       writeDaemonState2(state, config2);
     }
-    await new Promise((resolve44) => setTimeout(resolve44, config2.pollIntervalMs));
+    await new Promise((resolve50) => setTimeout(resolve50, config2.pollIntervalMs));
   }
 }
 function startDaemon(config2) {
@@ -84894,7 +84895,16 @@ var PRODUCT_ARTIFACT_REGISTRY = {
     format: "json",
     owner: "creative-loop",
     machineContract: "strict",
-    purpose: "UI/UX creative readiness gate: meaning, inspiration principles, divergent directions, motion, tokens, experiments, and taste verdict."
+    purpose: "UI/UX creative readiness gate: meaning, visual expectation, inspiration principles, divergent directions, motion, tokens, experiments, and taste verdict."
+  },
+  "creative-visual-expectation": {
+    name: "creative-visual-expectation",
+    lane: "design",
+    currentPath: ".omc/design/visual-expectation/current.json",
+    format: "json",
+    owner: "creative-loop",
+    machineContract: "strict",
+    purpose: "Machine-readable contract for desired perception, category codes to avoid, selected direction, token rationale, component proofs, and screenshot evidence."
   },
   "creative-taste-gate": {
     name: "creative-taste-gate",
@@ -85157,8 +85167,8 @@ function renderReport(report2) {
 init_formatting();
 
 // src/product/pipeline-contract-validator.ts
-var import_fs100 = require("fs");
-var import_path120 = require("path");
+var import_fs104 = require("fs");
+var import_path124 = require("path");
 
 // src/product/agent-output.ts
 var import_fs98 = require("fs");
@@ -85390,6 +85400,10 @@ function validateStrategy(value, issues) {
   }
 }
 
+// src/product/portfolio-ledger.ts
+var import_fs100 = require("fs");
+var import_path120 = require("path");
+
 // src/product/cycle-document.ts
 var import_fs99 = require("fs");
 var import_path119 = require("path");
@@ -85470,6 +85484,7 @@ function renderCycleProjection(doc) {
   const acceptance = doc.spec.acceptance_criteria.map((entry) => `  - ${entry}`).join("\n");
   const verification = doc.spec.verification_plan.map((entry) => `  - ${entry}`).join("\n");
   const learning = doc.spec.learning_plan.map((entry) => `  - ${entry}`).join("\n");
+  const expectation = renderFeatureExpectationContract(doc.spec.feature_expectation_contract);
   const evidence = doc.footer.evidence.map((entry) => `  - ${entry}`).join("\n");
   const blocking = doc.footer.blocking_issues.length === 0 ? "  - []" : doc.footer.blocking_issues.map((entry) => `  - ${entry}`).join("\n");
   const artifacts = doc.footer.artifacts_written.map((entry) => `  - ${entry}`).join("\n");
@@ -85500,6 +85515,7 @@ ${verification}
 learning_plan:
 ${learning}
 experience_gate: ${doc.spec.experience_gate ?? ".omc/experience/current.md"}
+${expectation}
 
 ## History
 ${history}
@@ -85514,6 +85530,22 @@ next_action: ${doc.footer.next_action}
 artifacts_written:
 ${artifacts}
 `;
+}
+function renderFeatureExpectationContract(contract) {
+  if (!contract) return "";
+  const uselessIf = contract.useless_if.map((entry) => `    - ${entry}`).join("\n");
+  const notDoneUntil = contract.not_done_until.map((entry) => `    - ${entry}`).join("\n");
+  return `feature_expectation_contract:
+  user_job: ${contract.user_job}
+  first_meaningful_use: ${contract.first_meaningful_use}
+  useless_if:
+${uselessIf}
+  maturity_ladder:
+    v0: ${contract.maturity_ladder.v0}
+    v1: ${contract.maturity_ladder.v1}
+    v2: ${contract.maturity_ladder.v2}
+  not_done_until:
+${notDoneUntil}`;
 }
 function migrateCycleMarkdownToJson(root2 = process.cwd(), options = {}) {
   const resolvedRoot = (0, import_path119.resolve)(root2);
@@ -85608,7 +85640,32 @@ function parseSpecSection(content, fields) {
     build_route: normalizeBuildRoute(matchValue(section, "build_route") ?? fields.build_route),
     verification_plan: parseList(section, "verification_plan"),
     learning_plan: parseList(section, "learning_plan"),
-    experience_gate: matchValue(section, "experience_gate") ?? fields.experience_gate
+    experience_gate: matchValue(section, "experience_gate") ?? fields.experience_gate,
+    feature_expectation_contract: parseFeatureExpectationContract(section)
+  };
+}
+function parseFeatureExpectationContract(section) {
+  const contractSection = sectionContent(section, /Feature Expectation Contract/i) ?? section;
+  const userJob = matchValue(contractSection, "user_job");
+  const firstMeaningfulUse = matchValue(contractSection, "first_meaningful_use");
+  const v0 = matchValue(contractSection, "v0");
+  const v1 = matchValue(contractSection, "v1");
+  const v2 = matchValue(contractSection, "v2");
+  const uselessIf = parseList(contractSection, "useless_if");
+  const notDoneUntil = parseList(contractSection, "not_done_until");
+  if (!userJob && !firstMeaningfulUse && !v0 && !v1 && !v2 && uselessIf.length === 0 && notDoneUntil.length === 0) {
+    return void 0;
+  }
+  return {
+    user_job: userJob ?? "",
+    first_meaningful_use: firstMeaningfulUse ?? "",
+    useless_if: uselessIf,
+    maturity_ladder: {
+      v0: v0 ?? "",
+      v1: v1 ?? "",
+      v2: v2 ?? ""
+    },
+    not_done_until: notDoneUntil
   };
 }
 function parseFooterSection(content) {
@@ -85710,6 +85767,9 @@ function validateDocumentShape(path23, document, issues) {
   if (!document.spec || !VALID_BUILD_ROUTES.has(document.spec.build_route)) {
     issues.push({ severity: "error", code: "invalid-build-route", path: path23, message: "spec.build_route must be a valid route" });
   }
+  if (document.spec?.feature_expectation_contract && !isValidFeatureExpectationContract(document.spec.feature_expectation_contract)) {
+    issues.push({ severity: "error", code: "invalid-feature-expectation-contract", path: path23, message: "spec.feature_expectation_contract must include user_job, first_meaningful_use, useless_if, v0/v1/v2, and not_done_until" });
+  }
   if (!document.selected_portfolio || typeof document.selected_portfolio.core_product_slice !== "string" || typeof document.selected_portfolio.enabling_task !== "string" || typeof document.selected_portfolio.learning_task !== "string") {
     issues.push({ severity: "error", code: "invalid-portfolio", path: path23, message: "selected_portfolio must include core_product_slice, enabling_task, learning_task" });
   }
@@ -85727,10 +85787,2545 @@ function validateDocumentShape(path23, document, issues) {
     issues.push({ severity: "warning", code: "complete-without-learn-event", path: path23, message: "cycle_stage=complete with no learn event in history" });
   }
 }
+function isValidFeatureExpectationContract(contract) {
+  return hasMeaningfulString(contract.user_job) && hasMeaningfulString(contract.first_meaningful_use) && Array.isArray(contract.useless_if) && contract.useless_if.some(hasMeaningfulString) && hasMeaningfulString(contract.maturity_ladder?.v0) && hasMeaningfulString(contract.maturity_ladder?.v1) && hasMeaningfulString(contract.maturity_ladder?.v2) && Array.isArray(contract.not_done_until) && contract.not_done_until.some(hasMeaningfulString);
+}
+function hasMeaningfulString(value) {
+  return typeof value === "string" && value.trim().length > 0 && !/^(?:tbd|todo|placeholder|pending|none|\[\])$/i.test(value.trim());
+}
+
+// src/product/portfolio-ledger.ts
+var PORTFOLIO_LEDGER_RELATIVE_PATH = ".omc/portfolio/current.json";
+var PORTFOLIO_PROJECTION_RELATIVE_PATH = ".omc/portfolio/current.md";
+var OPPORTUNITIES_RELATIVE_PATH = ".omc/opportunities/current.md";
+var VALID_LANES = /* @__PURE__ */ new Set([
+  "product",
+  "ux",
+  "research",
+  "backend",
+  "quality",
+  "brand-content",
+  "distribution"
+]);
+var VALID_STATUSES2 = /* @__PURE__ */ new Set([
+  "candidate",
+  "selected",
+  "in_progress",
+  "done",
+  "blocked",
+  "deferred",
+  "rejected"
+]);
+var MIN_PORTFOLIO_ITEMS = 20;
+var MAX_PORTFOLIO_ITEMS = 40;
+function getPortfolioLedgerPath(root2 = process.cwd()) {
+  return (0, import_path120.resolve)(root2, PORTFOLIO_LEDGER_RELATIVE_PATH);
+}
+function readPortfolioLedger(root2 = process.cwd()) {
+  const path23 = getPortfolioLedgerPath(root2);
+  if (!(0, import_fs100.existsSync)(path23)) return void 0;
+  return JSON.parse((0, import_fs100.readFileSync)(path23, "utf-8"));
+}
+function validatePortfolioLedger(root2 = process.cwd()) {
+  const path23 = getPortfolioLedgerPath(root2);
+  const issues = [];
+  let ledger;
+  if (!(0, import_fs100.existsSync)(path23)) {
+    issues.push({
+      severity: "error",
+      code: "missing-ledger",
+      path: path23,
+      message: `Missing ${PORTFOLIO_LEDGER_RELATIVE_PATH}`
+    });
+    return report(path23, ledger, issues);
+  }
+  try {
+    ledger = JSON.parse((0, import_fs100.readFileSync)(path23, "utf-8"));
+  } catch (error2) {
+    issues.push({
+      severity: "error",
+      code: "invalid-json",
+      path: path23,
+      message: error2 instanceof Error ? error2.message : String(error2)
+    });
+    return report(path23, ledger, issues);
+  }
+  validateLedgerShape(path23, ledger, issues, readActiveCycleId(root2));
+  return report(path23, ledger, issues);
+}
+function renderPortfolioProjection(ledger) {
+  const rows = [...ledger.items].sort((a, b) => {
+    if (a.selected_cycle && !b.selected_cycle) return -1;
+    if (!a.selected_cycle && b.selected_cycle) return 1;
+    return `${a.lane}:${a.id}`.localeCompare(`${b.lane}:${b.id}`);
+  });
+  const table = rows.map((item) => [
+    item.id,
+    item.lane,
+    item.status,
+    String(item.confidence),
+    item.selected_cycle ?? "",
+    item.dependencies.join(", "),
+    item.title
+  ]);
+  const selectedExpectations = rows.filter((item) => item.selected_cycle && item.feature_expectation);
+  return [
+    "# Portfolio Ledger",
+    "",
+    `schema_version: ${ledger.schema_version}`,
+    `updated_at: ${ledger.updated_at}`,
+    "",
+    "| ID | Lane | Status | Confidence | Selected Cycle | Dependencies | Title |",
+    "| --- | --- | --- | --- | --- | --- | --- |",
+    ...table.map((row) => `| ${row.map(escapeCell).join(" | ")} |`),
+    "",
+    ...selectedExpectations.length > 0 ? [
+      "## Selected Feature Expectations",
+      "",
+      ...selectedExpectations.flatMap((item) => [
+        `### ${item.id}`,
+        `- user_job: ${item.feature_expectation?.user_job ?? ""}`,
+        `- first_meaningful_use: ${item.feature_expectation?.first_meaningful_use ?? ""}`,
+        `- useless_if: ${(item.feature_expectation?.useless_if ?? []).join("; ")}`,
+        `- maturity_ladder: v0=${item.feature_expectation?.maturity_ladder.v0 ?? ""}; v1=${item.feature_expectation?.maturity_ladder.v1 ?? ""}; v2=${item.feature_expectation?.maturity_ladder.v2 ?? ""}`,
+        `- not_done_until: ${(item.feature_expectation?.not_done_until ?? []).join("; ")}`,
+        ""
+      ])
+    ] : [],
+    "## Source Artifacts",
+    ...ledger.source_artifacts.map((source) => `- ${source}`),
+    ""
+  ].join("\n");
+}
+function writePortfolioProjection(root2 = process.cwd(), path23) {
+  const ledger = readPortfolioLedger(root2);
+  if (!ledger) {
+    throw new Error(`Missing ${PORTFOLIO_LEDGER_RELATIVE_PATH}`);
+  }
+  const outputPath = (0, import_path120.resolve)(root2, path23 ?? PORTFOLIO_PROJECTION_RELATIVE_PATH);
+  (0, import_fs100.mkdirSync)((0, import_path120.dirname)(outputPath), { recursive: true });
+  (0, import_fs100.writeFileSync)(outputPath, renderPortfolioProjection(ledger), "utf-8");
+  return outputPath;
+}
+function migrateOpportunitiesToPortfolioLedger(root2 = process.cwd(), options = {}) {
+  const resolvedRoot = (0, import_path120.resolve)(root2);
+  const sourcePath = (0, import_path120.resolve)(resolvedRoot, options.source ?? OPPORTUNITIES_RELATIVE_PATH);
+  const outputPath = getPortfolioLedgerPath(resolvedRoot);
+  const issues = [];
+  if (!(0, import_fs100.existsSync)(sourcePath)) {
+    issues.push(issue3(sourcePath, "error", "missing-opportunities", `Missing ${(0, import_path120.relative)(resolvedRoot, sourcePath)}`));
+    return { ok: false, sourcePath, outputPath, wrote: false, issues };
+  }
+  if (options.write && (0, import_fs100.existsSync)(outputPath) && !options.force) {
+    issues.push(issue3(outputPath, "error", "ledger-exists", `${PORTFOLIO_LEDGER_RELATIVE_PATH} already exists; pass --force to overwrite`));
+    return { ok: false, sourcePath, outputPath, wrote: false, issues };
+  }
+  const content = (0, import_fs100.readFileSync)(sourcePath, "utf-8");
+  const sourceArtifact = (0, import_path120.relative)(resolvedRoot, sourcePath);
+  const items = extractPortfolioItemsFromOpportunities(content, sourceArtifact);
+  if (items.length === 0) {
+    issues.push(issue3(sourcePath, "error", "no-candidates-found", "Could not find candidate moves in markdown tables or id: blocks"));
+  }
+  const cycleId = inferSelectedCycleId(content, options.now);
+  applySelectedCycle(content, items, cycleId);
+  const ledger = {
+    schema_version: 1,
+    updated_at: options.now ?? (/* @__PURE__ */ new Date()).toISOString(),
+    source_artifacts: [sourceArtifact],
+    items
+  };
+  validateLedgerShape(outputPath, ledger, issues);
+  const errors = issues.filter((entry) => entry.severity === "error");
+  if (errors.length > 0) {
+    return { ok: false, sourcePath, outputPath, wrote: false, ledger, issues };
+  }
+  let projectionPath;
+  if (options.write) {
+    (0, import_fs100.mkdirSync)((0, import_path120.dirname)(outputPath), { recursive: true });
+    (0, import_fs100.writeFileSync)(outputPath, `${JSON.stringify(ledger, null, 2)}
+`, "utf-8");
+    projectionPath = writePortfolioProjection(resolvedRoot);
+  }
+  return {
+    ok: true,
+    sourcePath,
+    outputPath,
+    projectionPath,
+    wrote: Boolean(options.write),
+    ledger,
+    issues
+  };
+}
+function trimPortfolioLedger(root2 = process.cwd(), options = {}) {
+  const resolvedRoot = (0, import_path120.resolve)(root2);
+  const path23 = getPortfolioLedgerPath(resolvedRoot);
+  const target = options.to ?? MAX_PORTFOLIO_ITEMS;
+  const issues = [];
+  if (!Number.isInteger(target) || target < MIN_PORTFOLIO_ITEMS || target > MAX_PORTFOLIO_ITEMS) {
+    issues.push(issue3(path23, "error", "invalid-trim-target", `Trim target must be an integer between ${MIN_PORTFOLIO_ITEMS} and ${MAX_PORTFOLIO_ITEMS}`));
+    return trimReport(path23, target, 0, void 0, [], false, void 0, issues);
+  }
+  const validation = validatePortfolioLedger(resolvedRoot);
+  if (!validation.ledger) {
+    return trimReport(path23, target, 0, void 0, [], false, void 0, validation.issues);
+  }
+  const ledger = validation.ledger;
+  const originalCount = ledger.items.length;
+  if (originalCount <= target) {
+    return trimReport(path23, target, originalCount, {
+      ...ledger,
+      items: [...ledger.items]
+    }, [], false, void 0, validation.issues);
+  }
+  const trimmedItems = selectTrimmedPortfolioItems(ledger.items, target);
+  const keptIds = new Set(trimmedItems.map((item) => item.id));
+  const removedItems = ledger.items.filter((item) => !keptIds.has(item.id)).map(({ id, title, lane, status }) => ({ id, title, lane, status }));
+  const trimmedLedger = {
+    ...ledger,
+    updated_at: options.now ?? (/* @__PURE__ */ new Date()).toISOString(),
+    items: trimmedItems
+  };
+  const trimIssues = [...validation.issues.filter((entry) => entry.code !== "portfolio-too-large")];
+  validateLedgerShape(path23, trimmedLedger, trimIssues, readActiveCycleId(resolvedRoot));
+  const errors = trimIssues.filter((entry) => entry.severity === "error");
+  if (errors.length > 0) {
+    return trimReport(path23, target, originalCount, trimmedLedger, removedItems, false, void 0, trimIssues);
+  }
+  let projectionPath;
+  if (options.write) {
+    (0, import_fs100.mkdirSync)((0, import_path120.dirname)(path23), { recursive: true });
+    (0, import_fs100.writeFileSync)(path23, `${JSON.stringify(trimmedLedger, null, 2)}
+`, "utf-8");
+    projectionPath = writePortfolioProjection(resolvedRoot);
+  }
+  return trimReport(path23, target, originalCount, trimmedLedger, removedItems, Boolean(options.write), projectionPath, trimIssues);
+}
+function extractPortfolioItemsFromOpportunities(content, sourceArtifact) {
+  const fromTables = extractItemsFromTables(content, sourceArtifact);
+  const fromBlocks = extractItemsFromIdBlocks(content, sourceArtifact);
+  return dedupeItems([...fromTables, ...fromBlocks]);
+}
+function extractItemsFromTables(content, sourceArtifact) {
+  const lines = content.split("\n");
+  const items = [];
+  for (let index = 0; index < lines.length - 1; index += 1) {
+    if (!isMarkdownTableRow(lines[index]) || !isMarkdownSeparator(lines[index + 1])) continue;
+    const headers = splitMarkdownRow(lines[index]).map(normalizeHeader);
+    if (!headers.includes("lane") || !headers.some((header) => ["id", "candidate", "move", "title"].includes(header))) {
+      continue;
+    }
+    let rowIndex = index + 2;
+    while (rowIndex < lines.length && isMarkdownTableRow(lines[rowIndex])) {
+      if (!isMarkdownSeparator(lines[rowIndex])) {
+        const cells = splitMarkdownRow(lines[rowIndex]);
+        const item = itemFromCells(headers, cells, sourceArtifact);
+        if (item) items.push(item);
+      }
+      rowIndex += 1;
+    }
+    index = rowIndex;
+  }
+  return items;
+}
+function extractItemsFromIdBlocks(content, sourceArtifact) {
+  const blocks = [...content.matchAll(/(?:^|\n)\s*(?:[-*]\s*)?id:\s*([a-z0-9][a-z0-9-]*)[\s\S]*?(?=\n\s*(?:[-*]\s*)?id:\s*[a-z0-9]|\n#{1,6}\s|$)/gi)];
+  return blocks.map((match) => {
+    const block = match[0];
+    const id = match[1];
+    const values = parseKeyValueBlock(block);
+    return normalizeWorkItem({
+      id,
+      title: values.title ?? values.name ?? humanizeSlug(id),
+      lane: values.lane,
+      type: values.type,
+      status: values.status,
+      confidence: values.confidence,
+      dependencies: values.dependencies,
+      selected_cycle: values.selectedcycle,
+      evidence: values.evidence,
+      expected_learning: values.expectedlearning ?? values.learning,
+      dependency_unlock: values.dependencyunlock ?? values.unlock,
+      user_visible: values.uservisible,
+      feature_expectation: parseFeatureExpectation(values.featureexpectation)
+    }, sourceArtifact);
+  }).filter((item) => Boolean(item));
+}
+function itemFromCells(headers, cells, sourceArtifact) {
+  const get = (...names) => {
+    for (const name of names) {
+      const index = headers.indexOf(name);
+      if (index >= 0 && cells[index]?.trim()) return cells[index].trim();
+    }
+    return void 0;
+  };
+  const rawTitle = get("title", "candidate", "move", "workitem") ?? "";
+  const rawId = get("id", "candidateid", "moveid") ?? rawTitle;
+  if (!rawId && !rawTitle) return void 0;
+  return normalizeWorkItem({
+    id: slugify(rawId || rawTitle),
+    title: rawTitle || humanizeSlug(slugify(rawId)),
+    lane: get("lane"),
+    type: get("type"),
+    status: get("status"),
+    confidence: get("confidence"),
+    dependencies: get("dependencies", "dependency", "depends"),
+    selected_cycle: get("selectedcycle", "cycle"),
+    evidence: get("evidence", "source", "sources"),
+    expected_learning: get("expectedlearning", "learning"),
+    dependency_unlock: get("dependencyunlock", "unlock"),
+    user_visible: get("uservisible"),
+    feature_expectation: parseFeatureExpectation(get("featureexpectation"))
+  }, sourceArtifact);
+}
+function normalizeWorkItem(input, sourceArtifact) {
+  const id = slugify(String(input.id ?? ""));
+  if (!id) return void 0;
+  const title = String(input.title ?? humanizeSlug(id)).trim() || humanizeSlug(id);
+  const lane = normalizeLane(input.lane, `${title} ${input.type ?? ""}`);
+  const type = normalizeType(input.type, lane);
+  const confidence = normalizeConfidence(input.confidence);
+  const evidence = splitList(input.evidence).filter(Boolean);
+  const selectedCycle = typeof input.selected_cycle === "string" && input.selected_cycle.trim() ? slugify(input.selected_cycle) : null;
+  return {
+    id,
+    title,
+    lane,
+    type,
+    status: normalizeStatus(input.status),
+    user_visible: normalizeBoolean(input.user_visible) ?? (lane === "product" || lane === "ux" || lane === "distribution" || lane === "brand-content"),
+    confidence,
+    dependencies: splitList(input.dependencies).map(slugify).filter(Boolean),
+    selected_cycle: selectedCycle,
+    evidence: evidence.length > 0 ? evidence : [sourceArtifact],
+    expected_learning: typeof input.expected_learning === "string" && input.expected_learning.trim() ? input.expected_learning.trim() : "Migrated from opportunities artifact; refine expected learning on next priority-engine pass.",
+    dependency_unlock: typeof input.dependency_unlock === "string" && input.dependency_unlock.trim() ? input.dependency_unlock.trim() : "Migrated from opportunities artifact; refine dependency unlock on next priority-engine pass.",
+    ...isFeatureExpectation(input.feature_expectation) ? { feature_expectation: input.feature_expectation } : {}
+  };
+}
+function applySelectedCycle(content, items, cycleId) {
+  const selectedTargets = extractSelectedTargets(content);
+  for (const target of selectedTargets) {
+    const match = findBestItemMatch(items, target.text, target.lane);
+    if (!match) continue;
+    match.status = "selected";
+    match.selected_cycle = cycleId;
+    match.type = target.type;
+    match.user_visible = target.type === "core-product-slice" ? true : match.user_visible;
+  }
+  for (const item of items) {
+    if (item.status === "selected" && !item.selected_cycle) {
+      item.selected_cycle = cycleId;
+    }
+  }
+}
+function extractSelectedTargets(content) {
+  const section = content.match(/(?:^|\n)#{1,6}\s*Selected Cycle Portfolio[\s\S]*?(?=\n#{1,6}\s|$)/i)?.[0] ?? content;
+  const patterns = [
+    { regex: /(?:core_product_slice|core product slice|1\s+core product slice)\s*:\s*(.+)/gi, type: "core-product-slice", lane: "product" },
+    { regex: /(?:enabling_task|enabling task|1\s+enabling task)\s*:\s*(.+)/gi, type: "enabling", lane: "backend" },
+    { regex: /(?:learning_task|learning\/research task|learning task|1\s+learning\/research task|1\s+learning task)\s*:\s*(.+)/gi, type: "learning", lane: "research" }
+  ];
+  const targets = [];
+  for (const pattern of patterns) {
+    for (const match of section.matchAll(pattern.regex)) {
+      const text = match[1]?.replace(/^[-*]\s*/, "").trim();
+      if (text) targets.push({ text, type: pattern.type, lane: pattern.lane });
+    }
+  }
+  return targets;
+}
+function findBestItemMatch(items, text, preferredLane) {
+  const normalizedText = compactText2(text);
+  const candidates = preferredLane ? items.filter((item) => item.lane === preferredLane) : items;
+  return candidates.find((item) => {
+    const title = compactText2(item.title);
+    return normalizedText.includes(title) || title.includes(normalizedText) || normalizedText.includes(compactText2(item.id));
+  }) ?? candidates[0];
+}
+function inferSelectedCycleId(content, now) {
+  const explicit = content.match(/cycle_id:\s*([a-z0-9][a-z0-9-]*)/i)?.[1];
+  if (explicit) return slugify(explicit);
+  const date3 = content.match(/\b(20\d{2}-\d{2}-\d{2})\b/)?.[1] ?? (now ?? (/* @__PURE__ */ new Date()).toISOString()).slice(0, 10);
+  return `${date3}-migrated-portfolio`;
+}
+function parseKeyValueBlock(block) {
+  const values = {};
+  for (const line of block.split("\n")) {
+    const match = line.match(/^\s*(?:[-*]\s*)?([a-z_ -]+)\s*:\s*(.+?)\s*$/i);
+    if (!match) continue;
+    values[normalizeHeader(match[1])] = match[2].replace(/^["']|["']$/g, "").trim();
+  }
+  return values;
+}
+function dedupeItems(items) {
+  const seen = /* @__PURE__ */ new Map();
+  return items.map((item) => {
+    const count = seen.get(item.id) ?? 0;
+    seen.set(item.id, count + 1);
+    if (count === 0) return item;
+    return { ...item, id: `${item.id}-${count + 1}` };
+  });
+}
+function selectTrimmedPortfolioItems(items, target) {
+  const byId = new Map(items.map((item) => [item.id, item]));
+  const protectedIds = /* @__PURE__ */ new Set();
+  for (const item of items) {
+    if (item.selected_cycle || item.status === "selected" || item.status === "in_progress") {
+      protectItemAndDependencies(item, byId, protectedIds);
+    }
+  }
+  const ranked = [...items].sort((a, b) => portfolioTrimScore(b, protectedIds) - portfolioTrimScore(a, protectedIds) || a.lane.localeCompare(b.lane) || a.id.localeCompare(b.id));
+  const selected = [];
+  const selectedIds = /* @__PURE__ */ new Set();
+  for (const item of ranked) {
+    if (selected.length >= target) break;
+    selected.push(item);
+    selectedIds.add(item.id);
+  }
+  if (new Set(selected.map((item) => item.lane)).size < 5) {
+    for (const lane of [...VALID_LANES]) {
+      if (selected.some((item) => item.lane === lane)) continue;
+      const replacement = ranked.find((item) => item.lane === lane && !selectedIds.has(item.id));
+      if (!replacement) continue;
+      const replaceIndex = findTrimReplacementIndex(selected, protectedIds);
+      if (replaceIndex === -1) break;
+      selectedIds.delete(selected[replaceIndex].id);
+      selected[replaceIndex] = replacement;
+      selectedIds.add(replacement.id);
+      if (new Set(selected.map((item) => item.lane)).size >= 5) break;
+    }
+  }
+  return selected.sort((a, b) => items.indexOf(a) - items.indexOf(b));
+}
+function protectItemAndDependencies(item, byId, protectedIds) {
+  if (protectedIds.has(item.id)) return;
+  protectedIds.add(item.id);
+  for (const dependency of item.dependencies) {
+    const dependencyItem = byId.get(dependency);
+    if (dependencyItem) protectItemAndDependencies(dependencyItem, byId, protectedIds);
+  }
+}
+function portfolioTrimScore(item, protectedIds) {
+  return (protectedIds.has(item.id) ? 1e4 : 0) + statusTrimWeight(item.status) + typeTrimWeight(item.type) + confidenceTrimWeight(item.confidence) + Math.min(item.evidence.length, 5) + (item.user_visible ? 2 : 0);
+}
+function statusTrimWeight(status) {
+  switch (status) {
+    case "selected":
+      return 900;
+    case "in_progress":
+      return 800;
+    case "candidate":
+      return 500;
+    case "blocked":
+      return 300;
+    case "deferred":
+      return 200;
+    case "done":
+      return 100;
+    case "rejected":
+      return 0;
+  }
+}
+function typeTrimWeight(type) {
+  switch (type) {
+    case "core-product-slice":
+      return 70;
+    case "enabling":
+      return 60;
+    case "learning":
+    case "research":
+      return 50;
+    case "quality":
+      return 40;
+    case "distribution":
+      return 30;
+    default:
+      return 20;
+  }
+}
+function confidenceTrimWeight(confidence) {
+  if (typeof confidence === "number") return Math.round(confidence * 30);
+  const normalized = confidence.toLowerCase();
+  if (normalized === "high") return 30;
+  if (normalized === "medium") return 20;
+  return 10;
+}
+function findTrimReplacementIndex(items, protectedIds) {
+  let candidateIndex = -1;
+  let candidateScore = Number.POSITIVE_INFINITY;
+  for (const [index, item] of items.entries()) {
+    if (protectedIds.has(item.id)) continue;
+    const score = portfolioTrimScore(item, protectedIds);
+    if (score < candidateScore) {
+      candidateIndex = index;
+      candidateScore = score;
+    }
+  }
+  return candidateIndex;
+}
+function splitMarkdownRow(line) {
+  return line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((cell) => cell.trim());
+}
+function isMarkdownTableRow(line) {
+  const trimmed = line.trim();
+  return trimmed.startsWith("|") && trimmed.endsWith("|");
+}
+function isMarkdownSeparator(line) {
+  return /^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(line);
+}
+function normalizeHeader(value) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+function normalizeLane(value, fallbackText) {
+  const normalized = String(value ?? "").toLowerCase().trim();
+  if (VALID_LANES.has(normalized)) return normalized;
+  const lower = `${normalized} ${fallbackText}`.toLowerCase();
+  if (lower.includes("ux") || lower.includes("ui") || lower.includes("screen")) return "ux";
+  if (lower.includes("research") || lower.includes("interview") || lower.includes("learning")) return "research";
+  if (lower.includes("backend") || lower.includes("schema") || lower.includes("api") || lower.includes("persistence")) return "backend";
+  if (lower.includes("quality") || lower.includes("test") || lower.includes("a11y")) return "quality";
+  if (lower.includes("brand") || lower.includes("content")) return "brand-content";
+  if (lower.includes("distribution") || lower.includes("seo") || lower.includes("channel")) return "distribution";
+  return "product";
+}
+function normalizeStatus(value) {
+  const normalized = String(value ?? "").toLowerCase().trim();
+  return VALID_STATUSES2.has(normalized) ? normalized : "candidate";
+}
+function normalizeType(value, lane) {
+  const normalized = String(value ?? "").toLowerCase().trim();
+  if (["core-product-slice", "enabling", "learning", "research", "quality", "distribution"].includes(normalized)) {
+    return normalized;
+  }
+  if (lane === "research") return "learning";
+  if (lane === "backend") return "enabling";
+  if (lane === "quality") return "quality";
+  if (lane === "distribution") return "distribution";
+  return "core-product-slice";
+}
+function normalizeConfidence(value) {
+  const normalized = String(value ?? "").trim();
+  if (/^(high|medium|low)$/i.test(normalized)) return normalized.toUpperCase();
+  const numeric = Number(normalized);
+  return Number.isFinite(numeric) && numeric >= 0 && numeric <= 1 ? numeric : "MEDIUM";
+}
+function normalizeBoolean(value) {
+  if (typeof value === "boolean") return value;
+  if (typeof value !== "string") return void 0;
+  if (/^(true|yes|1)$/i.test(value.trim())) return true;
+  if (/^(false|no|0)$/i.test(value.trim())) return false;
+  return void 0;
+}
+function splitList(value) {
+  if (Array.isArray(value)) return value.map(String);
+  if (typeof value !== "string") return [];
+  return value.replace(/^\[/, "").replace(/\]$/, "").split(/[,;]+/).map((entry) => entry.replace(/^["'\s-]+|["'\s]+$/g, "").trim()).filter(Boolean);
+}
+function parseFeatureExpectation(value) {
+  if (isFeatureExpectation(value)) return value;
+  if (typeof value !== "string" || !value.trim()) return void 0;
+  try {
+    const parsed = JSON.parse(value);
+    return isFeatureExpectation(parsed) ? parsed : void 0;
+  } catch {
+    return void 0;
+  }
+}
+function isFeatureExpectation(value) {
+  if (!value || typeof value !== "object") return false;
+  const rec = value;
+  const ladder = rec.maturity_ladder;
+  if (!ladder || typeof ladder !== "object") return false;
+  const ladderRec = ladder;
+  return hasMeaningfulString2(rec.user_job) && hasMeaningfulString2(rec.first_meaningful_use) && Array.isArray(rec.useless_if) && rec.useless_if.some(hasMeaningfulString2) && hasMeaningfulString2(ladderRec.v0) && hasMeaningfulString2(ladderRec.v1) && hasMeaningfulString2(ladderRec.v2) && Array.isArray(rec.not_done_until) && rec.not_done_until.some(hasMeaningfulString2);
+}
+function hasMeaningfulString2(value) {
+  return typeof value === "string" && value.trim().length > 0 && !/^(?:tbd|todo|placeholder|pending|none|\[\])$/i.test(value.trim());
+}
+function slugify(value) {
+  return value.toLowerCase().replace(/`/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
+}
+function humanizeSlug(value) {
+  return value.split("-").filter(Boolean).map((part) => `${part[0]?.toUpperCase() ?? ""}${part.slice(1)}`).join(" ");
+}
+function compactText2(value) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+function validateLedgerShape(path23, ledger, issues, activeCycleId) {
+  if (ledger.schema_version !== 1) {
+    issues.push(issue3(path23, "error", "invalid-schema-version", "schema_version must be 1"));
+  }
+  if (!ledger.updated_at || Number.isNaN(Date.parse(ledger.updated_at))) {
+    issues.push(issue3(path23, "error", "invalid-updated-at", "updated_at must be an ISO timestamp"));
+  }
+  if (!Array.isArray(ledger.source_artifacts)) {
+    issues.push(issue3(path23, "error", "invalid-source-artifacts", "source_artifacts must be an array"));
+  }
+  if (!Array.isArray(ledger.items)) {
+    issues.push(issue3(path23, "error", "invalid-items", "items must be an array"));
+    return;
+  }
+  if (ledger.items.length < MIN_PORTFOLIO_ITEMS) {
+    issues.push(issue3(path23, "error", "portfolio-too-small", `Expected at least ${MIN_PORTFOLIO_ITEMS} portfolio items, found ${ledger.items.length}`));
+  }
+  if (ledger.items.length > MAX_PORTFOLIO_ITEMS) {
+    issues.push(issue3(path23, "error", "portfolio-too-large", `Expected at most ${MAX_PORTFOLIO_ITEMS} portfolio items, found ${ledger.items.length}`));
+  }
+  const ids = /* @__PURE__ */ new Set();
+  const selectedByCycle = /* @__PURE__ */ new Map();
+  for (const [index, item] of ledger.items.entries()) {
+    const itemPath = `${path23}#/items/${index}`;
+    validateItem(itemPath, item, issues);
+    if (typeof item.id === "string") {
+      if (ids.has(item.id)) {
+        issues.push(issue3(itemPath, "error", "duplicate-id", `Duplicate item id: ${item.id}`));
+      }
+      ids.add(item.id);
+    }
+    if (item.selected_cycle) {
+      const current = selectedByCycle.get(item.selected_cycle) ?? [];
+      current.push(item);
+      selectedByCycle.set(item.selected_cycle, current);
+    }
+  }
+  for (const [cycle, items] of selectedByCycle.entries()) {
+    if (activeCycleId && cycle !== activeCycleId) {
+      issues.push(issue3(path23, "error", "selected-cycle-mismatch", `Selected item cycle ${cycle} does not match active cycle_id ${activeCycleId}`));
+    }
+    if (items.length !== 3) {
+      issues.push(issue3(path23, "error", "invalid-selected-cycle-size", `Cycle ${cycle} has ${items.length} selected items; expected exactly 3`));
+    }
+    const core = items.filter((item) => item.type === "core-product-slice");
+    const enabling = items.filter((item) => item.type === "enabling");
+    const learning = items.filter((item) => item.type === "learning" || item.type === "research");
+    if (core.length !== 1 || enabling.length !== 1 || learning.length !== 1) {
+      issues.push(
+        issue3(
+          path23,
+          "error",
+          "invalid-selected-cycle-trio",
+          `Cycle ${cycle} must select exactly one core-product-slice, one enabling, and one learning/research item`
+        )
+      );
+    }
+    const weakImplementationItems = items.filter((item) => (item.type === "core-product-slice" || item.type === "enabling") && isWeakConfidence(item.confidence));
+    if (weakImplementationItems.length > 0 && learning.length === 0) {
+      issues.push(
+        issue3(
+          path23,
+          "error",
+          "missing-research-debt-task",
+          `Cycle ${cycle} has weak-confidence selected product/enabling work but no selected learning/research debt task`
+        )
+      );
+    }
+  }
+}
+function validateItem(path23, item, issues) {
+  if (!item || typeof item !== "object") {
+    issues.push(issue3(path23, "error", "invalid-item", "Portfolio item must be an object"));
+    return;
+  }
+  if (!item.id || !/^[a-z0-9][a-z0-9-]*$/.test(item.id)) {
+    issues.push(issue3(path23, "error", "invalid-id", "id must be kebab-case and stable"));
+  }
+  if (!item.title || typeof item.title !== "string") {
+    issues.push(issue3(path23, "error", "missing-title", "title is required"));
+  }
+  if (!VALID_LANES.has(item.lane)) {
+    issues.push(issue3(path23, "error", "invalid-lane", `lane must be one of: ${[...VALID_LANES].join(", ")}`));
+  }
+  if (!VALID_STATUSES2.has(item.status)) {
+    issues.push(issue3(path23, "error", "invalid-status", `status must be one of: ${[...VALID_STATUSES2].join(", ")}`));
+  }
+  if (!isValidConfidence(item.confidence)) {
+    issues.push(issue3(path23, "error", "invalid-confidence", "confidence must be HIGH/MEDIUM/LOW or number 0..1"));
+  }
+  if (!Array.isArray(item.dependencies)) {
+    issues.push(issue3(path23, "error", "invalid-dependencies", "dependencies must be an array"));
+  }
+  if (!(item.selected_cycle === null || typeof item.selected_cycle === "string")) {
+    issues.push(issue3(path23, "error", "invalid-selected-cycle", "selected_cycle must be string or null"));
+  }
+  if (!Array.isArray(item.evidence) || item.evidence.length === 0) {
+    issues.push(issue3(path23, "error", "missing-evidence", "evidence must be a non-empty array"));
+  }
+  if (item.selected_cycle && item.type === "core-product-slice" && item.user_visible !== false && !isFeatureExpectation(item.feature_expectation)) {
+    issues.push(issue3(
+      path23,
+      "warning",
+      "missing-feature-expectation",
+      "selected user-visible core-product-slice should include feature_expectation with user_job, first_meaningful_use, useless_if, v0/v1/v2 maturity ladder, and not_done_until"
+    ));
+  }
+}
+function isValidConfidence(value) {
+  if (typeof value === "number") return Number.isFinite(value) && value >= 0 && value <= 1;
+  return ["HIGH", "MEDIUM", "LOW", "high", "medium", "low"].includes(value);
+}
+function isWeakConfidence(value) {
+  if (typeof value === "number") return value < 0.5;
+  return value.toLowerCase() === "low";
+}
+function readActiveCycleId(root2) {
+  const jsonPath = (0, import_path120.resolve)(root2, CYCLE_DOCUMENT_RELATIVE_PATH);
+  if ((0, import_fs100.existsSync)(jsonPath)) {
+    try {
+      const parsed = JSON.parse((0, import_fs100.readFileSync)(jsonPath, "utf-8"));
+      return typeof parsed.cycle_id === "string" ? parsed.cycle_id : void 0;
+    } catch {
+      return void 0;
+    }
+  }
+  const projectionPath = (0, import_path120.resolve)(root2, CYCLE_PROJECTION_RELATIVE_PATH);
+  if (!(0, import_fs100.existsSync)(projectionPath)) return void 0;
+  const match = (0, import_fs100.readFileSync)(projectionPath, "utf-8").match(/^\s*cycle_id:\s*([a-z0-9][a-z0-9-]*)\s*$/im);
+  return match?.[1];
+}
+function report(path23, ledger, issues) {
+  const errors = issues.filter((issue4) => issue4.severity === "error").length;
+  const warnings = issues.length - errors;
+  const items = ledger?.items ?? [];
+  return {
+    ok: errors === 0,
+    path: path23,
+    ledger,
+    issues,
+    summary: {
+      items: items.length,
+      selected: items.filter((item) => Boolean(item.selected_cycle)).length,
+      lanes: new Set(items.map((item) => item.lane)).size,
+      errors,
+      warnings
+    }
+  };
+}
+function trimReport(path23, target, originalCount, ledger, removedItems, wrote, projectionPath, issues) {
+  const errors = issues.filter((entry) => entry.severity === "error");
+  return {
+    ok: errors.length === 0,
+    path: path23,
+    projectionPath,
+    wrote,
+    target,
+    originalCount,
+    trimmedCount: ledger?.items.length ?? 0,
+    removedCount: removedItems.length,
+    removedItems,
+    ledger,
+    issues
+  };
+}
+function issue3(path23, severity, code, message) {
+  return { severity, code, path: path23, message };
+}
+function escapeCell(value) {
+  return value.replace(/\|/g, "\\|").replace(/\n/g, " ");
+}
+
+// src/runtime-qa/diagnostics.ts
+var import_child_process30 = require("child_process");
+var import_fs103 = require("fs");
+var import_os19 = require("os");
+var import_path123 = require("path");
+
+// src/runtime-qa/runner.ts
+var import_fs102 = require("fs");
+var import_child_process29 = require("child_process");
+var import_path122 = require("path");
+init_atomic_write();
+
+// src/lib/summary-policy.ts
+var DEFAULT_SUMMARY_POLICY = {
+  mode: "compact",
+  agentResultMaxWords: 120,
+  stageReportMaxLines: 20,
+  finalReportMaxLines: 35,
+  inlineLogMaxChars: 800,
+  jsonSidecarRequired: true
+};
+function normalizeSummaryPolicy(policy) {
+  return {
+    mode: isSummaryMode(policy?.mode) ? policy.mode : DEFAULT_SUMMARY_POLICY.mode,
+    agentResultMaxWords: positiveInt(policy?.agentResultMaxWords, DEFAULT_SUMMARY_POLICY.agentResultMaxWords),
+    stageReportMaxLines: positiveInt(policy?.stageReportMaxLines, DEFAULT_SUMMARY_POLICY.stageReportMaxLines),
+    finalReportMaxLines: positiveInt(policy?.finalReportMaxLines, DEFAULT_SUMMARY_POLICY.finalReportMaxLines),
+    inlineLogMaxChars: positiveInt(policy?.inlineLogMaxChars, DEFAULT_SUMMARY_POLICY.inlineLogMaxChars),
+    jsonSidecarRequired: policy?.jsonSidecarRequired ?? DEFAULT_SUMMARY_POLICY.jsonSidecarRequired
+  };
+}
+function truncateInlineLog(value, policy) {
+  const text = value ?? "";
+  const max = normalizeSummaryPolicy(policy).inlineLogMaxChars;
+  if (text.length <= max) return text;
+  const suffix = "\n...[truncated; full output is stored in artifacts when available]";
+  return `${text.slice(0, Math.max(0, max - suffix.length)).trimEnd()}${suffix}`;
+}
+function limitReportLines(value, maxLines, omittedLabel = "lines omitted by summaryPolicy") {
+  const lines = value.split("\n");
+  if (lines.length <= maxLines) return value;
+  const keep = Math.max(1, maxLines - 1);
+  return [
+    ...lines.slice(0, keep),
+    `... (+${lines.length - keep} ${omittedLabel})`
+  ].join("\n");
+}
+function limitFinalReport(value, policy) {
+  return limitReportLines(value, normalizeSummaryPolicy(policy).finalReportMaxLines);
+}
+function positiveInt(value, fallback) {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? Math.floor(value) : fallback;
+}
+function isSummaryMode(value) {
+  return value === "compact" || value === "normal" || value === "verbose";
+}
+
+// src/runtime-qa/fixture-providers.ts
+var import_crypto20 = require("crypto");
+var import_fs101 = require("fs");
+var import_path121 = require("path");
+init_atomic_write();
+var RUNTIME_QA_RUNTIME_DIR = ".omc/runtime-qa";
+var RUNTIME_QA_CONFIG_RELATIVE_PATH = ".omc/runtime-qa.json";
+function resolveFixtureProvider(root2, fixtureName, fixture) {
+  if (!fixture?.provider) {
+    return {
+      supported: false,
+      available: false,
+      reason: "Fixture does not declare a provider."
+    };
+  }
+  if (fixture.provider !== "supabase" || fixture.strategy !== "auth-admin-user") {
+    return {
+      supported: false,
+      provider: fixture.provider,
+      strategy: fixture.strategy,
+      requestedBackend: fixture.backend,
+      available: false,
+      reason: `Unsupported runtime QA fixture provider ${fixture.provider}/${fixture.strategy}.`
+    };
+  }
+  const backend = resolveSupabaseBackend(root2, fixture.backend ?? "auto");
+  const commands = providerLifecycleCommands(fixtureName);
+  return {
+    supported: true,
+    provider: "supabase",
+    strategy: "auth-admin-user",
+    requestedBackend: fixture.backend ?? "auto",
+    backend: backend.backend,
+    available: backend.available,
+    requiresAgentMcp: backend.requiresAgentMcp,
+    provisionCommand: commands.provisionCommand,
+    teardownCommand: commands.teardownCommand,
+    envFile: fixtureEnvFileRelative(fixtureName),
+    reason: backend.reason
+  };
+}
+async function provisionRuntimeQaFixture(options) {
+  const root2 = (0, import_path121.resolve)(options.root ?? process.cwd());
+  const fixture = readRuntimeQaFixtureConfig(root2, options.fixtureName);
+  assertSupportedSupabaseFixture(options.fixtureName, fixture);
+  const backend = resolveSupabaseBackend(root2, options.backend ?? fixture.backend ?? "auto");
+  if (backend.backend === "mcp") {
+    return unsupportedMcpResult(root2, options.fixtureName, "provision", backend.reason);
+  }
+  if (!backend.available) {
+    return failedFixtureResult(root2, options.fixtureName, "provision", backend.backend, backend.reason);
+  }
+  const env2 = readRuntimeQaEnv(root2);
+  const supabaseEnv = requireSupabaseEnv(env2);
+  const previousState = readFixtureState(root2, options.fixtureName);
+  if (previousState?.user_id) {
+    await deleteSupabaseUser(supabaseEnv, previousState.user_id);
+  }
+  const runId = (/* @__PURE__ */ new Date()).toISOString().replace(/[^0-9A-Za-z]+/g, "-").replace(/-$/, "");
+  const emailPrefix = fixture.email_prefix ?? `runtime-qa-${toKebabCase(options.fixtureName)}`;
+  const email2 = `${emailPrefix}+${runId}-${randomToken(4)}@example.com`;
+  const password = `OMC-rqa-${randomToken(18)}1!`;
+  const user = await createSupabaseUser(supabaseEnv, {
+    email: email2,
+    password,
+    fixtureName: options.fixtureName,
+    runId
+  });
+  const paths2 = fixtureStatePaths(root2, options.fixtureName);
+  const state = {
+    provider: "supabase",
+    strategy: "auth-admin-user",
+    backend: "env",
+    user_id: user.id,
+    email: email2,
+    password,
+    created_at: (/* @__PURE__ */ new Date()).toISOString()
+  };
+  ensureDirSync((0, import_path121.dirname)(paths2.statePath));
+  atomicWriteJsonSync(paths2.statePath, state);
+  atomicWriteFileSync(paths2.envPath, renderFixtureEnv(options.fixtureName, state, fixture));
+  return {
+    root: root2,
+    fixture: options.fixtureName,
+    provider: "supabase",
+    backend: "env",
+    action: "provision",
+    ok: true,
+    statePath: paths2.statePath,
+    envPath: paths2.envPath,
+    userId: user.id,
+    email: email2,
+    reason: "Supabase disposable auth user provisioned."
+  };
+}
+async function teardownRuntimeQaFixture(options) {
+  const root2 = (0, import_path121.resolve)(options.root ?? process.cwd());
+  const fixture = readRuntimeQaFixtureConfig(root2, options.fixtureName);
+  assertSupportedSupabaseFixture(options.fixtureName, fixture);
+  const backend = resolveSupabaseBackend(root2, options.backend ?? fixture.backend ?? "auto");
+  if (backend.backend === "mcp") {
+    return unsupportedMcpResult(root2, options.fixtureName, "teardown", backend.reason);
+  }
+  const paths2 = fixtureStatePaths(root2, options.fixtureName);
+  const state = readFixtureState(root2, options.fixtureName);
+  if (!state?.user_id) {
+    (0, import_fs101.rmSync)(paths2.envPath, { force: true });
+    return {
+      root: root2,
+      fixture: options.fixtureName,
+      provider: "supabase",
+      backend: backend.backend,
+      action: "teardown",
+      ok: true,
+      statePath: paths2.statePath,
+      envPath: paths2.envPath,
+      reason: "No Supabase disposable auth user state found; teardown skipped."
+    };
+  }
+  if (!backend.available) {
+    return failedFixtureResult(root2, options.fixtureName, "teardown", backend.backend, backend.reason);
+  }
+  const env2 = readRuntimeQaEnv(root2);
+  await deleteSupabaseUser(requireSupabaseEnv(env2), state.user_id);
+  (0, import_fs101.rmSync)(paths2.statePath, { force: true });
+  (0, import_fs101.rmSync)(paths2.envPath, { force: true });
+  return {
+    root: root2,
+    fixture: options.fixtureName,
+    provider: "supabase",
+    backend: "env",
+    action: "teardown",
+    ok: true,
+    statePath: paths2.statePath,
+    envPath: paths2.envPath,
+    userId: state.user_id,
+    email: state.email,
+    reason: "Supabase disposable auth user torn down."
+  };
+}
+function wrapCommandWithFixtureEnv(fixtureName, command) {
+  const envFile = fixtureEnvFileRelative(fixtureName);
+  return `set -a; . ${shellQuote(envFile)}; set +a; ${command}`;
+}
+function providerLifecycleCommands(fixtureName) {
+  return {
+    provisionCommand: `omc runtime-qa fixture provision ${shellQuote(fixtureName)}`,
+    teardownCommand: `omc runtime-qa fixture teardown ${shellQuote(fixtureName)}`
+  };
+}
+function fixtureEnvFileRelative(fixtureName) {
+  return `${RUNTIME_QA_RUNTIME_DIR}/${sanitizeFixtureName(fixtureName)}.env`;
+}
+function assertSupportedSupabaseFixture(fixtureName, fixture) {
+  if (!fixture) {
+    throw new Error(`Runtime QA fixture ${fixtureName} was not found in ${RUNTIME_QA_CONFIG_RELATIVE_PATH}.`);
+  }
+  if (fixture.provider !== "supabase" || fixture.strategy !== "auth-admin-user") {
+    throw new Error(`Runtime QA fixture ${fixtureName} must declare provider=supabase and strategy=auth-admin-user.`);
+  }
+}
+function readRuntimeQaFixtureConfig(root2, fixtureName) {
+  const path23 = (0, import_path121.resolve)(root2, RUNTIME_QA_CONFIG_RELATIVE_PATH);
+  if (!(0, import_fs101.existsSync)(path23)) return void 0;
+  const config2 = JSON.parse((0, import_fs101.readFileSync)(path23, "utf-8"));
+  return config2.fixtures?.[fixtureName];
+}
+function resolveSupabaseBackend(root2, requested) {
+  if (requested === "mcp") {
+    const configured = hasSupabaseMcp(root2);
+    return {
+      backend: "mcp",
+      available: false,
+      requiresAgentMcp: configured,
+      reason: configured ? "Supabase MCP is configured for Claude-mediated provisioning. The runtime QA shell runner needs the Claude agent step to create the fixture env file before simulator commands run." : "Supabase MCP is not configured for this project/session."
+    };
+  }
+  const env2 = readRuntimeQaEnv(root2);
+  const hasEnv = Boolean((env2.SUPABASE_URL || env2.EXPO_PUBLIC_SUPABASE_URL) && env2.SUPABASE_SERVICE_ROLE_KEY);
+  if (requested === "env") {
+    return {
+      backend: "env",
+      available: hasEnv,
+      reason: hasEnv ? "SUPABASE_URL/EXPO_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are available." : "Missing SUPABASE_SERVICE_ROLE_KEY or Supabase URL for env backend."
+    };
+  }
+  if (hasEnv) {
+    return {
+      backend: "env",
+      available: true,
+      reason: "Auto backend selected env because Supabase service-role credentials are available."
+    };
+  }
+  if (hasSupabaseMcp(root2)) {
+    return {
+      backend: "mcp",
+      available: false,
+      requiresAgentMcp: true,
+      reason: "Auto backend found Supabase MCP configuration for Claude-mediated provisioning. The runtime QA shell runner needs the Claude agent step to create the fixture env file before simulator commands run."
+    };
+  }
+  return {
+    backend: "env",
+    available: false,
+    reason: "Auto backend found neither Supabase service-role env nor Supabase MCP configuration."
+  };
+}
+function readRuntimeQaEnv(root2) {
+  const env2 = { ...process.env };
+  for (const relativePath of [".env", ".env.local", "apps/mobile/.env", "apps/mobile/.env.local"]) {
+    loadEnvFile((0, import_path121.resolve)(root2, relativePath), env2);
+  }
+  return env2;
+}
+function loadEnvFile(path23, env2) {
+  if (!(0, import_fs101.existsSync)(path23)) return;
+  const content = (0, import_fs101.readFileSync)(path23, "utf-8");
+  for (const line of content.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const match = trimmed.match(/^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/);
+    if (!match) continue;
+    const [, key, rawValue] = match;
+    if (env2[key] !== void 0) continue;
+    env2[key] = unquoteEnvValue(rawValue.trim());
+  }
+}
+function requireSupabaseEnv(env2) {
+  const url = env2.SUPABASE_URL || env2.EXPO_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = env2.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url) throw new Error("Missing SUPABASE_URL or EXPO_PUBLIC_SUPABASE_URL for Supabase fixture provider.");
+  if (!serviceRoleKey) {
+    throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY. Supabase auth-admin fixture provisioning must run only in a trusted local/CI shell.");
+  }
+  return { url, serviceRoleKey };
+}
+async function createSupabaseUser(env2, user) {
+  const response = await fetch(`${env2.url.replace(/\/$/, "")}/auth/v1/admin/users`, {
+    method: "POST",
+    headers: supabaseAdminHeaders(env2),
+    body: JSON.stringify({
+      email: user.email,
+      password: user.password,
+      email_confirm: true,
+      user_metadata: {
+        runtime_qa: true,
+        fixture: user.fixtureName,
+        run_id: user.runId
+      }
+    })
+  });
+  const json = await readJsonResponse(response);
+  if (!response.ok) {
+    throw new Error(`Failed to create Supabase runtime QA user: ${errorMessage(json, response.status)}`);
+  }
+  const id = typeof json.id === "string" ? json.id : void 0;
+  if (!id) throw new Error("Supabase admin create user returned no user id.");
+  return { id };
+}
+async function deleteSupabaseUser(env2, userId) {
+  const response = await fetch(`${env2.url.replace(/\/$/, "")}/auth/v1/admin/users/${encodeURIComponent(userId)}`, {
+    method: "DELETE",
+    headers: supabaseAdminHeaders(env2)
+  });
+  if (response.status === 404) return;
+  if (!response.ok) {
+    throw new Error(`Failed to delete Supabase runtime QA user ${userId}: ${errorMessage(await readJsonResponse(response), response.status)}`);
+  }
+}
+function supabaseAdminHeaders(env2) {
+  return {
+    Authorization: `Bearer ${env2.serviceRoleKey}`,
+    apikey: env2.serviceRoleKey,
+    "Content-Type": "application/json"
+  };
+}
+async function readJsonResponse(response) {
+  try {
+    return await response.json();
+  } catch {
+    return {};
+  }
+}
+function errorMessage(json, status) {
+  const message = typeof json.message === "string" ? json.message : typeof json.error_description === "string" ? json.error_description : typeof json.error === "string" ? json.error : `HTTP ${status}`;
+  return message;
+}
+function renderFixtureEnv(fixtureName, state, fixture) {
+  const defaultPrefix = toEnvPrefix(fixtureName);
+  const emailEnv = fixture.email_env ?? `${defaultPrefix}_EMAIL`;
+  const passwordEnv = fixture.password_env ?? `${defaultPrefix}_PASSWORD`;
+  const userIdEnv = fixture.user_id_env ?? `${defaultPrefix}_ID`;
+  return [
+    `${emailEnv}=${shellQuote(state.email)}`,
+    `${passwordEnv}=${shellQuote(state.password)}`,
+    `${userIdEnv}=${shellQuote(state.user_id)}`,
+    ""
+  ].join("\n");
+}
+function readFixtureState(root2, fixtureName) {
+  const { statePath } = fixtureStatePaths(root2, fixtureName);
+  if (!(0, import_fs101.existsSync)(statePath)) return void 0;
+  try {
+    return JSON.parse((0, import_fs101.readFileSync)(statePath, "utf-8"));
+  } catch {
+    return void 0;
+  }
+}
+function fixtureStatePaths(root2, fixtureName) {
+  const name = sanitizeFixtureName(fixtureName);
+  return {
+    statePath: (0, import_path121.resolve)(root2, RUNTIME_QA_RUNTIME_DIR, `${name}.json`),
+    envPath: (0, import_path121.resolve)(root2, RUNTIME_QA_RUNTIME_DIR, `${name}.env`)
+  };
+}
+function failedFixtureResult(root2, fixtureName, action, backend, reason) {
+  const paths2 = fixtureStatePaths(root2, fixtureName);
+  return {
+    root: root2,
+    fixture: fixtureName,
+    provider: "supabase",
+    backend,
+    action,
+    ok: false,
+    statePath: paths2.statePath,
+    envPath: paths2.envPath,
+    reason
+  };
+}
+function unsupportedMcpResult(root2, fixtureName, action, reason) {
+  const paths2 = fixtureStatePaths(root2, fixtureName);
+  return {
+    root: root2,
+    fixture: fixtureName,
+    provider: "supabase",
+    backend: "mcp",
+    action,
+    ok: false,
+    statePath: paths2.statePath,
+    envPath: paths2.envPath,
+    agent_action: mcpAgentAction(fixtureName, action, paths2, reason),
+    reason
+  };
+}
+function mcpAgentAction(fixtureName, action, paths2, reason) {
+  const prefix = toEnvPrefix(fixtureName);
+  return {
+    kind: "supabase-auth-admin-user",
+    transport: "claude-mcp",
+    action,
+    fixture: fixtureName,
+    statePath: paths2.statePath,
+    envPath: paths2.envPath,
+    required_env: {
+      email: `${prefix}_EMAIL`,
+      password: `${prefix}_PASSWORD`,
+      user_id: `${prefix}_ID`
+    },
+    safety: [
+      "Use a development or testing Supabase project, never production data.",
+      "Use an explicit Supabase Auth/Admin user-management tool when the MCP server exposes one.",
+      "Do not insert, update, or delete rows directly in auth.users via SQL as a fixture shortcut."
+    ],
+    instructions: [
+      reason,
+      action === "provision" ? `Create a confirmed disposable Supabase Auth user for fixture "${fixtureName}".` : `Delete the Supabase Auth user recorded in ${paths2.statePath}, if it exists.`,
+      action === "provision" ? `Write ${paths2.statePath} with provider, strategy, backend, user_id, email, password, and created_at.` : `Remove ${paths2.statePath} and ${paths2.envPath} after the user is deleted or confirmed absent.`,
+      action === "provision" ? `Write ${paths2.envPath} with ${prefix}_EMAIL, ${prefix}_PASSWORD, and ${prefix}_ID for the simulator command.` : "Keep teardown idempotent: missing state or already-deleted users are not failures."
+    ]
+  };
+}
+function hasSupabaseMcp(root2) {
+  if (process.env.SUPABASE_ACCESS_TOKEN || process.env.SUPABASE_MCP_URL) return true;
+  const candidates = [
+    (0, import_path121.resolve)(root2, ".mcp.json"),
+    (0, import_path121.resolve)(process.env.HOME ?? "", ".claude.json"),
+    (0, import_path121.resolve)(process.env.HOME ?? "", ".codex", "config.toml")
+  ];
+  return candidates.some((path23) => {
+    if (!(0, import_fs101.existsSync)(path23)) return false;
+    try {
+      return /\bsupabase\b/i.test((0, import_fs101.readFileSync)(path23, "utf-8"));
+    } catch {
+      return false;
+    }
+  });
+}
+function sanitizeFixtureName(value) {
+  return value.trim().replace(/[^a-z0-9_-]+/gi, "-").replace(/^-+|-+$/g, "") || "fixture";
+}
+function toEnvPrefix(value) {
+  return value.replace(/([a-z0-9])([A-Z])/g, "$1_$2").replace(/[^a-z0-9]+/gi, "_").replace(/^_+|_+$/g, "").toUpperCase() || "RUNTIME_QA_FIXTURE";
+}
+function toKebabCase(value) {
+  return value.replace(/([a-z0-9])([A-Z])/g, "$1-$2").replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase() || "fixture";
+}
+function unquoteEnvValue(value) {
+  if (value.startsWith('"') && value.endsWith('"') || value.startsWith("'") && value.endsWith("'")) {
+    return value.slice(1, -1);
+  }
+  return value;
+}
+function shellQuote(value) {
+  return `'${String(value).replace(/'/g, "'\\''")}'`;
+}
+function randomToken(bytes) {
+  return (0, import_crypto20.randomBytes)(bytes).toString("base64url");
+}
+
+// src/runtime-qa/runner.ts
+var RUNTIME_QA_CONFIG_RELATIVE_PATH2 = ".omc/runtime-qa.json";
+var RUNTIME_QA_HANDOFF_RELATIVE_PATH = ".omc/handoffs/runtime-qa/current.json";
+var RUNTIME_QA_HANDOFF_MD_RELATIVE_PATH = ".omc/handoffs/runtime-qa/current.md";
+var DEFAULT_TIMEOUT_MS2 = 12e4;
+function shouldRunRuntimeQa(root2 = process.cwd()) {
+  if ((0, import_fs102.existsSync)((0, import_path122.resolve)(root2, RUNTIME_QA_CONFIG_RELATIVE_PATH2))) return true;
+  const cyclePath = (0, import_path122.resolve)(root2, ".omc/cycles/current.md");
+  if (!(0, import_fs102.existsSync)(cyclePath)) return false;
+  try {
+    const content = (0, import_fs102.readFileSync)(cyclePath, "utf-8");
+    return /\b(runtime-qa|simulator|emulator|smoke|playwright|maestro|detox|appium|ios|android)\b/i.test(content);
+  } catch {
+    return false;
+  }
+}
+function readRuntimeQaConfig(root2 = process.cwd()) {
+  const path23 = (0, import_path122.resolve)(root2, RUNTIME_QA_CONFIG_RELATIVE_PATH2);
+  if (!(0, import_fs102.existsSync)(path23)) return void 0;
+  return normalizeRuntimeQaConfig(readRuntimeQaConfigRaw(root2));
+}
+function readRuntimeQaConfigRaw(root2 = process.cwd()) {
+  const path23 = (0, import_path122.resolve)(root2, RUNTIME_QA_CONFIG_RELATIVE_PATH2);
+  if (!(0, import_fs102.existsSync)(path23)) return void 0;
+  return JSON.parse((0, import_fs102.readFileSync)(path23, "utf-8"));
+}
+function detectRuntimeQaConfig(root2 = process.cwd(), target) {
+  const resolvedRoot = (0, import_path122.resolve)(root2);
+  const inferredTarget = target ?? inferRuntimeQaTarget(resolvedRoot);
+  if (inferredTarget === "mobile") {
+    const adapter = inferMobileAdapter(resolvedRoot);
+    const smoke2 = detectMobileSmokeCommand(adapter, resolvedRoot);
+    return {
+      schema_version: 1,
+      target: "mobile",
+      adapter,
+      commands: smoke2 ? { smoke: smoke2 } : void 0,
+      mobile: { tool: mobileToolForAdapter(adapter, void 0) }
+    };
+  }
+  if (inferredTarget === "web") {
+    const smoke2 = detectWebSmokeCommand(resolvedRoot);
+    return {
+      schema_version: 1,
+      target: "web",
+      adapter: "web-playwright",
+      commands: smoke2 ? { smoke: smoke2 } : void 0
+    };
+  }
+  const smoke = detectProjectSmokeCommand(resolvedRoot);
+  return {
+    schema_version: 1,
+    target: inferredTarget ?? "project-script",
+    adapter: inferredTarget === "cli" || inferredTarget === "service" ? "cli-tmux" : "project-script",
+    commands: smoke ? { smoke } : void 0
+  };
+}
+function initRuntimeQaConfig(options = {}) {
+  const root2 = (0, import_path122.resolve)(options.root ?? process.cwd());
+  const path23 = (0, import_path122.resolve)(root2, RUNTIME_QA_CONFIG_RELATIVE_PATH2);
+  const existed = (0, import_fs102.existsSync)(path23);
+  const config2 = existed && !options.force ? readRuntimeQaConfig(root2) ?? detectRuntimeQaConfig(root2, options.target) : detectRuntimeQaConfig(root2, options.target);
+  const written = options.write === true && (!existed || options.force === true);
+  if (written) {
+    ensureDirSync((0, import_path122.dirname)(path23));
+    atomicWriteJsonSync(path23, config2);
+  }
+  return {
+    root: root2,
+    path: path23,
+    config: config2,
+    existed,
+    written,
+    reason: existed && !options.force ? "Existing runtime QA config preserved." : "Runtime QA config detected from project files and scripts."
+  };
+}
+function migrateRuntimeQaConfig(options = {}) {
+  const root2 = (0, import_path122.resolve)(options.root ?? process.cwd());
+  const path23 = (0, import_path122.resolve)(root2, RUNTIME_QA_CONFIG_RELATIVE_PATH2);
+  const raw = readRuntimeQaConfigRaw(root2);
+  const existed = Boolean(raw);
+  const config2 = raw ? normalizeRuntimeQaConfig(raw) : detectRuntimeQaConfig(root2);
+  const changed = !raw || JSON.stringify(raw, null, 2) !== JSON.stringify(config2, null, 2);
+  const written = options.write === true && (changed || options.force === true);
+  if (written) {
+    ensureDirSync((0, import_path122.dirname)(path23));
+    atomicWriteJsonSync(path23, config2);
+  }
+  return {
+    root: root2,
+    path: path23,
+    existed,
+    changed,
+    written,
+    config: config2,
+    reason: raw ? changed ? "Runtime QA config can be migrated to the canonical schema." : "Runtime QA config already uses the canonical schema." : "Runtime QA config detected from project files and scripts."
+  };
+}
+function runRuntimeQa(options = {}) {
+  const root2 = (0, import_path122.resolve)(options.root ?? process.cwd());
+  const activeCycleId = readActiveCycleId2(root2);
+  const configPath = (0, import_path122.resolve)(root2, RUNTIME_QA_CONFIG_RELATIVE_PATH2);
+  const explicitConfig = options.config ?? readRuntimeQaConfig(root2);
+  const configExists = Boolean(options.config || (0, import_fs102.existsSync)(configPath));
+  const config2 = explicitConfig ?? detectRuntimeQaConfig(root2);
+  if (!configExists && options.writeDetectedConfig === true && config2.commands && options.dryRun !== true) {
+    ensureDirSync((0, import_path122.dirname)(configPath));
+    atomicWriteJsonSync(configPath, config2);
+  }
+  const runId = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
+  const artifactDir = (0, import_path122.resolve)(root2, config2?.artifacts_dir ?? `.omc/artifacts/runtime-qa/${runId}`);
+  const dryRun = options.dryRun === true;
+  const adapterResolution = resolveAdapter(root2, config2, {
+    dryRun,
+    installMobileTools: options.installMobileTools === true,
+    toolDetector: options.toolDetector ?? defaultToolDetector
+  });
+  const commandRunner = options.commandRunner ?? defaultCommandRunner;
+  const timeoutMs = config2?.timeout_ms ?? DEFAULT_TIMEOUT_MS2;
+  const stepResults = [];
+  if (adapterResolution.blocked) {
+    return {
+      schema_version: 1,
+      produced_at: (/* @__PURE__ */ new Date()).toISOString(),
+      agent_role: "runtime-qa-runner",
+      cycle_id: activeCycleId,
+      status: "blocked",
+      root: root2,
+      config_path: RUNTIME_QA_CONFIG_RELATIVE_PATH2,
+      config_exists: configExists,
+      adapter: adapterResolution.adapter,
+      auto: options.auto === true,
+      dry_run: dryRun,
+      artifact_dir: artifactDir,
+      install_proposal: adapterResolution.installProposal,
+      tool_detection: adapterResolution.toolDetection,
+      step_results: [{
+        name: "adapter",
+        status: "blocked",
+        reason: adapterResolution.reason
+      }]
+    };
+  }
+  if (adapterResolution.provisionCommands.length > 0) {
+    for (const command of adapterResolution.provisionCommands) {
+      if (dryRun) {
+        stepResults.push({
+          name: command.name,
+          command: command.command,
+          status: "dry-run",
+          reason: "Would install missing mobile runtime QA tooling."
+        });
+        continue;
+      }
+      const result = commandRunner(command.command, root2, timeoutMs);
+      ensureDirSync(artifactDir);
+      stepResults.push(commandResultToStep(command, result, artifactDir, options.summaryPolicy));
+      if (result.error || result.status !== 0) {
+        return {
+          schema_version: 1,
+          produced_at: (/* @__PURE__ */ new Date()).toISOString(),
+          agent_role: "runtime-qa-runner",
+          cycle_id: activeCycleId,
+          status: "failed",
+          root: root2,
+          config_path: RUNTIME_QA_CONFIG_RELATIVE_PATH2,
+          config_exists: configExists,
+          adapter: adapterResolution.adapter,
+          auto: options.auto === true,
+          dry_run: dryRun,
+          artifact_dir: artifactDir,
+          install_proposal: adapterResolution.installProposal,
+          tool_detection: adapterResolution.toolDetection,
+          step_results: stepResults
+        };
+      }
+    }
+  }
+  const commands = withFixtureLifecycleCommands(
+    root2,
+    config2,
+    commandsForAdapter(adapterResolution.adapter, config2, root2, adapterResolution.toolDetection)
+  );
+  const runnableCommands = commands.filter((command) => !isCleanupCommand(command.name));
+  const cleanupCommands = commands.filter((command) => isCleanupCommand(command.name));
+  if (commands.length === 0) {
+    return {
+      schema_version: 1,
+      produced_at: (/* @__PURE__ */ new Date()).toISOString(),
+      agent_role: "runtime-qa-runner",
+      cycle_id: activeCycleId,
+      status: "noop",
+      root: root2,
+      config_path: RUNTIME_QA_CONFIG_RELATIVE_PATH2,
+      config_exists: configExists,
+      adapter: adapterResolution.adapter,
+      auto: options.auto === true,
+      dry_run: dryRun,
+      artifact_dir: artifactDir,
+      install_proposal: adapterResolution.installProposal,
+      tool_detection: adapterResolution.toolDetection,
+      step_results: [{
+        name: "commands",
+        status: "skipped",
+        reason: "No runtime QA commands were configured or detected."
+      }]
+    };
+  }
+  let failed = false;
+  let partial2 = false;
+  const startedFlows = /* @__PURE__ */ new Set();
+  for (const command of runnableCommands) {
+    if (failed && command.lifecycle !== "teardown") continue;
+    if (command.lifecycle === "teardown" && command.flowKey && !startedFlows.has(command.flowKey)) {
+      continue;
+    }
+    if (command.skipReason) {
+      partial2 = true;
+      stepResults.push({
+        name: command.name,
+        command: command.command,
+        status: "skipped",
+        reason: command.skipReason
+      });
+      continue;
+    }
+    if (command.flowKey && command.lifecycle !== "teardown") startedFlows.add(command.flowKey);
+    if (dryRun) {
+      stepResults.push({
+        name: command.name,
+        command: command.command,
+        status: "dry-run",
+        reason: runtimeQaDryRunReason(command)
+      });
+      continue;
+    }
+    const result = commandRunner(command.command, root2, timeoutMs);
+    ensureDirSync(artifactDir);
+    const step = commandResultToStep(command, result, artifactDir, options.summaryPolicy);
+    stepResults.push(step);
+    if (step.status === "failed") {
+      failed = true;
+    }
+  }
+  for (const command of cleanupCommands) {
+    if (dryRun) {
+      stepResults.push({
+        name: command.name,
+        command: command.command,
+        status: "dry-run",
+        reason: failed ? "Would run cleanup after a runtime QA failure." : "Would run runtime QA cleanup command."
+      });
+      continue;
+    }
+    const result = commandRunner(command.command, root2, timeoutMs);
+    ensureDirSync(artifactDir);
+    const step = commandResultToStep(command, result, artifactDir, options.summaryPolicy);
+    stepResults.push(step);
+    if (step.status === "failed") failed = true;
+  }
+  return {
+    schema_version: 1,
+    produced_at: (/* @__PURE__ */ new Date()).toISOString(),
+    agent_role: "runtime-qa-runner",
+    cycle_id: activeCycleId,
+    status: dryRun ? "dry-run" : failed ? "failed" : partial2 ? "partial-pass" : "passed",
+    root: root2,
+    config_path: RUNTIME_QA_CONFIG_RELATIVE_PATH2,
+    config_exists: configExists,
+    adapter: adapterResolution.adapter,
+    auto: options.auto === true,
+    dry_run: dryRun,
+    artifact_dir: artifactDir,
+    install_proposal: adapterResolution.installProposal,
+    tool_detection: adapterResolution.toolDetection,
+    step_results: stepResults
+  };
+}
+function writeRuntimeQaRunReport(root2, report2) {
+  const jsonPath = (0, import_path122.resolve)(root2, RUNTIME_QA_HANDOFF_RELATIVE_PATH);
+  const mdPath = (0, import_path122.resolve)(root2, RUNTIME_QA_HANDOFF_MD_RELATIVE_PATH);
+  ensureDirSync((0, import_path122.dirname)(jsonPath));
+  atomicWriteJsonSync(jsonPath, report2);
+  atomicWriteFileSync(mdPath, renderRuntimeQaRunReport(report2));
+  return { jsonPath, mdPath };
+}
+function renderRuntimeQaRunReport(report2) {
+  const lines = [
+    "# Runtime QA Report",
+    "",
+    `produced_at: ${report2.produced_at}`,
+    ...report2.cycle_id ? [`cycle_id: ${report2.cycle_id}`] : [],
+    `status: ${report2.status}`,
+    `adapter: ${report2.adapter}`,
+    `auto: ${report2.auto}`,
+    `dry_run: ${report2.dry_run}`,
+    `config_exists: ${report2.config_exists}`,
+    `artifact_dir: ${report2.artifact_dir}`
+  ];
+  if (report2.install_proposal) {
+    lines.push(`install_proposal: ${report2.install_proposal}`);
+  }
+  if (report2.tool_detection) {
+    lines.push(`tool_detection: ${report2.tool_detection.tool} ${report2.tool_detection.detected ? "detected" : "missing"} (${report2.tool_detection.method})`);
+    if (report2.tool_detection.missing_prerequisite) {
+      lines.push(`missing_prerequisite: ${report2.tool_detection.missing_prerequisite}`);
+    }
+    if (report2.tool_detection.reason) {
+      lines.push(`tool_detection_reason: ${report2.tool_detection.reason}`);
+    }
+  }
+  lines.push("", "## Steps");
+  for (const step of report2.step_results) {
+    lines.push(`- ${step.name}: ${step.status}`);
+    lines.push(`  - reason: ${step.reason}`);
+    if (step.command) lines.push(`  - command: ${step.command}`);
+    if (step.exit_code !== void 0) lines.push(`  - exit_code: ${step.exit_code}`);
+    if (step.stdout_artifact) lines.push(`  - stdout_artifact: ${step.stdout_artifact}`);
+    if (step.stderr_artifact) lines.push(`  - stderr_artifact: ${step.stderr_artifact}`);
+  }
+  lines.push("");
+  lines.push("artifacts_written:");
+  lines.push(`  - ${RUNTIME_QA_HANDOFF_RELATIVE_PATH}`);
+  lines.push(`  - ${RUNTIME_QA_HANDOFF_MD_RELATIVE_PATH}`);
+  lines.push("");
+  return lines.join("\n");
+}
+function resolveAdapter(root2, config2, options) {
+  const adapter = config2?.adapter ?? defaultAdapterForTarget(config2?.target);
+  if (adapter === "web-playwright" && !hasPlaywright(root2) && !hasConfiguredSmoke(config2)) {
+    return {
+      adapter,
+      blocked: true,
+      reason: "web-playwright selected but no Playwright project config or smoke command was found.",
+      installProposal: "Install/configure Playwright or add .omc/runtime-qa.json commands.smoke.",
+      provisionCommands: []
+    };
+  }
+  if (isMobileAdapter(adapter)) {
+    const tool2 = mobileToolForAdapter(adapter, config2);
+    const toolDetection = options.toolDetector(tool2, root2);
+    if (!hasMobileSmokeCommand(adapter, config2, root2)) {
+      return {
+        adapter,
+        blocked: true,
+        reason: `${adapter} selected but no mobile smoke command was configured or detected.`,
+        installProposal: `Set commands.smoke or mobile.command in .omc/runtime-qa.json before running ${tool2} simulator checks.`,
+        toolDetection,
+        provisionCommands: []
+      };
+    }
+    if (!toolDetection.detected) {
+      const provisionCommands = mobileProvisionCommands(root2, tool2, config2, toolDetection);
+      const installProposal = mobileInstallProposal(tool2, provisionCommands, toolDetection);
+      if (options.dryRun) {
+        return {
+          adapter,
+          blocked: false,
+          reason: `${adapter} selected but ${tool2} was not detected; dry-run will render the planned simulator commands only.`,
+          installProposal,
+          toolDetection,
+          provisionCommands: options.installMobileTools ? provisionCommands : []
+        };
+      }
+      const installAllowed = options.installMobileTools || config2?.mobile?.install?.enabled === true;
+      if (installAllowed && provisionCommands.length > 0) {
+        return {
+          adapter,
+          blocked: false,
+          reason: `${tool2} was not detected; provisioning is explicitly enabled.`,
+          installProposal,
+          toolDetection,
+          provisionCommands
+        };
+      }
+      return {
+        adapter,
+        blocked: true,
+        reason: `${adapter} selected but ${tool2} was not detected.`,
+        installProposal,
+        toolDetection,
+        provisionCommands: []
+      };
+    }
+    return {
+      adapter,
+      blocked: false,
+      reason: `${tool2} detected and mobile smoke command is available.`,
+      toolDetection,
+      provisionCommands: []
+    };
+  }
+  return { adapter, blocked: false, reason: "Adapter is runnable.", provisionCommands: [] };
+}
+function defaultAdapterForTarget(target) {
+  if (target === "web") return "web-playwright";
+  if (target === "cli" || target === "service") return "cli-tmux";
+  if (target === "mobile") return "mobile-maestro";
+  return "project-script";
+}
+function inferRuntimeQaTarget(root2) {
+  const cycle = readRelative(root2, ".omc/cycles/current.md")?.toLowerCase() ?? "";
+  const pkg = readPackageJson(root2);
+  const scriptText = Object.entries(pkg?.scripts ?? {}).map(([name, command]) => `${name} ${command}`).join("\n").toLowerCase();
+  if ((0, import_fs102.existsSync)((0, import_path122.resolve)(root2, ".maestro")) || /\b(maestro|detox|appium|ios|android|simulator|emulator|react-native|expo)\b/i.test(`${cycle}
+${scriptText}`)) {
+    return "mobile";
+  }
+  if (hasPlaywright(root2) || /\b(playwright|browser|e2e:web|test:e2e)\b/i.test(`${cycle}
+${scriptText}`)) {
+    return "web";
+  }
+  if (/\b(cli|terminal|command-line|tmux)\b/i.test(cycle)) return "cli";
+  if (/\b(service|server|api smoke)\b/i.test(cycle)) return "service";
+  return "project-script";
+}
+function inferMobileAdapter(root2) {
+  const scriptText = Object.values(readPackageJson(root2)?.scripts ?? {}).join("\n").toLowerCase();
+  if (scriptText.includes("detox")) return "mobile-detox";
+  if (scriptText.includes("appium")) return "mobile-appium";
+  return "mobile-maestro";
+}
+function commandsForAdapter(adapter, config2, root2, toolDetection) {
+  const configured = flattenConfiguredCommands(config2?.commands);
+  if (configured.length > 0) return adapter === "mobile-maestro" ? configured.map((command) => withMaestroJavaEnvironment(root2, command, toolDetection)) : configured;
+  if (adapter === "web-playwright") {
+    return [{ name: "smoke", command: detectWebSmokeCommand(root2) ?? "npx playwright test --trace retain-on-failure" }];
+  }
+  if (config2?.mobile?.command) {
+    return [{ name: "smoke", command: config2.mobile.command }];
+  }
+  const detectedMobileCommand = detectMobileSmokeCommand(adapter, root2);
+  if (detectedMobileCommand) {
+    const command = { name: "smoke", command: detectedMobileCommand };
+    return adapter === "mobile-maestro" ? [withMaestroJavaEnvironment(root2, command, toolDetection)] : [command];
+  }
+  return [];
+}
+function withFixtureLifecycleCommands(root2, config2, commands) {
+  if (!config2?.flows?.length || !config2.fixtures) return commands;
+  const expanded = [];
+  for (const command of commands) {
+    const flow = flowForCommand(config2.flows, command);
+    const fixture = flow?.fixture ? config2.fixtures[flow.fixture] : void 0;
+    const flowKey = flow ? flowKeyForLifecycle(flow) : void 0;
+    const provider = flow?.fixture ? resolveFixtureProvider(root2, flow.fixture, fixture) : void 0;
+    const providerCommands = flow?.fixture && provider?.supported && provider.requiresAgentMcp !== true ? providerLifecycleCommands(flow.fixture) : void 0;
+    const provisionCommand = fixture?.provision_command ?? providerCommands?.provisionCommand;
+    const teardownCommand = fixture?.teardown_command ?? providerCommands?.teardownCommand;
+    const skipReason2 = flow ? destructiveFlowSkipReason(root2, flow, fixture, provider, provisionCommand) : void 0;
+    if (flow && provisionCommand && !skipReason2) {
+      expanded.push({
+        name: `fixture-${flowKey}-provision`,
+        command: provisionCommand,
+        lifecycle: "provision",
+        flowKey
+      });
+    }
+    const commandWithFixture = flowKey ? {
+      ...command,
+      command: flow?.fixture && provider?.supported ? wrapCommandWithFixtureEnv(flow.fixture, command.command) : command.command,
+      flowKey,
+      skipReason: skipReason2
+    } : command;
+    expanded.push(commandWithFixture);
+    if (flow && teardownCommand && !skipReason2) {
+      expanded.push({
+        name: `fixture-${flowKey}-teardown`,
+        command: teardownCommand,
+        lifecycle: "teardown",
+        flowKey
+      });
+    }
+  }
+  return expanded;
+}
+function destructiveFlowSkipReason(root2, flow, fixture, provider, provisionCommand) {
+  if (flow.destructive !== true) return void 0;
+  const flowId = flow.id ?? flow.path;
+  if (!flow.fixture) {
+    return `Destructive runtime QA flow ${flowId} skipped: no disposable fixture is declared. partial-pass is not complete evidence.`;
+  }
+  if (provider?.requiresAgentMcp === true) {
+    const envFile = fixtureEnvFileRelative(flow.fixture);
+    if (!(0, import_fs102.existsSync)((0, import_path122.resolve)(root2, envFile))) {
+      return `Destructive runtime QA flow ${flowId} skipped: Supabase MCP fixture ${flow.fixture} must be provisioned by the Claude/OMC agent before simulator execution (${envFile} missing). partial-pass is not complete evidence.`;
+    }
+    return void 0;
+  }
+  if (!provisionCommand) {
+    const reason = provider?.reason ?? (fixture ? `fixture ${flow.fixture} has no executable provision_command or supported provider` : `fixture ${flow.fixture} is not declared`);
+    return `Destructive runtime QA flow ${flowId} skipped: ${reason}. partial-pass is not complete evidence.`;
+  }
+  return void 0;
+}
+function flowForCommand(flows, command) {
+  if (!isSmokeCommand(command.name)) return void 0;
+  return flows.find((flow) => command.command.includes(flow.path));
+}
+function flowKeyForLifecycle(flow) {
+  return sanitizeStepName(flow.id ?? flow.path.replace(/\.[^.]+$/, ""));
+}
+function sanitizeStepName(value) {
+  const sanitized = value.trim().replace(/[^a-z0-9_-]+/gi, "-").replace(/^-+|-+$/g, "");
+  return sanitized || "flow";
+}
+function isSmokeCommand(name) {
+  return name === "smoke" || name.startsWith("smoke-");
+}
+function runtimeQaDryRunReason(command) {
+  if (command.lifecycle === "provision") return "Would provision runtime QA fixture.";
+  if (command.lifecycle === "teardown") return "Would tear down runtime QA fixture.";
+  return "Would run runtime QA command.";
+}
+function detectWebSmokeCommand(root2) {
+  const pkg = readPackageJson(root2);
+  if (!pkg?.scripts) {
+    return hasPlaywright(root2) ? "npx playwright test --trace retain-on-failure" : void 0;
+  }
+  const names = ["test:e2e", "e2e", "playwright:test", "test:playwright", "smoke:web", "smoke"];
+  for (const name of names) {
+    const script = pkg.scripts[name];
+    if (script && /\b(playwright|browser|e2e|smoke)\b/i.test(script)) {
+      return `${packageRunCommand(root2)} ${name}`;
+    }
+  }
+  const fallback = Object.entries(pkg.scripts).find(([name, script]) => /\b(e2e|smoke|playwright)\b/i.test(name) || /\bplaywright\b/i.test(script));
+  return fallback ? `${packageRunCommand(root2)} ${fallback[0]}` : hasPlaywright(root2) ? "npx playwright test --trace retain-on-failure" : void 0;
+}
+function detectProjectSmokeCommand(root2) {
+  const pkg = readPackageJson(root2);
+  if (!pkg?.scripts) return void 0;
+  const names = ["smoke", "test:smoke", "test:e2e", "e2e", "test:integration", "test"];
+  for (const name of names) {
+    if (pkg.scripts[name]) return `${packageRunCommand(root2)} ${name}`;
+  }
+  const fallback = Object.keys(pkg.scripts).find((name) => /\b(smoke|e2e|integration)\b/i.test(name));
+  return fallback ? `${packageRunCommand(root2)} ${fallback}` : void 0;
+}
+function flattenConfiguredCommands(commands) {
+  if (!commands) return [];
+  return [
+    ...expandCommand2("build", commands.build),
+    ...expandCommand2("start", commands.start),
+    ...expandCommand2("readiness", commands.readiness),
+    ...expandCommand2("smoke", commands.smoke),
+    ...expandCommand2("cleanup", commands.cleanup)
+  ];
+}
+function expandCommand2(name, value) {
+  if (!value) return [];
+  const commands = Array.isArray(value) ? value : [value];
+  return commands.map((command, index) => ({
+    name: commands.length === 1 ? name : `${name}-${index + 1}`,
+    command
+  }));
+}
+function isCleanupCommand(name) {
+  return name === "cleanup" || name.startsWith("cleanup-");
+}
+function hasConfiguredSmoke(config2) {
+  return Boolean(config2?.commands?.smoke || config2?.mobile?.command);
+}
+function hasMobileSmokeCommand(adapter, config2, root2) {
+  return hasConfiguredSmoke(config2) || Boolean(detectMobileSmokeCommand(adapter, root2));
+}
+function isMobileAdapter(adapter) {
+  return adapter === "mobile-maestro" || adapter === "mobile-detox" || adapter === "mobile-appium";
+}
+function mobileToolForAdapter(adapter, config2) {
+  if (config2?.mobile?.tool) return config2.mobile.tool;
+  if (adapter === "mobile-detox") return "detox";
+  if (adapter === "mobile-appium") return "appium";
+  return "maestro";
+}
+function detectMobileSmokeCommand(adapter, root2) {
+  if (adapter === "mobile-maestro" && (0, import_fs102.existsSync)((0, import_path122.resolve)(root2, ".maestro"))) {
+    return "maestro test .maestro";
+  }
+  const pkg = readPackageJson(root2);
+  if (!pkg?.scripts) return void 0;
+  const scriptEntries = Object.entries(pkg.scripts);
+  const preferredNames = adapter === "mobile-detox" ? ["detox:test", "e2e:detox", "test:e2e", "e2e"] : adapter === "mobile-appium" ? ["appium:test", "e2e:appium", "test:e2e", "e2e"] : ["maestro:test", "test:maestro", "test:e2e", "e2e"];
+  const commandNeedle = adapter.replace("mobile-", "");
+  for (const name of preferredNames) {
+    const script = pkg.scripts[name];
+    if (script && script.includes(commandNeedle)) {
+      return `${packageRunCommand(root2)} ${name}`;
+    }
+  }
+  const fallback = scriptEntries.find(([, script]) => script.includes(commandNeedle));
+  return fallback ? `${packageRunCommand(root2)} ${fallback[0]}` : void 0;
+}
+function mobileProvisionCommands(root2, tool2, config2, toolDetection) {
+  if (tool2 === "maestro" && toolDetection?.missing_prerequisite === "java-17") {
+    return java17ProvisionCommands();
+  }
+  if (config2?.mobile?.install?.command) {
+    return expandCommand2(`install-${tool2}`, config2.mobile.install.command);
+  }
+  const configuredManager = config2?.mobile?.install?.manager;
+  const manager = resolveInstallManager(root2, configuredManager);
+  if (tool2 === "maestro") {
+    const javaCommands = java17ProvisionCommands();
+    if (configuredManager === "brew") {
+      return [
+        ...javaCommands,
+        { name: "install-maestro-1", command: "brew tap mobile-dev-inc/tap" },
+        { name: "install-maestro-2", command: "brew install mobile-dev-inc/tap/maestro" }
+      ];
+    }
+    return [
+      ...javaCommands,
+      { name: "install-maestro", command: 'curl -fsSL "https://get.maestro.mobile.dev" | bash' }
+    ];
+  }
+  if (tool2 === "detox") {
+    return [{ name: "install-detox", command: packageAddCommand(root2, manager, "detox") }];
+  }
+  const appiumManager = configuredManager && configuredManager !== "auto" ? configuredManager : "npm";
+  return [{ name: "install-appium", command: globalPackageAddCommand(appiumManager, "appium") }];
+}
+function mobileInstallProposal(tool2, commands, toolDetection) {
+  if (toolDetection?.missing_prerequisite === "java-17") {
+    if (commands.length === 0) {
+      return "Install Java 17+ and set JAVA_HOME before running Maestro runtime QA.";
+    }
+    return [
+      "Run omc runtime-qa run --auto --install-mobile-tools to provision Java 17 for Maestro, or run manually:",
+      ...commands.map((entry) => entry.command)
+    ].join(" ");
+  }
+  if (commands.length === 0) {
+    return `Configure mobile.install.command in .omc/runtime-qa.json to provision ${tool2}.`;
+  }
+  return [
+    `Run omc runtime-qa run --auto --install-mobile-tools to provision ${tool2}, or run manually:`,
+    ...commands.map((entry) => entry.command)
+  ].join(" ");
+}
+function java17ProvisionCommands() {
+  if (process.platform === "darwin") {
+    return [{ name: "install-java-17", command: "brew install openjdk@17" }];
+  }
+  return [];
+}
+function resolveInstallManager(root2, configured) {
+  if (configured && configured !== "auto") return configured;
+  if ((0, import_fs102.existsSync)((0, import_path122.resolve)(root2, "pnpm-lock.yaml"))) return "pnpm";
+  if ((0, import_fs102.existsSync)((0, import_path122.resolve)(root2, "yarn.lock"))) return "yarn";
+  return "npm";
+}
+function packageRunCommand(root2) {
+  if ((0, import_fs102.existsSync)((0, import_path122.resolve)(root2, "pnpm-lock.yaml"))) return "pnpm run";
+  if ((0, import_fs102.existsSync)((0, import_path122.resolve)(root2, "yarn.lock"))) return "yarn";
+  return "npm run";
+}
+function withMaestroJavaEnvironment(root2, command, toolDetection) {
+  if (!/^\s*maestro(?:\s|$)/.test(command.command)) return command;
+  if (toolDetection?.missing_prerequisite !== "java-17" && javaIsOnPath(root2)) return command;
+  const javaHome = detectJava17Home();
+  if (!javaHome) return command;
+  const javaBin = `${javaHome}/bin`;
+  return {
+    ...command,
+    command: `JAVA_HOME=${shellQuote2(javaHome)} PATH=${shellQuote2(javaBin)}:$PATH ${command.command}`
+  };
+}
+function javaIsOnPath(root2) {
+  const result = (0, import_child_process29.spawnSync)("java -version", {
+    cwd: root2,
+    shell: true,
+    encoding: "utf-8",
+    stdio: ["ignore", "pipe", "pipe"],
+    timeout: 5e3
+  });
+  return result.status === 0;
+}
+function detectJava17Home() {
+  const candidates = [
+    process.env.JAVA_HOME,
+    "/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home",
+    "/usr/local/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home"
+  ].filter((value) => Boolean(value));
+  return candidates.find((candidate) => (0, import_fs102.existsSync)((0, import_path122.resolve)(candidate, "bin/java")));
+}
+function shellQuote2(value) {
+  return `'${value.replace(/'/g, `'\\''`)}'`;
+}
+function packageAddCommand(root2, manager, packageName) {
+  const resolved = manager === "auto" ? resolveInstallManager(root2, manager) : manager;
+  if (resolved === "pnpm") return `pnpm add ${packageName} --save-dev`;
+  if (resolved === "yarn") return `yarn add ${packageName} --dev`;
+  return `npm install ${packageName} --save-dev`;
+}
+function globalPackageAddCommand(manager, packageName) {
+  if (manager === "pnpm") return `pnpm add --global ${packageName}`;
+  if (manager === "yarn") return `yarn global add ${packageName}`;
+  return `npm i --location=global ${packageName}`;
+}
+function hasPlaywright(root2) {
+  if ((0, import_fs102.existsSync)((0, import_path122.resolve)(root2, "playwright.config.ts")) || (0, import_fs102.existsSync)((0, import_path122.resolve)(root2, "playwright.config.js"))) {
+    return true;
+  }
+  if ((0, import_fs102.existsSync)((0, import_path122.resolve)(root2, "node_modules/.bin/playwright"))) {
+    return true;
+  }
+  const packagePath = (0, import_path122.resolve)(root2, "package.json");
+  if (!(0, import_fs102.existsSync)(packagePath)) return false;
+  try {
+    const pkg = JSON.parse((0, import_fs102.readFileSync)(packagePath, "utf-8"));
+    return Boolean(pkg.dependencies?.["@playwright/test"] || pkg.devDependencies?.["@playwright/test"]);
+  } catch {
+    return false;
+  }
+}
+function defaultToolDetector(tool2, root2) {
+  const packageDetection = detectToolFromPackage(tool2, root2);
+  if (packageDetection.detected) return packageDetection;
+  if (tool2 === "maestro" && javaIsOnPath(root2) && maestroExistsOnPath(root2)) {
+    return {
+      tool: tool2,
+      detected: true,
+      method: "path",
+      command: "command -v maestro"
+    };
+  }
+  const command = tool2 === "detox" ? "detox --version" : tool2 === "appium" ? "appium --version" : "maestro --version";
+  if (tool2 === "maestro" && !javaIsOnPath(root2)) {
+    const javaHome = detectJava17Home();
+    if (javaHome) {
+      const commandWithJava = `JAVA_HOME=${shellQuote2(javaHome)} PATH=${shellQuote2(`${javaHome}/bin`)}:$PATH ${command}`;
+      const resultWithJava = (0, import_child_process29.spawnSync)(commandWithJava, {
+        cwd: root2,
+        shell: true,
+        encoding: "utf-8",
+        stdio: ["ignore", "pipe", "pipe"],
+        timeout: 5e3
+      });
+      if (resultWithJava.status === 0) {
+        return {
+          tool: tool2,
+          detected: true,
+          method: "path-with-java-home",
+          command: commandWithJava,
+          version: String(resultWithJava.stdout || resultWithJava.stderr).trim().split("\n")[0]
+        };
+      }
+    }
+  }
+  const result = (0, import_child_process29.spawnSync)(command, {
+    cwd: root2,
+    shell: true,
+    encoding: "utf-8",
+    stdio: ["ignore", "pipe", "pipe"],
+    timeout: 5e3
+  });
+  if (result.status === 0) {
+    return {
+      tool: tool2,
+      detected: true,
+      method: "path",
+      command,
+      version: String(result.stdout || result.stderr).trim().split("\n")[0]
+    };
+  }
+  if (tool2 === "maestro" && maestroExistsOnPath(root2) && isJavaRuntimeMissing(result.stderr, result.stdout)) {
+    return {
+      tool: tool2,
+      detected: false,
+      method: "path-prerequisite",
+      command,
+      missing_prerequisite: "java-17",
+      reason: "maestro is installed, but Java 17+ is missing or not visible to the shell."
+    };
+  }
+  return {
+    tool: tool2,
+    detected: false,
+    method: packageDetection.method === "package-json" ? "package-json-and-path" : "path",
+    command
+  };
+}
+function maestroExistsOnPath(root2) {
+  const result = (0, import_child_process29.spawnSync)("command -v maestro", {
+    cwd: root2,
+    shell: true,
+    encoding: "utf-8",
+    stdio: ["ignore", "pipe", "pipe"],
+    timeout: 5e3
+  });
+  return result.status === 0;
+}
+function isJavaRuntimeMissing(stderr, stdout) {
+  return /unable to locate a java runtime|java runtime|could not find java|JAVA_HOME/i.test(`${stderr ?? ""}
+${stdout ?? ""}`);
+}
+function detectToolFromPackage(tool2, root2) {
+  const binaryPath = (0, import_path122.resolve)(root2, "node_modules/.bin", tool2);
+  if ((0, import_fs102.existsSync)(binaryPath)) {
+    return { tool: tool2, detected: true, method: "node_modules", command: binaryPath };
+  }
+  const pkg = readPackageJson(root2);
+  if (pkg?.dependencies?.[tool2] || pkg?.devDependencies?.[tool2]) {
+    return { tool: tool2, detected: true, method: "package-json" };
+  }
+  return { tool: tool2, detected: false, method: pkg ? "package-json" : "none" };
+}
+function readPackageJson(root2) {
+  const packagePath = (0, import_path122.resolve)(root2, "package.json");
+  if (!(0, import_fs102.existsSync)(packagePath)) return void 0;
+  try {
+    return JSON.parse((0, import_fs102.readFileSync)(packagePath, "utf-8"));
+  } catch {
+    return void 0;
+  }
+}
+function normalizeRuntimeQaConfig(config2) {
+  if ("target" in config2 || "adapter" in config2 || "commands" in config2 || "mobile" in config2) {
+    return config2;
+  }
+  const legacy = config2;
+  const platform = typeof legacy.platform === "string" ? legacy.platform.toLowerCase() : void 0;
+  const framework = typeof legacy.tooling?.framework === "string" ? legacy.tooling.framework.toLowerCase() : void 0;
+  if (platform !== "mobile" || !isRuntimeQaMobileTool(framework)) {
+    return config2;
+  }
+  const smokeCommands = (legacy.flows ?? []).map((flow) => typeof flow.path === "string" ? flow.path.trim() : "").filter(Boolean).map((path23) => `${framework} test ${path23}`);
+  const buildCommands = Object.values(legacy.tooling?.platformRequirements ?? {}).map((requirements) => requirements?.buildCommand).filter((command) => typeof command === "string" && command.trim().length > 0);
+  const installCommand = legacy.tooling?.installCommand;
+  const flows = normalizeLegacyFlows(legacy.flows);
+  const fixtures = normalizeLegacyFixtures(legacy.fixtures);
+  return {
+    schema_version: 1,
+    target: "mobile",
+    adapter: `mobile-${framework}`,
+    commands: {
+      ...buildCommands.length > 0 ? { build: buildCommands } : {},
+      ...smokeCommands.length > 0 ? { smoke: smokeCommands } : {}
+    },
+    mobile: {
+      tool: framework,
+      install: typeof installCommand === "string" ? { command: installCommand } : void 0
+    },
+    ...Object.keys(fixtures).length > 0 ? { fixtures } : {},
+    ...flows.length > 0 ? { flows } : {},
+    ...legacy.gates ? { gates: legacy.gates } : {},
+    ...legacy.history ? { history: legacy.history } : {}
+  };
+}
+function isRuntimeQaMobileTool(value) {
+  return value === "maestro" || value === "detox" || value === "appium";
+}
+function normalizeLegacyFlows(flows) {
+  return (flows ?? []).map((flow) => {
+    const path23 = typeof flow.path === "string" ? flow.path.trim() : "";
+    if (!path23) return void 0;
+    return {
+      ...typeof flow.id === "string" ? { id: flow.id } : {},
+      path: path23,
+      ...typeof flow.fixture === "string" ? { fixture: flow.fixture } : {},
+      ...typeof flow.destructive === "boolean" ? { destructive: flow.destructive } : {},
+      ...Array.isArray(flow.verifies) ? { verifies: flow.verifies.filter((item) => typeof item === "string") } : {},
+      ...typeof flow.spec === "string" ? { spec: flow.spec } : {},
+      ...typeof flow.expectedDurationSec === "number" ? { expectedDurationSec: flow.expectedDurationSec } : {}
+    };
+  }).filter((flow) => Boolean(flow));
+}
+function normalizeLegacyFixtures(fixtures) {
+  const normalized = {};
+  for (const [name, fixture] of Object.entries(fixtures ?? {})) {
+    if (!fixture) continue;
+    normalized[name] = {
+      ...typeof fixture.purpose === "string" ? { purpose: fixture.purpose } : {},
+      ...typeof fixture.provisioning === "string" ? { provisioning: fixture.provisioning } : {},
+      ...typeof fixture.provision_command === "string" ? { provision_command: fixture.provision_command } : {},
+      ...typeof fixture.teardown_command === "string" ? { teardown_command: fixture.teardown_command } : {},
+      ...fixture.provider === "supabase" ? { provider: fixture.provider } : {},
+      ...fixture.strategy === "auth-admin-user" ? { strategy: fixture.strategy } : {},
+      ...isRuntimeQaFixtureBackend(fixture.backend) ? { backend: fixture.backend } : {},
+      ...typeof fixture.email_prefix === "string" ? { email_prefix: fixture.email_prefix } : {},
+      ...typeof fixture.email_env === "string" ? { email_env: fixture.email_env } : {},
+      ...typeof fixture.password_env === "string" ? { password_env: fixture.password_env } : {},
+      ...typeof fixture.user_id_env === "string" ? { user_id_env: fixture.user_id_env } : {}
+    };
+  }
+  return normalized;
+}
+function isRuntimeQaFixtureBackend(value) {
+  return value === "auto" || value === "env" || value === "mcp";
+}
+function readActiveCycleId2(root2) {
+  const content = readRelative(root2, ".omc/cycles/current.md");
+  if (!content) return void 0;
+  const match = content.match(/^\s*cycle_id\s*:\s*(.*?)\s*$/im);
+  return match?.[1]?.replace(/^['"]|['"]$/g, "").trim();
+}
+function readRelative(root2, relativePath) {
+  const path23 = (0, import_path122.resolve)(root2, relativePath);
+  if (!(0, import_fs102.existsSync)(path23)) return void 0;
+  try {
+    return (0, import_fs102.readFileSync)(path23, "utf-8");
+  } catch {
+    return void 0;
+  }
+}
+function commandResultToStep(command, result, artifactDir, summaryPolicy) {
+  const stdoutArtifact = writeCommandArtifact(artifactDir, `${command.name}.stdout.txt`, result.stdout ?? "");
+  const stderrArtifact = writeCommandArtifact(artifactDir, `${command.name}.stderr.txt`, result.stderr ?? "");
+  const status = result.error || result.status !== 0 ? "failed" : "passed";
+  return {
+    name: command.name,
+    command: command.command,
+    status,
+    exit_code: result.status,
+    signal: result.signal,
+    reason: result.error?.message ?? (status === "passed" ? "Command completed successfully." : `Command exited with status ${result.status ?? "unknown"}.`),
+    stdout_artifact: stdoutArtifact,
+    stderr_artifact: stderrArtifact,
+    stdout_preview: truncateInlineLog(result.stdout ?? "", summaryPolicy),
+    stderr_preview: truncateInlineLog(result.stderr ?? "", summaryPolicy)
+  };
+}
+function writeCommandArtifact(artifactDir, filename, content) {
+  const path23 = (0, import_path122.resolve)(artifactDir, filename);
+  atomicWriteFileSync(path23, content);
+  return path23;
+}
+function defaultCommandRunner(command, cwd2, timeoutMs) {
+  const result = (0, import_child_process29.spawnSync)(command, {
+    cwd: cwd2,
+    shell: true,
+    encoding: "utf-8",
+    stdio: ["ignore", "pipe", "pipe"],
+    timeout: timeoutMs
+  });
+  return {
+    status: result.status,
+    signal: result.signal,
+    error: result.error,
+    stdout: result.stdout ?? "",
+    stderr: result.stderr ?? ""
+  };
+}
+
+// src/runtime-qa/diagnostics.ts
+var RUNTIME_QA_DOCTOR_COMMAND_TIMEOUT_MS = 5e3;
+function diagnoseRuntimeQa(root2 = process.cwd(), options = {}) {
+  const resolvedRoot = (0, import_path123.resolve)(root2);
+  const configPath = (0, import_path123.resolve)(resolvedRoot, RUNTIME_QA_CONFIG_RELATIVE_PATH2);
+  const handoffPath = (0, import_path123.resolve)(resolvedRoot, RUNTIME_QA_HANDOFF_RELATIVE_PATH);
+  const configExists = (0, import_fs103.existsSync)(configPath);
+  const handoffExists = (0, import_fs103.existsSync)(handoffPath);
+  const activeCycleId = readActiveCycleId3(resolvedRoot);
+  const dryRunReport = runRuntimeQa({ root: resolvedRoot, dryRun: true, toolDetector: options.toolDetector });
+  const handoff = readJson2(handoffPath);
+  const rawConfig = readRuntimeQaConfigRaw(resolvedRoot);
+  const platformChecks = inspectPlatformReadiness(resolvedRoot, rawConfig, dryRunReport, options);
+  const destructiveFlows = inspectDestructiveFlows(resolvedRoot, rawConfig);
+  const issues = [];
+  if (!configExists && shouldRunRuntimeQa(resolvedRoot)) {
+    issues.push({
+      severity: "error",
+      code: "runtime-qa-config-missing",
+      message: "Cycle asks for runtime QA/simulator evidence, but .omc/runtime-qa.json is missing.",
+      path: RUNTIME_QA_CONFIG_RELATIVE_PATH2
+    });
+  }
+  if (dryRunReport.status === "blocked") {
+    issues.push({
+      severity: "error",
+      code: "runtime-qa-blocked",
+      message: dryRunReport.step_results[0]?.reason ?? "Runtime QA is blocked.",
+      path: RUNTIME_QA_CONFIG_RELATIVE_PATH2
+    });
+  }
+  if (dryRunReport.status === "noop") {
+    issues.push({
+      severity: "error",
+      code: "runtime-qa-no-executable-commands",
+      message: "Runtime QA config produced no executable build/smoke commands.",
+      path: RUNTIME_QA_CONFIG_RELATIVE_PATH2
+    });
+  }
+  if (dryRunReport.tool_detection && !dryRunReport.tool_detection.detected) {
+    pushIssue(issues, {
+      severity: "error",
+      code: dryRunReport.tool_detection.missing_prerequisite ? `runtime-qa-missing-${dryRunReport.tool_detection.missing_prerequisite}` : "runtime-qa-tool-missing",
+      message: dryRunReport.tool_detection.reason ?? `${dryRunReport.tool_detection.tool} is required but was not detected.`,
+      path: RUNTIME_QA_CONFIG_RELATIVE_PATH2
+    });
+  }
+  for (const check2 of platformChecks) {
+    if (check2.required && !check2.detected) {
+      pushIssue(issues, {
+        severity: "error",
+        code: `runtime-qa-missing-${check2.id}`,
+        message: check2.reason,
+        path: RUNTIME_QA_CONFIG_RELATIVE_PATH2
+      });
+    }
+  }
+  for (const flow of destructiveFlows) {
+    if (!flow.provisioned) {
+      const requiresAgentMcp = flow.requiresAgentMcp === true;
+      issues.push({
+        severity: "error",
+        code: requiresAgentMcp ? "runtime-qa-fixture-agent-mcp-required" : "runtime-qa-destructive-fixture-missing",
+        message: destructiveFixtureMessage(flow, requiresAgentMcp),
+        path: flow.path
+      });
+    }
+  }
+  if (!handoffExists) {
+    issues.push({
+      severity: "warning",
+      code: "runtime-qa-handoff-missing",
+      message: "No executed runtime QA handoff report exists yet.",
+      path: RUNTIME_QA_HANDOFF_RELATIVE_PATH
+    });
+  } else {
+    inspectHandoff(handoff, activeCycleId, rawConfig, issues);
+  }
+  const errors = issues.filter((issue4) => issue4.severity === "error").length;
+  const warnings = issues.length - errors;
+  return {
+    ok: errors === 0,
+    root: resolvedRoot,
+    configPath,
+    configExists,
+    handoffPath,
+    handoffExists,
+    shouldRun: shouldRunRuntimeQa(resolvedRoot),
+    activeCycleId,
+    dryRunReport,
+    handoff,
+    platformChecks,
+    destructiveFlows,
+    issues,
+    summary: { errors, warnings }
+  };
+}
+function destructiveFixtureMessage(flow, requiresAgentMcp) {
+  if (requiresAgentMcp) {
+    return `Destructive runtime QA flow ${flow.id} uses Supabase MCP; run it through the Claude/OMC agent provisioning step so ${flow.fixture ?? "the fixture"} writes its runtime env before simulator execution.`;
+  }
+  if (flow.reason) {
+    return `Destructive runtime QA flow ${flow.id} fixture is not runnable: ${flow.reason}`;
+  }
+  return `Destructive runtime QA flow ${flow.id} must declare a disposable fixture with an executable provision_command or provider.`;
+}
+function pushIssue(issues, issue4) {
+  if (issues.some((existing) => existing.code === issue4.code && existing.path === issue4.path)) return;
+  issues.push(issue4);
+}
+function inspectPlatformReadiness(root2, config2, dryRunReport, options) {
+  if (!isMobileRuntimeQa(config2, dryRunReport)) return [];
+  const commandRunner = options.commandRunner ?? defaultDoctorCommandRunner;
+  const env2 = options.env ?? process.env;
+  const platform = options.platform ?? process.platform;
+  const scope = mobileReadinessScope(config2, dryRunReport, platform);
+  const checks = [];
+  if (dryRunReport.adapter === "mobile-maestro") {
+    checks.push(checkJava17(root2, commandRunner));
+  }
+  if (scope.ios) {
+    checks.push(checkXcode(root2, commandRunner, platform));
+    checks.push(checkIosSimulator(root2, commandRunner, platform));
+  }
+  if (scope.android) {
+    checks.push(checkAndroidSdk(root2, commandRunner, env2));
+    checks.push(checkAndroidEmulator(root2, commandRunner, env2));
+  }
+  return checks;
+}
+function isMobileRuntimeQa(config2, dryRunReport) {
+  if (dryRunReport.adapter.startsWith("mobile-")) return true;
+  return config2?.target === "mobile" || config2?.platform === "mobile";
+}
+function mobileReadinessScope(config2, dryRunReport, platform) {
+  const text = [
+    config2?.target,
+    config2?.adapter,
+    config2?.platform,
+    config2?.mobile?.tool,
+    config2?.mobile?.command,
+    config2?.tooling?.framework,
+    config2?.tooling?.installCommand,
+    ...commandValues(config2?.commands),
+    ...Object.values(config2?.tooling?.platformRequirements ?? {}).flatMap((entry) => commandValues(entry?.buildCommand)),
+    ...(config2?.flows ?? []).flatMap((flow) => [flow.path, flow.id]),
+    ...(dryRunReport.step_results ?? []).flatMap((step) => [step.command, step.name])
+  ].filter((value) => typeof value === "string").join("\n").toLowerCase();
+  const ios = /\b(ios|iphone|ipad|xcode|simctl|simulator)\b/.test(text);
+  const android = /\b(android|adb|avd|emulator)\b/.test(text);
+  if (ios || android) return { ios, android };
+  return platform === "darwin" ? { ios: true, android: false } : { ios: false, android: true };
+}
+function commandValues(value) {
+  if (typeof value === "string") return [value];
+  if (Array.isArray(value)) return value.filter((entry) => typeof entry === "string");
+  return [];
+}
+function checkJava17(root2, commandRunner) {
+  const command = "java -version";
+  const result = commandRunner(command, root2, RUNTIME_QA_DOCTOR_COMMAND_TIMEOUT_MS);
+  const output = `${result.stdout ?? ""}
+${result.stderr ?? ""}`;
+  const version3 = output.match(/version\s+"(\d+)(?:[._]\d+)?/i)?.[1];
+  const detected = result.status === 0 && Number(version3 ?? "0") >= 17;
+  return {
+    id: "java-17",
+    label: "Java 17+",
+    required: true,
+    detected,
+    command,
+    reason: detected ? `Java ${version3}+ is visible to runtime QA.` : "Java 17+ is required for Maestro runtime QA but was not detected."
+  };
+}
+function checkXcode(root2, commandRunner, platform) {
+  const command = "xcode-select -p";
+  if (platform !== "darwin") {
+    return {
+      id: "xcode",
+      label: "Xcode command line tools",
+      required: true,
+      detected: false,
+      command,
+      reason: "iOS simulator runtime QA requires macOS with Xcode command line tools."
+    };
+  }
+  const result = commandRunner(command, root2, RUNTIME_QA_DOCTOR_COMMAND_TIMEOUT_MS);
+  const detected = result.status === 0 && String(result.stdout ?? "").trim().length > 0;
+  return {
+    id: "xcode",
+    label: "Xcode command line tools",
+    required: true,
+    detected,
+    command,
+    reason: detected ? "Xcode command line tools are selected." : "Xcode command line tools are required for iOS simulator runtime QA."
+  };
+}
+function checkIosSimulator(root2, commandRunner, platform) {
+  const command = "xcrun simctl list devices available";
+  if (platform !== "darwin") {
+    return {
+      id: "ios-simulator",
+      label: "iOS Simulator",
+      required: true,
+      detected: false,
+      command,
+      reason: "iOS simulator runtime QA requires macOS with simctl."
+    };
+  }
+  const result = commandRunner(command, root2, RUNTIME_QA_DOCTOR_COMMAND_TIMEOUT_MS);
+  const output = `${result.stdout ?? ""}
+${result.stderr ?? ""}`;
+  const detected = result.status === 0 && /\(.+\)/.test(output);
+  return {
+    id: "ios-simulator",
+    label: "iOS Simulator",
+    required: true,
+    detected,
+    command,
+    reason: detected ? "At least one available iOS simulator device was detected." : "No available iOS simulator device was detected via simctl."
+  };
+}
+function checkAndroidSdk(root2, commandRunner, env2) {
+  const sdkRoot = resolveAndroidSdkRoot(env2);
+  const command = "command -v adb";
+  const adb = commandRunner(command, root2, RUNTIME_QA_DOCTOR_COMMAND_TIMEOUT_MS);
+  const detected = Boolean(sdkRoot && (0, import_fs103.existsSync)(sdkRoot)) || adb.status === 0;
+  return {
+    id: "android-sdk",
+    label: "Android SDK",
+    required: true,
+    detected,
+    command,
+    reason: detected ? "Android SDK or adb was detected." : "Android runtime QA requires ANDROID_HOME/ANDROID_SDK_ROOT or adb on PATH."
+  };
+}
+function checkAndroidEmulator(root2, commandRunner, env2) {
+  const sdkRoot = resolveAndroidSdkRoot(env2);
+  const emulatorPath = sdkRoot ? (0, import_path123.resolve)(sdkRoot, "emulator", "emulator") : void 0;
+  const command = "command -v emulator";
+  const result = commandRunner(command, root2, RUNTIME_QA_DOCTOR_COMMAND_TIMEOUT_MS);
+  const detected = (emulatorPath ? (0, import_fs103.existsSync)(emulatorPath) : false) || result.status === 0;
+  return {
+    id: "android-emulator",
+    label: "Android emulator",
+    required: true,
+    detected,
+    command,
+    reason: detected ? "Android emulator binary was detected." : "Android runtime QA requires an emulator binary from the Android SDK."
+  };
+}
+function resolveAndroidSdkRoot(env2) {
+  const configured = env2.ANDROID_HOME || env2.ANDROID_SDK_ROOT;
+  if (configured) return configured;
+  const defaultMac = (0, import_path123.resolve)((0, import_os19.homedir)(), "Library", "Android", "sdk");
+  if ((0, import_fs103.existsSync)(defaultMac)) return defaultMac;
+  const defaultLinux = (0, import_path123.resolve)((0, import_os19.homedir)(), "Android", "Sdk");
+  if ((0, import_fs103.existsSync)(defaultLinux)) return defaultLinux;
+  return void 0;
+}
+function defaultDoctorCommandRunner(command, cwd2, timeoutMs) {
+  const result = (0, import_child_process30.spawnSync)(command, {
+    cwd: cwd2,
+    shell: true,
+    encoding: "utf-8",
+    stdio: ["ignore", "pipe", "pipe"],
+    timeout: timeoutMs
+  });
+  return {
+    status: result.status,
+    signal: result.signal,
+    error: result.error,
+    stdout: result.stdout,
+    stderr: result.stderr
+  };
+}
+function inspectHandoff(handoff, activeCycleId, rawConfig, issues) {
+  const status = typeof handoff?.status === "string" ? handoff.status : "unknown";
+  const dryRun = typeof handoff?.dry_run === "boolean" ? handoff.dry_run : false;
+  if (status !== "passed") {
+    issues.push({
+      severity: "error",
+      code: "runtime-qa-handoff-not-passed",
+      message: `Latest runtime QA handoff status is ${status}, expected passed.`,
+      path: RUNTIME_QA_HANDOFF_RELATIVE_PATH
+    });
+  }
+  if (dryRun) {
+    issues.push({
+      severity: "error",
+      code: "runtime-qa-handoff-dry-run",
+      message: "Latest runtime QA handoff is a dry-run and does not prove simulator execution.",
+      path: RUNTIME_QA_HANDOFF_RELATIVE_PATH
+    });
+  }
+  if (!activeCycleId) return;
+  const handoffCycle = readStringField(handoff, "cycle_id");
+  if (!handoffCycle) {
+    issues.push({
+      severity: "error",
+      code: "runtime-qa-handoff-cycle-missing",
+      message: `Latest runtime QA handoff does not declare cycle_id for active cycle ${activeCycleId}.`,
+      path: RUNTIME_QA_HANDOFF_RELATIVE_PATH
+    });
+    return;
+  }
+  if (handoffCycle && handoffCycle !== activeCycleId) {
+    issues.push({
+      severity: "error",
+      code: "runtime-qa-handoff-stale-cycle",
+      message: `Latest runtime QA handoff is for cycle ${handoffCycle}, but active cycle is ${activeCycleId}.`,
+      path: RUNTIME_QA_HANDOFF_RELATIVE_PATH
+    });
+  }
+  const specs = (rawConfig?.flows ?? []).map((flow) => typeof flow.spec === "string" ? flow.spec : "").filter(Boolean);
+  if (specs.length > 0 && specs.every((spec) => !spec.includes(activeCycleId))) {
+    issues.push({
+      severity: "error",
+      code: "runtime-qa-flow-spec-stale-cycle",
+      message: `Runtime QA flow specs do not reference active cycle ${activeCycleId}.`,
+      path: RUNTIME_QA_CONFIG_RELATIVE_PATH2
+    });
+  }
+}
+function readStringField(value, field) {
+  if (!value || typeof value !== "object") return void 0;
+  const record2 = value;
+  return typeof record2[field] === "string" ? record2[field] : void 0;
+}
+function inspectDestructiveFlows(root2, config2) {
+  const fixtures = config2?.fixtures ?? {};
+  return (config2?.flows ?? []).filter((flow) => flow.destructive === true).map((flow, index) => {
+    const id = typeof flow.id === "string" ? flow.id : `flow-${index + 1}`;
+    const path23 = typeof flow.path === "string" ? flow.path : RUNTIME_QA_CONFIG_RELATIVE_PATH2;
+    const fixture = typeof flow.fixture === "string" ? flow.fixture : void 0;
+    const fixtureConfig = fixture ? fixtures[fixture] : void 0;
+    const provider = fixture ? resolveFixtureProvider(root2, fixture, normalizeDiagnosticFixture(fixtureConfig)) : void 0;
+    return {
+      id,
+      path: path23,
+      fixture,
+      provider: provider?.provider,
+      backend: provider?.backend,
+      provisioned: hasExecutableProvisioning(fixtureConfig) || Boolean(provider?.supported && provider.available),
+      requiresAgentMcp: provider?.requiresAgentMcp,
+      reason: provider?.supported && !provider.available ? provider.reason : void 0
+    };
+  });
+}
+function hasExecutableProvisioning(fixture) {
+  return typeof fixture?.provision_command === "string" && fixture.provision_command.trim().length > 0;
+}
+function normalizeDiagnosticFixture(fixture) {
+  if (!fixture) return void 0;
+  return {
+    ...typeof fixture.provisioning === "string" ? { provisioning: fixture.provisioning } : {},
+    ...typeof fixture.provision_command === "string" ? { provision_command: fixture.provision_command } : {},
+    ...typeof fixture.teardown_command === "string" ? { teardown_command: fixture.teardown_command } : {},
+    ...fixture.provider === "supabase" ? { provider: "supabase" } : {},
+    ...fixture.strategy === "auth-admin-user" ? { strategy: "auth-admin-user" } : {},
+    ...isFixtureBackend(fixture.backend) ? { backend: fixture.backend } : {}
+  };
+}
+function isFixtureBackend(value) {
+  return value === "auto" || value === "env" || value === "mcp";
+}
+function readActiveCycleId3(root2) {
+  const content = safeRead2((0, import_path123.resolve)(root2, ".omc/cycles/current.md"));
+  if (!content) return void 0;
+  const match = content.match(/^\s*cycle_id\s*:\s*(.*?)\s*$/im);
+  return match?.[1]?.replace(/^['"]|['"]$/g, "").trim();
+}
+function readJson2(path23) {
+  if (!(0, import_fs103.existsSync)(path23)) return void 0;
+  try {
+    return JSON.parse((0, import_fs103.readFileSync)(path23, "utf-8"));
+  } catch {
+    return void 0;
+  }
+}
+function safeRead2(path23) {
+  if (!(0, import_fs103.existsSync)(path23)) return void 0;
+  try {
+    return (0, import_fs103.readFileSync)(path23, "utf-8");
+  } catch {
+    return void 0;
+  }
+}
 
 // src/product/pipeline-contract-validator.ts
 function validateProductPipelineContracts(options = {}) {
-  const root2 = (0, import_path120.resolve)(options.root ?? process.cwd());
+  const root2 = (0, import_path124.resolve)(options.root ?? process.cwd());
   const stage = options.stage ?? "foundation-lite";
   const contracts = buildContracts(stage);
   const artifacts = contracts.map((contract) => validateArtifact(root2, contract));
@@ -85820,13 +88415,13 @@ function buildContracts(stage) {
   return [capability(true), meaning(true), ecosystem(true), portfolioLedger(), opportunities(), roadmap(), cycle(), experienceGate(true), learning(true)];
 }
 function validateArtifact(root2, contract) {
-  const cycleDocumentPath = (0, import_path120.resolve)(root2, CYCLE_DOCUMENT_RELATIVE_PATH);
-  const useCycleDocument = contract.artifact === "cycle" && (0, import_fs100.existsSync)(cycleDocumentPath);
-  const path23 = useCycleDocument ? cycleDocumentPath : (0, import_path120.resolve)(root2, contract.relativePath);
+  const cycleDocumentPath = (0, import_path124.resolve)(root2, CYCLE_DOCUMENT_RELATIVE_PATH);
+  const useCycleDocument = contract.artifact === "cycle" && (0, import_fs104.existsSync)(cycleDocumentPath);
+  const path23 = useCycleDocument ? cycleDocumentPath : (0, import_path124.resolve)(root2, contract.relativePath);
   const result = {
     artifact: contract.artifact,
     path: path23,
-    exists: (0, import_fs100.existsSync)(path23),
+    exists: (0, import_fs104.existsSync)(path23),
     metrics: {},
     issues: []
   };
@@ -85848,7 +88443,7 @@ function validateArtifact(root2, contract) {
       }
       content = renderCycleProjection(document);
     } else {
-      content = (0, import_fs100.readFileSync)(path23, "utf-8");
+      content = (0, import_fs104.readFileSync)(path23, "utf-8");
     }
   } catch (error2) {
     addIssue2(result, "error", "unreadable-artifact", `Cannot read ${contract.relativePath}: ${error2 instanceof Error ? error2.message : String(error2)}`);
@@ -85866,9 +88461,10 @@ function applyCrossArtifactContracts(root2, stage, artifacts) {
   const cycleContent = readCycleContractContent(root2);
   const userFacing = isUserFacingCycle(cycleContent);
   let experience = artifacts.find((artifact) => artifact.artifact === "experience-gate");
+  applyRuntimeQaContracts(root2, cycleContent, artifacts);
   if (userFacing && (!experience || !experience.exists)) {
     if (!experience) {
-      experience = createVirtualArtifactResult("experience-gate", (0, import_path120.resolve)(root2, PRODUCT_ARTIFACT_PATHS["experience-gate"]));
+      experience = createVirtualArtifactResult("experience-gate", (0, import_path124.resolve)(root2, PRODUCT_ARTIFACT_PATHS["experience-gate"]));
       artifacts.push(experience);
     }
     addIssue2(
@@ -85878,9 +88474,9 @@ function applyCrossArtifactContracts(root2, stage, artifacts) {
       "User-facing cycles must pass .omc/experience/current.md before build"
     );
   }
-  const portfolioPath = (0, import_path120.resolve)(root2, PRODUCT_ARTIFACT_PATHS["portfolio-ledger"]);
-  const roadmapPath = (0, import_path120.resolve)(root2, PRODUCT_ARTIFACT_PATHS.roadmap);
-  if (!(0, import_fs100.existsSync)(portfolioPath) || !(0, import_fs100.existsSync)(roadmapPath)) return;
+  const portfolioPath = (0, import_path124.resolve)(root2, PRODUCT_ARTIFACT_PATHS["portfolio-ledger"]);
+  const roadmapPath = (0, import_path124.resolve)(root2, PRODUCT_ARTIFACT_PATHS.roadmap);
+  if (!(0, import_fs104.existsSync)(portfolioPath) || !(0, import_fs104.existsSync)(roadmapPath)) return;
   const portfolio = artifacts.find((artifact) => artifact.artifact === "portfolio-ledger");
   const activeCycleId = readField(cycleContent, "cycle_id");
   if (portfolio && activeCycleId) {
@@ -85896,7 +88492,7 @@ function applyCrossArtifactContracts(root2, stage, artifacts) {
     }
   }
   const researchDebt = portfolioHasSelectedResearchDebt(portfolioPath);
-  const roadmapContent = safeRead2(roadmapPath);
+  const roadmapContent = safeRead3(roadmapPath);
   const roadmap = artifacts.find((artifact) => artifact.artifact === "roadmap");
   if (researchDebt && roadmap && !/\b(research debt|learning gate|research gate|learning\/research task)\b/i.test(roadmapContent)) {
     addIssue2(
@@ -85907,6 +88503,20 @@ function applyCrossArtifactContracts(root2, stage, artifacts) {
     );
   }
 }
+function applyRuntimeQaContracts(root2, cycleContent, artifacts) {
+  if (!needsRuntimeQaContract(root2, cycleContent)) return;
+  const cycle = artifacts.find((artifact) => artifact.artifact === "cycle");
+  if (!cycle) return;
+  const report2 = diagnoseRuntimeQa(root2);
+  for (const issue4 of report2.issues) {
+    addIssue2(cycle, issue4.severity, issue4.code, issue4.message);
+  }
+  cycle.metrics.runtimeQaStatus = report2.dryRunReport.status;
+  cycle.metrics.runtimeQaSteps = report2.dryRunReport.step_results.length;
+}
+function needsRuntimeQaContract(root2, cycleContent) {
+  return /\b(runtime-qa|simulator|emulator|smoke|maestro|detox|appium|ios|android)\b/i.test(cycleContent) || (0, import_fs104.existsSync)((0, import_path124.resolve)(root2, ".omc/runtime-qa.json")) || (0, import_fs104.existsSync)((0, import_path124.resolve)(root2, ".omc/handoffs/runtime-qa/current.json"));
+}
 function createVirtualArtifactResult(artifact, path23) {
   return {
     artifact,
@@ -85916,16 +88526,16 @@ function createVirtualArtifactResult(artifact, path23) {
     issues: []
   };
 }
-function safeRead2(path23) {
+function safeRead3(path23) {
   try {
-    return (0, import_fs100.readFileSync)(path23, "utf-8");
+    return (0, import_fs104.readFileSync)(path23, "utf-8");
   } catch {
     return "";
   }
 }
 function readCycleContractContent(root2) {
-  const cycleDocumentPath = (0, import_path120.resolve)(root2, CYCLE_DOCUMENT_RELATIVE_PATH);
-  if ((0, import_fs100.existsSync)(cycleDocumentPath)) {
+  const cycleDocumentPath = (0, import_path124.resolve)(root2, CYCLE_DOCUMENT_RELATIVE_PATH);
+  if ((0, import_fs104.existsSync)(cycleDocumentPath)) {
     try {
       const document = readCycleDocument(root2);
       return document ? renderCycleProjection(document) : "";
@@ -85933,8 +88543,8 @@ function readCycleContractContent(root2) {
       return "";
     }
   }
-  const cyclePath = (0, import_path120.resolve)(root2, PRODUCT_ARTIFACT_PATHS.cycle);
-  return (0, import_fs100.existsSync)(cyclePath) ? safeRead2(cyclePath) : "";
+  const cyclePath = (0, import_path124.resolve)(root2, PRODUCT_ARTIFACT_PATHS.cycle);
+  return (0, import_fs104.existsSync)(cyclePath) ? safeRead3(cyclePath) : "";
 }
 function isUserFacingCycle(content) {
   const route = extractBuildRoute(content);
@@ -85952,11 +88562,11 @@ function isUserFacingCycle(content) {
 }
 function portfolioHasSelectedResearchDebt(path23) {
   try {
-    const ledger = JSON.parse((0, import_fs100.readFileSync)(path23, "utf-8"));
+    const ledger = JSON.parse((0, import_fs104.readFileSync)(path23, "utf-8"));
     const items = Array.isArray(ledger.items) ? ledger.items : [];
     return items.some((item) => {
       const selected = typeof item.selected_cycle === "string" && item.selected_cycle.length > 0;
-      const weak = isWeakConfidence(item.confidence);
+      const weak = isWeakConfidence2(item.confidence);
       const research = item.lane === "research" || item.type === "learning" || item.type === "research";
       return selected && weak && !research;
     });
@@ -85966,7 +88576,7 @@ function portfolioHasSelectedResearchDebt(path23) {
 }
 function selectedCycleIds(path23) {
   try {
-    const ledger = JSON.parse((0, import_fs100.readFileSync)(path23, "utf-8"));
+    const ledger = JSON.parse((0, import_fs104.readFileSync)(path23, "utf-8"));
     const items = Array.isArray(ledger.items) ? ledger.items : [];
     return Array.from(new Set(items.map((item) => item.selected_cycle).filter((value) => typeof value === "string" && value.length > 0)));
   } catch {
@@ -86087,6 +88697,7 @@ function validatePortfolioLedgerArtifact(content, result) {
   const selectedByCycle = /* @__PURE__ */ new Map();
   const ids = /* @__PURE__ */ new Set();
   let evidenceBacked = 0;
+  let selectedCoreExpectationCount = 0;
   const selectedResearchByCycle = /* @__PURE__ */ new Map();
   const weakSelectedByCycle = /* @__PURE__ */ new Map();
   for (const [index, item] of items.entries()) {
@@ -86118,10 +88729,13 @@ function validatePortfolioLedgerArtifact(content, result) {
       const selectedItems = selectedByCycle.get(selectedCycle) ?? [];
       selectedItems.push(item);
       selectedByCycle.set(selectedCycle, selectedItems);
+      if (type === "core-product-slice" && item.user_visible !== false && isFeatureExpectation(item.feature_expectation)) {
+        selectedCoreExpectationCount += 1;
+      }
       if (lane === "research" || type === "learning" || type === "research") {
         selectedResearchByCycle.set(selectedCycle, (selectedResearchByCycle.get(selectedCycle) ?? 0) + 1);
       }
-      if (isWeakConfidence(confidence) && lane !== "research" && type !== "learning" && type !== "research") {
+      if (isWeakConfidence2(confidence) && lane !== "research" && type !== "learning" && type !== "research") {
         weakSelectedByCycle.set(selectedCycle, (weakSelectedByCycle.get(selectedCycle) ?? 0) + 1);
       }
     } else if (selectedCycle !== null) {
@@ -86132,6 +88746,7 @@ function validatePortfolioLedgerArtifact(content, result) {
   result.metrics.laneCount = lanes.size;
   result.metrics.evidenceBackedItems = evidenceBacked;
   result.metrics.selectedItems = [...selectedCycles.values()].reduce((total, count) => total + count, 0);
+  result.metrics.selectedCoreFeatureExpectations = selectedCoreExpectationCount;
   if (items.length < 20) {
     addIssue2(result, "error", "portfolio-too-small", `Expected at least 20 portfolio items, found ${items.length}`);
   }
@@ -86158,6 +88773,17 @@ function validatePortfolioLedgerArtifact(content, result) {
         "invalid-selected-cycle-trio",
         `Cycle ${cycle} must select exactly one core-product-slice, one enabling, and one learning/research item`
       );
+    }
+    const userVisibleCore = core.filter((item) => item.user_visible !== false);
+    for (const item of userVisibleCore) {
+      if (!isFeatureExpectation(item.feature_expectation)) {
+        addIssue2(
+          result,
+          "error",
+          "missing-selected-core-feature-expectation",
+          `Selected core product slice ${String(item.id ?? "<unknown>")} must include feature_expectation with user_job, first_meaningful_use, useless_if, v0/v1/v2 maturity ladder, and not_done_until`
+        );
+      }
     }
   }
   for (const [cycle, count] of weakSelectedByCycle.entries()) {
@@ -86244,6 +88870,12 @@ function validateCycle(content, result) {
   if (stage === "complete" && !containsTerm(content, ".omc/learning/current.md")) {
     addIssue2(result, "error", "complete-without-learning", "Completed cycle must reference .omc/learning/current.md");
   }
+  if (stage === "complete" && hasUncheckedChecklistItem(content)) {
+    addIssue2(result, "error", "complete-with-open-checklist", "Completed cycle must not contain open checklist items");
+  }
+  if (stage === "complete" && hasPendingGateMarker(content)) {
+    addIssue2(result, "error", "complete-with-pending-gate", "Completed cycle still contains pending human/manual/learning gate markers");
+  }
   validateStructuredOutput(result);
 }
 function validateLearning(content, result) {
@@ -86254,6 +88886,11 @@ function validateLearning(content, result) {
     "invalidated assumptions",
     "recommended next cycle"
   ]);
+  const status = extractStatus(content);
+  result.metrics.status = status ?? "unknown";
+  if (status === "complete" && hasPendingGateMarker(content)) {
+    addIssue2(result, "error", "learning-complete-with-pending-gate", "Learning capture is marked complete while pending human/manual/learning gate markers remain");
+  }
   validateStructuredOutput(result);
 }
 function resolveSidecarPath(artifactPath) {
@@ -86263,9 +88900,9 @@ function resolveSidecarPath(artifactPath) {
 }
 function readAgentOutputSidecar(artifactPath) {
   const sidecarPath = resolveSidecarPath(artifactPath);
-  if (!(0, import_fs100.existsSync)(sidecarPath)) return void 0;
+  if (!(0, import_fs104.existsSync)(sidecarPath)) return void 0;
   try {
-    return JSON.parse((0, import_fs100.readFileSync)(sidecarPath, "utf-8"));
+    return JSON.parse((0, import_fs104.readFileSync)(sidecarPath, "utf-8"));
   } catch {
     return void 0;
   }
@@ -86310,6 +88947,12 @@ function containsAny(content, terms) {
 function containsAll(content, terms) {
   return terms.every((term) => containsTerm(content, term));
 }
+function hasUncheckedChecklistItem(content) {
+  return /^\s*[-*]\s+\[\s\]\s+/m.test(content);
+}
+function hasPendingGateMarker(content) {
+  return /\b(?:pending|awaiting|human gate|manual smoke|dogfood protocol|friction log pending|learn stage gate)\b/i.test(content);
+}
 function hasRequestedNextAgent(content, artifactPath, agent) {
   const sidecar = readAgentOutputSidecar(artifactPath);
   if (sidecar?.routing?.next_recommended) {
@@ -86351,9 +88994,11 @@ function validateCycleSpecValues(content, result) {
   const acceptanceCriteria = readListOrInline(content, "acceptance_criteria");
   const verificationPlan = readListOrInline(content, "verification_plan");
   const learningPlan = readListOrInline(content, "learning_plan");
+  const requiresFeatureExpectation = isUserFacingCycle(content);
   result.metrics.acceptanceCriteriaCount = acceptanceCriteria.length;
   result.metrics.verificationPlanCount = verificationPlan.length;
   result.metrics.learningPlanCount = learningPlan.length;
+  result.metrics.requiresFeatureExpectation = requiresFeatureExpectation;
   if (acceptanceCriteria.length === 0) {
     addIssue2(result, "error", "missing-acceptance-criteria", "acceptance_criteria must include at least one testable criterion");
   }
@@ -86369,6 +89014,79 @@ function validateCycleSpecValues(content, result) {
       break;
     }
   }
+  if (requiresFeatureExpectation) {
+    validateFeatureExpectationContract(content, result);
+  }
+}
+function validateFeatureExpectationContract(content, result) {
+  const hasContract = /\bfeature_expectation_contract\b/i.test(content) || /#{1,6}\s*Feature Expectation Contract\b/i.test(content);
+  result.metrics.hasFeatureExpectationContract = hasContract;
+  if (!hasContract) {
+    addIssue2(
+      result,
+      "error",
+      "missing-feature-expectation-contract",
+      "User-facing cycle specs must define feature_expectation_contract before build"
+    );
+    return;
+  }
+  const contractContent = featureExpectationContractContent(content);
+  const missingOrPlaceholder = [
+    ...["user_job", "first_meaningful_use"].filter((field) => {
+      const value = readLooseField(contractContent, field);
+      return !value || isPlaceholderValue(value);
+    }),
+    ...["useless_if", "not_done_until"].filter((field) => {
+      const values = readLooseListOrInline(contractContent, field);
+      return values.length === 0 || values.every(isPlaceholderValue);
+    })
+  ];
+  if (missingOrPlaceholder.length > 0) {
+    addIssue2(
+      result,
+      "error",
+      "incomplete-feature-expectation-contract",
+      `feature_expectation_contract is missing meaningful values for: ${missingOrPlaceholder.join(", ")}`
+    );
+  }
+  const missingLadder = ["v0", "v1", "v2"].filter((level) => {
+    const value = readLooseField(contractContent, level);
+    return !value || isPlaceholderValue(value);
+  });
+  if (missingLadder.length > 0) {
+    addIssue2(
+      result,
+      "error",
+      "incomplete-feature-maturity-ladder",
+      `feature_expectation_contract.maturity_ladder must include ${missingLadder.join(", ")}`
+    );
+  }
+}
+function featureExpectationContractContent(content) {
+  const headingSection = content.match(/(?:^|\n)#{1,6}\s*Feature Expectation Contract\s*\n([\s\S]*?)(?=\n#{1,6}\s|$)/i)?.[1];
+  return headingSection ?? content;
+}
+function readLooseField(content, field) {
+  const match = content.match(new RegExp(`^\\s*(?:[-*]\\s*)?${escapeRegExp3(field)}\\s*:\\s*(.*?)\\s*$`, "im"));
+  return match?.[1]?.replace(/^['"]|['"]$/g, "").trim();
+}
+function readLooseListOrInline(content, field) {
+  const inline = readLooseField(content, field);
+  const values = [];
+  if (inline && !isListIntroducer2(inline)) {
+    values.push(...inline.replace(/^['"]|['"]$/g, "").split(/[;,]/).map((value) => value.trim()).filter(Boolean));
+  }
+  const blockMatch = content.match(new RegExp(`^\\s*(?:[-*]\\s*)?${escapeRegExp3(field)}\\s*:\\s*\\n((?:^\\s+[-*].*\\n?)+)`, "im"));
+  if (blockMatch) {
+    for (const line of blockMatch[1].split("\n")) {
+      const item = line.match(/^\s*[-*]\s+(.*)$/);
+      if (!item) continue;
+      const value = item[1].trim();
+      if (!value || value === "[]" || value.toLowerCase() === "none") continue;
+      values.push(value);
+    }
+  }
+  return Array.from(new Set(values));
 }
 function readField(content, field) {
   const match = content.match(new RegExp(`^\\s*${escapeRegExp3(field)}\\s*:\\s*(.*?)\\s*$`, "im"));
@@ -86401,7 +89119,7 @@ function isPlaceholderValue(value) {
   const normalized = value.trim().toLowerCase();
   return normalized.length === 0 || normalized === "[]" || normalized === "-" || normalized === "tbd" || normalized === "todo" || normalized === "pending" || normalized === "placeholder" || normalized === "<todo>" || normalized === "<tbd>" || normalized.includes("tbd") || normalized.includes("todo") || normalized.includes("placeholder");
 }
-function isWeakConfidence(value) {
+function isWeakConfidence2(value) {
   if (typeof value === "number") return value < 0.5;
   if (typeof value !== "string") return false;
   const normalized = value.toLowerCase().trim();
@@ -86515,12 +89233,488 @@ function summarizeMetrics(metrics) {
   return entries.map(([key, value]) => `${key}=${String(value)}`).join(", ").slice(0, 48);
 }
 
+// src/cli/commands/project-doctor.ts
+var import_path127 = require("path");
+
+// src/runtime-qa/setup.ts
+var import_child_process31 = require("child_process");
+var import_fs105 = require("fs");
+var import_path125 = require("path");
+var RUNTIME_QA_SETUP_TIMEOUT_MS = 10 * 6e4;
+function setupRuntimeQaPrerequisites(root2 = process.cwd(), options = {}) {
+  const resolvedRoot = (0, import_path125.resolve)(root2);
+  const doctor = diagnoseRuntimeQa(resolvedRoot, options);
+  const steps = buildRuntimeQaSetupPlan(resolvedRoot, doctor, options);
+  const commandRunner = options.commandRunner ?? defaultSetupCommandRunner;
+  if (options.apply === true) {
+    for (const step of steps) {
+      if (step.kind !== "command" || !step.command) {
+        step.status = "skipped";
+        continue;
+      }
+      const result = commandRunner(step.command, resolvedRoot, RUNTIME_QA_SETUP_TIMEOUT_MS);
+      step.status = result.status === 0 && !result.error ? "passed" : "failed";
+      step.exit_code = result.status;
+      step.stdout_preview = preview(result.stdout);
+      step.stderr_preview = preview(result.stderr ?? result.error?.message);
+    }
+  }
+  const failed = steps.filter((step) => step.status === "failed").length;
+  const manual = steps.filter((step) => step.kind === "manual").length;
+  const commands = steps.filter((step) => step.kind === "command").length;
+  return {
+    root: resolvedRoot,
+    applied: options.apply === true,
+    ok: failed === 0 && (options.apply === true ? true : steps.length === 0),
+    doctor,
+    steps,
+    summary: { commands, manual, failed }
+  };
+}
+function buildRuntimeQaSetupPlan(root2, doctor, options = {}) {
+  const platform = options.platform ?? process.platform;
+  const steps = [];
+  const rawConfig = readRuntimeQaConfigRaw(root2);
+  if (doctor.dryRunReport.adapter === "mobile-maestro") {
+    const missingJava = hasIssue(doctor, "runtime-qa-missing-java-17") || doctor.platformChecks.some((check2) => check2.id === "java-17" && !check2.detected);
+    if (missingJava) {
+      steps.push(java17SetupStep(platform));
+    }
+    const missingMaestro = hasIssue(doctor, "runtime-qa-tool-missing") && doctor.dryRunReport.tool_detection?.tool === "maestro";
+    if (missingMaestro) {
+      steps.push(...maestroSetupSteps(platform));
+    }
+  }
+  if (rawConfig?.target === "web" || rawConfig?.adapter === "web-playwright" || doctor.dryRunReport.adapter === "web-playwright") {
+    steps.push(playwrightBrowsersStep(root2));
+  }
+  if (hasIssue(doctor, "runtime-qa-missing-xcode")) {
+    steps.push({
+      id: "xcode-install",
+      title: "Install/select Xcode",
+      kind: "manual",
+      reason: "iOS simulator runtime QA requires Xcode; install Xcode and run xcode-select before rerunning doctor.",
+      status: "pending"
+    });
+  }
+  if (hasIssue(doctor, "runtime-qa-missing-ios-simulator")) {
+    steps.push({
+      id: "ios-simulator-install",
+      title: "Install an iOS simulator runtime",
+      kind: "manual",
+      reason: "Install an iOS Simulator runtime in Xcode Settings > Platforms, then verify with xcrun simctl list devices available.",
+      status: "pending"
+    });
+  }
+  if (hasIssue(doctor, "runtime-qa-missing-android-sdk") || hasIssue(doctor, "runtime-qa-missing-android-emulator")) {
+    steps.push(androidSdkSetupStep(platform));
+  }
+  return dedupeSteps(steps);
+}
+function java17SetupStep(platform) {
+  if (platform === "darwin") {
+    return {
+      id: "java-17-install",
+      title: "Install Java 17 for Maestro",
+      kind: "command",
+      command: "brew install openjdk@17",
+      reason: "Maestro requires Java 17+ and doctor did not detect it.",
+      status: "pending"
+    };
+  }
+  return {
+    id: "java-17-install",
+    title: "Install Java 17 for Maestro",
+    kind: "manual",
+    reason: "Install OpenJDK 17+ with the OS package manager and rerun omc doctor runtime-qa.",
+    status: "pending"
+  };
+}
+function maestroSetupSteps(platform) {
+  if (platform === "darwin") {
+    return [
+      {
+        id: "maestro-tap",
+        title: "Add Maestro Homebrew tap",
+        kind: "command",
+        command: "brew tap mobile-dev-inc/tap",
+        reason: "Maestro is required for mobile-maestro runtime QA.",
+        status: "pending"
+      },
+      {
+        id: "maestro-install",
+        title: "Install Maestro",
+        kind: "command",
+        command: "brew install mobile-dev-inc/tap/maestro",
+        reason: "Maestro is required for mobile-maestro runtime QA.",
+        status: "pending"
+      }
+    ];
+  }
+  return [{
+    id: "maestro-install",
+    title: "Install Maestro",
+    kind: "command",
+    command: 'curl -fsSL "https://get.maestro.mobile.dev" | bash',
+    reason: "Maestro is required for mobile-maestro runtime QA.",
+    status: "pending"
+  }];
+}
+function playwrightBrowsersStep(root2) {
+  const manager = (0, import_fs105.existsSync)((0, import_path125.resolve)(root2, "pnpm-lock.yaml")) ? "pnpm" : (0, import_fs105.existsSync)((0, import_path125.resolve)(root2, "yarn.lock")) ? "yarn" : "npm";
+  const command = manager === "pnpm" ? "pnpm exec playwright install" : manager === "yarn" ? "yarn playwright install" : "npx playwright install";
+  return {
+    id: "playwright-browsers-install",
+    title: "Install Playwright browsers",
+    kind: "command",
+    command,
+    reason: "web-playwright runtime QA needs browser binaries installed.",
+    status: "pending"
+  };
+}
+function androidSdkSetupStep(platform) {
+  if (platform === "darwin") {
+    return {
+      id: "android-sdk-install",
+      title: "Install Android SDK/emulator",
+      kind: "manual",
+      reason: "Install Android Studio or command line tools, then set ANDROID_HOME/ANDROID_SDK_ROOT and install platform-tools plus emulator.",
+      status: "pending"
+    };
+  }
+  return {
+    id: "android-sdk-install",
+    title: "Install Android SDK/emulator",
+    kind: "manual",
+    reason: "Install Android command line tools, set ANDROID_HOME/ANDROID_SDK_ROOT, and install platform-tools plus emulator.",
+    status: "pending"
+  };
+}
+function hasIssue(report2, code) {
+  return report2.issues.some((issue4) => issue4.code === code);
+}
+function dedupeSteps(steps) {
+  const seen = /* @__PURE__ */ new Set();
+  return steps.filter((step) => {
+    if (seen.has(step.id)) return false;
+    seen.add(step.id);
+    return true;
+  });
+}
+function defaultSetupCommandRunner(command, cwd2, timeoutMs) {
+  const result = (0, import_child_process31.spawnSync)(command, {
+    cwd: cwd2,
+    shell: true,
+    encoding: "utf-8",
+    stdio: ["ignore", "pipe", "pipe"],
+    timeout: timeoutMs
+  });
+  return {
+    status: result.status,
+    signal: result.signal,
+    error: result.error,
+    stdout: result.stdout,
+    stderr: result.stderr
+  };
+}
+function preview(value) {
+  if (!value) return void 0;
+  const trimmed = value.trim();
+  if (trimmed.length <= 500) return trimmed;
+  return `${trimmed.slice(0, 500)}...`;
+}
+
+// src/cli/commands/state-hygiene.ts
+var import_child_process32 = require("child_process");
+var import_path126 = require("path");
+init_formatting();
+var ROOT_RUNTIME_DIRECTORIES = /* @__PURE__ */ new Set(["logs", "sessions", "state", "telemetry"]);
+var ROOT_RUNTIME_FILES = /* @__PURE__ */ new Set([
+  ".fingerprint-history.json",
+  "notepad.md",
+  "project-memory.json"
+]);
+async function stateHygieneCommand(root2, options, logger = console) {
+  const report2 = runStateHygiene(root2, { apply: options.apply === true });
+  logger.log(options.json ? JSON.stringify(report2, null, 2) : renderStateHygieneReport(report2));
+  return report2.ok ? 0 : 1;
+}
+function runStateHygiene(root2, options = {}) {
+  const report2 = inspectStateHygiene(root2);
+  if (options.apply && report2.gitRoot && report2.trackedRuntimeFiles.length > 0) {
+    try {
+      untrackFiles(report2.gitRoot, report2.trackedRuntimeFiles);
+      report2.applied = true;
+      report2.trackedRuntimeFiles = listTrackedRuntimeFiles(report2.gitRoot);
+      report2.trackedRuntimeFileCount = report2.trackedRuntimeFiles.length;
+      report2.ok = report2.trackedRuntimeFileCount === 0;
+      report2.issues = report2.ok ? [] : [trackedRuntimeStateIssue()];
+    } catch (error2) {
+      report2.ok = false;
+      report2.issues.push({
+        severity: "error",
+        code: "git-rm-cached-failed",
+        message: error2 instanceof Error ? error2.message : String(error2)
+      });
+    }
+  }
+  return report2;
+}
+function inspectStateHygiene(root2) {
+  const resolvedRoot = (0, import_path126.resolve)(root2 ?? process.cwd());
+  const gitRoot = findGitRoot(resolvedRoot);
+  if (!gitRoot) {
+    return {
+      ok: false,
+      root: resolvedRoot,
+      gitRoot: null,
+      applied: false,
+      trackedRuntimeFileCount: 0,
+      trackedRuntimeFiles: [],
+      issues: [{
+        severity: "error",
+        code: "not-a-git-repository",
+        message: "Root is not inside a git repository."
+      }]
+    };
+  }
+  const trackedRuntimeFiles = listTrackedRuntimeFiles(gitRoot);
+  return {
+    ok: trackedRuntimeFiles.length === 0,
+    root: resolvedRoot,
+    gitRoot,
+    applied: false,
+    trackedRuntimeFileCount: trackedRuntimeFiles.length,
+    trackedRuntimeFiles,
+    issues: trackedRuntimeFiles.length === 0 ? [] : [trackedRuntimeStateIssue()]
+  };
+}
+function isOmcRuntimeStatePath(path23) {
+  const normalized = path23.replace(/\\/g, "/").replace(/^\.\//, "");
+  const segments = normalized.split("/").filter(Boolean);
+  const firstOmcIndex = segments.indexOf(".omc");
+  if (firstOmcIndex === -1) return false;
+  if (firstOmcIndex > 0) return true;
+  if (segments.indexOf(".omc", 1) !== -1) return true;
+  const secondSegment = segments[1];
+  if (!secondSegment) return false;
+  if (ROOT_RUNTIME_DIRECTORIES.has(secondSegment)) return true;
+  if (segments.length === 2 && ROOT_RUNTIME_FILES.has(secondSegment)) return true;
+  return false;
+}
+function findGitRoot(root2) {
+  try {
+    return (0, import_child_process32.execFileSync)("git", ["-C", root2, "rev-parse", "--show-toplevel"], {
+      encoding: "utf-8",
+      stdio: ["ignore", "pipe", "pipe"]
+    }).trim();
+  } catch {
+    return null;
+  }
+}
+function listTrackedRuntimeFiles(gitRoot) {
+  const raw = (0, import_child_process32.execFileSync)("git", ["-C", gitRoot, "ls-files", "-z"], {
+    encoding: "utf-8",
+    stdio: ["ignore", "pipe", "pipe"]
+  });
+  return raw.split("\0").filter(Boolean).filter(isOmcRuntimeStatePath).sort((a, b) => a.localeCompare(b));
+}
+function untrackFiles(gitRoot, paths2) {
+  const chunkSize = 100;
+  for (let index = 0; index < paths2.length; index += chunkSize) {
+    const chunk = paths2.slice(index, index + chunkSize);
+    (0, import_child_process32.execFileSync)("git", ["-C", gitRoot, "rm", "--cached", "--ignore-unmatch", "--", ...chunk], {
+      encoding: "utf-8",
+      stdio: ["ignore", "pipe", "pipe"]
+    });
+  }
+}
+function trackedRuntimeStateIssue() {
+  return {
+    severity: "error",
+    code: "tracked-runtime-state",
+    message: "OMC runtime state is tracked by git. Re-run with --apply to remove it from the index while keeping files on disk."
+  };
+}
+function renderStateHygieneReport(report2) {
+  const lines = [
+    colors.bold("OMC state hygiene"),
+    `root: ${report2.root}`,
+    `gitRoot: ${report2.gitRoot ?? "none"}`,
+    `trackedRuntimeFiles: ${report2.trackedRuntimeFileCount}`
+  ];
+  if (report2.trackedRuntimeFiles.length > 0) {
+    lines.push("");
+    lines.push(renderTable(report2.trackedRuntimeFiles.map((path23) => ({ path: path23 })), [
+      { header: "tracked runtime path", field: "path", width: 100 }
+    ]));
+  }
+  if (report2.issues.length > 0) {
+    lines.push("");
+    lines.push(renderTable(report2.issues.map((issue4) => ({
+      severity: issue4.severity === "error" ? colors.red(issue4.severity) : colors.yellow(issue4.severity),
+      code: issue4.code,
+      message: issue4.message
+    })), [
+      { header: "severity", field: "severity", width: 10 },
+      { header: "code", field: "code", width: 26 },
+      { header: "message", field: "message", width: 90 }
+    ]));
+  }
+  lines.push("");
+  if (report2.ok) {
+    lines.push(colors.green(report2.applied ? "Pass: runtime state removed from git index." : "Pass: no runtime state is tracked."));
+  } else {
+    lines.push(colors.red("Fail: tracked runtime state found."));
+  }
+  return lines.join("\n");
+}
+
+// src/cli/commands/project-doctor.ts
+init_formatting();
+async function projectDoctorCommand(root2, options, logger = console) {
+  const report2 = inspectProjectDoctor(root2, options);
+  logger.log(options.json ? JSON.stringify(report2, null, 2) : renderProjectDoctorReport(report2));
+  return report2.ok ? 0 : 1;
+}
+function inspectProjectDoctor(root2, options = {}) {
+  const resolvedRoot = (0, import_path127.resolve)(root2 ?? process.cwd());
+  const stateHygiene = runStateHygiene(resolvedRoot, { apply: options.applyStateHygiene === true });
+  const runtimeQaApplies = shouldRunRuntimeQa(resolvedRoot);
+  const runtimeQaSetup = runtimeQaApplies ? setupRuntimeQaPrerequisites(resolvedRoot, { apply: options.applyRuntimeQaSetup === true }) : void 0;
+  const checks = [
+    stateHygieneCheck(stateHygiene),
+    runtimeQaCheck(runtimeQaSetup)
+  ];
+  const passed = checks.filter((check2) => check2.status === "pass").length;
+  const warnings = checks.filter((check2) => check2.status === "warning").length;
+  const failed = checks.filter((check2) => check2.status === "fail").length;
+  const skipped = checks.filter((check2) => check2.status === "skipped").length;
+  return {
+    ok: failed === 0,
+    root: resolvedRoot,
+    applied: {
+      stateHygiene: stateHygiene.applied,
+      runtimeQaSetup: runtimeQaSetup?.applied ?? false
+    },
+    checks,
+    stateHygiene,
+    runtimeQaSetup,
+    summary: { passed, warnings, failed, skipped }
+  };
+}
+function renderProjectDoctorReport(report2) {
+  const lines = [
+    colors.bold("OMC project doctor"),
+    `root: ${report2.root}`
+  ];
+  lines.push("");
+  lines.push(renderTable(report2.checks.map((check2) => ({
+    check: check2.label,
+    status: colorStatus(check2.status),
+    summary: check2.summary,
+    next: check2.recommendation ?? "-"
+  })), [
+    { header: "check", field: "check", width: 26 },
+    { header: "status", field: "status", width: 10 },
+    { header: "summary", field: "summary", width: 72 },
+    { header: "next", field: "next", width: 72 }
+  ]));
+  if (report2.runtimeQaSetup?.steps.length) {
+    lines.push("");
+    lines.push(colors.bold("Runtime QA setup plan"));
+    for (const step of report2.runtimeQaSetup.steps) {
+      lines.push(`  - ${step.title}: ${step.status}${step.command ? ` (${step.command})` : ""}`);
+    }
+  }
+  lines.push("");
+  lines.push(report2.ok ? colors.green(`Pass: ${report2.summary.passed} passed, ${report2.summary.warnings} warning(s), ${report2.summary.skipped} skipped.`) : colors.red(`Fail: ${report2.summary.failed} failed, ${report2.summary.warnings} warning(s), ${report2.summary.skipped} skipped.`));
+  return lines.join("\n");
+}
+function stateHygieneCheck(report2) {
+  if (report2.ok) {
+    return {
+      id: "state-hygiene",
+      label: "State hygiene",
+      ok: true,
+      status: "pass",
+      summary: report2.applied ? "Runtime state was removed from the git index." : "No tracked runtime state was found."
+    };
+  }
+  const notGit = report2.issues.some((issue4) => issue4.code === "not-a-git-repository");
+  if (notGit) {
+    return {
+      id: "state-hygiene",
+      label: "State hygiene",
+      ok: true,
+      status: "warning",
+      summary: "Project root is not inside a git repository.",
+      recommendation: "Run from a project git root to enable runtime state hygiene."
+    };
+  }
+  return {
+    id: "state-hygiene",
+    label: "State hygiene",
+    ok: false,
+    status: "fail",
+    summary: `${report2.trackedRuntimeFileCount} runtime state file(s) are tracked by git.`,
+    recommendation: "Run `omc state-hygiene --apply` or `omc setup --apply-project-fixes`."
+  };
+}
+function runtimeQaCheck(report2) {
+  if (!report2) {
+    return {
+      id: "runtime-qa",
+      label: "Runtime QA",
+      ok: true,
+      status: "skipped",
+      summary: "No runtime QA config or cycle signal was detected."
+    };
+  }
+  const commandSteps = report2.steps.filter((step) => step.kind === "command");
+  const manualSteps = report2.steps.filter((step) => step.kind === "manual");
+  const runtimeErrors = report2.doctor.summary.errors;
+  const failedSetupSteps = report2.summary.failed;
+  if (runtimeErrors === 0 && failedSetupSteps === 0 && report2.steps.length === 0) {
+    return {
+      id: "runtime-qa",
+      label: "Runtime QA",
+      ok: true,
+      status: "pass",
+      summary: `Runtime QA is ready with ${report2.doctor.summary.warnings} warning(s).`
+    };
+  }
+  return {
+    id: "runtime-qa",
+    label: "Runtime QA",
+    ok: false,
+    status: "fail",
+    summary: `${runtimeErrors} doctor error(s), ${commandSteps.length} command setup step(s), ${manualSteps.length} manual setup step(s).`,
+    recommendation: runtimeQaRecommendation(report2, commandSteps.length, manualSteps.length)
+  };
+}
+function runtimeQaRecommendation(report2, commandSteps, manualSteps) {
+  if (!report2.applied && commandSteps > 0) {
+    return "Run `omc runtime-qa setup --apply` for command steps, then `omc doctor runtime-qa`.";
+  }
+  if (manualSteps > 0) {
+    return "Complete manual platform setup steps, then run `omc doctor runtime-qa`.";
+  }
+  return "Run `omc doctor runtime-qa` for fixture, handoff freshness, and runtime evidence details.";
+}
+function colorStatus(status) {
+  if (status === "pass") return colors.green(status);
+  if (status === "fail") return colors.red(status);
+  if (status === "warning") return colors.yellow(status);
+  return status;
+}
+
 // src/cli/commands/product-cycle.ts
 init_formatting();
 
 // src/product/cycle-fsm.ts
-var import_fs101 = require("fs");
-var import_path121 = require("path");
+var import_fs106 = require("fs");
+var import_path128 = require("path");
 var LEARNING_RELATIVE_PATH = ".omc/learning/current.md";
 var STAGES = ["discover", "rank", "select", "spec", "build", "verify", "learn", "complete"];
 var STAGE_SET = /* @__PURE__ */ new Set([...STAGES, "blocked"]);
@@ -86537,13 +89731,13 @@ function isProductCycleStage(value) {
   return STAGE_SET.has(value);
 }
 function getProductCyclePath(root2 = process.cwd()) {
-  return (0, import_path121.resolve)(root2, CYCLE_PROJECTION_RELATIVE_PATH);
+  return (0, import_path128.resolve)(root2, CYCLE_PROJECTION_RELATIVE_PATH);
 }
 function readProductCycle(root2 = process.cwd()) {
-  const resolvedRoot = (0, import_path121.resolve)(root2);
-  const jsonPath = (0, import_path121.resolve)(resolvedRoot, CYCLE_DOCUMENT_RELATIVE_PATH);
+  const resolvedRoot = (0, import_path128.resolve)(root2);
+  const jsonPath = (0, import_path128.resolve)(resolvedRoot, CYCLE_DOCUMENT_RELATIVE_PATH);
   const projectionPath = getProductCyclePath(resolvedRoot);
-  if ((0, import_fs101.existsSync)(jsonPath)) {
+  if ((0, import_fs106.existsSync)(jsonPath)) {
     try {
       const document = readCycleDocument(resolvedRoot);
       if (!document) throw new Error(`Missing ${CYCLE_DOCUMENT_RELATIVE_PATH}`);
@@ -86565,7 +89759,7 @@ function readProductCycle(root2 = process.cwd()) {
       };
     }
   }
-  if (!(0, import_fs101.existsSync)(projectionPath)) {
+  if (!(0, import_fs106.existsSync)(projectionPath)) {
     return {
       exists: false,
       root: resolvedRoot,
@@ -86578,7 +89772,7 @@ function readProductCycle(root2 = process.cwd()) {
       }]
     };
   }
-  const content = (0, import_fs101.readFileSync)(projectionPath, "utf-8");
+  const content = (0, import_fs106.readFileSync)(projectionPath, "utf-8");
   const stage = parseStage(readField2(content, "cycle_stage"));
   const snapshot = {
     exists: true,
@@ -86613,7 +89807,7 @@ function validateProductCycle(root2 = process.cwd()) {
       message: `${issue4.artifact}: ${issue4.message}`
     });
   }
-  if (snapshot.stage === "complete" && !(0, import_fs101.existsSync)((0, import_path121.resolve)(snapshot.root, LEARNING_RELATIVE_PATH))) {
+  if (snapshot.stage === "complete" && !(0, import_fs106.existsSync)((0, import_path128.resolve)(snapshot.root, LEARNING_RELATIVE_PATH))) {
     snapshot.issues.push({
       severity: "error",
       code: "complete-learning-missing",
@@ -86623,7 +89817,7 @@ function validateProductCycle(root2 = process.cwd()) {
   return snapshot;
 }
 function advanceProductCycle(options) {
-  const root2 = (0, import_path121.resolve)(options.root ?? process.cwd());
+  const root2 = (0, import_path128.resolve)(options.root ?? process.cwd());
   const to = options.to;
   const before = readProductCycle(root2);
   const issues = [];
@@ -86671,7 +89865,7 @@ function advanceProductCycle(options) {
     }
     writeCycleDocument(root2, updateCycleDocumentStage(document, to));
   } else {
-    const content = (0, import_fs101.readFileSync)(before.path, "utf-8");
+    const content = (0, import_fs106.readFileSync)(before.path, "utf-8");
     writeCycle(root2, updateCycleStage(content, to));
   }
   const after = readProductCycle(root2);
@@ -86712,12 +89906,25 @@ function transitionGuardIssues(root2, from, to) {
       });
     }
   }
-  if (from === "learn" && to === "complete" && !(0, import_fs101.existsSync)((0, import_path121.resolve)(root2, LEARNING_RELATIVE_PATH))) {
+  if (from === "learn" && to === "complete" && !(0, import_fs106.existsSync)((0, import_path128.resolve)(root2, LEARNING_RELATIVE_PATH))) {
     issues.push({
       severity: "error",
       code: "learning-missing",
       message: `Cannot complete before ${LEARNING_RELATIVE_PATH} exists`
     });
+  }
+  if (from === "learn" && to === "complete") {
+    const report2 = diagnoseRuntimeQa(root2);
+    const runtimeQaApplies = report2.shouldRun || report2.configExists || report2.handoffExists;
+    if (runtimeQaApplies) {
+      for (const issue4 of report2.issues.filter((entry) => entry.severity === "error")) {
+        issues.push({
+          severity: "error",
+          code: issue4.code,
+          message: `Cannot complete while runtime QA is not current: ${issue4.message}`
+        });
+      }
+    }
   }
   return issues;
 }
@@ -86727,12 +89934,12 @@ function isLegalTransition(from, to) {
 }
 function writeCycle(root2, content) {
   const path23 = getProductCyclePath(root2);
-  (0, import_fs101.mkdirSync)((0, import_path121.dirname)(path23), { recursive: true });
-  (0, import_fs101.writeFileSync)(path23, content, "utf-8");
+  (0, import_fs106.mkdirSync)((0, import_path128.dirname)(path23), { recursive: true });
+  (0, import_fs106.writeFileSync)(path23, content, "utf-8");
 }
 function createCycleDocumentTemplate(goal) {
   const date3 = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-  const slug = slugify(goal);
+  const slug = slugify2(goal);
   return {
     schema_version: 1,
     cycle_id: `${date3}-${slug}`,
@@ -86816,8 +90023,8 @@ function snapshotFromDocument(root2, path23, document) {
   };
 }
 function projectionDriftIssue(root2, document) {
-  const projectionPath = (0, import_path121.resolve)(root2, CYCLE_PROJECTION_RELATIVE_PATH);
-  if (!(0, import_fs101.existsSync)(projectionPath)) {
+  const projectionPath = (0, import_path128.resolve)(root2, CYCLE_PROJECTION_RELATIVE_PATH);
+  if (!(0, import_fs106.existsSync)(projectionPath)) {
     return {
       severity: "warning",
       code: "missing-cycle-projection",
@@ -86825,7 +90032,7 @@ function projectionDriftIssue(root2, document) {
     };
   }
   const expected = normalizeProjection(renderCycleProjection(document));
-  const actual = normalizeProjection((0, import_fs101.readFileSync)(projectionPath, "utf-8"));
+  const actual = normalizeProjection((0, import_fs106.readFileSync)(projectionPath, "utf-8"));
   if (expected === actual) return void 0;
   return {
     severity: "warning",
@@ -86917,7 +90124,7 @@ function parseStage(raw) {
   const normalized = raw.toLowerCase();
   return isProductCycleStage(normalized) ? normalized : void 0;
 }
-function slugify(input) {
+function slugify2(input) {
   const slug = input.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 48);
   return slug || "cycle";
 }
@@ -86925,542 +90132,481 @@ function escapeRegExp4(input) {
   return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-// src/product/cycle-runner.ts
-var import_fs110 = require("fs");
+// src/product/cycle-repair.ts
+var import_fs108 = require("fs");
 var import_path130 = require("path");
-var import_child_process30 = require("child_process");
 
-// src/product/portfolio-ledger.ts
-var import_fs102 = require("fs");
-var import_path122 = require("path");
-var PORTFOLIO_LEDGER_RELATIVE_PATH = ".omc/portfolio/current.json";
-var PORTFOLIO_PROJECTION_RELATIVE_PATH = ".omc/portfolio/current.md";
-var OPPORTUNITIES_RELATIVE_PATH = ".omc/opportunities/current.md";
-var VALID_LANES = /* @__PURE__ */ new Set([
-  "product",
-  "ux",
-  "research",
-  "backend",
-  "quality",
-  "brand-content",
-  "distribution"
-]);
-var VALID_STATUSES2 = /* @__PURE__ */ new Set([
-  "candidate",
-  "selected",
-  "in_progress",
-  "done",
-  "blocked",
-  "deferred",
-  "rejected"
-]);
-function getPortfolioLedgerPath(root2 = process.cwd()) {
-  return (0, import_path122.resolve)(root2, PORTFOLIO_LEDGER_RELATIVE_PATH);
+// src/product/learning-document.ts
+var import_fs107 = require("fs");
+var import_path129 = require("path");
+var LEARNING_DOCUMENT_RELATIVE_PATH = ".omc/learning/current.json";
+var LEARNING_PROJECTION_RELATIVE_PATH = ".omc/learning/current.md";
+function getLearningDocumentPath(root2 = process.cwd()) {
+  return (0, import_path129.resolve)(root2, LEARNING_DOCUMENT_RELATIVE_PATH);
 }
-function readPortfolioLedger(root2 = process.cwd()) {
-  const path23 = getPortfolioLedgerPath(root2);
-  if (!(0, import_fs102.existsSync)(path23)) return void 0;
-  return JSON.parse((0, import_fs102.readFileSync)(path23, "utf-8"));
+function getLearningProjectionPath(root2 = process.cwd()) {
+  return (0, import_path129.resolve)(root2, LEARNING_PROJECTION_RELATIVE_PATH);
 }
-function validatePortfolioLedger(root2 = process.cwd()) {
-  const path23 = getPortfolioLedgerPath(root2);
+function readLearningDocument(root2 = process.cwd()) {
+  const path23 = getLearningDocumentPath(root2);
+  if (!(0, import_fs107.existsSync)(path23)) return void 0;
+  return JSON.parse((0, import_fs107.readFileSync)(path23, "utf-8"));
+}
+function validateLearningDocument(root2 = process.cwd()) {
+  const path23 = getLearningDocumentPath(root2);
   const issues = [];
-  let ledger;
-  if (!(0, import_fs102.existsSync)(path23)) {
-    issues.push({
-      severity: "error",
-      code: "missing-ledger",
-      path: path23,
-      message: `Missing ${PORTFOLIO_LEDGER_RELATIVE_PATH}`
-    });
-    return report(path23, ledger, issues);
+  if (!(0, import_fs107.existsSync)(path23)) {
+    issues.push({ severity: "error", code: "missing-document", path: path23, message: `Missing ${LEARNING_DOCUMENT_RELATIVE_PATH}` });
+    return { ok: false, path: path23, issues };
   }
+  let document;
   try {
-    ledger = JSON.parse((0, import_fs102.readFileSync)(path23, "utf-8"));
+    document = JSON.parse((0, import_fs107.readFileSync)(path23, "utf-8"));
   } catch (error2) {
-    issues.push({
-      severity: "error",
-      code: "invalid-json",
-      path: path23,
-      message: error2 instanceof Error ? error2.message : String(error2)
-    });
-    return report(path23, ledger, issues);
+    issues.push({ severity: "error", code: "invalid-json", path: path23, message: error2 instanceof Error ? error2.message : String(error2) });
+    return { ok: false, path: path23, issues };
   }
-  validateLedgerShape(path23, ledger, issues, readActiveCycleId(root2));
-  return report(path23, ledger, issues);
+  validateDocumentShape2(path23, document, issues);
+  return { ok: !issues.some((entry) => entry.severity === "error"), path: path23, document, issues };
 }
-function renderPortfolioProjection(ledger) {
-  const rows = [...ledger.items].sort((a, b) => {
-    if (a.selected_cycle && !b.selected_cycle) return -1;
-    if (!a.selected_cycle && b.selected_cycle) return 1;
-    return `${a.lane}:${a.id}`.localeCompare(`${b.lane}:${b.id}`);
-  });
-  const table = rows.map((item) => [
-    item.id,
-    item.lane,
-    item.status,
-    String(item.confidence),
-    item.selected_cycle ?? "",
-    item.dependencies.join(", "),
-    item.title
-  ]);
-  return [
-    "# Portfolio Ledger",
-    "",
-    `schema_version: ${ledger.schema_version}`,
-    `updated_at: ${ledger.updated_at}`,
-    "",
-    "| ID | Lane | Status | Confidence | Selected Cycle | Dependencies | Title |",
-    "| --- | --- | --- | --- | --- | --- | --- |",
-    ...table.map((row) => `| ${row.map(escapeCell).join(" | ")} |`),
-    "",
-    "## Source Artifacts",
-    ...ledger.source_artifacts.map((source) => `- ${source}`),
-    ""
-  ].join("\n");
+function writeLearningDocument(root2, doc) {
+  const jsonPath = getLearningDocumentPath(root2);
+  (0, import_fs107.mkdirSync)((0, import_path129.dirname)(jsonPath), { recursive: true });
+  (0, import_fs107.writeFileSync)(jsonPath, `${JSON.stringify(doc, null, 2)}
+`, "utf-8");
+  const projectionPath = writeLearningProjection(root2, doc);
+  return { jsonPath, projectionPath };
 }
-function writePortfolioProjection(root2 = process.cwd(), path23) {
-  const ledger = readPortfolioLedger(root2);
-  if (!ledger) {
-    throw new Error(`Missing ${PORTFOLIO_LEDGER_RELATIVE_PATH}`);
-  }
-  const outputPath = (0, import_path122.resolve)(root2, path23 ?? PORTFOLIO_PROJECTION_RELATIVE_PATH);
-  (0, import_fs102.mkdirSync)((0, import_path122.dirname)(outputPath), { recursive: true });
-  (0, import_fs102.writeFileSync)(outputPath, renderPortfolioProjection(ledger), "utf-8");
-  return outputPath;
+function writeLearningProjection(root2, document) {
+  const doc = document ?? readLearningDocument(root2);
+  if (!doc) throw new Error(`Missing ${LEARNING_DOCUMENT_RELATIVE_PATH}`);
+  const projectionPath = getLearningProjectionPath(root2);
+  (0, import_fs107.mkdirSync)((0, import_path129.dirname)(projectionPath), { recursive: true });
+  (0, import_fs107.writeFileSync)(projectionPath, renderLearningProjection(doc), "utf-8");
+  return projectionPath;
 }
-function migrateOpportunitiesToPortfolioLedger(root2 = process.cwd(), options = {}) {
-  const resolvedRoot = (0, import_path122.resolve)(root2);
-  const sourcePath = (0, import_path122.resolve)(resolvedRoot, options.source ?? OPPORTUNITIES_RELATIVE_PATH);
-  const outputPath = getPortfolioLedgerPath(resolvedRoot);
+function renderLearningProjection(doc) {
+  const evidence = bulletList(doc.evidence_collected);
+  const userLearning = bulletList(doc.user_product_learning);
+  const assumptions = bulletList(doc.invalidated_assumptions);
+  const adjustments = bulletList(doc.next_candidate_adjustments);
+  const footerEvidence = bulletList(doc.footer.evidence);
+  const blocking = doc.footer.blocking_issues.length === 0 ? "  - []" : doc.footer.blocking_issues.map((entry) => `  - ${entry}`).join("\n");
+  const artifacts = bulletList(doc.footer.artifacts_written);
+  return `# Learning: ${doc.cycle_id}
+
+cycle_id: ${doc.cycle_id}
+schema_source: ${LEARNING_DOCUMENT_RELATIVE_PATH}
+captured_at: ${doc.captured_at}
+
+## Shipped outcome
+${doc.shipped_outcome.trim() || "_pending_"}
+
+## Evidence collected
+${evidence}
+
+## User/product learning
+${userLearning}
+
+## Invalidated assumptions
+${assumptions}
+
+## Recommended next cycle
+${doc.recommended_next_cycle.trim() || "_pending_"}
+
+## Next candidate adjustments
+${adjustments}
+
+status: ${doc.footer.status}
+evidence:
+${footerEvidence}
+confidence: ${doc.footer.confidence}
+blocking_issues:
+${blocking}
+next_action: ${doc.footer.next_action}
+artifacts_written:
+${artifacts}
+`;
+}
+function migrateLearningMarkdownToJson(root2 = process.cwd(), options = {}) {
+  const resolvedRoot = (0, import_path129.resolve)(root2);
+  const sourcePath = (0, import_path129.resolve)(resolvedRoot, options.source ?? LEARNING_PROJECTION_RELATIVE_PATH);
+  const jsonPath = getLearningDocumentPath(resolvedRoot);
   const issues = [];
-  if (!(0, import_fs102.existsSync)(sourcePath)) {
-    issues.push(issue3(sourcePath, "error", "missing-opportunities", `Missing ${(0, import_path122.relative)(resolvedRoot, sourcePath)}`));
-    return { ok: false, sourcePath, outputPath, wrote: false, issues };
+  if (!(0, import_fs107.existsSync)(sourcePath)) {
+    issues.push({ severity: "error", code: "missing-source", path: sourcePath, message: `Missing ${(0, import_path129.relative)(resolvedRoot, sourcePath)}` });
+    return { ok: false, sourcePath, jsonPath, wrote: false, issues };
   }
-  if (options.write && (0, import_fs102.existsSync)(outputPath) && !options.force) {
-    issues.push(issue3(outputPath, "error", "ledger-exists", `${PORTFOLIO_LEDGER_RELATIVE_PATH} already exists; pass --force to overwrite`));
-    return { ok: false, sourcePath, outputPath, wrote: false, issues };
+  if (options.write && (0, import_fs107.existsSync)(jsonPath) && !options.force) {
+    issues.push({ severity: "error", code: "json-exists", path: jsonPath, message: `${LEARNING_DOCUMENT_RELATIVE_PATH} already exists; pass --force to overwrite` });
+    return { ok: false, sourcePath, jsonPath, wrote: false, issues };
   }
-  const content = (0, import_fs102.readFileSync)(sourcePath, "utf-8");
-  const sourceArtifact = (0, import_path122.relative)(resolvedRoot, sourcePath);
-  const items = extractPortfolioItemsFromOpportunities(content, sourceArtifact);
-  if (items.length === 0) {
-    issues.push(issue3(sourcePath, "error", "no-candidates-found", "Could not find candidate moves in markdown tables or id: blocks"));
-  }
-  const cycleId = inferSelectedCycleId(content, options.now);
-  applySelectedCycle(content, items, cycleId);
-  const ledger = {
-    schema_version: 1,
-    updated_at: options.now ?? (/* @__PURE__ */ new Date()).toISOString(),
-    source_artifacts: [sourceArtifact],
-    items
-  };
-  validateLedgerShape(outputPath, ledger, issues);
+  const content = (0, import_fs107.readFileSync)(sourcePath, "utf-8");
+  const document = parseLearningMarkdown(content, options);
+  validateDocumentShape2(jsonPath, document, issues);
   const errors = issues.filter((entry) => entry.severity === "error");
   if (errors.length > 0) {
-    return { ok: false, sourcePath, outputPath, wrote: false, ledger, issues };
+    return { ok: false, sourcePath, jsonPath, wrote: false, document, issues };
   }
   let projectionPath;
   if (options.write) {
-    (0, import_fs102.mkdirSync)((0, import_path122.dirname)(outputPath), { recursive: true });
-    (0, import_fs102.writeFileSync)(outputPath, `${JSON.stringify(ledger, null, 2)}
-`, "utf-8");
-    projectionPath = writePortfolioProjection(resolvedRoot);
+    const result = writeLearningDocument(resolvedRoot, document);
+    projectionPath = result.projectionPath;
   }
+  return { ok: true, sourcePath, jsonPath, projectionPath, wrote: Boolean(options.write), document, issues };
+}
+function parseLearningMarkdown(content, options = {}) {
+  const cycleId = options.cycleId ?? matchValue2(content, "cycle_id") ?? deriveCycleIdFromHeading(content);
+  const shippedOutcome = sectionParagraph(content, "Shipped outcome") ?? "";
+  const recommendedNextCycle = sectionParagraph(content, "Recommended next cycle") ?? "";
+  const evidence = sectionList(content, "Evidence collected");
+  const userLearning = sectionList(content, "User\\/product learning");
+  const assumptions = sectionList(content, "Invalidated assumptions");
+  const adjustments = sectionList(content, "Next candidate adjustments");
   return {
-    ok: true,
-    sourcePath,
-    outputPath,
-    projectionPath,
-    wrote: Boolean(options.write),
-    ledger,
-    issues
+    schema_version: 1,
+    cycle_id: cycleId,
+    shipped_outcome: shippedOutcome.trim(),
+    evidence_collected: evidence,
+    user_product_learning: userLearning,
+    invalidated_assumptions: assumptions,
+    recommended_next_cycle: recommendedNextCycle.trim(),
+    next_candidate_adjustments: adjustments,
+    footer: parseFooter(content),
+    captured_at: options.now ?? (/* @__PURE__ */ new Date()).toISOString()
   };
 }
-function extractPortfolioItemsFromOpportunities(content, sourceArtifact) {
-  const fromTables = extractItemsFromTables(content, sourceArtifact);
-  const fromBlocks = extractItemsFromIdBlocks(content, sourceArtifact);
-  return dedupeItems([...fromTables, ...fromBlocks]);
-}
-function extractItemsFromTables(content, sourceArtifact) {
-  const lines = content.split("\n");
-  const items = [];
-  for (let index = 0; index < lines.length - 1; index += 1) {
-    if (!isMarkdownTableRow(lines[index]) || !isMarkdownSeparator(lines[index + 1])) continue;
-    const headers = splitMarkdownRow(lines[index]).map(normalizeHeader);
-    if (!headers.includes("lane") || !headers.some((header) => ["id", "candidate", "move", "title"].includes(header))) {
-      continue;
-    }
-    let rowIndex = index + 2;
-    while (rowIndex < lines.length && isMarkdownTableRow(lines[rowIndex])) {
-      if (!isMarkdownSeparator(lines[rowIndex])) {
-        const cells = splitMarkdownRow(lines[rowIndex]);
-        const item = itemFromCells(headers, cells, sourceArtifact);
-        if (item) items.push(item);
-      }
-      rowIndex += 1;
-    }
-    index = rowIndex;
-  }
-  return items;
-}
-function extractItemsFromIdBlocks(content, sourceArtifact) {
-  const blocks = [...content.matchAll(/(?:^|\n)\s*(?:[-*]\s*)?id:\s*([a-z0-9][a-z0-9-]*)[\s\S]*?(?=\n\s*(?:[-*]\s*)?id:\s*[a-z0-9]|\n#{1,6}\s|$)/gi)];
-  return blocks.map((match) => {
-    const block = match[0];
-    const id = match[1];
-    const values = parseKeyValueBlock(block);
-    return normalizeWorkItem({
-      id,
-      title: values.title ?? values.name ?? humanizeSlug(id),
-      lane: values.lane,
-      type: values.type,
-      status: values.status,
-      confidence: values.confidence,
-      dependencies: values.dependencies,
-      selected_cycle: values.selectedcycle,
-      evidence: values.evidence,
-      expected_learning: values.expectedlearning ?? values.learning,
-      dependency_unlock: values.dependencyunlock ?? values.unlock,
-      user_visible: values.uservisible
-    }, sourceArtifact);
-  }).filter((item) => Boolean(item));
-}
-function itemFromCells(headers, cells, sourceArtifact) {
-  const get = (...names) => {
-    for (const name of names) {
-      const index = headers.indexOf(name);
-      if (index >= 0 && cells[index]?.trim()) return cells[index].trim();
-    }
-    return void 0;
-  };
-  const rawTitle = get("title", "candidate", "move", "workitem") ?? "";
-  const rawId = get("id", "candidateid", "moveid") ?? rawTitle;
-  if (!rawId && !rawTitle) return void 0;
-  return normalizeWorkItem({
-    id: slugify2(rawId || rawTitle),
-    title: rawTitle || humanizeSlug(slugify2(rawId)),
-    lane: get("lane"),
-    type: get("type"),
-    status: get("status"),
-    confidence: get("confidence"),
-    dependencies: get("dependencies", "dependency", "depends"),
-    selected_cycle: get("selectedcycle", "cycle"),
-    evidence: get("evidence", "source", "sources"),
-    expected_learning: get("expectedlearning", "learning"),
-    dependency_unlock: get("dependencyunlock", "unlock"),
-    user_visible: get("uservisible")
-  }, sourceArtifact);
-}
-function normalizeWorkItem(input, sourceArtifact) {
-  const id = slugify2(String(input.id ?? ""));
-  if (!id) return void 0;
-  const title = String(input.title ?? humanizeSlug(id)).trim() || humanizeSlug(id);
-  const lane = normalizeLane(input.lane, `${title} ${input.type ?? ""}`);
-  const type = normalizeType(input.type, lane);
-  const confidence = normalizeConfidence(input.confidence);
-  const evidence = splitList(input.evidence).filter(Boolean);
-  const selectedCycle = typeof input.selected_cycle === "string" && input.selected_cycle.trim() ? slugify2(input.selected_cycle) : null;
+function parseFooter(content) {
   return {
-    id,
-    title,
-    lane,
-    type,
-    status: normalizeStatus(input.status),
-    user_visible: normalizeBoolean(input.user_visible) ?? (lane === "product" || lane === "ux" || lane === "distribution" || lane === "brand-content"),
-    confidence,
-    dependencies: splitList(input.dependencies).map(slugify2).filter(Boolean),
-    selected_cycle: selectedCycle,
-    evidence: evidence.length > 0 ? evidence : [sourceArtifact],
-    expected_learning: typeof input.expected_learning === "string" && input.expected_learning.trim() ? input.expected_learning.trim() : "Migrated from opportunities artifact; refine expected learning on next priority-engine pass.",
-    dependency_unlock: typeof input.dependency_unlock === "string" && input.dependency_unlock.trim() ? input.dependency_unlock.trim() : "Migrated from opportunities artifact; refine dependency unlock on next priority-engine pass."
+    status: matchValue2(content, "status") ?? "unknown",
+    confidence: parseConfidence2(matchValue2(content, "confidence")),
+    evidence: parseList2(content, "evidence"),
+    blocking_issues: parseList2(content, "blocking_issues").filter((entry) => entry.toLowerCase() !== "none"),
+    next_action: matchValue2(content, "next_action") ?? "",
+    artifacts_written: parseList2(content, "artifacts_written")
   };
 }
-function applySelectedCycle(content, items, cycleId) {
-  const selectedTargets = extractSelectedTargets(content);
-  for (const target of selectedTargets) {
-    const match = findBestItemMatch(items, target.text, target.lane);
-    if (!match) continue;
-    match.status = "selected";
-    match.selected_cycle = cycleId;
-    match.type = target.type;
-    match.user_visible = target.type === "core-product-slice" ? true : match.user_visible;
-  }
-  for (const item of items) {
-    if (item.status === "selected" && !item.selected_cycle) {
-      item.selected_cycle = cycleId;
+function deriveCycleIdFromHeading(content) {
+  const heading = content.match(/^#\s+Learning:\s*([a-z0-9][a-z0-9-]*)/im);
+  if (heading) return heading[1];
+  const dated = content.match(/\b(20\d{2}-\d{2}-\d{2})\b/);
+  return `${dated?.[1] ?? "0000-00-00"}-learning`;
+}
+function sectionParagraph(content, header) {
+  const pattern = new RegExp(`(?:^|\\n)#{1,6}\\s*${header}\\s*\\n([\\s\\S]*?)(?=\\n#{1,6}\\s|\\nstatus:|$)`, "i");
+  return content.match(pattern)?.[1]?.trim();
+}
+function sectionList(content, header) {
+  const section = sectionParagraph(content, header);
+  if (!section) return [];
+  const lines = section.split("\n");
+  const result = [];
+  let buffer = "";
+  for (const line of lines) {
+    const item = line.match(/^\s*[-*]\s+(.*)$/);
+    if (item) {
+      if (buffer) result.push(buffer.trim());
+      buffer = item[1];
+    } else if (buffer && line.trim().length > 0) {
+      buffer += ` ${line.trim()}`;
+    } else if (buffer && line.trim().length === 0) {
+      result.push(buffer.trim());
+      buffer = "";
+    } else if (!buffer && line.trim().length > 0) {
+      buffer = line.trim();
     }
   }
+  if (buffer) result.push(buffer.trim());
+  return result.filter((entry) => entry && entry !== "[]");
 }
-function extractSelectedTargets(content) {
-  const section = content.match(/(?:^|\n)#{1,6}\s*Selected Cycle Portfolio[\s\S]*?(?=\n#{1,6}\s|$)/i)?.[0] ?? content;
-  const patterns = [
-    { regex: /(?:core_product_slice|core product slice|1\s+core product slice)\s*:\s*(.+)/gi, type: "core-product-slice", lane: "product" },
-    { regex: /(?:enabling_task|enabling task|1\s+enabling task)\s*:\s*(.+)/gi, type: "enabling", lane: "backend" },
-    { regex: /(?:learning_task|learning\/research task|learning task|1\s+learning\/research task|1\s+learning task)\s*:\s*(.+)/gi, type: "learning", lane: "research" }
-  ];
-  const targets = [];
-  for (const pattern of patterns) {
-    for (const match of section.matchAll(pattern.regex)) {
-      const text = match[1]?.replace(/^[-*]\s*/, "").trim();
-      if (text) targets.push({ text, type: pattern.type, lane: pattern.lane });
+function matchValue2(section, key) {
+  const match = section.match(new RegExp(`^\\s*${key}:\\s*(.+?)\\s*$`, "im"));
+  return match?.[1]?.replace(/^['"]|['"]$/g, "").trim();
+}
+function parseList2(content, key) {
+  const out = [];
+  const inline = content.match(new RegExp(`^\\s*${key}:\\s*(.+?)\\s*$`, "im"));
+  if (inline && inline[1] && !inline[1].endsWith(":")) {
+    const value = inline[1].replace(/^['"]|['"]$/g, "").trim();
+    if (value && value !== "[]" && value !== "none" && !value.match(/^[-*]/)) out.push(value);
+  }
+  const block = content.match(new RegExp(`^\\s*${key}:\\s*\\n((?:^\\s+[-*].*\\n?)+)`, "im"));
+  if (block) {
+    for (const line of block[1].split("\n")) {
+      const item = line.match(/^\s*[-*]\s+(.*)$/);
+      if (!item) continue;
+      const value = item[1].trim();
+      if (!value || value === "[]") continue;
+      out.push(value);
     }
   }
-  return targets;
+  return Array.from(new Set(out));
 }
-function findBestItemMatch(items, text, preferredLane) {
-  const normalizedText = compactText2(text);
-  const candidates = preferredLane ? items.filter((item) => item.lane === preferredLane) : items;
-  return candidates.find((item) => {
-    const title = compactText2(item.title);
-    return normalizedText.includes(title) || title.includes(normalizedText) || normalizedText.includes(compactText2(item.id));
-  }) ?? candidates[0];
+function bulletList(items) {
+  if (items.length === 0) return "_none recorded_";
+  return items.map((entry) => `- ${entry}`).join("\n");
 }
-function inferSelectedCycleId(content, now) {
-  const explicit = content.match(/cycle_id:\s*([a-z0-9][a-z0-9-]*)/i)?.[1];
-  if (explicit) return slugify2(explicit);
-  const date3 = content.match(/\b(20\d{2}-\d{2}-\d{2})\b/)?.[1] ?? (now ?? (/* @__PURE__ */ new Date()).toISOString()).slice(0, 10);
-  return `${date3}-migrated-portfolio`;
+function parseConfidence2(value) {
+  if (!value) return "unknown";
+  const numeric = Number(value);
+  if (Number.isFinite(numeric)) return numeric;
+  return value;
 }
-function parseKeyValueBlock(block) {
-  const values = {};
-  for (const line of block.split("\n")) {
-    const match = line.match(/^\s*(?:[-*]\s*)?([a-z_ -]+)\s*:\s*(.+?)\s*$/i);
-    if (!match) continue;
-    values[normalizeHeader(match[1])] = match[2].replace(/^["']|["']$/g, "").trim();
+function validateDocumentShape2(path23, document, issues) {
+  if (document.schema_version !== 1) {
+    issues.push({ severity: "error", code: "invalid-schema-version", path: path23, message: "schema_version must be 1" });
   }
-  return values;
-}
-function dedupeItems(items) {
-  const seen = /* @__PURE__ */ new Map();
-  return items.map((item) => {
-    const count = seen.get(item.id) ?? 0;
-    seen.set(item.id, count + 1);
-    if (count === 0) return item;
-    return { ...item, id: `${item.id}-${count + 1}` };
-  });
-}
-function splitMarkdownRow(line) {
-  return line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((cell) => cell.trim());
-}
-function isMarkdownTableRow(line) {
-  const trimmed = line.trim();
-  return trimmed.startsWith("|") && trimmed.endsWith("|");
-}
-function isMarkdownSeparator(line) {
-  return /^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(line);
-}
-function normalizeHeader(value) {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, "");
-}
-function normalizeLane(value, fallbackText) {
-  const normalized = String(value ?? "").toLowerCase().trim();
-  if (VALID_LANES.has(normalized)) return normalized;
-  const lower = `${normalized} ${fallbackText}`.toLowerCase();
-  if (lower.includes("ux") || lower.includes("ui") || lower.includes("screen")) return "ux";
-  if (lower.includes("research") || lower.includes("interview") || lower.includes("learning")) return "research";
-  if (lower.includes("backend") || lower.includes("schema") || lower.includes("api") || lower.includes("persistence")) return "backend";
-  if (lower.includes("quality") || lower.includes("test") || lower.includes("a11y")) return "quality";
-  if (lower.includes("brand") || lower.includes("content")) return "brand-content";
-  if (lower.includes("distribution") || lower.includes("seo") || lower.includes("channel")) return "distribution";
-  return "product";
-}
-function normalizeStatus(value) {
-  const normalized = String(value ?? "").toLowerCase().trim();
-  return VALID_STATUSES2.has(normalized) ? normalized : "candidate";
-}
-function normalizeType(value, lane) {
-  const normalized = String(value ?? "").toLowerCase().trim();
-  if (["core-product-slice", "enabling", "learning", "research", "quality", "distribution"].includes(normalized)) {
-    return normalized;
+  if (!document.cycle_id || !/^[a-z0-9][a-z0-9-]*$/.test(document.cycle_id)) {
+    issues.push({ severity: "error", code: "invalid-cycle-id", path: path23, message: "cycle_id must be kebab-case and reference an existing cycle" });
   }
-  if (lane === "research") return "learning";
-  if (lane === "backend") return "enabling";
-  if (lane === "quality") return "quality";
-  if (lane === "distribution") return "distribution";
-  return "core-product-slice";
-}
-function normalizeConfidence(value) {
-  const normalized = String(value ?? "").trim();
-  if (/^(high|medium|low)$/i.test(normalized)) return normalized.toUpperCase();
-  const numeric = Number(normalized);
-  return Number.isFinite(numeric) && numeric >= 0 && numeric <= 1 ? numeric : "MEDIUM";
-}
-function normalizeBoolean(value) {
-  if (typeof value === "boolean") return value;
-  if (typeof value !== "string") return void 0;
-  if (/^(true|yes|1)$/i.test(value.trim())) return true;
-  if (/^(false|no|0)$/i.test(value.trim())) return false;
-  return void 0;
-}
-function splitList(value) {
-  if (Array.isArray(value)) return value.map(String);
-  if (typeof value !== "string") return [];
-  return value.replace(/^\[/, "").replace(/\]$/, "").split(/[,;]+/).map((entry) => entry.replace(/^["'\s-]+|["'\s]+$/g, "").trim()).filter(Boolean);
-}
-function slugify2(value) {
-  return value.toLowerCase().replace(/`/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
-}
-function humanizeSlug(value) {
-  return value.split("-").filter(Boolean).map((part) => `${part[0]?.toUpperCase() ?? ""}${part.slice(1)}`).join(" ");
-}
-function compactText2(value) {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, "");
-}
-function validateLedgerShape(path23, ledger, issues, activeCycleId) {
-  if (ledger.schema_version !== 1) {
-    issues.push(issue3(path23, "error", "invalid-schema-version", "schema_version must be 1"));
+  if (!document.shipped_outcome.trim()) {
+    issues.push({ severity: "error", code: "missing-shipped-outcome", path: path23, message: "shipped_outcome must not be empty" });
   }
-  if (!ledger.updated_at || Number.isNaN(Date.parse(ledger.updated_at))) {
-    issues.push(issue3(path23, "error", "invalid-updated-at", "updated_at must be an ISO timestamp"));
+  if (!Array.isArray(document.evidence_collected)) {
+    issues.push({ severity: "error", code: "invalid-evidence-collected", path: path23, message: "evidence_collected must be an array" });
   }
-  if (!Array.isArray(ledger.source_artifacts)) {
-    issues.push(issue3(path23, "error", "invalid-source-artifacts", "source_artifacts must be an array"));
+  if (!Array.isArray(document.user_product_learning)) {
+    issues.push({ severity: "error", code: "invalid-user-product-learning", path: path23, message: "user_product_learning must be an array" });
   }
-  if (!Array.isArray(ledger.items)) {
-    issues.push(issue3(path23, "error", "invalid-items", "items must be an array"));
-    return;
+  if (!Array.isArray(document.invalidated_assumptions)) {
+    issues.push({ severity: "error", code: "invalid-invalidated-assumptions", path: path23, message: "invalidated_assumptions must be an array" });
   }
-  const ids = /* @__PURE__ */ new Set();
-  const selectedByCycle = /* @__PURE__ */ new Map();
-  for (const [index, item] of ledger.items.entries()) {
-    const itemPath = `${path23}#/items/${index}`;
-    validateItem(itemPath, item, issues);
-    if (typeof item.id === "string") {
-      if (ids.has(item.id)) {
-        issues.push(issue3(itemPath, "error", "duplicate-id", `Duplicate item id: ${item.id}`));
-      }
-      ids.add(item.id);
-    }
-    if (item.selected_cycle) {
-      const current = selectedByCycle.get(item.selected_cycle) ?? [];
-      current.push(item);
-      selectedByCycle.set(item.selected_cycle, current);
-    }
+  if (!document.recommended_next_cycle.trim()) {
+    issues.push({ severity: "warning", code: "missing-recommended-next-cycle", path: path23, message: "recommended_next_cycle is empty" });
   }
-  for (const [cycle, items] of selectedByCycle.entries()) {
-    if (activeCycleId && cycle !== activeCycleId) {
-      issues.push(issue3(path23, "error", "selected-cycle-mismatch", `Selected item cycle ${cycle} does not match active cycle_id ${activeCycleId}`));
-    }
-    if (items.length !== 3) {
-      issues.push(issue3(path23, "error", "invalid-selected-cycle-size", `Cycle ${cycle} has ${items.length} selected items; expected exactly 3`));
-    }
-    const core = items.filter((item) => item.type === "core-product-slice");
-    const enabling = items.filter((item) => item.type === "enabling");
-    const learning = items.filter((item) => item.type === "learning" || item.type === "research");
-    if (core.length !== 1 || enabling.length !== 1 || learning.length !== 1) {
-      issues.push(
-        issue3(
-          path23,
-          "error",
-          "invalid-selected-cycle-trio",
-          `Cycle ${cycle} must select exactly one core-product-slice, one enabling, and one learning/research item`
-        )
-      );
-    }
-    const weakImplementationItems = items.filter((item) => (item.type === "core-product-slice" || item.type === "enabling") && isWeakConfidence2(item.confidence));
-    if (weakImplementationItems.length > 0 && learning.length === 0) {
-      issues.push(
-        issue3(
-          path23,
-          "error",
-          "missing-research-debt-task",
-          `Cycle ${cycle} has weak-confidence selected product/enabling work but no selected learning/research debt task`
-        )
-      );
-    }
-  }
-}
-function validateItem(path23, item, issues) {
-  if (!item || typeof item !== "object") {
-    issues.push(issue3(path23, "error", "invalid-item", "Portfolio item must be an object"));
-    return;
-  }
-  if (!item.id || !/^[a-z0-9][a-z0-9-]*$/.test(item.id)) {
-    issues.push(issue3(path23, "error", "invalid-id", "id must be kebab-case and stable"));
-  }
-  if (!item.title || typeof item.title !== "string") {
-    issues.push(issue3(path23, "error", "missing-title", "title is required"));
-  }
-  if (!VALID_LANES.has(item.lane)) {
-    issues.push(issue3(path23, "error", "invalid-lane", `lane must be one of: ${[...VALID_LANES].join(", ")}`));
-  }
-  if (!VALID_STATUSES2.has(item.status)) {
-    issues.push(issue3(path23, "error", "invalid-status", `status must be one of: ${[...VALID_STATUSES2].join(", ")}`));
-  }
-  if (!isValidConfidence(item.confidence)) {
-    issues.push(issue3(path23, "error", "invalid-confidence", "confidence must be HIGH/MEDIUM/LOW or number 0..1"));
-  }
-  if (!Array.isArray(item.dependencies)) {
-    issues.push(issue3(path23, "error", "invalid-dependencies", "dependencies must be an array"));
-  }
-  if (!(item.selected_cycle === null || typeof item.selected_cycle === "string")) {
-    issues.push(issue3(path23, "error", "invalid-selected-cycle", "selected_cycle must be string or null"));
-  }
-  if (!Array.isArray(item.evidence) || item.evidence.length === 0) {
-    issues.push(issue3(path23, "error", "missing-evidence", "evidence must be a non-empty array"));
-  }
-}
-function isValidConfidence(value) {
-  if (typeof value === "number") return Number.isFinite(value) && value >= 0 && value <= 1;
-  return ["HIGH", "MEDIUM", "LOW", "high", "medium", "low"].includes(value);
-}
-function isWeakConfidence2(value) {
-  if (typeof value === "number") return value < 0.5;
-  return value.toLowerCase() === "low";
-}
-function readActiveCycleId(root2) {
-  const jsonPath = (0, import_path122.resolve)(root2, CYCLE_DOCUMENT_RELATIVE_PATH);
-  if ((0, import_fs102.existsSync)(jsonPath)) {
-    try {
-      const parsed = JSON.parse((0, import_fs102.readFileSync)(jsonPath, "utf-8"));
-      return typeof parsed.cycle_id === "string" ? parsed.cycle_id : void 0;
-    } catch {
-      return void 0;
-    }
-  }
-  const projectionPath = (0, import_path122.resolve)(root2, CYCLE_PROJECTION_RELATIVE_PATH);
-  if (!(0, import_fs102.existsSync)(projectionPath)) return void 0;
-  const match = (0, import_fs102.readFileSync)(projectionPath, "utf-8").match(/^\s*cycle_id:\s*([a-z0-9][a-z0-9-]*)\s*$/im);
-  return match?.[1];
-}
-function report(path23, ledger, issues) {
-  const errors = issues.filter((issue4) => issue4.severity === "error").length;
-  const warnings = issues.length - errors;
-  const items = ledger?.items ?? [];
-  return {
-    ok: errors === 0,
-    path: path23,
-    ledger,
-    issues,
-    summary: {
-      items: items.length,
-      selected: items.filter((item) => Boolean(item.selected_cycle)).length,
-      lanes: new Set(items.map((item) => item.lane)).size,
-      errors,
-      warnings
-    }
-  };
-}
-function issue3(path23, severity, code, message) {
-  return { severity, code, path: path23, message };
-}
-function escapeCell(value) {
-  return value.replace(/\|/g, "\\|").replace(/\n/g, " ");
 }
 
+// src/product/cycle-repair.ts
+function repairProductCycle(root2 = process.cwd(), options = {}) {
+  const resolvedRoot = (0, import_path130.resolve)(root2);
+  const safe2 = options.safe === true;
+  const actions = [
+    repairCycleProjection(resolvedRoot, safe2),
+    repairLearningProjection(resolvedRoot, safe2),
+    repairPortfolioProjection(resolvedRoot, safe2),
+    inspectRuntimeQaRepair(resolvedRoot)
+  ];
+  const summary = {
+    passed: actions.filter((action) => action.status === "passed").length,
+    changed: actions.filter((action) => action.status === "changed").length,
+    needed: actions.filter((action) => action.status === "needed").length,
+    skipped: actions.filter((action) => action.status === "skipped").length,
+    blocked: actions.filter((action) => action.status === "blocked").length
+  };
+  return {
+    ok: safe2 ? summary.blocked === 0 && summary.needed === 0 : true,
+    root: resolvedRoot,
+    safe: safe2,
+    actions,
+    summary
+  };
+}
+function repairCycleProjection(root2, safe2) {
+  const document = readCycleDocument(root2);
+  const path23 = getCycleProjectionPath(root2);
+  if (!document) {
+    return {
+      id: "cycle-projection",
+      status: "skipped",
+      path: path23,
+      message: "No typed cycle document exists; migrate with `omc product-cycle migrate-document --write` first.",
+      command: "omc product-cycle migrate-document --write"
+    };
+  }
+  const expected = renderCycleProjection(document);
+  if (projectionMatches(path23, expected)) {
+    return {
+      id: "cycle-projection",
+      status: "passed",
+      path: path23,
+      message: `${CYCLE_PROJECTION_RELATIVE_PATH} matches ${document.cycle_id}.`
+    };
+  }
+  if (safe2) {
+    const written = writeCycleProjection(root2, document);
+    return {
+      id: "cycle-projection",
+      status: "changed",
+      path: written,
+      message: `Re-rendered ${CYCLE_PROJECTION_RELATIVE_PATH} from typed cycle JSON.`
+    };
+  }
+  return {
+    id: "cycle-projection",
+    status: "needed",
+    path: path23,
+    message: `${CYCLE_PROJECTION_RELATIVE_PATH} is missing or stale.`,
+    command: "omc product-cycle repair --safe"
+  };
+}
+function repairLearningProjection(root2, safe2) {
+  const document = readLearningDocument(root2);
+  const path23 = getLearningProjectionPath(root2);
+  if (!document) {
+    return {
+      id: "learning-projection",
+      status: "skipped",
+      path: path23,
+      message: "No typed learning document exists.",
+      command: "omc learning migrate --write"
+    };
+  }
+  const expected = renderLearningProjection(document);
+  if (projectionMatches(path23, expected)) {
+    return {
+      id: "learning-projection",
+      status: "passed",
+      path: path23,
+      message: `${LEARNING_PROJECTION_RELATIVE_PATH} matches ${document.cycle_id}.`
+    };
+  }
+  if (safe2) {
+    const written = writeLearningProjection(root2, document);
+    return {
+      id: "learning-projection",
+      status: "changed",
+      path: written,
+      message: `Re-rendered ${LEARNING_PROJECTION_RELATIVE_PATH} from typed learning JSON.`
+    };
+  }
+  return {
+    id: "learning-projection",
+    status: "needed",
+    path: path23,
+    message: `${LEARNING_PROJECTION_RELATIVE_PATH} is missing or stale.`,
+    command: "omc product-cycle repair --safe"
+  };
+}
+function repairPortfolioProjection(root2, safe2) {
+  const ledger = readPortfolioLedger(root2);
+  const validation = validatePortfolioLedger(root2);
+  const path23 = (0, import_path130.resolve)(root2, PORTFOLIO_PROJECTION_RELATIVE_PATH);
+  if (!ledger) {
+    return {
+      id: "portfolio-projection",
+      status: "skipped",
+      path: path23,
+      message: `No ${PORTFOLIO_LEDGER_RELATIVE_PATH} exists.`,
+      command: "omc portfolio migrate --write"
+    };
+  }
+  if (!validation.ok) {
+    return {
+      id: "portfolio-projection",
+      status: "blocked",
+      path: validation.path,
+      message: `Portfolio ledger has ${validation.summary.errors} error(s); repair ledger before projecting.`,
+      command: validation.issues.some((issue4) => issue4.code === "portfolio-too-large") ? "omc portfolio trim --to 40 --write" : "omc portfolio validate"
+    };
+  }
+  const expected = renderPortfolioProjection(ledger);
+  if (projectionMatches(path23, expected)) {
+    return {
+      id: "portfolio-projection",
+      status: "passed",
+      path: path23,
+      message: `${PORTFOLIO_PROJECTION_RELATIVE_PATH} matches ${PORTFOLIO_LEDGER_RELATIVE_PATH}.`
+    };
+  }
+  if (safe2) {
+    const written = writePortfolioProjection(root2);
+    return {
+      id: "portfolio-projection",
+      status: "changed",
+      path: written,
+      message: `Re-rendered ${PORTFOLIO_PROJECTION_RELATIVE_PATH} from portfolio ledger.`
+    };
+  }
+  return {
+    id: "portfolio-projection",
+    status: "needed",
+    path: path23,
+    message: `${PORTFOLIO_PROJECTION_RELATIVE_PATH} is missing or stale.`,
+    command: "omc product-cycle repair --safe"
+  };
+}
+function inspectRuntimeQaRepair(root2) {
+  if (!shouldRunRuntimeQa(root2)) {
+    return {
+      id: "runtime-qa",
+      status: "skipped",
+      message: "Runtime QA is not configured or requested by the current cycle."
+    };
+  }
+  const migration = migrateRuntimeQaConfig({ root: root2, write: false });
+  if (migration.changed) {
+    return {
+      id: "runtime-qa",
+      status: "needed",
+      path: migration.path,
+      message: `${RUNTIME_QA_CONFIG_RELATIVE_PATH2} can be migrated to the canonical schema.`,
+      command: "omc runtime-qa migrate --write"
+    };
+  }
+  const rawConfig = readRuntimeQaConfigRaw(root2);
+  if (!rawConfig) {
+    return {
+      id: "runtime-qa",
+      status: "blocked",
+      path: (0, import_path130.resolve)(root2, RUNTIME_QA_CONFIG_RELATIVE_PATH2),
+      message: "Runtime QA is requested but no config exists.",
+      command: "omc runtime-qa init"
+    };
+  }
+  const setup = setupRuntimeQaPrerequisites(root2);
+  if (setup.steps.length > 0) {
+    const commandSteps = setup.steps.filter((step) => step.kind === "command").length;
+    const manualSteps = setup.steps.filter((step) => step.kind === "manual").length;
+    return {
+      id: "runtime-qa",
+      status: commandSteps > 0 ? "needed" : "blocked",
+      path: setup.doctor.configPath,
+      message: `Runtime QA setup has ${commandSteps} command step(s) and ${manualSteps} manual step(s).`,
+      command: commandSteps > 0 ? "omc runtime-qa setup --apply" : "omc runtime-qa setup"
+    };
+  }
+  const doctor = diagnoseRuntimeQa(root2);
+  if (!doctor.ok) {
+    return {
+      id: "runtime-qa",
+      status: "blocked",
+      path: doctor.configPath,
+      message: `Runtime QA doctor reports ${doctor.summary.errors} error(s).`,
+      command: "omc doctor runtime-qa"
+    };
+  }
+  return {
+    id: "runtime-qa",
+    status: "passed",
+    path: doctor.configPath,
+    message: "Runtime QA setup and evidence are ready."
+  };
+}
+function projectionMatches(path23, expected) {
+  if (!(0, import_fs108.existsSync)(path23)) return false;
+  return normalizeProjection2((0, import_fs108.readFileSync)(path23, "utf-8")) === normalizeProjection2(expected);
+}
+function normalizeProjection2(content) {
+  return content.trim().replace(/\r\n/g, "\n");
+}
+
+// src/product/cycle-runner.ts
+var import_fs115 = require("fs");
+var import_path137 = require("path");
+var import_child_process33 = require("child_process");
+
 // src/product/intervention-router.ts
-var import_fs104 = require("fs");
-var import_path124 = require("path");
+var import_fs110 = require("fs");
+var import_path132 = require("path");
 init_atomic_write();
 
 // src/product/creative-loop.ts
-var import_fs103 = require("fs");
-var import_path123 = require("path");
+var import_fs109 = require("fs");
+var import_path131 = require("path");
 init_atomic_write();
 var CREATIVE_LOOP_JSON_RELATIVE_PATH = ".omc/design/creative-loop/current.json";
 var CREATIVE_LOOP_MD_RELATIVE_PATH = ".omc/design/creative-loop/current.md";
+var VISUAL_EXPECTATION_RELATIVE_PATH = ".omc/design/visual-expectation/current.json";
 var ARTIFACTS = [
   {
     id: "meaning-brief",
@@ -87472,25 +90618,31 @@ var ARTIFACTS = [
     id: "inspiration-ledger",
     path: ".omc/design/inspiration-ledger/current.md",
     required: true,
-    passTerms: ["principle", "what not to copy", "source"]
+    passTerms: ["principle", "what not to copy", "source", "constraint"]
+  },
+  {
+    id: "visual-expectation",
+    path: VISUAL_EXPECTATION_RELATIVE_PATH,
+    required: true,
+    passTerms: []
   },
   {
     id: "design-directions",
     path: ".omc/design/directions/current.md",
     required: true,
-    passTerms: ["direction 1", "direction 2", "direction 3", "hypothesis"]
+    passTerms: ["direction 1", "direction 2", "direction 3", "hypothesis", "tradeoff"]
   },
   {
     id: "motion-grammar",
     path: ".omc/design/motion-grammar/current.md",
     required: true,
-    passTerms: ["state", "why", "duration", "easing"]
+    passTerms: ["state", "why", "duration", "easing", "reduced motion"]
   },
   {
     id: "token-system",
     path: ".omc/design/tokens/current.json",
     required: true,
-    passTerms: ["color", "type", "spacing", "radius", "motion"]
+    passTerms: ["color", "type", "spacing", "radius", "elevation", "motion"]
   },
   {
     id: "component-experiments",
@@ -87512,7 +90664,7 @@ var ARTIFACTS = [
   }
 ];
 function planCreativeLoop(options = {}) {
-  const root2 = (0, import_path123.resolve)(options.root ?? process.cwd());
+  const root2 = (0, import_path131.resolve)(options.root ?? process.cwd());
   const artifacts = ARTIFACTS.map((artifact) => inspectArtifact(root2, artifact));
   const missingRequired = artifacts.filter((artifact) => artifact.required && !artifact.passed).map((artifact) => artifact.id);
   const status = creativeStatus(missingRequired);
@@ -87529,21 +90681,21 @@ function planCreativeLoop(options = {}) {
   };
 }
 function initCreativeLoop(options = {}) {
-  const root2 = (0, import_path123.resolve)(options.root ?? process.cwd());
+  const root2 = (0, import_path131.resolve)(options.root ?? process.cwd());
   for (const artifact of ARTIFACTS) {
-    const path23 = (0, import_path123.resolve)(root2, artifact.path);
-    if ((0, import_fs103.existsSync)(path23)) continue;
-    (0, import_fs103.mkdirSync)((0, import_path123.dirname)(path23), { recursive: true });
-    (0, import_fs103.writeFileSync)(path23, templateFor(artifact.id, options.goal), "utf-8");
+    const path23 = (0, import_path131.resolve)(root2, artifact.path);
+    if ((0, import_fs109.existsSync)(path23)) continue;
+    (0, import_fs109.mkdirSync)((0, import_path131.dirname)(path23), { recursive: true });
+    (0, import_fs109.writeFileSync)(path23, templateFor(artifact.id, options.goal), "utf-8");
   }
   const plan = planCreativeLoop(options);
   writeCreativeLoopPlan(root2, plan);
   return plan;
 }
 function writeCreativeLoopPlan(root2 = process.cwd(), plan) {
-  const jsonPath = (0, import_path123.resolve)(root2, CREATIVE_LOOP_JSON_RELATIVE_PATH);
-  const mdPath = (0, import_path123.resolve)(root2, CREATIVE_LOOP_MD_RELATIVE_PATH);
-  (0, import_fs103.mkdirSync)((0, import_path123.dirname)(jsonPath), { recursive: true });
+  const jsonPath = (0, import_path131.resolve)(root2, CREATIVE_LOOP_JSON_RELATIVE_PATH);
+  const mdPath = (0, import_path131.resolve)(root2, CREATIVE_LOOP_MD_RELATIVE_PATH);
+  (0, import_fs109.mkdirSync)((0, import_path131.dirname)(jsonPath), { recursive: true });
   atomicWriteJsonSync(jsonPath, plan);
   atomicWriteFileSync(mdPath, renderCreativeLoopPlan(plan));
   return { jsonPath, mdPath };
@@ -87578,8 +90730,8 @@ function renderCreativeLoopPlan(plan) {
   ].join("\n");
 }
 function inspectArtifact(root2, artifact) {
-  const path23 = (0, import_path123.resolve)(root2, artifact.path);
-  if (!(0, import_fs103.existsSync)(path23)) {
+  const path23 = (0, import_path131.resolve)(root2, artifact.path);
+  if (!(0, import_fs109.existsSync)(path23)) {
     return {
       id: artifact.id,
       path: artifact.path,
@@ -87589,7 +90741,7 @@ function inspectArtifact(root2, artifact) {
       reason: "missing"
     };
   }
-  const rawContent = (0, import_fs103.readFileSync)(path23, "utf-8");
+  const rawContent = (0, import_fs109.readFileSync)(path23, "utf-8");
   const content = rawContent.toLowerCase();
   if (isDraftPlaceholder(content)) {
     return {
@@ -87601,7 +90753,43 @@ function inspectArtifact(root2, artifact) {
       reason: "draft placeholder"
     };
   }
+  if (artifact.id === "visual-expectation") {
+    const validation = validateVisualExpectationContract(root2, rawContent);
+    return {
+      id: artifact.id,
+      path: artifact.path,
+      required: artifact.required,
+      exists: true,
+      passed: validation.passed,
+      reason: validation.reason
+    };
+  }
+  if (artifact.id === "token-system") {
+    const validation = validateTokenSystem(rawContent);
+    return {
+      id: artifact.id,
+      path: artifact.path,
+      required: artifact.required,
+      exists: true,
+      passed: validation.passed,
+      reason: validation.reason
+    };
+  }
+  if (artifact.id === "component-experiments") {
+    const validation = validateComponentExperiments(root2, rawContent);
+    return {
+      id: artifact.id,
+      path: artifact.path,
+      required: artifact.required,
+      exists: true,
+      passed: validation.passed,
+      reason: validation.reason
+    };
+  }
   const missingTerms = artifact.passTerms.filter((term) => !content.includes(term));
+  if (artifact.id === "taste-gate" && missingTerms.length === 0 && !/\b(screenshot|visual_verdict|visual verdict|evidence)\b/i.test(rawContent)) {
+    missingTerms.push("visual evidence");
+  }
   return {
     id: artifact.id,
     path: artifact.path,
@@ -87614,8 +90802,129 @@ function inspectArtifact(root2, artifact) {
 function isDraftPlaceholder(content) {
   return /\bstatus:\s*draft\b/.test(content) || /"status"\s*:\s*"draft"/.test(content) || /<[^>\n]+>/.test(content);
 }
+function validateVisualExpectationContract(root2, rawContent) {
+  const parsed = parseJsonObject(rawContent);
+  if (!parsed) return { passed: false, reason: "invalid json" };
+  const contract = objectValue(parsed.visual_expectation_contract) ?? parsed;
+  const missing = [];
+  requireMeaningfulList(contract, "desired_perception", missing);
+  requireMeaningfulList(contract, "category_codes_to_avoid", missing);
+  requireMeaningfulList(contract, "not_ready_if", missing);
+  requireStringFields(objectValue(contract.selected_direction), "selected_direction", ["name", "rationale", "tradeoffs"], missing);
+  const inspirationPrinciples = arrayValue(contract.inspiration_principles);
+  if (!inspirationPrinciples || inspirationPrinciples.length === 0) {
+    missing.push("inspiration_principles");
+  } else {
+    for (const [index, entry] of inspirationPrinciples.entries()) {
+      requireStringFields(objectValue(entry), `inspiration_principles[${index}]`, ["source", "principle", "what_not_to_copy"], missing);
+    }
+  }
+  const tokenRationale = arrayValue(contract.token_rationale);
+  if (!tokenRationale || tokenRationale.length === 0) {
+    missing.push("token_rationale");
+  } else {
+    for (const [index, entry] of tokenRationale.entries()) {
+      requireStringFields(objectValue(entry), `token_rationale[${index}]`, ["token", "decision", "reason"], missing);
+    }
+  }
+  const componentProofs = arrayValue(contract.component_proofs);
+  if (!componentProofs || componentProofs.length === 0) {
+    missing.push("component_proofs");
+  } else {
+    for (const [index, entry] of componentProofs.entries()) {
+      const proof = objectValue(entry);
+      requireStringFields(proof, `component_proofs[${index}]`, ["component", "state", "screenshot", "visual_verdict"], missing);
+      if (proof && hasMeaningfulString3(proof.screenshot) && !pathExists(root2, proof.screenshot)) {
+        missing.push(`component_proofs[${index}].screenshot file`);
+      }
+      if (proof && hasMeaningfulString3(proof.visual_verdict) && !/\bpass\b/i.test(proof.visual_verdict)) {
+        missing.push(`component_proofs[${index}].visual_verdict pass`);
+      }
+    }
+  }
+  const screenshots = stringArrayValue(contract.screenshot_evidence);
+  if (screenshots.length === 0) {
+    missing.push("screenshot_evidence");
+  } else {
+    for (const [index, screenshot] of screenshots.entries()) {
+      if (!pathExists(root2, screenshot)) missing.push(`screenshot_evidence[${index}] file`);
+    }
+  }
+  return missing.length === 0 ? { passed: true, reason: "visual expectation contract passed" } : { passed: false, reason: `missing or invalid: ${missing.join(", ")}` };
+}
+function validateTokenSystem(rawContent) {
+  const parsed = parseJsonObject(rawContent);
+  if (!parsed) return { passed: false, reason: "invalid json" };
+  const required2 = ["color", "type", "spacing", "radius", "elevation", "motion"];
+  const missing = required2.filter((field) => !hasNonEmptyStructuredValue(parsed[field]));
+  return missing.length === 0 ? { passed: true, reason: "token system has meaningful required token groups" } : { passed: false, reason: `missing or empty token groups: ${missing.join(", ")}` };
+}
+function validateComponentExperiments(root2, rawContent) {
+  const parsed = parseJsonObject(rawContent);
+  if (!parsed) return { passed: false, reason: "invalid json" };
+  const missing = [];
+  const experiments = stringArrayValue(parsed.experiment);
+  const screenshots = stringArrayValue(parsed.screenshot);
+  const verdicts = stringArrayValue(parsed.visual_verdict);
+  if (experiments.length === 0) missing.push("experiment");
+  if (screenshots.length === 0) {
+    missing.push("screenshot");
+  } else {
+    for (const [index, screenshot] of screenshots.entries()) {
+      if (!pathExists(root2, screenshot)) missing.push(`screenshot[${index}] file`);
+    }
+  }
+  if (verdicts.length === 0 || !verdicts.some((verdict) => /\bpass\b/i.test(verdict))) {
+    missing.push("visual_verdict pass");
+  }
+  return missing.length === 0 ? { passed: true, reason: "component experiments include screenshot evidence and passing visual verdict" } : { passed: false, reason: `missing or invalid: ${missing.join(", ")}` };
+}
+function parseJsonObject(rawContent) {
+  try {
+    const parsed = JSON.parse(rawContent);
+    return objectValue(parsed);
+  } catch {
+    return void 0;
+  }
+}
+function requireMeaningfulList(record2, field, missing) {
+  if (stringArrayValue(record2[field]).length === 0) missing.push(field);
+}
+function requireStringFields(record2, prefix, fields, missing) {
+  if (!record2) {
+    missing.push(prefix);
+    return;
+  }
+  for (const field of fields) {
+    if (!hasMeaningfulString3(record2[field])) missing.push(`${prefix}.${field}`);
+  }
+}
+function objectValue(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : void 0;
+}
+function arrayValue(value) {
+  return Array.isArray(value) ? value : void 0;
+}
+function stringArrayValue(value) {
+  if (Array.isArray(value)) return value.filter(hasMeaningfulString3);
+  return hasMeaningfulString3(value) ? [value] : [];
+}
+function hasMeaningfulString3(value) {
+  return typeof value === "string" && value.trim().length > 0 && !/^(?:tbd|todo|placeholder|pending|none|\[\])$/i.test(value.trim());
+}
+function hasNonEmptyStructuredValue(value) {
+  if (hasMeaningfulString3(value)) return true;
+  if (typeof value === "number") return Number.isFinite(value);
+  if (typeof value === "boolean") return true;
+  if (Array.isArray(value)) return value.some(hasNonEmptyStructuredValue);
+  const record2 = objectValue(value);
+  return record2 ? Object.values(record2).some(hasNonEmptyStructuredValue) : false;
+}
+function pathExists(root2, path23) {
+  return (0, import_fs109.existsSync)((0, import_path131.resolve)(root2, path23));
+}
 function creativeStatus(missingRequired) {
-  if (missingRequired.includes("meaning-brief") || missingRequired.includes("inspiration-ledger")) {
+  if (missingRequired.includes("meaning-brief") || missingRequired.includes("inspiration-ledger") || missingRequired.includes("visual-expectation")) {
     return "needs-brief";
   }
   if (missingRequired.includes("design-directions") || missingRequired.includes("motion-grammar") || missingRequired.includes("token-system")) {
@@ -87639,7 +90948,7 @@ function recommendedCommands(goal, status) {
 }
 function templateFor(id, goal) {
   const title = goal ?? "<visual goal>";
-  if (id === "token-system" || id === "component-experiments") {
+  if (id === "visual-expectation" || id === "token-system" || id === "component-experiments") {
     return `${JSON.stringify(templateJsonFor(id), null, 2)}
 `;
   }
@@ -87653,6 +90962,26 @@ function templateFor(id, goal) {
   ].join("\n");
 }
 function templateJsonFor(id) {
+  if (id === "visual-expectation") {
+    return {
+      schema_version: 1,
+      status: "draft",
+      visual_expectation_contract: {
+        desired_perception: [],
+        category_codes_to_avoid: [],
+        inspiration_principles: [],
+        selected_direction: {
+          name: "",
+          rationale: "",
+          tradeoffs: ""
+        },
+        token_rationale: [],
+        component_proofs: [],
+        screenshot_evidence: [],
+        not_ready_if: []
+      }
+    };
+  }
   if (id === "token-system") {
     return {
       schema_version: 1,
@@ -87694,18 +91023,22 @@ function templateBodyFor(id) {
         "## Sources",
         "- source: <reference>",
         "  - principle: <what to extract>",
+        "  - constraint: <where this principle applies>",
         "  - what not to copy: <signature details to avoid>"
       ].join("\n");
     case "design-directions":
       return [
         "## Direction 1",
         "hypothesis: <visual hypothesis>",
+        "tradeoff: <what this direction gains and loses>",
         "",
         "## Direction 2",
         "hypothesis: <visual hypothesis>",
+        "tradeoff: <what this direction gains and loses>",
         "",
         "## Direction 3",
-        "hypothesis: <visual hypothesis>"
+        "hypothesis: <visual hypothesis>",
+        "tradeoff: <what this direction gains and loses>"
       ].join("\n");
     case "motion-grammar":
       return [
@@ -87713,7 +91046,8 @@ function templateBodyFor(id) {
         "- state: <state>",
         "  - why: <user/product reason>",
         "  - duration: <ms>",
-        "  - easing: <curve>"
+        "  - easing: <curve>",
+        "  - reduced motion: <fallback>"
       ].join("\n");
     case "taste-gate":
       return [
@@ -87754,7 +91088,7 @@ function escapeCell2(value) {
 var PRODUCT_INTERVENTION_HANDOFF_RELATIVE_PATH = ".omc/handoffs/product-cycle-interventions/current.json";
 var PRODUCT_BUILD_ROUTES = /* @__PURE__ */ new Set(["product-pipeline", "both"]);
 function planProductInterventions(options) {
-  const root2 = (0, import_path124.resolve)(options.root ?? process.cwd());
+  const root2 = (0, import_path132.resolve)(options.root ?? process.cwd());
   const routes = [];
   if (options.stage === "spec") {
     routes.push(...planSpecInterventions(root2, options.snapshot));
@@ -87776,8 +91110,8 @@ function planProductInterventions(options) {
 function writeProductInterventionHandoff(root2, snapshot, plan) {
   const jsonRelativePath = PRODUCT_INTERVENTION_HANDOFF_RELATIVE_PATH;
   const mdRelativePath = ".omc/handoffs/product-cycle-interventions/current.md";
-  const jsonPath = (0, import_path124.resolve)(root2, jsonRelativePath);
-  const mdPath = (0, import_path124.resolve)(root2, mdRelativePath);
+  const jsonPath = (0, import_path132.resolve)(root2, jsonRelativePath);
+  const mdPath = (0, import_path132.resolve)(root2, mdRelativePath);
   const handoff = {
     schema_version: 1,
     produced_at: (/* @__PURE__ */ new Date()).toISOString(),
@@ -87791,15 +91125,15 @@ function writeProductInterventionHandoff(root2, snapshot, plan) {
     blocking_route_count: plan.blockingRoutes.length,
     context_consumed: interventionContext(plan)
   };
-  ensureDirSync((0, import_path124.dirname)(jsonPath));
+  ensureDirSync((0, import_path132.dirname)(jsonPath));
   atomicWriteJsonSync(jsonPath, handoff);
   atomicWriteFileSync(mdPath, renderProductInterventionHandoff(handoff));
   return { jsonPath, mdPath };
 }
 function readProductInterventionHandoff(root2 = process.cwd()) {
-  const path23 = (0, import_path124.resolve)(root2, PRODUCT_INTERVENTION_HANDOFF_RELATIVE_PATH);
-  if (!(0, import_fs104.existsSync)(path23)) return void 0;
-  return JSON.parse((0, import_fs104.readFileSync)(path23, "utf-8"));
+  const path23 = (0, import_path132.resolve)(root2, PRODUCT_INTERVENTION_HANDOFF_RELATIVE_PATH);
+  if (!(0, import_fs110.existsSync)(path23)) return void 0;
+  return JSON.parse((0, import_fs110.readFileSync)(path23, "utf-8"));
 }
 function planSpecInterventions(root2, snapshot) {
   if (!isUserFacingCycle2(snapshot)) return [];
@@ -87808,7 +91142,7 @@ function planSpecInterventions(root2, snapshot) {
 }
 function planExperienceGateIntervention(root2, snapshot) {
   const experiencePath = ".omc/experience/current.md";
-  const experienceContent = readRelative(root2, experiencePath);
+  const experienceContent = readRelative2(root2, experiencePath);
   const quality = evaluateExperienceGateQuality(experienceContent ?? "");
   if (quality.passed) return void 0;
   return {
@@ -87922,7 +91256,7 @@ function planCreativeLoopIntervention(root2, snapshot) {
     id: "creative-loop-gate",
     agent: "creative-loop",
     trigger: `user-facing visual build requires creative-loop readiness; status=${plan.status}`,
-    purpose: "Run meaning brief, inspiration ledger, divergent visual hypotheses, motion grammar, tokens, component experiments, screenshots, visual verdict, and taste gate before implementation.",
+    purpose: "Run meaning brief, inspiration ledger, visual expectation contract, divergent visual hypotheses, motion grammar, tokens, component experiments, screenshots, visual verdict, and taste gate before implementation.",
     required: true,
     command: `/creative-loop "${quoteArg(goal)}"`,
     blocksStage: true,
@@ -87931,6 +91265,7 @@ function planCreativeLoopIntervention(root2, snapshot) {
       CREATIVE_LOOP_MD_RELATIVE_PATH,
       ".omc/design/meaning-brief/current.md",
       ".omc/design/inspiration-ledger/current.md",
+      ".omc/design/visual-expectation/current.json",
       ".omc/design/directions/current.md",
       ".omc/design/motion-grammar/current.md",
       ".omc/design/tokens/current.json",
@@ -87987,7 +91322,7 @@ function needsVisualCreativeProvisioning(root2, snapshot) {
   return hasVisualCreativeSignal(root2, snapshot);
 }
 function hasVisualCreativeProvisioning(root2) {
-  const manifest = readRelative(root2, ".omc/provisioned/current.json");
+  const manifest = readRelative2(root2, ".omc/provisioned/current.json");
   if (!manifest) return false;
   return /\bvisual-creative\b|\bmeaning-driven-ui-builder\b|\bvisual-verdict\b|\bimagegen\b|\bcreative-direction\b/i.test(manifest);
 }
@@ -87995,10 +91330,10 @@ function hasVisualCreativeSignal(root2, snapshot) {
   const corpus = [
     snapshot.cycleGoal,
     snapshot.buildRoute,
-    readRelative(root2, ".omc/cycles/current.md"),
-    readRelative(root2, ".omc/experience/current.md"),
-    readRelative(root2, ".omc/product/capability-map/current.md"),
-    readRelative(root2, ".omc/meaning/current.md")
+    readRelative2(root2, ".omc/cycles/current.md"),
+    readRelative2(root2, ".omc/experience/current.md"),
+    readRelative2(root2, ".omc/product/capability-map/current.md"),
+    readRelative2(root2, ".omc/meaning/current.md")
   ].filter(Boolean).join("\n").toLowerCase();
   return /\b(ui|ux|visual|interface|screen|dashboard|onboarding|empty state|error state|return session|flow|layout|brand|typography|motion|animation|icon|illustration|hero|canvas|3d|chart|graph|image|asset|style|theme)\b/i.test(corpus);
 }
@@ -88009,11 +91344,11 @@ function isUserFacingCycle2(snapshot) {
 function coreSliceOrGoal(snapshot) {
   return snapshot.cycleGoal ?? "core product slice";
 }
-function readRelative(root2, relativePath) {
-  const path23 = (0, import_path124.resolve)(root2, relativePath);
-  if (!(0, import_fs104.existsSync)(path23)) return void 0;
+function readRelative2(root2, relativePath) {
+  const path23 = (0, import_path132.resolve)(root2, relativePath);
+  if (!(0, import_fs110.existsSync)(path23)) return void 0;
   try {
-    return (0, import_fs104.readFileSync)(path23, "utf-8");
+    return (0, import_fs110.readFileSync)(path23, "utf-8");
   } catch {
     return void 0;
   }
@@ -88068,8 +91403,8 @@ function quoteArg(input) {
 }
 
 // src/product/intervention-execution-plan.ts
-var import_fs105 = require("fs");
-var import_path125 = require("path");
+var import_fs111 = require("fs");
+var import_path133 = require("path");
 init_atomic_write();
 var PRODUCT_INTERVENTION_EXECUTION_PLAN_RELATIVE_PATH = ".omc/handoffs/product-cycle-interventions/execution-plan.json";
 var DEFAULT_PROVIDER = "codex";
@@ -88095,17 +91430,17 @@ function buildProductInterventionExecutionPlan(handoff, options = {}) {
   };
 }
 function writeProductInterventionExecutionPlan(root2, plan) {
-  const jsonPath = (0, import_path125.resolve)(root2, PRODUCT_INTERVENTION_EXECUTION_PLAN_RELATIVE_PATH);
-  const mdPath = (0, import_path125.resolve)(root2, PRODUCT_INTERVENTION_EXECUTION_PLAN_MD_RELATIVE_PATH);
-  ensureDirSync((0, import_path125.dirname)(jsonPath));
+  const jsonPath = (0, import_path133.resolve)(root2, PRODUCT_INTERVENTION_EXECUTION_PLAN_RELATIVE_PATH);
+  const mdPath = (0, import_path133.resolve)(root2, PRODUCT_INTERVENTION_EXECUTION_PLAN_MD_RELATIVE_PATH);
+  ensureDirSync((0, import_path133.dirname)(jsonPath));
   atomicWriteJsonSync(jsonPath, plan);
   atomicWriteFileSync(mdPath, renderProductInterventionExecutionPlan(plan));
   return { jsonPath, mdPath };
 }
 function readProductInterventionExecutionPlan(root2 = process.cwd()) {
-  const path23 = (0, import_path125.resolve)(root2, PRODUCT_INTERVENTION_EXECUTION_PLAN_RELATIVE_PATH);
-  if (!(0, import_fs105.existsSync)(path23)) return void 0;
-  return JSON.parse((0, import_fs105.readFileSync)(path23, "utf-8"));
+  const path23 = (0, import_path133.resolve)(root2, PRODUCT_INTERVENTION_EXECUTION_PLAN_RELATIVE_PATH);
+  if (!(0, import_fs111.existsSync)(path23)) return void 0;
+  return JSON.parse((0, import_fs111.readFileSync)(path23, "utf-8"));
 }
 function renderProductInterventionExecutionPlan(plan) {
   const lines = [
@@ -88293,13 +91628,13 @@ function renderArgv(argv) {
 }
 
 // src/product/research-router.ts
-var import_fs107 = require("fs");
-var import_path127 = require("path");
+var import_fs113 = require("fs");
+var import_path135 = require("path");
 init_atomic_write();
 
 // src/product/research-artifact-validator.ts
-var import_fs106 = require("fs");
-var import_path126 = require("path");
+var import_fs112 = require("fs");
+var import_path134 = require("path");
 var PLACEHOLDER_PATTERN = /\b(tbd|todo|placeholder|fixture|mock|none|n\/a|unknown)\b/i;
 var DEFAULT_RESEARCH_ARTIFACT_RELATIVE_PATH = ".omc/research/product-cycle/current.md";
 var REQUIRED_SECTIONS = [
@@ -88321,11 +91656,11 @@ var USER_FACING_SECTIONS = [
   { code: "missing-perceived-value", label: "Perceived Value", pattern: /\bperceived value|user value|value signal\b/i }
 ];
 function validateProductResearchArtifact(options = {}) {
-  const root2 = (0, import_path126.resolve)(options.root ?? process.cwd());
+  const root2 = (0, import_path134.resolve)(options.root ?? process.cwd());
   const relativePath = options.artifactPath ?? DEFAULT_RESEARCH_ARTIFACT_RELATIVE_PATH;
-  const path23 = (0, import_path126.resolve)(root2, relativePath);
+  const path23 = (0, import_path134.resolve)(root2, relativePath);
   const issues = [];
-  if (!(0, import_fs106.existsSync)(path23)) {
+  if (!(0, import_fs112.existsSync)(path23)) {
     issues.push({
       severity: "error",
       code: "missing-research-artifact",
@@ -88335,7 +91670,7 @@ function validateProductResearchArtifact(options = {}) {
   }
   let content = "";
   try {
-    content = (0, import_fs106.readFileSync)(path23, "utf-8");
+    content = (0, import_fs112.readFileSync)(path23, "utf-8");
   } catch (error2) {
     issues.push({
       severity: "error",
@@ -88489,7 +91824,7 @@ var PRODUCT_RESEARCH_ARTIFACT_RELATIVE_PATH = ".omc/research/product-cycle/curre
 var PRODUCT_RESEARCH_HANDOFF_MD_RELATIVE_PATH = ".omc/handoffs/product-cycle-research/current.md";
 var USER_FACING_BUILD_ROUTES = /* @__PURE__ */ new Set(["product-pipeline", "both", ""]);
 function planProductResearch(options) {
-  const root2 = (0, import_path127.resolve)(options.root ?? process.cwd());
+  const root2 = (0, import_path135.resolve)(options.root ?? process.cwd());
   const routes = [];
   const corpus = researchCorpus(root2, options.snapshot);
   const scorecard = scoreProductResearch({
@@ -88522,8 +91857,8 @@ function planProductResearch(options) {
   };
 }
 function writeProductResearchHandoff(root2, snapshot, plan) {
-  const jsonPath = (0, import_path127.resolve)(root2, PRODUCT_RESEARCH_HANDOFF_RELATIVE_PATH);
-  const mdPath = (0, import_path127.resolve)(root2, PRODUCT_RESEARCH_HANDOFF_MD_RELATIVE_PATH);
+  const jsonPath = (0, import_path135.resolve)(root2, PRODUCT_RESEARCH_HANDOFF_RELATIVE_PATH);
+  const mdPath = (0, import_path135.resolve)(root2, PRODUCT_RESEARCH_HANDOFF_MD_RELATIVE_PATH);
   const handoff = {
     schema_version: 1,
     produced_at: (/* @__PURE__ */ new Date()).toISOString(),
@@ -88539,15 +91874,15 @@ function writeProductResearchHandoff(root2, snapshot, plan) {
     context_consumed: Array.from(new Set(plan.routes.flatMap((route) => route.evidence))).sort(),
     scorecard: plan.scorecard
   };
-  ensureDirSync((0, import_path127.dirname)(jsonPath));
+  ensureDirSync((0, import_path135.dirname)(jsonPath));
   atomicWriteJsonSync(jsonPath, handoff);
   atomicWriteFileSync(mdPath, renderProductResearchHandoff(handoff));
   return { jsonPath, mdPath };
 }
 function readProductResearchHandoff(root2 = process.cwd()) {
-  const path23 = (0, import_path127.resolve)(root2, PRODUCT_RESEARCH_HANDOFF_RELATIVE_PATH);
-  if (!(0, import_fs107.existsSync)(path23)) return void 0;
-  return JSON.parse((0, import_fs107.readFileSync)(path23, "utf-8"));
+  const path23 = (0, import_path135.resolve)(root2, PRODUCT_RESEARCH_HANDOFF_RELATIVE_PATH);
+  if (!(0, import_fs113.existsSync)(path23)) return void 0;
+  return JSON.parse((0, import_fs113.readFileSync)(path23, "utf-8"));
 }
 function planStageResearch(root2, snapshot, stage, validation, scorecard) {
   const routes = [];
@@ -88680,12 +92015,12 @@ function researchCorpus(root2, snapshot) {
   return [
     snapshot.cycleGoal,
     snapshot.buildRoute,
-    readRelative2(root2, ".omc/cycles/current.md"),
-    readRelative2(root2, ".omc/experience/current.md"),
-    readRelative2(root2, ".omc/product/capability-map/current.md"),
-    readRelative2(root2, ".omc/ecosystem/current.md"),
-    readRelative2(root2, ".omc/portfolio/current.json"),
-    readRelative2(root2, ".omc/meaning/current.md")
+    readRelative3(root2, ".omc/cycles/current.md"),
+    readRelative3(root2, ".omc/experience/current.md"),
+    readRelative3(root2, ".omc/product/capability-map/current.md"),
+    readRelative3(root2, ".omc/ecosystem/current.md"),
+    readRelative3(root2, ".omc/portfolio/current.json"),
+    readRelative3(root2, ".omc/meaning/current.md")
   ].filter(Boolean).join("\n").toLowerCase();
 }
 function researchArtifactReason(validation) {
@@ -88706,7 +92041,7 @@ function researchEvidencePaths(root2) {
     ".omc/ecosystem/current.md",
     ".omc/portfolio/current.json",
     ".omc/meaning/current.md"
-  ].filter((path23) => (0, import_fs107.existsSync)((0, import_path127.resolve)(root2, path23)));
+  ].filter((path23) => (0, import_fs113.existsSync)((0, import_path135.resolve)(root2, path23)));
 }
 function scoreProductResearch(options) {
   const scores = [
@@ -88730,7 +92065,7 @@ function scoreUserInteractionResearch(options) {
     signal("interaction-language", 2, /\b(ui|ux|interface|screen|dashboard|onboarding|form|table|flow|layout|navigation)\b/i.test(options.corpus), "interaction or screen language found"),
     signal("state-language", 2, /\b(empty state|error state|failure state|loading|return session|resume|accessibility|a11y)\b/i.test(options.corpus), "workflow state/accessibility language found"),
     signal("visual-product-language", 2, hasVisualCreativeResearchSignal(options.corpus), "visual/product presentation language found"),
-    signal("experience-artifact-present", 1, (0, import_fs107.existsSync)((0, import_path127.resolve)(options.root, ".omc/experience/current.md")), ".omc/experience/current.md is present")
+    signal("experience-artifact-present", 1, (0, import_fs113.existsSync)((0, import_path135.resolve)(options.root, ".omc/experience/current.md")), ".omc/experience/current.md is present")
   ]);
 }
 function scoreDependencyApiResearch(options) {
@@ -88799,7 +92134,7 @@ function requiredResearchSurfaces(snapshot, corpus, selectedRouteIds) {
   return Array.from(surfaces);
 }
 function hasProvisioningForSurfaces(root2, surfaces) {
-  const manifest = readRelative2(root2, ".omc/provisioned/current.json");
+  const manifest = readRelative3(root2, ".omc/provisioned/current.json");
   if (!manifest) return false;
   return surfaces.every((surface) => new RegExp(`\\b${escapeRegExp6(surface)}\\b`, "i").test(manifest));
 }
@@ -88822,11 +92157,11 @@ function isUserFacingCycle3(snapshot) {
 function coreSliceOrGoal2(snapshot) {
   return snapshot.cycleGoal ?? "core product slice";
 }
-function readRelative2(root2, relativePath) {
-  const path23 = (0, import_path127.resolve)(root2, relativePath);
-  if (!(0, import_fs107.existsSync)(path23)) return void 0;
+function readRelative3(root2, relativePath) {
+  const path23 = (0, import_path135.resolve)(root2, relativePath);
+  if (!(0, import_fs113.existsSync)(path23)) return void 0;
   try {
-    return (0, import_fs107.readFileSync)(path23, "utf-8");
+    return (0, import_fs113.readFileSync)(path23, "utf-8");
   } catch {
     return void 0;
   }
@@ -88846,643 +92181,9 @@ function escapeRegExp6(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-// src/runtime-qa/runner.ts
-var import_fs108 = require("fs");
-var import_child_process29 = require("child_process");
-var import_path128 = require("path");
-init_atomic_write();
-
-// src/lib/summary-policy.ts
-var DEFAULT_SUMMARY_POLICY = {
-  mode: "compact",
-  agentResultMaxWords: 120,
-  stageReportMaxLines: 20,
-  finalReportMaxLines: 35,
-  inlineLogMaxChars: 800,
-  jsonSidecarRequired: true
-};
-function normalizeSummaryPolicy(policy) {
-  return {
-    mode: isSummaryMode(policy?.mode) ? policy.mode : DEFAULT_SUMMARY_POLICY.mode,
-    agentResultMaxWords: positiveInt(policy?.agentResultMaxWords, DEFAULT_SUMMARY_POLICY.agentResultMaxWords),
-    stageReportMaxLines: positiveInt(policy?.stageReportMaxLines, DEFAULT_SUMMARY_POLICY.stageReportMaxLines),
-    finalReportMaxLines: positiveInt(policy?.finalReportMaxLines, DEFAULT_SUMMARY_POLICY.finalReportMaxLines),
-    inlineLogMaxChars: positiveInt(policy?.inlineLogMaxChars, DEFAULT_SUMMARY_POLICY.inlineLogMaxChars),
-    jsonSidecarRequired: policy?.jsonSidecarRequired ?? DEFAULT_SUMMARY_POLICY.jsonSidecarRequired
-  };
-}
-function truncateInlineLog(value, policy) {
-  const text = value ?? "";
-  const max = normalizeSummaryPolicy(policy).inlineLogMaxChars;
-  if (text.length <= max) return text;
-  const suffix = "\n...[truncated; full output is stored in artifacts when available]";
-  return `${text.slice(0, Math.max(0, max - suffix.length)).trimEnd()}${suffix}`;
-}
-function limitReportLines(value, maxLines, omittedLabel = "lines omitted by summaryPolicy") {
-  const lines = value.split("\n");
-  if (lines.length <= maxLines) return value;
-  const keep = Math.max(1, maxLines - 1);
-  return [
-    ...lines.slice(0, keep),
-    `... (+${lines.length - keep} ${omittedLabel})`
-  ].join("\n");
-}
-function limitFinalReport(value, policy) {
-  return limitReportLines(value, normalizeSummaryPolicy(policy).finalReportMaxLines);
-}
-function positiveInt(value, fallback) {
-  return typeof value === "number" && Number.isFinite(value) && value > 0 ? Math.floor(value) : fallback;
-}
-function isSummaryMode(value) {
-  return value === "compact" || value === "normal" || value === "verbose";
-}
-
-// src/runtime-qa/runner.ts
-var RUNTIME_QA_CONFIG_RELATIVE_PATH = ".omc/runtime-qa.json";
-var RUNTIME_QA_HANDOFF_RELATIVE_PATH = ".omc/handoffs/runtime-qa/current.json";
-var RUNTIME_QA_HANDOFF_MD_RELATIVE_PATH = ".omc/handoffs/runtime-qa/current.md";
-var DEFAULT_TIMEOUT_MS2 = 12e4;
-function shouldRunRuntimeQa(root2 = process.cwd()) {
-  if ((0, import_fs108.existsSync)((0, import_path128.resolve)(root2, RUNTIME_QA_CONFIG_RELATIVE_PATH))) return true;
-  const cyclePath = (0, import_path128.resolve)(root2, ".omc/cycles/current.md");
-  if (!(0, import_fs108.existsSync)(cyclePath)) return false;
-  try {
-    const content = (0, import_fs108.readFileSync)(cyclePath, "utf-8");
-    return /\b(runtime-qa|simulator|emulator|smoke|playwright|maestro|detox|appium|ios|android)\b/i.test(content);
-  } catch {
-    return false;
-  }
-}
-function readRuntimeQaConfig(root2 = process.cwd()) {
-  const path23 = (0, import_path128.resolve)(root2, RUNTIME_QA_CONFIG_RELATIVE_PATH);
-  if (!(0, import_fs108.existsSync)(path23)) return void 0;
-  return JSON.parse((0, import_fs108.readFileSync)(path23, "utf-8"));
-}
-function detectRuntimeQaConfig(root2 = process.cwd(), target) {
-  const resolvedRoot = (0, import_path128.resolve)(root2);
-  const inferredTarget = target ?? inferRuntimeQaTarget(resolvedRoot);
-  if (inferredTarget === "mobile") {
-    const adapter = inferMobileAdapter(resolvedRoot);
-    const smoke2 = detectMobileSmokeCommand(adapter, resolvedRoot);
-    return {
-      schema_version: 1,
-      target: "mobile",
-      adapter,
-      commands: smoke2 ? { smoke: smoke2 } : void 0,
-      mobile: { tool: mobileToolForAdapter(adapter, void 0) }
-    };
-  }
-  if (inferredTarget === "web") {
-    const smoke2 = detectWebSmokeCommand(resolvedRoot);
-    return {
-      schema_version: 1,
-      target: "web",
-      adapter: "web-playwright",
-      commands: smoke2 ? { smoke: smoke2 } : void 0
-    };
-  }
-  const smoke = detectProjectSmokeCommand(resolvedRoot);
-  return {
-    schema_version: 1,
-    target: inferredTarget ?? "project-script",
-    adapter: inferredTarget === "cli" || inferredTarget === "service" ? "cli-tmux" : "project-script",
-    commands: smoke ? { smoke } : void 0
-  };
-}
-function initRuntimeQaConfig(options = {}) {
-  const root2 = (0, import_path128.resolve)(options.root ?? process.cwd());
-  const path23 = (0, import_path128.resolve)(root2, RUNTIME_QA_CONFIG_RELATIVE_PATH);
-  const existed = (0, import_fs108.existsSync)(path23);
-  const config2 = existed && !options.force ? readRuntimeQaConfig(root2) ?? detectRuntimeQaConfig(root2, options.target) : detectRuntimeQaConfig(root2, options.target);
-  const written = options.write === true && (!existed || options.force === true);
-  if (written) {
-    ensureDirSync((0, import_path128.dirname)(path23));
-    atomicWriteJsonSync(path23, config2);
-  }
-  return {
-    root: root2,
-    path: path23,
-    config: config2,
-    existed,
-    written,
-    reason: existed && !options.force ? "Existing runtime QA config preserved." : "Runtime QA config detected from project files and scripts."
-  };
-}
-function runRuntimeQa(options = {}) {
-  const root2 = (0, import_path128.resolve)(options.root ?? process.cwd());
-  const configPath = (0, import_path128.resolve)(root2, RUNTIME_QA_CONFIG_RELATIVE_PATH);
-  const explicitConfig = options.config ?? readRuntimeQaConfig(root2);
-  const configExists = Boolean(options.config || (0, import_fs108.existsSync)(configPath));
-  const config2 = explicitConfig ?? detectRuntimeQaConfig(root2);
-  if (!configExists && options.writeDetectedConfig === true && config2.commands && options.dryRun !== true) {
-    ensureDirSync((0, import_path128.dirname)(configPath));
-    atomicWriteJsonSync(configPath, config2);
-  }
-  const runId = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
-  const artifactDir = (0, import_path128.resolve)(root2, config2?.artifacts_dir ?? `.omc/artifacts/runtime-qa/${runId}`);
-  const adapterResolution = resolveAdapter(root2, config2, {
-    installMobileTools: options.installMobileTools === true,
-    toolDetector: options.toolDetector ?? defaultToolDetector
-  });
-  const commandRunner = options.commandRunner ?? defaultCommandRunner;
-  const dryRun = options.dryRun === true;
-  const timeoutMs = config2?.timeout_ms ?? DEFAULT_TIMEOUT_MS2;
-  const stepResults = [];
-  if (adapterResolution.blocked) {
-    return {
-      schema_version: 1,
-      produced_at: (/* @__PURE__ */ new Date()).toISOString(),
-      agent_role: "runtime-qa-runner",
-      status: "blocked",
-      root: root2,
-      config_path: RUNTIME_QA_CONFIG_RELATIVE_PATH,
-      config_exists: configExists,
-      adapter: adapterResolution.adapter,
-      auto: options.auto === true,
-      dry_run: dryRun,
-      artifact_dir: artifactDir,
-      install_proposal: adapterResolution.installProposal,
-      tool_detection: adapterResolution.toolDetection,
-      step_results: [{
-        name: "adapter",
-        status: "blocked",
-        reason: adapterResolution.reason
-      }]
-    };
-  }
-  ensureDirSync(artifactDir);
-  if (adapterResolution.provisionCommands.length > 0) {
-    for (const command of adapterResolution.provisionCommands) {
-      if (dryRun) {
-        stepResults.push({
-          name: command.name,
-          command: command.command,
-          status: "dry-run",
-          reason: "Would install missing mobile runtime QA tooling."
-        });
-        continue;
-      }
-      const result = commandRunner(command.command, root2, timeoutMs);
-      stepResults.push(commandResultToStep(command, result, artifactDir, options.summaryPolicy));
-      if (result.error || result.status !== 0) {
-        return {
-          schema_version: 1,
-          produced_at: (/* @__PURE__ */ new Date()).toISOString(),
-          agent_role: "runtime-qa-runner",
-          status: "failed",
-          root: root2,
-          config_path: RUNTIME_QA_CONFIG_RELATIVE_PATH,
-          config_exists: configExists,
-          adapter: adapterResolution.adapter,
-          auto: options.auto === true,
-          dry_run: dryRun,
-          artifact_dir: artifactDir,
-          install_proposal: adapterResolution.installProposal,
-          tool_detection: adapterResolution.toolDetection,
-          step_results: stepResults
-        };
-      }
-    }
-  }
-  const commands = commandsForAdapter(adapterResolution.adapter, config2, root2);
-  if (commands.length === 0) {
-    return {
-      schema_version: 1,
-      produced_at: (/* @__PURE__ */ new Date()).toISOString(),
-      agent_role: "runtime-qa-runner",
-      status: "noop",
-      root: root2,
-      config_path: RUNTIME_QA_CONFIG_RELATIVE_PATH,
-      config_exists: configExists,
-      adapter: adapterResolution.adapter,
-      auto: options.auto === true,
-      dry_run: dryRun,
-      artifact_dir: artifactDir,
-      install_proposal: adapterResolution.installProposal,
-      tool_detection: adapterResolution.toolDetection,
-      step_results: [{
-        name: "commands",
-        status: "skipped",
-        reason: "No runtime QA commands were configured or detected."
-      }]
-    };
-  }
-  for (const command of commands) {
-    if (dryRun) {
-      stepResults.push({
-        name: command.name,
-        command: command.command,
-        status: "dry-run",
-        reason: "Would run runtime QA command."
-      });
-      continue;
-    }
-    const result = commandRunner(command.command, root2, timeoutMs);
-    const step = commandResultToStep(command, result, artifactDir, options.summaryPolicy);
-    stepResults.push(step);
-    if (step.status === "failed") break;
-  }
-  return {
-    schema_version: 1,
-    produced_at: (/* @__PURE__ */ new Date()).toISOString(),
-    agent_role: "runtime-qa-runner",
-    status: stepResults.some((step) => step.status === "failed") ? "failed" : "passed",
-    root: root2,
-    config_path: RUNTIME_QA_CONFIG_RELATIVE_PATH,
-    config_exists: configExists,
-    adapter: adapterResolution.adapter,
-    auto: options.auto === true,
-    dry_run: dryRun,
-    artifact_dir: artifactDir,
-    install_proposal: adapterResolution.installProposal,
-    tool_detection: adapterResolution.toolDetection,
-    step_results: stepResults
-  };
-}
-function writeRuntimeQaRunReport(root2, report2) {
-  const jsonPath = (0, import_path128.resolve)(root2, RUNTIME_QA_HANDOFF_RELATIVE_PATH);
-  const mdPath = (0, import_path128.resolve)(root2, RUNTIME_QA_HANDOFF_MD_RELATIVE_PATH);
-  ensureDirSync((0, import_path128.dirname)(jsonPath));
-  atomicWriteJsonSync(jsonPath, report2);
-  atomicWriteFileSync(mdPath, renderRuntimeQaRunReport(report2));
-  return { jsonPath, mdPath };
-}
-function renderRuntimeQaRunReport(report2) {
-  const lines = [
-    "# Runtime QA Report",
-    "",
-    `produced_at: ${report2.produced_at}`,
-    `status: ${report2.status}`,
-    `adapter: ${report2.adapter}`,
-    `auto: ${report2.auto}`,
-    `dry_run: ${report2.dry_run}`,
-    `config_exists: ${report2.config_exists}`,
-    `artifact_dir: ${report2.artifact_dir}`
-  ];
-  if (report2.install_proposal) {
-    lines.push(`install_proposal: ${report2.install_proposal}`);
-  }
-  if (report2.tool_detection) {
-    lines.push(`tool_detection: ${report2.tool_detection.tool} ${report2.tool_detection.detected ? "detected" : "missing"} (${report2.tool_detection.method})`);
-  }
-  lines.push("", "## Steps");
-  for (const step of report2.step_results) {
-    lines.push(`- ${step.name}: ${step.status}`);
-    lines.push(`  - reason: ${step.reason}`);
-    if (step.command) lines.push(`  - command: ${step.command}`);
-    if (step.exit_code !== void 0) lines.push(`  - exit_code: ${step.exit_code}`);
-    if (step.stdout_artifact) lines.push(`  - stdout_artifact: ${step.stdout_artifact}`);
-    if (step.stderr_artifact) lines.push(`  - stderr_artifact: ${step.stderr_artifact}`);
-  }
-  lines.push("");
-  lines.push("artifacts_written:");
-  lines.push(`  - ${RUNTIME_QA_HANDOFF_RELATIVE_PATH}`);
-  lines.push(`  - ${RUNTIME_QA_HANDOFF_MD_RELATIVE_PATH}`);
-  lines.push("");
-  return lines.join("\n");
-}
-function resolveAdapter(root2, config2, options) {
-  const adapter = config2?.adapter ?? defaultAdapterForTarget(config2?.target);
-  if (adapter === "web-playwright" && !hasPlaywright(root2) && !hasConfiguredSmoke(config2)) {
-    return {
-      adapter,
-      blocked: true,
-      reason: "web-playwright selected but no Playwright project config or smoke command was found.",
-      installProposal: "Install/configure Playwright or add .omc/runtime-qa.json commands.smoke.",
-      provisionCommands: []
-    };
-  }
-  if (isMobileAdapter(adapter)) {
-    const tool2 = mobileToolForAdapter(adapter, config2);
-    const toolDetection = options.toolDetector(tool2, root2);
-    if (!hasMobileSmokeCommand(adapter, config2, root2)) {
-      return {
-        adapter,
-        blocked: true,
-        reason: `${adapter} selected but no mobile smoke command was configured or detected.`,
-        installProposal: `Set commands.smoke or mobile.command in .omc/runtime-qa.json before running ${tool2} simulator checks.`,
-        toolDetection,
-        provisionCommands: []
-      };
-    }
-    if (!toolDetection.detected) {
-      const provisionCommands = mobileProvisionCommands(root2, tool2, config2);
-      const installProposal = mobileInstallProposal(tool2, provisionCommands);
-      const installAllowed = options.installMobileTools || config2?.mobile?.install?.enabled === true;
-      if (installAllowed && provisionCommands.length > 0) {
-        return {
-          adapter,
-          blocked: false,
-          reason: `${tool2} was not detected; provisioning is explicitly enabled.`,
-          installProposal,
-          toolDetection,
-          provisionCommands
-        };
-      }
-      return {
-        adapter,
-        blocked: true,
-        reason: `${adapter} selected but ${tool2} was not detected.`,
-        installProposal,
-        toolDetection,
-        provisionCommands: []
-      };
-    }
-    return {
-      adapter,
-      blocked: false,
-      reason: `${tool2} detected and mobile smoke command is available.`,
-      toolDetection,
-      provisionCommands: []
-    };
-  }
-  return { adapter, blocked: false, reason: "Adapter is runnable.", provisionCommands: [] };
-}
-function defaultAdapterForTarget(target) {
-  if (target === "web") return "web-playwright";
-  if (target === "cli" || target === "service") return "cli-tmux";
-  if (target === "mobile") return "mobile-maestro";
-  return "project-script";
-}
-function inferRuntimeQaTarget(root2) {
-  const cycle = readRelative3(root2, ".omc/cycles/current.md")?.toLowerCase() ?? "";
-  const pkg = readPackageJson(root2);
-  const scriptText = Object.entries(pkg?.scripts ?? {}).map(([name, command]) => `${name} ${command}`).join("\n").toLowerCase();
-  if ((0, import_fs108.existsSync)((0, import_path128.resolve)(root2, ".maestro")) || /\b(maestro|detox|appium|ios|android|simulator|emulator|react-native|expo)\b/i.test(`${cycle}
-${scriptText}`)) {
-    return "mobile";
-  }
-  if (hasPlaywright(root2) || /\b(playwright|browser|e2e:web|test:e2e)\b/i.test(`${cycle}
-${scriptText}`)) {
-    return "web";
-  }
-  if (/\b(cli|terminal|command-line|tmux)\b/i.test(cycle)) return "cli";
-  if (/\b(service|server|api smoke)\b/i.test(cycle)) return "service";
-  return "project-script";
-}
-function inferMobileAdapter(root2) {
-  const scriptText = Object.values(readPackageJson(root2)?.scripts ?? {}).join("\n").toLowerCase();
-  if (scriptText.includes("detox")) return "mobile-detox";
-  if (scriptText.includes("appium")) return "mobile-appium";
-  return "mobile-maestro";
-}
-function commandsForAdapter(adapter, config2, root2) {
-  const configured = flattenConfiguredCommands(config2?.commands);
-  if (configured.length > 0) return configured;
-  if (adapter === "web-playwright") {
-    return [{ name: "smoke", command: detectWebSmokeCommand(root2) ?? "npx playwright test --trace retain-on-failure" }];
-  }
-  if (config2?.mobile?.command) {
-    return [{ name: "smoke", command: config2.mobile.command }];
-  }
-  const detectedMobileCommand = detectMobileSmokeCommand(adapter, root2);
-  if (detectedMobileCommand) {
-    return [{ name: "smoke", command: detectedMobileCommand }];
-  }
-  return [];
-}
-function detectWebSmokeCommand(root2) {
-  const pkg = readPackageJson(root2);
-  if (!pkg?.scripts) {
-    return hasPlaywright(root2) ? "npx playwright test --trace retain-on-failure" : void 0;
-  }
-  const names = ["test:e2e", "e2e", "playwright:test", "test:playwright", "smoke:web", "smoke"];
-  for (const name of names) {
-    const script = pkg.scripts[name];
-    if (script && /\b(playwright|browser|e2e|smoke)\b/i.test(script)) {
-      return `${packageRunCommand(root2)} ${name}`;
-    }
-  }
-  const fallback = Object.entries(pkg.scripts).find(([name, script]) => /\b(e2e|smoke|playwright)\b/i.test(name) || /\bplaywright\b/i.test(script));
-  return fallback ? `${packageRunCommand(root2)} ${fallback[0]}` : hasPlaywright(root2) ? "npx playwright test --trace retain-on-failure" : void 0;
-}
-function detectProjectSmokeCommand(root2) {
-  const pkg = readPackageJson(root2);
-  if (!pkg?.scripts) return void 0;
-  const names = ["smoke", "test:smoke", "test:e2e", "e2e", "test:integration", "test"];
-  for (const name of names) {
-    if (pkg.scripts[name]) return `${packageRunCommand(root2)} ${name}`;
-  }
-  const fallback = Object.keys(pkg.scripts).find((name) => /\b(smoke|e2e|integration)\b/i.test(name));
-  return fallback ? `${packageRunCommand(root2)} ${fallback}` : void 0;
-}
-function flattenConfiguredCommands(commands) {
-  if (!commands) return [];
-  return [
-    ...expandCommand2("build", commands.build),
-    ...expandCommand2("start", commands.start),
-    ...expandCommand2("readiness", commands.readiness),
-    ...expandCommand2("smoke", commands.smoke),
-    ...expandCommand2("cleanup", commands.cleanup)
-  ];
-}
-function expandCommand2(name, value) {
-  if (!value) return [];
-  const commands = Array.isArray(value) ? value : [value];
-  return commands.map((command, index) => ({
-    name: commands.length === 1 ? name : `${name}-${index + 1}`,
-    command
-  }));
-}
-function hasConfiguredSmoke(config2) {
-  return Boolean(config2?.commands?.smoke || config2?.mobile?.command);
-}
-function hasMobileSmokeCommand(adapter, config2, root2) {
-  return hasConfiguredSmoke(config2) || Boolean(detectMobileSmokeCommand(adapter, root2));
-}
-function isMobileAdapter(adapter) {
-  return adapter === "mobile-maestro" || adapter === "mobile-detox" || adapter === "mobile-appium";
-}
-function mobileToolForAdapter(adapter, config2) {
-  if (config2?.mobile?.tool) return config2.mobile.tool;
-  if (adapter === "mobile-detox") return "detox";
-  if (adapter === "mobile-appium") return "appium";
-  return "maestro";
-}
-function detectMobileSmokeCommand(adapter, root2) {
-  if (adapter === "mobile-maestro" && (0, import_fs108.existsSync)((0, import_path128.resolve)(root2, ".maestro"))) {
-    return "maestro test .maestro";
-  }
-  const pkg = readPackageJson(root2);
-  if (!pkg?.scripts) return void 0;
-  const scriptEntries = Object.entries(pkg.scripts);
-  const preferredNames = adapter === "mobile-detox" ? ["detox:test", "e2e:detox", "test:e2e", "e2e"] : adapter === "mobile-appium" ? ["appium:test", "e2e:appium", "test:e2e", "e2e"] : ["maestro:test", "test:maestro", "test:e2e", "e2e"];
-  const commandNeedle = adapter.replace("mobile-", "");
-  for (const name of preferredNames) {
-    const script = pkg.scripts[name];
-    if (script && script.includes(commandNeedle)) {
-      return `${packageRunCommand(root2)} ${name}`;
-    }
-  }
-  const fallback = scriptEntries.find(([, script]) => script.includes(commandNeedle));
-  return fallback ? `${packageRunCommand(root2)} ${fallback[0]}` : void 0;
-}
-function mobileProvisionCommands(root2, tool2, config2) {
-  if (config2?.mobile?.install?.command) {
-    return expandCommand2(`install-${tool2}`, config2.mobile.install.command);
-  }
-  const configuredManager = config2?.mobile?.install?.manager;
-  const manager = resolveInstallManager(root2, configuredManager);
-  if (tool2 === "maestro") {
-    if (configuredManager === "brew") {
-      return [
-        { name: "install-maestro-1", command: "brew tap mobile-dev-inc/tap" },
-        { name: "install-maestro-2", command: "brew install mobile-dev-inc/tap/maestro" }
-      ];
-    }
-    return [{ name: "install-maestro", command: 'curl -fsSL "https://get.maestro.mobile.dev" | bash' }];
-  }
-  if (tool2 === "detox") {
-    return [{ name: "install-detox", command: packageAddCommand(root2, manager, "detox") }];
-  }
-  const appiumManager = configuredManager && configuredManager !== "auto" ? configuredManager : "npm";
-  return [{ name: "install-appium", command: globalPackageAddCommand(appiumManager, "appium") }];
-}
-function mobileInstallProposal(tool2, commands) {
-  if (commands.length === 0) {
-    return `Configure mobile.install.command in .omc/runtime-qa.json to provision ${tool2}.`;
-  }
-  return [
-    `Run omc runtime-qa run --auto --install-mobile-tools to provision ${tool2}, or run manually:`,
-    ...commands.map((entry) => entry.command)
-  ].join(" ");
-}
-function resolveInstallManager(root2, configured) {
-  if (configured && configured !== "auto") return configured;
-  if ((0, import_fs108.existsSync)((0, import_path128.resolve)(root2, "pnpm-lock.yaml"))) return "pnpm";
-  if ((0, import_fs108.existsSync)((0, import_path128.resolve)(root2, "yarn.lock"))) return "yarn";
-  return "npm";
-}
-function packageRunCommand(root2) {
-  if ((0, import_fs108.existsSync)((0, import_path128.resolve)(root2, "pnpm-lock.yaml"))) return "pnpm run";
-  if ((0, import_fs108.existsSync)((0, import_path128.resolve)(root2, "yarn.lock"))) return "yarn";
-  return "npm run";
-}
-function packageAddCommand(root2, manager, packageName) {
-  const resolved = manager === "auto" ? resolveInstallManager(root2, manager) : manager;
-  if (resolved === "pnpm") return `pnpm add ${packageName} --save-dev`;
-  if (resolved === "yarn") return `yarn add ${packageName} --dev`;
-  return `npm install ${packageName} --save-dev`;
-}
-function globalPackageAddCommand(manager, packageName) {
-  if (manager === "pnpm") return `pnpm add --global ${packageName}`;
-  if (manager === "yarn") return `yarn global add ${packageName}`;
-  return `npm i --location=global ${packageName}`;
-}
-function hasPlaywright(root2) {
-  if ((0, import_fs108.existsSync)((0, import_path128.resolve)(root2, "playwright.config.ts")) || (0, import_fs108.existsSync)((0, import_path128.resolve)(root2, "playwright.config.js"))) {
-    return true;
-  }
-  if ((0, import_fs108.existsSync)((0, import_path128.resolve)(root2, "node_modules/.bin/playwright"))) {
-    return true;
-  }
-  const packagePath = (0, import_path128.resolve)(root2, "package.json");
-  if (!(0, import_fs108.existsSync)(packagePath)) return false;
-  try {
-    const pkg = JSON.parse((0, import_fs108.readFileSync)(packagePath, "utf-8"));
-    return Boolean(pkg.dependencies?.["@playwright/test"] || pkg.devDependencies?.["@playwright/test"]);
-  } catch {
-    return false;
-  }
-}
-function defaultToolDetector(tool2, root2) {
-  const packageDetection = detectToolFromPackage(tool2, root2);
-  if (packageDetection.detected) return packageDetection;
-  const command = tool2 === "detox" ? "detox --version" : tool2 === "appium" ? "appium --version" : "maestro --version";
-  const result = (0, import_child_process29.spawnSync)(command, {
-    cwd: root2,
-    shell: true,
-    encoding: "utf-8",
-    stdio: ["ignore", "pipe", "pipe"],
-    timeout: 5e3
-  });
-  if (result.status === 0) {
-    return {
-      tool: tool2,
-      detected: true,
-      method: "path",
-      command,
-      version: String(result.stdout || result.stderr).trim().split("\n")[0]
-    };
-  }
-  return {
-    tool: tool2,
-    detected: false,
-    method: packageDetection.method === "package-json" ? "package-json-and-path" : "path",
-    command
-  };
-}
-function detectToolFromPackage(tool2, root2) {
-  const binaryPath = (0, import_path128.resolve)(root2, "node_modules/.bin", tool2);
-  if ((0, import_fs108.existsSync)(binaryPath)) {
-    return { tool: tool2, detected: true, method: "node_modules", command: binaryPath };
-  }
-  const pkg = readPackageJson(root2);
-  if (pkg?.dependencies?.[tool2] || pkg?.devDependencies?.[tool2]) {
-    return { tool: tool2, detected: true, method: "package-json" };
-  }
-  return { tool: tool2, detected: false, method: pkg ? "package-json" : "none" };
-}
-function readPackageJson(root2) {
-  const packagePath = (0, import_path128.resolve)(root2, "package.json");
-  if (!(0, import_fs108.existsSync)(packagePath)) return void 0;
-  try {
-    return JSON.parse((0, import_fs108.readFileSync)(packagePath, "utf-8"));
-  } catch {
-    return void 0;
-  }
-}
-function readRelative3(root2, relativePath) {
-  const path23 = (0, import_path128.resolve)(root2, relativePath);
-  if (!(0, import_fs108.existsSync)(path23)) return void 0;
-  try {
-    return (0, import_fs108.readFileSync)(path23, "utf-8");
-  } catch {
-    return void 0;
-  }
-}
-function commandResultToStep(command, result, artifactDir, summaryPolicy) {
-  const stdoutArtifact = writeCommandArtifact(artifactDir, `${command.name}.stdout.txt`, result.stdout ?? "");
-  const stderrArtifact = writeCommandArtifact(artifactDir, `${command.name}.stderr.txt`, result.stderr ?? "");
-  const status = result.error || result.status !== 0 ? "failed" : "passed";
-  return {
-    name: command.name,
-    command: command.command,
-    status,
-    exit_code: result.status,
-    signal: result.signal,
-    reason: result.error?.message ?? (status === "passed" ? "Command completed successfully." : `Command exited with status ${result.status ?? "unknown"}.`),
-    stdout_artifact: stdoutArtifact,
-    stderr_artifact: stderrArtifact,
-    stdout_preview: truncateInlineLog(result.stdout ?? "", summaryPolicy),
-    stderr_preview: truncateInlineLog(result.stderr ?? "", summaryPolicy)
-  };
-}
-function writeCommandArtifact(artifactDir, filename, content) {
-  const path23 = (0, import_path128.resolve)(artifactDir, filename);
-  atomicWriteFileSync(path23, content);
-  return path23;
-}
-function defaultCommandRunner(command, cwd2, timeoutMs) {
-  const result = (0, import_child_process29.spawnSync)(command, {
-    cwd: cwd2,
-    shell: true,
-    encoding: "utf-8",
-    stdio: ["ignore", "pipe", "pipe"],
-    timeout: timeoutMs
-  });
-  return {
-    status: result.status,
-    signal: result.signal,
-    error: result.error,
-    stdout: result.stdout ?? "",
-    stderr: result.stderr ?? ""
-  };
-}
-
 // src/product/feature-generation.ts
-var import_fs109 = require("fs");
-var import_path129 = require("path");
+var import_fs114 = require("fs");
+var import_path136 = require("path");
 init_loader();
 init_mcp_registry();
 init_atomic_write();
@@ -89501,7 +92202,7 @@ var SOURCE_CANDIDATES = {
   portfolio: [".omc/portfolio/current.json", ".omc/opportunities/current.md", ".omc/roadmap/current.md"]
 };
 function planFeatureGeneration(options = {}) {
-  const root2 = (0, import_path129.resolve)(options.root ?? process.cwd());
+  const root2 = (0, import_path136.resolve)(options.root ?? process.cwd());
   const now = options.now ?? /* @__PURE__ */ new Date();
   const staleAfterDays = options.staleAfterDays ?? DEFAULT_STALE_AFTER_DAYS;
   const mcpStatus = options.mcpStatus ?? inspectUnifiedMcpRegistrySync();
@@ -89529,11 +92230,11 @@ function planFeatureGeneration(options = {}) {
   };
 }
 function writeFeatureGenerationPlan(root2 = process.cwd(), plan) {
-  const jsonPath = (0, import_path129.resolve)(root2, FEATURE_GENERATION_JSON_RELATIVE_PATH);
-  const mdPath = (0, import_path129.resolve)(root2, FEATURE_GENERATION_MD_RELATIVE_PATH);
-  (0, import_fs109.mkdirSync)((0, import_path129.dirname)(jsonPath), { recursive: true });
+  const jsonPath = (0, import_path136.resolve)(root2, FEATURE_GENERATION_JSON_RELATIVE_PATH);
+  const mdPath = (0, import_path136.resolve)(root2, FEATURE_GENERATION_MD_RELATIVE_PATH);
+  (0, import_fs114.mkdirSync)((0, import_path136.dirname)(jsonPath), { recursive: true });
   atomicWriteJsonSync(jsonPath, plan);
-  (0, import_fs109.writeFileSync)(mdPath, renderFeatureGenerationPlan(plan), "utf-8");
+  (0, import_fs114.writeFileSync)(mdPath, renderFeatureGenerationPlan(plan), "utf-8");
   return { jsonPath, mdPath };
 }
 function renderFeatureGenerationPlan(plan) {
@@ -89568,7 +92269,7 @@ function renderFeatureGenerationPlan(plan) {
 }
 function inspectSource(root2, kind, now, staleAfterDays) {
   const candidates = SOURCE_CANDIDATES[kind];
-  const found = candidates.find((candidate) => (0, import_fs109.existsSync)((0, import_path129.resolve)(root2, candidate)));
+  const found = candidates.find((candidate) => (0, import_fs114.existsSync)((0, import_path136.resolve)(root2, candidate)));
   if (!found) {
     return {
       kind,
@@ -89577,10 +92278,10 @@ function inspectSource(root2, kind, now, staleAfterDays) {
       reason: `Missing ${kind} context`
     };
   }
-  const absolutePath = (0, import_path129.resolve)(root2, found);
-  const stats = (0, import_fs109.statSync)(absolutePath);
+  const absolutePath = (0, import_path136.resolve)(root2, found);
+  const stats = (0, import_fs114.statSync)(absolutePath);
   const ageDays = Math.max(0, Math.floor((now.getTime() - stats.mtimeMs) / 864e5));
-  const content = (0, import_fs109.readFileSync)(absolutePath, "utf-8");
+  const content = (0, import_fs114.readFileSync)(absolutePath, "utf-8");
   const chars = content.trim().length;
   if (chars < 120) {
     return { kind, path: found, status: "thin", ageDays, chars, reason: `${kind} artifact is too thin (${chars} chars)` };
@@ -89681,7 +92382,7 @@ var NEXT_STAGE2 = {
   learn: "complete"
 };
 function runProductCycle(options = {}) {
-  const root2 = (0, import_path130.resolve)(options.root ?? process.cwd());
+  const root2 = (0, import_path137.resolve)(options.root ?? process.cwd());
   const dryRun = options.dryRun === true;
   const maxStages = options.maxStages ?? DEFAULT_MAX_STAGES;
   const verifyCommand = options.verifyCommand ?? DEFAULT_VERIFY_COMMAND;
@@ -89739,6 +92440,28 @@ function runProductCycle(options = {}) {
   while (snapshot.stage && stagesProcessed < maxStages) {
     const currentStage = snapshot.stage;
     if (currentStage === "complete") {
+      const cycleReport = validateProductPipelineContracts({ root: root2, stage: "cycle" });
+      if (!cycleReport.ok) {
+        const evaluation2 = {
+          stage: "complete",
+          outcome: "contract-failed",
+          reason: "completed cycle contract failed",
+          instruction: "omc product-cycle validate --json",
+          evidence: { issues: cycleReport.issues }
+        };
+        stageResults.push(evaluation2);
+        return finalize({
+          ok: false,
+          startedAt,
+          startedFromStage,
+          endedAtStage: currentStage,
+          stoppedReason: "contract-failed",
+          pauseInstruction: evaluation2.instruction,
+          stagesAdvanced,
+          stageResults,
+          issues
+        });
+      }
       return finalize({
         ok: true,
         startedAt,
@@ -89902,9 +92625,9 @@ function evaluateDiscover(root2, snapshot, dryRun) {
   const ecosystemPath = ".omc/ecosystem/current.md";
   const featurePlan = planFeatureGeneration({ root: root2, goal: snapshot.cycleGoal });
   const expected = [
-    { path: capabilityPath, exists: (0, import_fs110.existsSync)((0, import_path130.resolve)(root2, capabilityPath)) },
-    { path: ecosystemPath, exists: (0, import_fs110.existsSync)((0, import_path130.resolve)(root2, ecosystemPath)) },
-    { path: ".omc/feature-generation/current.json", exists: (0, import_fs110.existsSync)((0, import_path130.resolve)(root2, ".omc/feature-generation/current.json")) }
+    { path: capabilityPath, exists: (0, import_fs115.existsSync)((0, import_path137.resolve)(root2, capabilityPath)) },
+    { path: ecosystemPath, exists: (0, import_fs115.existsSync)((0, import_path137.resolve)(root2, ecosystemPath)) },
+    { path: ".omc/feature-generation/current.json", exists: (0, import_fs115.existsSync)((0, import_path137.resolve)(root2, ".omc/feature-generation/current.json")) }
   ];
   if (expected[0].exists) {
     if (!dryRun) writeFeatureGenerationPlan(root2, featurePlan);
@@ -89932,10 +92655,10 @@ function evaluateRank(root2, snapshot, dryRun) {
   const roadmap = ".omc/roadmap/current.md";
   const featurePlan = planFeatureGeneration({ root: root2, goal: snapshot.cycleGoal });
   const expected = [
-    { path: opportunities, exists: (0, import_fs110.existsSync)((0, import_path130.resolve)(root2, opportunities)) },
-    { path: roadmap, exists: (0, import_fs110.existsSync)((0, import_path130.resolve)(root2, roadmap)) },
-    { path: ledger, exists: (0, import_fs110.existsSync)((0, import_path130.resolve)(root2, ledger)) },
-    { path: ".omc/feature-generation/current.json", exists: (0, import_fs110.existsSync)((0, import_path130.resolve)(root2, ".omc/feature-generation/current.json")) }
+    { path: opportunities, exists: (0, import_fs115.existsSync)((0, import_path137.resolve)(root2, opportunities)) },
+    { path: roadmap, exists: (0, import_fs115.existsSync)((0, import_path137.resolve)(root2, roadmap)) },
+    { path: ledger, exists: (0, import_fs115.existsSync)((0, import_path137.resolve)(root2, ledger)) },
+    { path: ".omc/feature-generation/current.json", exists: (0, import_fs115.existsSync)((0, import_path137.resolve)(root2, ".omc/feature-generation/current.json")) }
   ];
   const missing = expected.filter((entry) => !entry.exists).map((entry) => entry.path);
   if (missing.length > 0) {
@@ -90076,7 +92799,28 @@ function evaluateVerify(root2, options) {
       instruction: "Run cycle-specific tests/audits manually, then omc product-cycle advance --to learn"
     };
   }
-  const result = (0, import_child_process30.spawnSync)(trimmed, {
+  if (options.dryRun) {
+    const runtimeQa = maybeRunRuntimeQa(root2, options);
+    const runtimeQaBlock = runtimeQa && (runtimeQa.report.status === "blocked" || runtimeQa.report.status === "noop");
+    if (runtimeQaBlock) {
+      return {
+        stage: "verify",
+        outcome: "pause-for-human",
+        reason: `dry-run: runtime QA would not produce executable evidence (${runtimeQa.report.status}, ${runtimeQa.report.adapter})`,
+        instruction: runtimeQa.report.install_proposal ?? "Configure .omc/runtime-qa.json with executable build/smoke/cleanup commands before verify can pass.",
+        runtimeQa,
+        evidence: { command: trimmed, dryRun: true, runtimeQaStatus: runtimeQa.report.status }
+      };
+    }
+    return {
+      stage: "verify",
+      outcome: "advance",
+      reason: `dry-run: would run verify (${trimmed})`,
+      runtimeQa,
+      evidence: { command: trimmed, dryRun: true, runtimeQaStatus: runtimeQa?.report.status }
+    };
+  }
+  const result = (0, import_child_process33.spawnSync)(trimmed, {
     cwd: root2,
     shell: true,
     stdio: "pipe",
@@ -90100,12 +92844,12 @@ function evaluateVerify(root2, options) {
   }
   if (result.status === 0) {
     const runtimeQa = maybeRunRuntimeQa(root2, options);
-    if (runtimeQa && runtimeQa.report.status === "blocked") {
+    if (runtimeQa && (runtimeQa.report.status === "blocked" || runtimeQa.report.status === "noop")) {
       return {
         stage: "verify",
         outcome: "pause-for-human",
-        reason: `runtime QA blocked (${runtimeQa.report.adapter})`,
-        instruction: runtimeQa.report.install_proposal ?? "Configure .omc/runtime-qa.json or rerun with --install-mobile-tools after approving tool provisioning.",
+        reason: runtimeQa.report.status === "noop" ? `runtime QA produced no executable evidence (${runtimeQa.report.adapter})` : `runtime QA blocked (${runtimeQa.report.adapter})`,
+        instruction: runtimeQa.report.install_proposal ?? "Configure .omc/runtime-qa.json with executable build/smoke/cleanup commands or rerun with --install-mobile-tools after approving tool provisioning.",
         runtimeQa,
         evidence: { command: trimmed, exitCode: 0, runtimeQaStatus: runtimeQa.report.status }
       };
@@ -90168,8 +92912,8 @@ function maybeRunRuntimeQa(root2, options) {
   return { report: report2, written };
 }
 function evaluateLearn(root2) {
-  const learningPath = (0, import_path130.resolve)(root2, ".omc/learning/current.md");
-  const expected = [{ path: ".omc/learning/current.md", exists: (0, import_fs110.existsSync)(learningPath) }];
+  const learningPath = (0, import_path137.resolve)(root2, ".omc/learning/current.md");
+  const expected = [{ path: ".omc/learning/current.md", exists: (0, import_fs115.existsSync)(learningPath) }];
   if (!expected[0].exists) {
     return {
       stage: "learn",
@@ -90179,7 +92923,7 @@ function evaluateLearn(root2) {
       expectedArtifacts: expected
     };
   }
-  const content = (0, import_fs110.readFileSync)(learningPath, "utf-8").toLowerCase();
+  const content = (0, import_fs115.readFileSync)(learningPath, "utf-8").toLowerCase();
   const required2 = ["shipped outcome", "evidence collected", "user/product learning", "invalidated assumptions", "recommended next cycle"];
   const missing = required2.filter((term) => !content.includes(term));
   if (missing.length > 0) {
@@ -90204,13 +92948,13 @@ function finalize(report2) {
 }
 
 // src/product/intervention-runner.ts
-var import_child_process31 = require("child_process");
-var import_path131 = require("path");
+var import_child_process34 = require("child_process");
+var import_path138 = require("path");
 init_atomic_write();
 var PRODUCT_INTERVENTION_RUN_REPORT_RELATIVE_PATH = ".omc/handoffs/product-cycle-interventions/run-report.json";
 var PRODUCT_INTERVENTION_RUN_REPORT_MD_RELATIVE_PATH = ".omc/handoffs/product-cycle-interventions/run-report.md";
 function runProductInterventionExecutionPlan(plan, options = {}) {
-  const root2 = (0, import_path131.resolve)(options.root ?? process.cwd());
+  const root2 = (0, import_path138.resolve)(options.root ?? process.cwd());
   const dryRun = options.dryRun === true;
   const maxSteps = options.maxSteps ?? Number.POSITIVE_INFINITY;
   const waitForTeamJobs = options.waitForTeamJobs === true;
@@ -90325,9 +93069,9 @@ function runProductInterventionExecutionPlan(plan, options = {}) {
   };
 }
 function writeProductInterventionRunReport(root2, report2) {
-  const jsonPath = (0, import_path131.resolve)(root2, PRODUCT_INTERVENTION_RUN_REPORT_RELATIVE_PATH);
-  const mdPath = (0, import_path131.resolve)(root2, PRODUCT_INTERVENTION_RUN_REPORT_MD_RELATIVE_PATH);
-  ensureDirSync((0, import_path131.dirname)(jsonPath));
+  const jsonPath = (0, import_path138.resolve)(root2, PRODUCT_INTERVENTION_RUN_REPORT_RELATIVE_PATH);
+  const mdPath = (0, import_path138.resolve)(root2, PRODUCT_INTERVENTION_RUN_REPORT_MD_RELATIVE_PATH);
+  ensureDirSync((0, import_path138.dirname)(jsonPath));
   atomicWriteJsonSync(jsonPath, report2);
   atomicWriteFileSync(mdPath, renderProductInterventionRunReport(report2));
   return { jsonPath, mdPath };
@@ -90391,7 +93135,7 @@ function resolveRunStatus(options) {
 }
 function defaultCommandRunner2(argv, cwd2) {
   const [command, ...args] = argv;
-  const result = (0, import_child_process31.spawnSync)(command, args, {
+  const result = (0, import_child_process34.spawnSync)(command, args, {
     cwd: cwd2,
     stdio: ["ignore", "pipe", "pipe"],
     encoding: "utf-8"
@@ -90417,7 +93161,7 @@ function waitForTeamJob(options) {
     waitArgv.push("--timeout-ms", String(options.timeoutMs));
   }
   const result = options.commandRunner(waitArgv, options.root);
-  const parsed = parseJsonObject(result.stdout ?? "");
+  const parsed = parseJsonObject2(result.stdout ?? "");
   const jobStatus = typeof parsed?.status === "string" ? parsed.status : void 0;
   const timedOut = parsed?.timedOut === true;
   if (result.error || result.status !== 0) {
@@ -90460,11 +93204,11 @@ function waitForTeamJob(options) {
   };
 }
 function parseTeamJobId(stdout) {
-  const parsed = parseJsonObject(stdout);
+  const parsed = parseJsonObject2(stdout);
   const jobId = parsed?.jobId;
   return typeof jobId === "string" && jobId.trim() ? jobId : void 0;
 }
-function parseJsonObject(raw) {
+function parseJsonObject2(raw) {
   try {
     const parsed = JSON.parse(raw);
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
@@ -90482,8 +93226,8 @@ function renderArgv2(argv) {
 }
 
 // src/product/research-execution-plan.ts
-var import_fs111 = require("fs");
-var import_path132 = require("path");
+var import_fs116 = require("fs");
+var import_path139 = require("path");
 init_atomic_write();
 var PRODUCT_RESEARCH_EXECUTION_PLAN_RELATIVE_PATH = ".omc/handoffs/product-cycle-research/execution-plan.json";
 var DEFAULT_PROVIDER2 = "codex";
@@ -90509,17 +93253,17 @@ function buildProductResearchExecutionPlan(handoff, options = {}) {
   };
 }
 function writeProductResearchExecutionPlan(root2, plan) {
-  const jsonPath = (0, import_path132.resolve)(root2, PRODUCT_RESEARCH_EXECUTION_PLAN_RELATIVE_PATH);
-  const mdPath = (0, import_path132.resolve)(root2, PRODUCT_RESEARCH_EXECUTION_PLAN_MD_RELATIVE_PATH);
-  ensureDirSync((0, import_path132.dirname)(jsonPath));
+  const jsonPath = (0, import_path139.resolve)(root2, PRODUCT_RESEARCH_EXECUTION_PLAN_RELATIVE_PATH);
+  const mdPath = (0, import_path139.resolve)(root2, PRODUCT_RESEARCH_EXECUTION_PLAN_MD_RELATIVE_PATH);
+  ensureDirSync((0, import_path139.dirname)(jsonPath));
   atomicWriteJsonSync(jsonPath, plan);
   atomicWriteFileSync(mdPath, renderProductResearchExecutionPlan(plan));
   return { jsonPath, mdPath };
 }
 function readProductResearchExecutionPlan(root2 = process.cwd()) {
-  const path23 = (0, import_path132.resolve)(root2, PRODUCT_RESEARCH_EXECUTION_PLAN_RELATIVE_PATH);
-  if (!(0, import_fs111.existsSync)(path23)) return void 0;
-  return JSON.parse((0, import_fs111.readFileSync)(path23, "utf-8"));
+  const path23 = (0, import_path139.resolve)(root2, PRODUCT_RESEARCH_EXECUTION_PLAN_RELATIVE_PATH);
+  if (!(0, import_fs116.existsSync)(path23)) return void 0;
+  return JSON.parse((0, import_fs116.readFileSync)(path23, "utf-8"));
 }
 function renderProductResearchExecutionPlan(plan) {
   const lines = [
@@ -90660,14 +93404,14 @@ function renderArgv3(argv) {
 }
 
 // src/product/research-runner.ts
-var import_fs112 = require("fs");
-var import_child_process32 = require("child_process");
-var import_path133 = require("path");
+var import_fs117 = require("fs");
+var import_child_process35 = require("child_process");
+var import_path140 = require("path");
 init_atomic_write();
 var PRODUCT_RESEARCH_RUN_REPORT_RELATIVE_PATH = ".omc/handoffs/product-cycle-research/run-report.json";
 var PRODUCT_RESEARCH_RUN_REPORT_MD_RELATIVE_PATH = ".omc/handoffs/product-cycle-research/run-report.md";
 function runProductResearchExecutionPlan(plan, options = {}) {
-  const root2 = (0, import_path133.resolve)(options.root ?? process.cwd());
+  const root2 = (0, import_path140.resolve)(options.root ?? process.cwd());
   const dryRun = options.dryRun === true;
   const maxSteps = options.maxSteps ?? Number.POSITIVE_INFINITY;
   const commandRunner = options.commandRunner ?? defaultCommandRunner3;
@@ -90740,7 +93484,7 @@ function runProductResearchExecutionPlan(plan, options = {}) {
     expectedCycleGoal: plan.cycle_goal,
     expectedRouteIds: routeIds
   });
-  const researchArtifactExists = (0, import_fs112.existsSync)((0, import_path133.resolve)(root2, plan.research_artifact));
+  const researchArtifactExists = (0, import_fs117.existsSync)((0, import_path140.resolve)(root2, plan.research_artifact));
   return {
     schema_version: 1,
     produced_at: (/* @__PURE__ */ new Date()).toISOString(),
@@ -90764,9 +93508,9 @@ function runProductResearchExecutionPlan(plan, options = {}) {
   };
 }
 function writeProductResearchRunReport(root2, report2) {
-  const jsonPath = (0, import_path133.resolve)(root2, PRODUCT_RESEARCH_RUN_REPORT_RELATIVE_PATH);
-  const mdPath = (0, import_path133.resolve)(root2, PRODUCT_RESEARCH_RUN_REPORT_MD_RELATIVE_PATH);
-  ensureDirSync((0, import_path133.dirname)(jsonPath));
+  const jsonPath = (0, import_path140.resolve)(root2, PRODUCT_RESEARCH_RUN_REPORT_RELATIVE_PATH);
+  const mdPath = (0, import_path140.resolve)(root2, PRODUCT_RESEARCH_RUN_REPORT_MD_RELATIVE_PATH);
+  ensureDirSync((0, import_path140.dirname)(jsonPath));
   atomicWriteJsonSync(jsonPath, report2);
   atomicWriteFileSync(mdPath, renderProductResearchRunReport(report2));
   return { jsonPath, mdPath };
@@ -90827,7 +93571,7 @@ function resolveRunStatus2(options) {
 }
 function defaultCommandRunner3(argv, cwd2) {
   const [command, ...args] = argv;
-  const result = (0, import_child_process32.spawnSync)(command, args, {
+  const result = (0, import_child_process35.spawnSync)(command, args, {
     cwd: cwd2,
     stdio: "inherit"
   });
@@ -90922,6 +93666,11 @@ async function productCycleValidateCommand(root2, options, logger = console) {
   const snapshot = validateProductCycle(root2);
   logger.log(options.json ? JSON.stringify(snapshot, null, 2) : renderSnapshot(snapshot));
   return snapshot.issues.some((issue4) => issue4.severity === "error") ? 1 : 0;
+}
+async function productCycleRepairCommand(root2, options, logger = console) {
+  const report2 = repairProductCycle(root2, { safe: options.safe === true });
+  logger.log(options.json ? JSON.stringify(report2, null, 2) : renderRepairReport(report2));
+  return report2.ok ? 0 : 1;
 }
 async function productCycleAdvanceCommand(root2, options, logger = console) {
   const to = options.to;
@@ -91787,6 +94536,40 @@ function renderSnapshot(snapshot) {
   }
   return lines.join("\n");
 }
+function renderRepairReport(report2) {
+  const lines = [
+    colors.bold("Product cycle repair"),
+    `root: ${report2.root}`,
+    `safe: ${report2.safe}`
+  ];
+  lines.push("");
+  lines.push(renderTable(report2.actions.map((action) => ({
+    action: action.id,
+    status: statusColor(action.status),
+    message: action.message,
+    command: action.command ?? "-"
+  })), [
+    { header: "action", field: "action", width: 22 },
+    { header: "status", field: "status", width: 10 },
+    { header: "message", field: "message", width: 82 },
+    { header: "command", field: "command", width: 52 }
+  ]));
+  lines.push("");
+  if (!report2.safe) {
+    lines.push(colors.green(
+      `Repair preview: ${report2.summary.needed} needed, ${report2.summary.blocked} blocked, ${report2.summary.skipped} skipped.`
+    ));
+  } else {
+    lines.push(report2.ok ? colors.green(`Repair ok: ${report2.summary.changed} changed, ${report2.summary.passed} passed.`) : colors.red(`Repair incomplete: ${report2.summary.needed} needed, ${report2.summary.blocked} blocked.`));
+  }
+  return lines.join("\n");
+}
+function statusColor(status) {
+  if (status === "passed" || status === "changed") return colors.green(status);
+  if (status === "blocked") return colors.red(status);
+  if (status === "needed") return colors.yellow(status);
+  return status;
+}
 
 // src/cli/commands/cycle-document.ts
 init_formatting();
@@ -91847,248 +94630,6 @@ async function cycleDocumentValidateCommand(root2, options, logger = console) {
 
 // src/cli/commands/learning-document.ts
 init_formatting();
-
-// src/product/learning-document.ts
-var import_fs113 = require("fs");
-var import_path134 = require("path");
-var LEARNING_DOCUMENT_RELATIVE_PATH = ".omc/learning/current.json";
-var LEARNING_PROJECTION_RELATIVE_PATH = ".omc/learning/current.md";
-function getLearningDocumentPath(root2 = process.cwd()) {
-  return (0, import_path134.resolve)(root2, LEARNING_DOCUMENT_RELATIVE_PATH);
-}
-function getLearningProjectionPath(root2 = process.cwd()) {
-  return (0, import_path134.resolve)(root2, LEARNING_PROJECTION_RELATIVE_PATH);
-}
-function readLearningDocument(root2 = process.cwd()) {
-  const path23 = getLearningDocumentPath(root2);
-  if (!(0, import_fs113.existsSync)(path23)) return void 0;
-  return JSON.parse((0, import_fs113.readFileSync)(path23, "utf-8"));
-}
-function validateLearningDocument(root2 = process.cwd()) {
-  const path23 = getLearningDocumentPath(root2);
-  const issues = [];
-  if (!(0, import_fs113.existsSync)(path23)) {
-    issues.push({ severity: "error", code: "missing-document", path: path23, message: `Missing ${LEARNING_DOCUMENT_RELATIVE_PATH}` });
-    return { ok: false, path: path23, issues };
-  }
-  let document;
-  try {
-    document = JSON.parse((0, import_fs113.readFileSync)(path23, "utf-8"));
-  } catch (error2) {
-    issues.push({ severity: "error", code: "invalid-json", path: path23, message: error2 instanceof Error ? error2.message : String(error2) });
-    return { ok: false, path: path23, issues };
-  }
-  validateDocumentShape2(path23, document, issues);
-  return { ok: !issues.some((entry) => entry.severity === "error"), path: path23, document, issues };
-}
-function writeLearningDocument(root2, doc) {
-  const jsonPath = getLearningDocumentPath(root2);
-  (0, import_fs113.mkdirSync)((0, import_path134.dirname)(jsonPath), { recursive: true });
-  (0, import_fs113.writeFileSync)(jsonPath, `${JSON.stringify(doc, null, 2)}
-`, "utf-8");
-  const projectionPath = writeLearningProjection(root2, doc);
-  return { jsonPath, projectionPath };
-}
-function writeLearningProjection(root2, document) {
-  const doc = document ?? readLearningDocument(root2);
-  if (!doc) throw new Error(`Missing ${LEARNING_DOCUMENT_RELATIVE_PATH}`);
-  const projectionPath = getLearningProjectionPath(root2);
-  (0, import_fs113.mkdirSync)((0, import_path134.dirname)(projectionPath), { recursive: true });
-  (0, import_fs113.writeFileSync)(projectionPath, renderLearningProjection(doc), "utf-8");
-  return projectionPath;
-}
-function renderLearningProjection(doc) {
-  const evidence = bulletList(doc.evidence_collected);
-  const userLearning = bulletList(doc.user_product_learning);
-  const assumptions = bulletList(doc.invalidated_assumptions);
-  const adjustments = bulletList(doc.next_candidate_adjustments);
-  const footerEvidence = bulletList(doc.footer.evidence);
-  const blocking = doc.footer.blocking_issues.length === 0 ? "  - []" : doc.footer.blocking_issues.map((entry) => `  - ${entry}`).join("\n");
-  const artifacts = bulletList(doc.footer.artifacts_written);
-  return `# Learning: ${doc.cycle_id}
-
-cycle_id: ${doc.cycle_id}
-schema_source: ${LEARNING_DOCUMENT_RELATIVE_PATH}
-captured_at: ${doc.captured_at}
-
-## Shipped outcome
-${doc.shipped_outcome.trim() || "_pending_"}
-
-## Evidence collected
-${evidence}
-
-## User/product learning
-${userLearning}
-
-## Invalidated assumptions
-${assumptions}
-
-## Recommended next cycle
-${doc.recommended_next_cycle.trim() || "_pending_"}
-
-## Next candidate adjustments
-${adjustments}
-
-status: ${doc.footer.status}
-evidence:
-${footerEvidence}
-confidence: ${doc.footer.confidence}
-blocking_issues:
-${blocking}
-next_action: ${doc.footer.next_action}
-artifacts_written:
-${artifacts}
-`;
-}
-function migrateLearningMarkdownToJson(root2 = process.cwd(), options = {}) {
-  const resolvedRoot = (0, import_path134.resolve)(root2);
-  const sourcePath = (0, import_path134.resolve)(resolvedRoot, options.source ?? LEARNING_PROJECTION_RELATIVE_PATH);
-  const jsonPath = getLearningDocumentPath(resolvedRoot);
-  const issues = [];
-  if (!(0, import_fs113.existsSync)(sourcePath)) {
-    issues.push({ severity: "error", code: "missing-source", path: sourcePath, message: `Missing ${(0, import_path134.relative)(resolvedRoot, sourcePath)}` });
-    return { ok: false, sourcePath, jsonPath, wrote: false, issues };
-  }
-  if (options.write && (0, import_fs113.existsSync)(jsonPath) && !options.force) {
-    issues.push({ severity: "error", code: "json-exists", path: jsonPath, message: `${LEARNING_DOCUMENT_RELATIVE_PATH} already exists; pass --force to overwrite` });
-    return { ok: false, sourcePath, jsonPath, wrote: false, issues };
-  }
-  const content = (0, import_fs113.readFileSync)(sourcePath, "utf-8");
-  const document = parseLearningMarkdown(content, options);
-  validateDocumentShape2(jsonPath, document, issues);
-  const errors = issues.filter((entry) => entry.severity === "error");
-  if (errors.length > 0) {
-    return { ok: false, sourcePath, jsonPath, wrote: false, document, issues };
-  }
-  let projectionPath;
-  if (options.write) {
-    const result = writeLearningDocument(resolvedRoot, document);
-    projectionPath = result.projectionPath;
-  }
-  return { ok: true, sourcePath, jsonPath, projectionPath, wrote: Boolean(options.write), document, issues };
-}
-function parseLearningMarkdown(content, options = {}) {
-  const cycleId = options.cycleId ?? matchValue2(content, "cycle_id") ?? deriveCycleIdFromHeading(content);
-  const shippedOutcome = sectionParagraph(content, "Shipped outcome") ?? "";
-  const recommendedNextCycle = sectionParagraph(content, "Recommended next cycle") ?? "";
-  const evidence = sectionList(content, "Evidence collected");
-  const userLearning = sectionList(content, "User\\/product learning");
-  const assumptions = sectionList(content, "Invalidated assumptions");
-  const adjustments = sectionList(content, "Next candidate adjustments");
-  return {
-    schema_version: 1,
-    cycle_id: cycleId,
-    shipped_outcome: shippedOutcome.trim(),
-    evidence_collected: evidence,
-    user_product_learning: userLearning,
-    invalidated_assumptions: assumptions,
-    recommended_next_cycle: recommendedNextCycle.trim(),
-    next_candidate_adjustments: adjustments,
-    footer: parseFooter(content),
-    captured_at: options.now ?? (/* @__PURE__ */ new Date()).toISOString()
-  };
-}
-function parseFooter(content) {
-  return {
-    status: matchValue2(content, "status") ?? "unknown",
-    confidence: parseConfidence2(matchValue2(content, "confidence")),
-    evidence: parseList2(content, "evidence"),
-    blocking_issues: parseList2(content, "blocking_issues").filter((entry) => entry.toLowerCase() !== "none"),
-    next_action: matchValue2(content, "next_action") ?? "",
-    artifacts_written: parseList2(content, "artifacts_written")
-  };
-}
-function deriveCycleIdFromHeading(content) {
-  const heading = content.match(/^#\s+Learning:\s*([a-z0-9][a-z0-9-]*)/im);
-  if (heading) return heading[1];
-  const dated = content.match(/\b(20\d{2}-\d{2}-\d{2})\b/);
-  return `${dated?.[1] ?? "0000-00-00"}-learning`;
-}
-function sectionParagraph(content, header) {
-  const pattern = new RegExp(`(?:^|\\n)#{1,6}\\s*${header}\\s*\\n([\\s\\S]*?)(?=\\n#{1,6}\\s|\\nstatus:|$)`, "i");
-  return content.match(pattern)?.[1]?.trim();
-}
-function sectionList(content, header) {
-  const section = sectionParagraph(content, header);
-  if (!section) return [];
-  const lines = section.split("\n");
-  const result = [];
-  let buffer = "";
-  for (const line of lines) {
-    const item = line.match(/^\s*[-*]\s+(.*)$/);
-    if (item) {
-      if (buffer) result.push(buffer.trim());
-      buffer = item[1];
-    } else if (buffer && line.trim().length > 0) {
-      buffer += ` ${line.trim()}`;
-    } else if (buffer && line.trim().length === 0) {
-      result.push(buffer.trim());
-      buffer = "";
-    } else if (!buffer && line.trim().length > 0) {
-      buffer = line.trim();
-    }
-  }
-  if (buffer) result.push(buffer.trim());
-  return result.filter((entry) => entry && entry !== "[]");
-}
-function matchValue2(section, key) {
-  const match = section.match(new RegExp(`^\\s*${key}:\\s*(.+?)\\s*$`, "im"));
-  return match?.[1]?.replace(/^['"]|['"]$/g, "").trim();
-}
-function parseList2(content, key) {
-  const out = [];
-  const inline = content.match(new RegExp(`^\\s*${key}:\\s*(.+?)\\s*$`, "im"));
-  if (inline && inline[1] && !inline[1].endsWith(":")) {
-    const value = inline[1].replace(/^['"]|['"]$/g, "").trim();
-    if (value && value !== "[]" && value !== "none" && !value.match(/^[-*]/)) out.push(value);
-  }
-  const block = content.match(new RegExp(`^\\s*${key}:\\s*\\n((?:^\\s+[-*].*\\n?)+)`, "im"));
-  if (block) {
-    for (const line of block[1].split("\n")) {
-      const item = line.match(/^\s*[-*]\s+(.*)$/);
-      if (!item) continue;
-      const value = item[1].trim();
-      if (!value || value === "[]") continue;
-      out.push(value);
-    }
-  }
-  return Array.from(new Set(out));
-}
-function bulletList(items) {
-  if (items.length === 0) return "_none recorded_";
-  return items.map((entry) => `- ${entry}`).join("\n");
-}
-function parseConfidence2(value) {
-  if (!value) return "unknown";
-  const numeric = Number(value);
-  if (Number.isFinite(numeric)) return numeric;
-  return value;
-}
-function validateDocumentShape2(path23, document, issues) {
-  if (document.schema_version !== 1) {
-    issues.push({ severity: "error", code: "invalid-schema-version", path: path23, message: "schema_version must be 1" });
-  }
-  if (!document.cycle_id || !/^[a-z0-9][a-z0-9-]*$/.test(document.cycle_id)) {
-    issues.push({ severity: "error", code: "invalid-cycle-id", path: path23, message: "cycle_id must be kebab-case and reference an existing cycle" });
-  }
-  if (!document.shipped_outcome.trim()) {
-    issues.push({ severity: "error", code: "missing-shipped-outcome", path: path23, message: "shipped_outcome must not be empty" });
-  }
-  if (!Array.isArray(document.evidence_collected)) {
-    issues.push({ severity: "error", code: "invalid-evidence-collected", path: path23, message: "evidence_collected must be an array" });
-  }
-  if (!Array.isArray(document.user_product_learning)) {
-    issues.push({ severity: "error", code: "invalid-user-product-learning", path: path23, message: "user_product_learning must be an array" });
-  }
-  if (!Array.isArray(document.invalidated_assumptions)) {
-    issues.push({ severity: "error", code: "invalid-invalidated-assumptions", path: path23, message: "invalidated_assumptions must be an array" });
-  }
-  if (!document.recommended_next_cycle.trim()) {
-    issues.push({ severity: "warning", code: "missing-recommended-next-cycle", path: path23, message: "recommended_next_cycle is empty" });
-  }
-}
-
-// src/cli/commands/learning-document.ts
 async function learningMigrateCommand(root2, options, logger = console) {
   const report2 = migrateLearningMarkdownToJson(root2, {
     write: options.write,
@@ -92152,14 +94693,14 @@ async function learningValidateCommand(root2, options, logger = console) {
 init_formatting();
 
 // src/product/historical-scorecard.ts
-var import_fs114 = require("fs");
-var import_path135 = require("path");
+var import_fs118 = require("fs");
+var import_path141 = require("path");
 var USER_VISIBLE_LANES = /* @__PURE__ */ new Set(["product", "ux", "distribution", "brand-content"]);
 var INFRA_HINTS = /\b(backend|schema|migration|api|worker|queue|infra|stack|adr|provision)\b/i;
 var USER_HINTS = /\b(reader|editor|onboarding|screen|loop|content|distribution|ui|ux|activation|retention)\b/i;
 function generateHistoricalScorecard(root2 = process.cwd()) {
-  const resolvedRoot = (0, import_path135.resolve)(root2);
-  const artifactRoot = (0, import_path135.join)(resolvedRoot, ".omc");
+  const resolvedRoot = (0, import_path141.resolve)(root2);
+  const artifactRoot = (0, import_path141.join)(resolvedRoot, ".omc");
   const rawCycles = collectCycleDocuments(artifactRoot);
   const cycles = rawCycles.map((entry) => buildCycleSummary(artifactRoot, entry)).sort((a, b) => (a.start_date ?? "").localeCompare(b.start_date ?? ""));
   const completed = cycles.filter((cycle) => cycle.cycle_stage === "complete").length;
@@ -92181,12 +94722,12 @@ function generateHistoricalScorecard(root2 = process.cwd()) {
   };
 }
 function collectCycleDocuments(artifactRoot) {
-  const cyclesDir = (0, import_path135.join)(artifactRoot, "cycles");
-  if (!(0, import_fs114.existsSync)(cyclesDir)) return [];
-  const entries = (0, import_fs114.readdirSync)(cyclesDir).filter((entry) => /^\d{4}-\d{2}-\d{2}/.test(entry));
+  const cyclesDir = (0, import_path141.join)(artifactRoot, "cycles");
+  if (!(0, import_fs118.existsSync)(cyclesDir)) return [];
+  const entries = (0, import_fs118.readdirSync)(cyclesDir).filter((entry) => /^\d{4}-\d{2}-\d{2}/.test(entry));
   const seen = /* @__PURE__ */ new Map();
   for (const entry of entries) {
-    const filePath = (0, import_path135.join)(cyclesDir, entry);
+    const filePath = (0, import_path141.join)(cyclesDir, entry);
     const stat3 = safeStat(filePath);
     if (!stat3 || !stat3.isFile()) continue;
     const fileMtime = Number(stat3.mtimeMs);
@@ -92195,7 +94736,7 @@ function collectCycleDocuments(artifactRoot) {
       if (!document) continue;
       seen.set(document.cycle_id, { document, source: "json", sourcePath: filePath, fileMtime });
     } else if (entry.endsWith(".md")) {
-      const content = safeRead3(filePath);
+      const content = safeRead4(filePath);
       if (!content) continue;
       const document = parseCycleMarkdown(content);
       if (!seen.has(document.cycle_id) || seen.get(document.cycle_id)?.source === "markdown") {
@@ -92236,18 +94777,18 @@ function buildCycleSummary(artifactRoot, entry) {
   };
 }
 function readMatchingLearning(artifactRoot, cycleId) {
-  const dir = (0, import_path135.join)(artifactRoot, "learning");
-  if (!(0, import_fs114.existsSync)(dir)) return void 0;
-  const candidates = (0, import_fs114.readdirSync)(dir).filter((entry) => entry.startsWith(cycleId) || entry.includes(cycleId));
+  const dir = (0, import_path141.join)(artifactRoot, "learning");
+  if (!(0, import_fs118.existsSync)(dir)) return void 0;
+  const candidates = (0, import_fs118.readdirSync)(dir).filter((entry) => entry.startsWith(cycleId) || entry.includes(cycleId));
   for (const candidate of candidates) {
-    const path23 = (0, import_path135.join)(dir, candidate);
+    const path23 = (0, import_path141.join)(dir, candidate);
     const stat3 = safeStat(path23);
     if (!stat3?.isFile()) continue;
     if (candidate.endsWith(".json")) {
       const json = parseJsonDocument(path23);
       if (json) return json;
     } else if (candidate.endsWith(".md")) {
-      const content = safeRead3(path23);
+      const content = safeRead4(path23);
       if (content) return parseLearningMarkdown(content);
     }
   }
@@ -92383,21 +94924,21 @@ function toNumber(value) {
 }
 function safeStat(path23) {
   try {
-    return (0, import_fs114.statSync)(path23);
+    return (0, import_fs118.statSync)(path23);
   } catch {
     return void 0;
   }
 }
-function safeRead3(path23) {
+function safeRead4(path23) {
   try {
-    return (0, import_fs114.readFileSync)(path23, "utf-8");
+    return (0, import_fs118.readFileSync)(path23, "utf-8");
   } catch {
     return void 0;
   }
 }
 function parseJsonDocument(path23) {
   try {
-    return JSON.parse((0, import_fs114.readFileSync)(path23, "utf-8"));
+    return JSON.parse((0, import_fs118.readFileSync)(path23, "utf-8"));
   } catch {
     return void 0;
   }
@@ -92509,6 +95050,23 @@ async function portfolioMigrateCommand(root2, options, logger = console) {
   logger.log(JSON.stringify(report2.ledger, null, 2));
   return 0;
 }
+async function portfolioTrimCommand(root2, options, logger = console) {
+  const target = normalizeTrimTarget(options.to);
+  const report2 = trimPortfolioLedger(root2, {
+    to: target,
+    write: options.write === true
+  });
+  if (options.json) {
+    logger.log(JSON.stringify(report2, null, 2));
+    return report2.ok ? 0 : 1;
+  }
+  if (!report2.ok) {
+    logger.error(renderTrimReport(report2));
+    return 1;
+  }
+  logger.log(renderTrimReport(report2));
+  return 0;
+}
 function renderValidationReport(report2) {
   const lines = [
     colors.bold("Portfolio ledger validation"),
@@ -92557,6 +95115,54 @@ function renderMigrationReport(report2) {
   lines.push(report2.ok ? colors.green(report2.wrote ? "Wrote migrated portfolio ledger" : "Migration preview is valid") : colors.red("Migration failed"));
   return lines.join("\n");
 }
+function renderTrimReport(report2) {
+  const lines = [
+    colors.bold("Portfolio trim"),
+    `path: ${report2.path}`,
+    `target: ${report2.target}`,
+    `items: ${report2.originalCount} -> ${report2.trimmedCount}`,
+    `removed: ${report2.removedCount}`,
+    `written: ${report2.wrote}`
+  ];
+  if (report2.projectionPath) {
+    lines.push(`projection: ${report2.projectionPath}`);
+  }
+  if (report2.removedItems.length > 0) {
+    lines.push("");
+    lines.push(renderTable(report2.removedItems.map((item) => ({
+      id: item.id,
+      lane: item.lane,
+      status: item.status,
+      title: item.title
+    })), [
+      { header: "id", field: "id", width: 28 },
+      { header: "lane", field: "lane", width: 16 },
+      { header: "status", field: "status", width: 12 },
+      { header: "title", field: "title", width: 70 }
+    ]));
+  }
+  if (report2.issues.length > 0) {
+    lines.push("");
+    lines.push(renderTable(report2.issues.map((issue4) => ({
+      severity: issue4.severity === "error" ? colors.red(issue4.severity) : colors.yellow(issue4.severity),
+      code: issue4.code,
+      message: issue4.message
+    })), [
+      { header: "severity", field: "severity", width: 10 },
+      { header: "code", field: "code", width: 24 },
+      { header: "message", field: "message", width: 80 }
+    ]));
+  }
+  lines.push("");
+  lines.push(report2.ok ? colors.green(report2.wrote ? "Wrote trimmed portfolio ledger" : "Trim preview is valid; re-run with --write to update the ledger") : colors.red("Trim failed"));
+  return lines.join("\n");
+}
+function normalizeTrimTarget(value) {
+  if (value === void 0) return void 0;
+  if (typeof value === "number") return value;
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) ? parsed : Number.NaN;
+}
 
 // src/cli/commands/creative-loop.ts
 init_formatting();
@@ -92582,7 +95188,7 @@ async function creativeLoopInitCommand(root2, options, logger = console) {
 function renderAudit(plan, written) {
   const lines = [
     colors.bold("Creative loop readiness"),
-    `status: ${statusColor(plan.status)}`,
+    `status: ${statusColor2(plan.status)}`,
     `goal: ${plan.goal ?? "unknown"}`
   ];
   if (written) {
@@ -92611,7 +95217,7 @@ function renderAudit(plan, written) {
   }
   return lines.join("\n");
 }
-function statusColor(status) {
+function statusColor2(status) {
   if (status === "ready") return colors.green(status);
   return colors.yellow(status);
 }
@@ -92631,7 +95237,7 @@ async function featureGenerationAuditCommand(root2, options, logger = console) {
 function renderAudit2(plan, written) {
   const lines = [
     colors.bold("Feature generation readiness"),
-    `status: ${statusColor2(plan.status)}`,
+    `status: ${statusColor3(plan.status)}`,
     `source score: ${plan.source_score}/${plan.required_source_count}`,
     `goal: ${plan.goal ?? "unknown"}`
   ];
@@ -92677,7 +95283,7 @@ function renderAudit2(plan, written) {
   }
   return lines.join("\n");
 }
-function statusColor2(status) {
+function statusColor3(status) {
   if (status === "ready") return colors.green(status);
   if (status === "blocked") return colors.red(status);
   return colors.yellow(status);
@@ -92687,13 +95293,13 @@ function statusColor2(status) {
 init_formatting();
 
 // src/product/run-scorecard.ts
-var import_fs115 = require("fs");
-var import_path136 = require("path");
+var import_fs119 = require("fs");
+var import_path142 = require("path");
 var ARTIFACT_WORD_BUDGET = 1800;
 var MAX_ARTIFACTS = 600;
 function generateRunScorecard(root2 = process.cwd()) {
-  const resolvedRoot = (0, import_path136.resolve)(root2);
-  const artifactRoot = (0, import_path136.join)(resolvedRoot, ".omc");
+  const resolvedRoot = (0, import_path142.resolve)(root2);
+  const artifactRoot = (0, import_path142.join)(resolvedRoot, ".omc");
   const artifacts = readArtifacts(artifactRoot, resolvedRoot);
   const handoffs = artifacts.filter(isHandoffArtifact);
   const decisions = artifacts.filter(isDecisionArtifact);
@@ -92773,15 +95379,15 @@ function generateRunScorecard(root2 = process.cwd()) {
   };
 }
 function readArtifacts(artifactRoot, root2) {
-  if (!(0, import_fs115.existsSync)(artifactRoot)) return [];
+  if (!(0, import_fs119.existsSync)(artifactRoot)) return [];
   const files = [];
   collectFiles(artifactRoot, files);
   const fileSet = new Set(files);
   return files.filter((path23) => /\.(md|json|jsonc)$/i.test(path23)).filter((path23) => !isShadowedProjection(path23, fileSet)).slice(0, MAX_ARTIFACTS).map((path23) => {
-    const content = safeRead4(path23);
+    const content = safeRead5(path23);
     return {
       path: path23,
-      relativePath: (0, import_path136.relative)(root2, path23),
+      relativePath: (0, import_path142.relative)(root2, path23),
       content,
       words: wordCount2(content),
       date: extractDate(path23, content)
@@ -92800,9 +95406,9 @@ function normalizePath4(path23) {
   return path23.replace(/\\/g, "/");
 }
 function collectFiles(dir, out) {
-  for (const entry of (0, import_fs115.readdirSync)(dir)) {
-    const path23 = (0, import_path136.join)(dir, entry);
-    const stat3 = (0, import_fs115.statSync)(path23);
+  for (const entry of (0, import_fs119.readdirSync)(dir)) {
+    const path23 = (0, import_path142.join)(dir, entry);
+    const stat3 = (0, import_fs119.statSync)(path23);
     if (stat3.isDirectory()) {
       collectFiles(path23, out);
     } else if (stat3.isFile()) {
@@ -92810,9 +95416,9 @@ function collectFiles(dir, out) {
     }
   }
 }
-function safeRead4(path23) {
+function safeRead5(path23) {
   try {
-    return (0, import_fs115.readFileSync)(path23, "utf-8");
+    return (0, import_fs119.readFileSync)(path23, "utf-8");
   } catch {
     return "";
   }
@@ -93058,6 +95664,72 @@ async function sessionSearchCommand(query, options, logger = console) {
   });
   logger.log(options.json ? JSON.stringify(report2, null, 2) : formatSessionSearchReport(report2));
   return report2;
+}
+
+// src/cli/commands/runtime-qa-doctor.ts
+init_formatting();
+async function runtimeQaDoctorCommand(root2, options, logger = console) {
+  const report2 = diagnoseRuntimeQa(root2);
+  logger.log(options.json ? JSON.stringify(report2, null, 2) : renderRuntimeQaDoctorReport(report2));
+  return report2.ok ? 0 : 1;
+}
+function renderRuntimeQaDoctorReport(report2) {
+  const lines = [
+    colors.bold("Runtime QA diagnostics"),
+    `root: ${report2.root}`,
+    `config: ${report2.configExists ? report2.configPath : "missing"}`,
+    `handoff: ${report2.handoffExists ? report2.handoffPath : "missing"}`,
+    `adapter: ${report2.dryRunReport.adapter}`,
+    `dryRunStatus: ${report2.dryRunReport.status}`
+  ];
+  if (report2.dryRunReport.tool_detection) {
+    const detection = report2.dryRunReport.tool_detection;
+    lines.push(`tool: ${detection.tool} ${detection.detected ? "detected" : "missing"} (${detection.method})`);
+    if (detection.missing_prerequisite) {
+      lines.push(`missingPrerequisite: ${detection.missing_prerequisite}`);
+    }
+  }
+  if (report2.platformChecks.length > 0) {
+    lines.push("");
+    lines.push(renderTable(report2.platformChecks.map((check2) => ({
+      check: check2.label,
+      required: check2.required ? "yes" : "no",
+      status: check2.detected ? colors.green("detected") : colors.red("missing"),
+      reason: check2.reason
+    })), [
+      { header: "check", field: "check", width: 28 },
+      { header: "required", field: "required", width: 10 },
+      { header: "status", field: "status", width: 12 },
+      { header: "reason", field: "reason", width: 80 }
+    ]));
+  }
+  if (report2.dryRunReport.step_results.length > 0) {
+    lines.push("");
+    lines.push(renderTable(report2.dryRunReport.step_results.map((step) => ({
+      step: step.name,
+      status: step.status,
+      command: step.command ?? "-"
+    })), [
+      { header: "step", field: "step", width: 18 },
+      { header: "status", field: "status", width: 10 },
+      { header: "command", field: "command", width: 80 }
+    ]));
+  }
+  if (report2.issues.length > 0) {
+    lines.push("");
+    lines.push(renderTable(report2.issues.map((issue4) => ({
+      severity: issue4.severity === "error" ? colors.red(issue4.severity) : colors.yellow(issue4.severity),
+      code: issue4.code,
+      message: issue4.message
+    })), [
+      { header: "severity", field: "severity", width: 10 },
+      { header: "code", field: "code", width: 38 },
+      { header: "message", field: "message", width: 90 }
+    ]));
+  }
+  lines.push("");
+  lines.push(report2.ok ? colors.green(`Pass: ${report2.summary.warnings} warning(s).`) : colors.red(`Fail: ${report2.summary.errors} error(s), ${report2.summary.warnings} warning(s).`));
+  return lines.join("\n");
 }
 
 // src/team/api-interop.ts
@@ -94465,7 +97137,7 @@ async function teamCommand(args) {
 
 // src/cli/commands/ralphthon.ts
 init_tmux_utils();
-var import_fs117 = require("fs");
+var import_fs121 = require("fs");
 
 // src/ralphthon/types.ts
 var RALPHTHON_DEFAULTS = {
@@ -94481,8 +97153,8 @@ var RALPHTHON_DEFAULTS = {
 var PRD_FILENAME2 = "ralphthon-prd.json";
 
 // src/ralphthon/prd.ts
-var import_fs116 = require("fs");
-var import_path137 = require("path");
+var import_fs120 = require("fs");
+var import_path143 = require("path");
 init_worktree_paths();
 var DEFAULT_PLANNING_CONTEXT = {
   brownfield: false,
@@ -94499,20 +97171,20 @@ function normalizePlanningContext(context) {
   };
 }
 function getRalphthonPrdPath(directory) {
-  return (0, import_path137.join)(getOmcRoot(directory), PRD_FILENAME2);
+  return (0, import_path143.join)(getOmcRoot(directory), PRD_FILENAME2);
 }
 function findRalphthonPrdPath(directory) {
-  const rootPath = (0, import_path137.join)(directory, PRD_FILENAME2);
-  if ((0, import_fs116.existsSync)(rootPath)) return rootPath;
+  const rootPath = (0, import_path143.join)(directory, PRD_FILENAME2);
+  if ((0, import_fs120.existsSync)(rootPath)) return rootPath;
   const omcPath = getRalphthonPrdPath(directory);
-  if ((0, import_fs116.existsSync)(omcPath)) return omcPath;
+  if ((0, import_fs120.existsSync)(omcPath)) return omcPath;
   return null;
 }
 function readRalphthonPrd(directory) {
   const prdPath = findRalphthonPrdPath(directory);
   if (!prdPath) return null;
   try {
-    const content = (0, import_fs116.readFileSync)(prdPath, "utf-8");
+    const content = (0, import_fs120.readFileSync)(prdPath, "utf-8");
     const prd = JSON.parse(content);
     if (!prd.stories || !Array.isArray(prd.stories)) return null;
     if (!prd.config) return null;
@@ -94526,9 +97198,9 @@ function writeRalphthonPrd(directory, prd) {
   let prdPath = findRalphthonPrdPath(directory);
   if (!prdPath) {
     const omcDir = getOmcRoot(directory);
-    if (!(0, import_fs116.existsSync)(omcDir)) {
+    if (!(0, import_fs120.existsSync)(omcDir)) {
       try {
-        (0, import_fs116.mkdirSync)(omcDir, { recursive: true });
+        (0, import_fs120.mkdirSync)(omcDir, { recursive: true });
       } catch {
         return false;
       }
@@ -94540,7 +97212,7 @@ function writeRalphthonPrd(directory, prd) {
       ...prd,
       planningContext: normalizePlanningContext(prd.planningContext)
     };
-    (0, import_fs116.writeFileSync)(prdPath, JSON.stringify(normalizedPrd, null, 2));
+    (0, import_fs120.writeFileSync)(prdPath, JSON.stringify(normalizedPrd, null, 2));
     return true;
   } catch {
     return false;
@@ -95294,7 +97966,7 @@ async function ralphthonCommand(args) {
     const pollMs = 5e3;
     let waited = 0;
     while (waited < maxWaitMs) {
-      if ((0, import_fs117.existsSync)(prdPath)) {
+      if ((0, import_fs121.existsSync)(prdPath)) {
         const prd = readRalphthonPrd(cwd2);
         if (prd && prd.stories.length > 0) {
           console.log(source_default.green("PRD generated successfully!"));
@@ -95345,14 +98017,14 @@ async function ralphthonCommand(args) {
   console.log(source_default.gray("Orchestrator running. Press Ctrl+C to stop."));
 }
 function sleep5(ms) {
-  return new Promise((resolve44) => setTimeout(resolve44, ms));
+  return new Promise((resolve50) => setTimeout(resolve50, ms));
 }
 
 // src/cli/commands/telemetry.ts
-var import_path138 = require("path");
+var import_path144 = require("path");
 init_aggregator();
 async function telemetryDigestCommand(options = {}) {
-  const directory = options.directory ? (0, import_path138.resolve)(options.directory) : process.cwd();
+  const directory = options.directory ? (0, import_path144.resolve)(options.directory) : process.cwd();
   try {
     const { digestPath } = await aggregate({ trigger: "on-demand", directory });
     console.log(source_default.green(`Telemetry digest written to:`));
@@ -95419,6 +98091,64 @@ async function runtimeQaInitCommand(root2, options, logger = console) {
   }
   return result.config.target === "mobile" && !result.config.commands?.smoke ? 1 : 0;
 }
+async function runtimeQaMigrateCommand(root2, options, logger = console) {
+  const result = migrateRuntimeQaConfig({
+    root: root2,
+    write: options.write === true,
+    force: options.force === true
+  });
+  if (options.json) {
+    logger.log(JSON.stringify(result, null, 2));
+  } else {
+    logger.log(colors.bold("Runtime QA migration"));
+    logger.log(`  path: ${result.path}`);
+    logger.log(`  existed: ${result.existed}`);
+    logger.log(`  changed: ${result.changed}`);
+    logger.log(`  written: ${result.written}`);
+    logger.log(`  reason: ${result.reason}`);
+    if (!result.written && result.changed) {
+      logger.log(colors.yellow("  re-run with --write to update .omc/runtime-qa.json"));
+    }
+  }
+  return 0;
+}
+async function runtimeQaSetupCommand(root2, options, logger = console) {
+  const report2 = setupRuntimeQaPrerequisites(root2, {
+    apply: options.apply === true,
+    commandRunner: options.commandRunner
+  });
+  if (options.json) {
+    logger.log(JSON.stringify(report2, null, 2));
+  } else {
+    logger.log(renderRuntimeQaSetupReport(report2));
+  }
+  return report2.summary.failed > 0 ? 1 : 0;
+}
+async function runtimeQaFixtureCommand(action, fixtureName, root2, options, logger = console) {
+  const backend = normalizeFixtureBackend(options.backend);
+  if (options.backend && !backend) {
+    logger.error(colors.red(`Invalid --backend: ${options.backend}`));
+    logger.error(colors.gray("Valid backends: auto, env, mcp"));
+    return 2;
+  }
+  const result = action === "provision" ? await provisionRuntimeQaFixture({ root: root2, fixtureName, backend }) : await teardownRuntimeQaFixture({ root: root2, fixtureName, backend });
+  if (options.json) {
+    logger.log(JSON.stringify(result, null, 2));
+  } else {
+    logger.log(colors.bold(`Runtime QA fixture ${action}`));
+    logger.log(`  fixture: ${result.fixture}`);
+    logger.log(`  provider: ${result.provider}`);
+    logger.log(`  backend: ${result.backend}`);
+    logger.log(`  ok: ${result.ok}`);
+    logger.log(`  reason: ${result.reason}`);
+    logger.log(`  state: ${result.statePath}`);
+    logger.log(`  env: ${result.envPath}`);
+    if (result.agent_action) {
+      logger.log(colors.yellow("  agent action: run this fixture through the Claude/OMC runtime-qa skill."));
+    }
+  }
+  return result.ok ? 0 : 1;
+}
 function normalizeTarget(value) {
   if (!value) return void 0;
   const normalized = value.trim().toLowerCase();
@@ -95427,15 +98157,46 @@ function normalizeTarget(value) {
   }
   return void 0;
 }
+function normalizeFixtureBackend(value) {
+  if (!value) return void 0;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "auto" || normalized === "env" || normalized === "mcp") return normalized;
+  return void 0;
+}
+function renderRuntimeQaSetupReport(report2) {
+  const lines = [
+    colors.bold("Runtime QA setup"),
+    `root: ${report2.root}`,
+    `applied: ${report2.applied}`
+  ];
+  if (report2.steps.length === 0) {
+    lines.push(colors.green("No runtime QA prerequisite setup steps are needed."));
+    return lines.join("\n");
+  }
+  for (const step of report2.steps) {
+    const status = step.status === "failed" ? colors.red(step.status) : step.status === "passed" ? colors.green(step.status) : step.status;
+    lines.push("");
+    lines.push(`${colors.bold(step.title)} [${step.kind}] ${status}`);
+    lines.push(`  reason: ${step.reason}`);
+    if (step.command) lines.push(`  command: ${step.command}`);
+    if (step.exit_code !== void 0) lines.push(`  exit_code: ${step.exit_code}`);
+    if (step.stderr_preview) lines.push(`  stderr: ${step.stderr_preview}`);
+  }
+  if (!report2.applied) {
+    lines.push("");
+    lines.push(colors.yellow("Re-run with --apply to execute command steps. Manual steps are always reported, not executed."));
+  }
+  return lines.join("\n");
+}
 
 // src/cli/commands/teleport.ts
-var import_child_process33 = require("child_process");
-var import_fs118 = require("fs");
-var import_os19 = require("os");
-var import_path139 = require("path");
+var import_child_process36 = require("child_process");
+var import_fs122 = require("fs");
+var import_os20 = require("os");
+var import_path145 = require("path");
 init_loader();
 init_providers();
-var DEFAULT_WORKTREE_ROOT = (0, import_path139.join)((0, import_os19.homedir)(), "Workspace", "omc-worktrees");
+var DEFAULT_WORKTREE_ROOT = (0, import_path145.join)((0, import_os20.homedir)(), "Workspace", "omc-worktrees");
 var PACKAGE_JSON_NAME = "package.json";
 var PACKAGE_MANAGER_LOCKFILES = {
   pnpm: "pnpm-lock.yaml",
@@ -95444,14 +98205,14 @@ var PACKAGE_MANAGER_LOCKFILES = {
 };
 function readPackageJsonText(directory) {
   try {
-    return (0, import_fs118.readFileSync)((0, import_path139.join)(directory, PACKAGE_JSON_NAME), "utf-8");
+    return (0, import_fs122.readFileSync)((0, import_path145.join)(directory, PACKAGE_JSON_NAME), "utf-8");
   } catch {
     return null;
   }
 }
 function detectPackageManager(parentRepoRoot, worktreePath) {
   for (const [manager, lockfile] of Object.entries(PACKAGE_MANAGER_LOCKFILES)) {
-    if ((0, import_fs118.existsSync)((0, import_path139.join)(worktreePath, lockfile)) || (0, import_fs118.existsSync)((0, import_path139.join)(parentRepoRoot, lockfile))) {
+    if ((0, import_fs122.existsSync)((0, import_path145.join)(worktreePath, lockfile)) || (0, import_fs122.existsSync)((0, import_path145.join)(parentRepoRoot, lockfile))) {
       return manager;
     }
   }
@@ -95470,12 +98231,12 @@ function detectPackageManager(parentRepoRoot, worktreePath) {
   return "npm";
 }
 function symlinkNodeModules(parentRepoRoot, worktreePath) {
-  const sourceNodeModules = (0, import_path139.join)(parentRepoRoot, "node_modules");
-  const targetNodeModules = (0, import_path139.join)(worktreePath, "node_modules");
-  if (!(0, import_fs118.existsSync)(sourceNodeModules) || (0, import_fs118.existsSync)(targetNodeModules)) {
+  const sourceNodeModules = (0, import_path145.join)(parentRepoRoot, "node_modules");
+  const targetNodeModules = (0, import_path145.join)(worktreePath, "node_modules");
+  if (!(0, import_fs122.existsSync)(sourceNodeModules) || (0, import_fs122.existsSync)(targetNodeModules)) {
     return false;
   }
-  (0, import_fs118.symlinkSync)(sourceNodeModules, targetNodeModules, process.platform === "win32" ? "junction" : "dir");
+  (0, import_fs122.symlinkSync)(sourceNodeModules, targetNodeModules, process.platform === "win32" ? "junction" : "dir");
   return true;
 }
 function installDependencies(worktreePath, packageManager) {
@@ -95484,7 +98245,7 @@ function installDependencies(worktreePath, packageManager) {
     pnpm: ["install"],
     yarn: ["install"]
   };
-  (0, import_child_process33.execFileSync)(packageManager, argsByManager[packageManager], {
+  (0, import_child_process36.execFileSync)(packageManager, argsByManager[packageManager], {
     cwd: worktreePath,
     stdio: "inherit"
   });
@@ -95662,8 +98423,8 @@ function sanitize(str, maxLen = 30) {
 }
 function getCurrentRepo() {
   try {
-    const root2 = (0, import_child_process33.execSync)("git rev-parse --show-toplevel", { encoding: "utf-8", timeout: 5e3 }).trim();
-    const remoteUrl = (0, import_child_process33.execSync)("git remote get-url origin", { encoding: "utf-8", timeout: 5e3 }).trim();
+    const root2 = (0, import_child_process36.execSync)("git rev-parse --show-toplevel", { encoding: "utf-8", timeout: 5e3 }).trim();
+    const remoteUrl = (0, import_child_process36.execSync)("git remote get-url origin", { encoding: "utf-8", timeout: 5e3 }).trim();
     const parsed = parseRemoteUrl(remoteUrl);
     if (parsed) {
       return { owner: parsed.owner, repo: parsed.repo, root: root2, provider: parsed.provider };
@@ -95682,25 +98443,25 @@ async function fetchProviderInfo(type, number3, provider, owner, repo) {
 }
 function createWorktree(repoRoot, worktreePath, branchName, baseBranch) {
   try {
-    const parentDir = (0, import_path139.join)(worktreePath, "..");
-    if (!(0, import_fs118.existsSync)(parentDir)) {
-      (0, import_fs118.mkdirSync)(parentDir, { recursive: true });
+    const parentDir = (0, import_path145.join)(worktreePath, "..");
+    if (!(0, import_fs122.existsSync)(parentDir)) {
+      (0, import_fs122.mkdirSync)(parentDir, { recursive: true });
     }
-    if ((0, import_fs118.existsSync)(worktreePath)) {
+    if ((0, import_fs122.existsSync)(worktreePath)) {
       return { success: false, error: `Worktree already exists at ${worktreePath}` };
     }
-    (0, import_child_process33.execFileSync)("git", ["fetch", "origin", baseBranch], {
+    (0, import_child_process36.execFileSync)("git", ["fetch", "origin", baseBranch], {
       cwd: repoRoot,
       stdio: "pipe"
     });
     try {
-      (0, import_child_process33.execFileSync)("git", ["branch", branchName, `origin/${baseBranch}`], {
+      (0, import_child_process36.execFileSync)("git", ["branch", branchName, `origin/${baseBranch}`], {
         cwd: repoRoot,
         stdio: "pipe"
       });
     } catch {
     }
-    (0, import_child_process33.execFileSync)("git", ["worktree", "add", worktreePath, branchName], {
+    (0, import_child_process36.execFileSync)("git", ["worktree", "add", worktreePath, branchName], {
       cwd: repoRoot,
       stdio: "pipe"
     });
@@ -95723,7 +98484,7 @@ async function teleportCommand(ref, options) {
     return { success: false, error: error2 };
   }
   const { owner, repo, root: repoRoot } = currentRepo;
-  const repoName = (0, import_path139.basename)(repoRoot);
+  const repoName = (0, import_path145.basename)(repoRoot);
   const config2 = loadConfig();
   const shouldSymlinkNodeModules = config2.teleport?.symlinkNodeModules ?? true;
   const effectiveProviderName = parsed.provider || currentRepo.provider;
@@ -95779,7 +98540,7 @@ async function teleportCommand(ref, options) {
       if (provider.prRefspec) {
         try {
           const refspec = provider.prRefspec.replace("{number}", String(parsed.number)).replace("{branch}", branchName);
-          (0, import_child_process33.execFileSync)(
+          (0, import_child_process36.execFileSync)(
             "git",
             ["fetch", "origin", refspec],
             { cwd: repoRoot, stdio: ["pipe", "pipe", "pipe"], timeout: 3e4 }
@@ -95788,7 +98549,7 @@ async function teleportCommand(ref, options) {
         }
       } else if (info.branch) {
         try {
-          (0, import_child_process33.execFileSync)(
+          (0, import_child_process36.execFileSync)(
             "git",
             ["fetch", "origin", `${info.branch}:${branchName}`],
             { cwd: repoRoot, stdio: ["pipe", "pipe", "pipe"], timeout: 3e4 }
@@ -95804,7 +98565,7 @@ async function teleportCommand(ref, options) {
       }
     }
   }
-  const worktreePath = (0, import_path139.join)(worktreeRoot, worktreeDirName);
+  const worktreePath = (0, import_path145.join)(worktreeRoot, worktreeDirName);
   if (!options.json) {
     console.log(source_default.gray(`  Branch: ${branchName}`));
     console.log(source_default.gray(`  Path: ${worktreePath}`));
@@ -95857,13 +98618,13 @@ function findWorktreeDirs(dir, maxDepth = 3, currentDepth = 0) {
   if (currentDepth >= maxDepth) return [];
   const results = [];
   try {
-    const entries = (0, import_fs118.readdirSync)(dir, { withFileTypes: true });
+    const entries = (0, import_fs122.readdirSync)(dir, { withFileTypes: true });
     for (const entry of entries) {
       if (!entry.isDirectory()) continue;
-      const fullPath = (0, import_path139.join)(dir, entry.name);
+      const fullPath = (0, import_path145.join)(dir, entry.name);
       try {
-        const gitPath = (0, import_path139.join)(fullPath, ".git");
-        const stat3 = (0, import_fs118.statSync)(gitPath);
+        const gitPath = (0, import_path145.join)(fullPath, ".git");
+        const stat3 = (0, import_fs122.statSync)(gitPath);
         if (stat3.isFile()) {
           results.push(fullPath);
           continue;
@@ -95878,7 +98639,7 @@ function findWorktreeDirs(dir, maxDepth = 3, currentDepth = 0) {
 }
 async function teleportListCommand(options) {
   const worktreeRoot = DEFAULT_WORKTREE_ROOT;
-  if (!(0, import_fs118.existsSync)(worktreeRoot)) {
+  if (!(0, import_fs122.existsSync)(worktreeRoot)) {
     if (options.json) {
       console.log(JSON.stringify({ worktrees: [] }));
     } else {
@@ -95888,10 +98649,10 @@ async function teleportListCommand(options) {
   }
   const worktreeDirs = findWorktreeDirs(worktreeRoot);
   const worktrees = worktreeDirs.map((worktreePath) => {
-    const relativePath = (0, import_path139.relative)(worktreeRoot, worktreePath);
+    const relativePath = (0, import_path145.relative)(worktreeRoot, worktreePath);
     let branch = "unknown";
     try {
-      branch = (0, import_child_process33.execSync)("git branch --show-current", {
+      branch = (0, import_child_process36.execSync)("git branch --show-current", {
         cwd: worktreePath,
         encoding: "utf-8"
       }).trim();
@@ -95919,10 +98680,10 @@ async function teleportListCommand(options) {
 async function teleportRemoveCommand(pathOrName, options) {
   const worktreeRoot = DEFAULT_WORKTREE_ROOT;
   let worktreePath = pathOrName;
-  if (!(0, import_path139.isAbsolute)(pathOrName)) {
-    worktreePath = (0, import_path139.join)(worktreeRoot, pathOrName);
+  if (!(0, import_path145.isAbsolute)(pathOrName)) {
+    worktreePath = (0, import_path145.join)(worktreeRoot, pathOrName);
   }
-  if (!(0, import_fs118.existsSync)(worktreePath)) {
+  if (!(0, import_fs122.existsSync)(worktreePath)) {
     const error2 = `Worktree not found: ${worktreePath}`;
     if (options.json) {
       console.log(JSON.stringify({ success: false, error: error2 }));
@@ -95931,8 +98692,8 @@ async function teleportRemoveCommand(pathOrName, options) {
     }
     return 1;
   }
-  const rel = (0, import_path139.relative)(worktreeRoot, worktreePath);
-  if (rel.startsWith("..") || (0, import_path139.isAbsolute)(rel)) {
+  const rel = (0, import_path145.relative)(worktreeRoot, worktreePath);
+  if (rel.startsWith("..") || (0, import_path145.isAbsolute)(rel)) {
     const error2 = `Refusing to remove worktree outside of ${worktreeRoot}`;
     if (options.json) {
       console.log(JSON.stringify({ success: false, error: error2 }));
@@ -95943,7 +98704,7 @@ async function teleportRemoveCommand(pathOrName, options) {
   }
   try {
     if (!options.force) {
-      const status = (0, import_child_process33.execSync)("git status --porcelain", {
+      const status = (0, import_child_process36.execSync)("git status --porcelain", {
         cwd: worktreePath,
         encoding: "utf-8"
       });
@@ -95957,7 +98718,7 @@ async function teleportRemoveCommand(pathOrName, options) {
         return 1;
       }
     }
-    const gitDir = (0, import_child_process33.execSync)("git rev-parse --git-dir", {
+    const gitDir = (0, import_child_process36.execSync)("git rev-parse --git-dir", {
       cwd: worktreePath,
       encoding: "utf-8"
     }).trim();
@@ -95965,12 +98726,12 @@ async function teleportRemoveCommand(pathOrName, options) {
     const mainRepo = mainRepoMatch ? mainRepoMatch[1] : null;
     if (mainRepo) {
       const args = options.force ? ["worktree", "remove", "--force", worktreePath] : ["worktree", "remove", worktreePath];
-      (0, import_child_process33.execFileSync)("git", args, {
+      (0, import_child_process36.execFileSync)("git", args, {
         cwd: mainRepo,
         stdio: "pipe"
       });
     } else {
-      (0, import_fs118.rmSync)(worktreePath, { recursive: true, force: true });
+      (0, import_fs122.rmSync)(worktreePath, { recursive: true, force: true });
     }
     if (options.json) {
       console.log(JSON.stringify({ success: true, removed: worktreePath }));
@@ -95993,19 +98754,19 @@ async function teleportRemoveCommand(pathOrName, options) {
 init_version();
 
 // src/lib/plugin-dir.ts
-var import_path140 = require("path");
+var import_path146 = require("path");
 function resolvePluginDirArg(rawPath) {
   if (!rawPath || rawPath.trim().length === 0) {
     throw new Error("--plugin-dir requires a non-empty path argument");
   }
-  return (0, import_path140.resolve)(rawPath);
+  return (0, import_path146.resolve)(rawPath);
 }
 
 // src/cli/launch.ts
-var import_child_process34 = require("child_process");
-var import_fs119 = require("fs");
-var import_os20 = require("os");
-var import_path141 = require("path");
+var import_child_process37 = require("child_process");
+var import_fs123 = require("fs");
+var import_os21 = require("os");
+var import_path147 = require("path");
 init_mcp_registry();
 init_config_dir();
 init_tmux_utils();
@@ -96021,45 +98782,45 @@ var SLACK_FLAG = "--slack";
 var WEBHOOK_FLAG = "--webhook";
 var OMC_RUNTIME_DIRNAME = ".omc-launch";
 function hasOmcMarkers(path23) {
-  if (!(0, import_fs119.existsSync)(path23)) return false;
-  const content = (0, import_fs119.readFileSync)(path23, "utf-8");
+  if (!(0, import_fs123.existsSync)(path23)) return false;
+  const content = (0, import_fs123.readFileSync)(path23, "utf-8");
   return content.includes("<!-- OMC:START -->") && content.includes("<!-- OMC:END -->");
 }
 function ensureMirroredPath(sourcePath, targetPath) {
-  if (!(0, import_fs119.existsSync)(sourcePath)) return;
+  if (!(0, import_fs123.existsSync)(sourcePath)) return;
   try {
-    const sourceStat = (0, import_fs119.lstatSync)(sourcePath);
-    const targetExists = (0, import_fs119.existsSync)(targetPath);
+    const sourceStat = (0, import_fs123.lstatSync)(sourcePath);
+    const targetExists = (0, import_fs123.existsSync)(targetPath);
     if (targetExists) {
-      const targetStat = (0, import_fs119.lstatSync)(targetPath);
+      const targetStat = (0, import_fs123.lstatSync)(targetPath);
       if (targetStat.isSymbolicLink()) {
         return;
       }
-      (0, import_fs119.rmSync)(targetPath, { recursive: true, force: true });
+      (0, import_fs123.rmSync)(targetPath, { recursive: true, force: true });
     }
     if (sourceStat.isDirectory()) {
-      (0, import_fs119.symlinkSync)(sourcePath, targetPath, process.platform === "win32" ? "junction" : "dir");
+      (0, import_fs123.symlinkSync)(sourcePath, targetPath, process.platform === "win32" ? "junction" : "dir");
       return;
     }
-    (0, import_fs119.symlinkSync)(sourcePath, targetPath, "file");
+    (0, import_fs123.symlinkSync)(sourcePath, targetPath, "file");
   } catch {
-    const sourceStat = (0, import_fs119.lstatSync)(sourcePath);
+    const sourceStat = (0, import_fs123.lstatSync)(sourcePath);
     if (sourceStat.isDirectory()) {
-      (0, import_fs119.cpSync)(sourcePath, targetPath, { recursive: true });
+      (0, import_fs123.cpSync)(sourcePath, targetPath, { recursive: true });
       return;
     }
-    (0, import_fs119.copyFileSync)(sourcePath, targetPath);
+    (0, import_fs123.copyFileSync)(sourcePath, targetPath);
   }
 }
 function prepareOmcLaunchConfigDir(baseConfigDir = getClaudeConfigDir()) {
-  const companionPath = (0, import_path141.join)(baseConfigDir, "CLAUDE-omc.md");
+  const companionPath = (0, import_path147.join)(baseConfigDir, "CLAUDE-omc.md");
   if (!hasOmcMarkers(companionPath)) {
     return baseConfigDir;
   }
-  const runtimeConfigDir = (0, import_path141.join)(baseConfigDir, OMC_RUNTIME_DIRNAME);
-  (0, import_fs119.rmSync)(runtimeConfigDir, { recursive: true, force: true });
-  (0, import_fs119.mkdirSync)(runtimeConfigDir, { recursive: true });
-  (0, import_fs119.copyFileSync)(companionPath, (0, import_path141.join)(runtimeConfigDir, "CLAUDE.md"));
+  const runtimeConfigDir = (0, import_path147.join)(baseConfigDir, OMC_RUNTIME_DIRNAME);
+  (0, import_fs123.rmSync)(runtimeConfigDir, { recursive: true, force: true });
+  (0, import_fs123.mkdirSync)(runtimeConfigDir, { recursive: true });
+  (0, import_fs123.copyFileSync)(companionPath, (0, import_path147.join)(runtimeConfigDir, "CLAUDE.md"));
   for (const entry of [
     "agents",
     "commands",
@@ -96076,27 +98837,27 @@ function prepareOmcLaunchConfigDir(baseConfigDir = getClaudeConfigDir()) {
     "settings.json",
     "settings.local.json"
   ]) {
-    ensureMirroredPath((0, import_path141.join)(baseConfigDir, entry), (0, import_path141.join)(runtimeConfigDir, (0, import_path141.basename)(entry)));
+    ensureMirroredPath((0, import_path147.join)(baseConfigDir, entry), (0, import_path147.join)(runtimeConfigDir, (0, import_path147.basename)(entry)));
   }
-  const runtimeSettingsPath = (0, import_path141.join)(runtimeConfigDir, "settings.json");
-  if ((0, import_fs119.existsSync)(runtimeSettingsPath)) {
+  const runtimeSettingsPath = (0, import_path147.join)(runtimeConfigDir, "settings.json");
+  if ((0, import_fs123.existsSync)(runtimeSettingsPath)) {
     try {
-      const rawSettings = JSON.parse((0, import_fs119.readFileSync)(runtimeSettingsPath, "utf-8"));
+      const rawSettings = JSON.parse((0, import_fs123.readFileSync)(runtimeSettingsPath, "utf-8"));
       const repaired = stripRetiredTeamMcpServers(rawSettings);
       if (repaired.changed) {
-        (0, import_fs119.writeFileSync)(runtimeSettingsPath, JSON.stringify(repaired.settings, null, 2));
+        (0, import_fs123.writeFileSync)(runtimeSettingsPath, JSON.stringify(repaired.settings, null, 2));
       }
     } catch {
     }
   }
-  (0, import_fs119.writeFileSync)(
-    (0, import_path141.join)(runtimeConfigDir, ".omc-launch-profile.json"),
+  (0, import_fs123.writeFileSync)(
+    (0, import_path147.join)(runtimeConfigDir, ".omc-launch-profile.json"),
     JSON.stringify({ sourceConfigDir: baseConfigDir, sourceClaudeMd: companionPath }, null, 2)
   );
   return runtimeConfigDir;
 }
 function isDefaultClaudeConfigDirPath2(configDir) {
-  return configDir === (0, import_path141.join)((0, import_os20.homedir)(), ".claude");
+  return configDir === (0, import_path147.join)((0, import_os21.homedir)(), ".claude");
 }
 function extractNotifyFlag(args) {
   let notifyEnabled = true;
@@ -96259,7 +99020,7 @@ function runClaudeInsideTmux(cwd2, args) {
   } catch {
   }
   try {
-    (0, import_child_process34.execFileSync)("claude", args, { cwd: cwd2, stdio: "inherit" });
+    (0, import_child_process37.execFileSync)("claude", args, { cwd: cwd2, stdio: "inherit" });
   } catch (error2) {
     const err = error2;
     if (err.code === "ENOENT") {
@@ -96321,7 +99082,7 @@ function runClaudeOutsideTmux(cwd2, args, _sessionId) {
 }
 function runClaudeDirect(cwd2, args) {
   try {
-    (0, import_child_process34.execFileSync)("claude", args, { cwd: cwd2, stdio: "inherit" });
+    (0, import_child_process37.execFileSync)("claude", args, { cwd: cwd2, stdio: "inherit" });
   } catch (error2) {
     const err = error2;
     if (err.code === "ENOENT") {
@@ -96420,8 +99181,8 @@ async function launchCommand(args) {
 }
 
 // src/cli/interop.ts
-var import_child_process35 = require("child_process");
-var import_crypto20 = require("crypto");
+var import_child_process38 = require("child_process");
+var import_crypto21 = require("crypto");
 init_tmux_utils();
 function readInteropRuntimeFlags(env2 = process.env) {
   const rawMode = (env2.OMX_OMC_INTEROP_MODE || "off").toLowerCase();
@@ -96444,7 +99205,7 @@ function validateInteropRuntimeFlags(flags) {
 }
 function isCodexAvailable() {
   try {
-    (0, import_child_process35.execFileSync)("codex", ["--version"], { stdio: "ignore" });
+    (0, import_child_process38.execFileSync)("codex", ["--version"], { stdio: "ignore" });
     return true;
   } catch {
     return false;
@@ -96479,7 +99240,7 @@ function launchInteropSession(cwd2 = process.cwd()) {
     console.error("Start tmux first: tmux new-session -s myproject");
     process.exit(1);
   }
-  const sessionId = `interop-${(0, import_crypto20.randomUUID)().split("-")[0]}`;
+  const sessionId = `interop-${(0, import_crypto21.randomUUID)().split("-")[0]}`;
   const _config = initInteropSession(sessionId, cwd2, hasCodex ? cwd2 : void 0);
   console.log(`Initializing interop session: ${sessionId}`);
   console.log(`Working directory: ${cwd2}`);
@@ -96534,11 +99295,11 @@ function interopCommand(options = {}) {
 }
 
 // src/cli/ask.ts
-var import_child_process36 = require("child_process");
-var import_fs120 = require("fs");
+var import_child_process39 = require("child_process");
+var import_fs124 = require("fs");
 var import_promises17 = require("fs/promises");
-var import_os21 = require("os");
-var import_path142 = require("path");
+var import_os22 = require("os");
+var import_path148 = require("path");
 var import_url15 = require("url");
 init_security_config();
 var ASK_USAGE = [
@@ -96566,19 +99327,19 @@ function warnDeprecatedAlias(alias, canonical) {
 }
 function getPackageRoot() {
   if (typeof __dirname !== "undefined" && __dirname) {
-    const currentDirName = (0, import_path142.basename)(__dirname);
-    const parentDirName = (0, import_path142.basename)((0, import_path142.dirname)(__dirname));
+    const currentDirName = (0, import_path148.basename)(__dirname);
+    const parentDirName = (0, import_path148.basename)((0, import_path148.dirname)(__dirname));
     if (currentDirName === "bridge") {
-      return (0, import_path142.join)(__dirname, "..");
+      return (0, import_path148.join)(__dirname, "..");
     }
     if (currentDirName === "cli" && (parentDirName === "src" || parentDirName === "dist")) {
-      return (0, import_path142.join)(__dirname, "..", "..");
+      return (0, import_path148.join)(__dirname, "..", "..");
     }
   }
   try {
     const __filename4 = (0, import_url15.fileURLToPath)(importMetaUrl);
-    const __dirname2 = (0, import_path142.dirname)(__filename4);
-    return (0, import_path142.join)(__dirname2, "..", "..");
+    const __dirname2 = (0, import_path148.dirname)(__filename4);
+    return (0, import_path148.join)(__dirname2, "..", "..");
   } catch {
     return process.cwd();
   }
@@ -96586,30 +99347,30 @@ function getPackageRoot() {
 function resolveAskPromptsDir(cwd2, packageRoot, env2 = process.env) {
   const codexHomeOverride = env2.CODEX_HOME?.trim();
   if (codexHomeOverride) {
-    return (0, import_path142.join)(codexHomeOverride, "prompts");
+    return (0, import_path148.join)(codexHomeOverride, "prompts");
   }
   try {
-    const scopePath = (0, import_path142.join)(cwd2, ".omx", "setup-scope.json");
-    if ((0, import_fs120.existsSync)(scopePath)) {
-      const parsed = JSON.parse((0, import_fs120.readFileSync)(scopePath, "utf-8"));
+    const scopePath = (0, import_path148.join)(cwd2, ".omx", "setup-scope.json");
+    if ((0, import_fs124.existsSync)(scopePath)) {
+      const parsed = JSON.parse((0, import_fs124.readFileSync)(scopePath, "utf-8"));
       if (parsed.scope === "project" || parsed.scope === "project-local") {
-        return (0, import_path142.join)(cwd2, ".codex", "prompts");
+        return (0, import_path148.join)(cwd2, ".codex", "prompts");
       }
     }
   } catch {
   }
-  return (0, import_path142.join)(packageRoot, "agents");
+  return (0, import_path148.join)(packageRoot, "agents");
 }
 async function resolveAgentPromptContent(role, promptsDir) {
   const normalizedRole = role.trim().toLowerCase();
   if (!SAFE_ROLE_PATTERN.test(normalizedRole)) {
     throw new Error(`[ask] invalid --agent-prompt role "${role}". Expected lowercase role names like "executor" or "test-engineer".`);
   }
-  if (!(0, import_fs120.existsSync)(promptsDir)) {
+  if (!(0, import_fs124.existsSync)(promptsDir)) {
     throw new Error(`[ask] prompts directory not found: ${promptsDir}.`);
   }
-  const promptPath = (0, import_path142.join)(promptsDir, `${normalizedRole}.md`);
-  if (!(0, import_fs120.existsSync)(promptPath)) {
+  const promptPath = (0, import_path148.join)(promptsDir, `${normalizedRole}.md`);
+  if (!(0, import_fs124.existsSync)(promptPath)) {
     const files = await (0, import_promises17.readdir)(promptsDir).catch(() => []);
     const availableRoles = files.filter((file) => file.endsWith(".md")).map((file) => file.slice(0, -3)).sort();
     const availableSuffix = availableRoles.length > 0 ? ` Available roles: ${availableRoles.join(", ")}.` : "";
@@ -96675,18 +99436,18 @@ function parseAskArgs(args) {
 function resolveAskAdvisorScriptPath(packageRoot = getPackageRoot(), env2 = process.env) {
   const canonical = env2[ASK_ADVISOR_SCRIPT_ENV]?.trim();
   if (canonical) {
-    return (0, import_path142.isAbsolute)(canonical) ? canonical : (0, import_path142.join)(packageRoot, canonical);
+    return (0, import_path148.isAbsolute)(canonical) ? canonical : (0, import_path148.join)(packageRoot, canonical);
   }
   const alias = env2[ASK_ADVISOR_SCRIPT_ENV_ALIAS]?.trim();
   if (alias) {
     warnDeprecatedAlias(ASK_ADVISOR_SCRIPT_ENV_ALIAS, ASK_ADVISOR_SCRIPT_ENV);
-    return (0, import_path142.isAbsolute)(alias) ? alias : (0, import_path142.join)(packageRoot, alias);
+    return (0, import_path148.isAbsolute)(alias) ? alias : (0, import_path148.join)(packageRoot, alias);
   }
-  return (0, import_path142.join)(packageRoot, "scripts", "run-provider-advisor.js");
+  return (0, import_path148.join)(packageRoot, "scripts", "run-provider-advisor.js");
 }
 function resolveSignalExitCode(signal2) {
   if (!signal2) return 1;
-  const signalNumber = import_os21.constants.signals[signal2];
+  const signalNumber = import_os22.constants.signals[signal2];
   if (typeof signalNumber === "number" && Number.isFinite(signalNumber)) {
     return 128 + signalNumber;
   }
@@ -96702,7 +99463,7 @@ async function askCommand(args) {
   const packageRoot = getPackageRoot();
   const advisorScriptPath = resolveAskAdvisorScriptPath(packageRoot);
   const promptsDir = resolveAskPromptsDir(process.cwd(), packageRoot, process.env);
-  if (!(0, import_fs120.existsSync)(advisorScriptPath)) {
+  if (!(0, import_fs124.existsSync)(advisorScriptPath)) {
     throw new Error(`[ask] advisor script not found: ${advisorScriptPath}`);
   }
   let finalPrompt = parsed.prompt;
@@ -96712,7 +99473,7 @@ async function askCommand(args) {
 
 ${parsed.prompt}`;
   }
-  const child = (0, import_child_process36.spawnSync)(
+  const child = (0, import_child_process39.spawnSync)(
     process.execPath,
     [advisorScriptPath, parsed.provider, finalPrompt],
     {
@@ -96740,9 +99501,9 @@ ${parsed.prompt}`;
 }
 
 // src/cli/stack.ts
-var import_child_process37 = require("child_process");
-var import_path143 = require("path");
-var import_fs121 = require("fs");
+var import_child_process40 = require("child_process");
+var import_path149 = require("path");
+var import_fs125 = require("fs");
 var import_url16 = require("url");
 var STACK_USAGE = `
 Usage:
@@ -96798,29 +99559,29 @@ function parseCli(argv) {
 }
 function getPackageRoot2() {
   if (typeof __dirname !== "undefined" && __dirname) {
-    const currentDirName = (0, import_path143.basename)(__dirname);
-    const parentDirName = (0, import_path143.basename)((0, import_path143.dirname)(__dirname));
-    if (currentDirName === "bridge") return (0, import_path143.join)(__dirname, "..");
+    const currentDirName = (0, import_path149.basename)(__dirname);
+    const parentDirName = (0, import_path149.basename)((0, import_path149.dirname)(__dirname));
+    if (currentDirName === "bridge") return (0, import_path149.join)(__dirname, "..");
     if (currentDirName === "cli" && (parentDirName === "src" || parentDirName === "dist")) {
-      return (0, import_path143.join)(__dirname, "..", "..");
+      return (0, import_path149.join)(__dirname, "..", "..");
     }
   }
   try {
     const filename = (0, import_url16.fileURLToPath)(importMetaUrl);
-    return (0, import_path143.join)((0, import_path143.dirname)(filename), "..", "..");
+    return (0, import_path149.join)((0, import_path149.dirname)(filename), "..", "..");
   } catch {
     return process.cwd();
   }
 }
 function resolveOrchestratorPath(packageRoot) {
   const candidates = [
-    (0, import_path143.join)(packageRoot, "skills", "stack-provision", "scripts", "orchestrate.mjs"),
-    (0, import_path143.join)(packageRoot, "..", "skills", "stack-provision", "scripts", "orchestrate.mjs")
+    (0, import_path149.join)(packageRoot, "skills", "stack-provision", "scripts", "orchestrate.mjs"),
+    (0, import_path149.join)(packageRoot, "..", "skills", "stack-provision", "scripts", "orchestrate.mjs")
   ];
   for (const candidate of candidates) {
-    if ((0, import_fs121.existsSync)(candidate)) return (0, import_path143.resolve)(candidate);
+    if ((0, import_fs125.existsSync)(candidate)) return (0, import_path149.resolve)(candidate);
   }
-  return (0, import_path143.resolve)(candidates[0]);
+  return (0, import_path149.resolve)(candidates[0]);
 }
 function prettyEvent(evt) {
   switch (evt.event) {
@@ -96899,7 +99660,7 @@ async function stackCommand(argv) {
   }
   const packageRoot = getPackageRoot2();
   const orchestrator = resolveOrchestratorPath(packageRoot);
-  if (!(0, import_fs121.existsSync)(orchestrator)) {
+  if (!(0, import_fs125.existsSync)(orchestrator)) {
     process.stderr.write(
       source_default.red(`[omc stack] orchestrator not found at ${orchestrator}.
 `) + "Re-install or rebuild the package, or run from a development checkout.\n"
@@ -96910,7 +99671,7 @@ async function stackCommand(argv) {
   const { args } = buildOrchestratorArgs(parsed);
   const useRaw = parsed.raw || !process.stdout.isTTY;
   return new Promise((resolveExit, reject) => {
-    const proc = (0, import_child_process37.spawn)(process.execPath, [orchestrator, ...args], {
+    const proc = (0, import_child_process40.spawn)(process.execPath, [orchestrator, ...args], {
       stdio: useRaw ? "inherit" : ["inherit", "pipe", "inherit"]
     });
     if (!useRaw && proc.stdout) {
@@ -96960,20 +99721,20 @@ function warnIfWin32() {
 }
 
 // src/cli/autoresearch.ts
-var import_child_process42 = require("child_process");
-var import_fs126 = require("fs");
+var import_child_process45 = require("child_process");
+var import_fs130 = require("fs");
 
 // src/autoresearch/contracts.ts
-var import_child_process38 = require("child_process");
-var import_fs122 = require("fs");
+var import_child_process41 = require("child_process");
+var import_fs126 = require("fs");
 var import_promises18 = require("fs/promises");
-var import_path144 = require("path");
+var import_path150 = require("path");
 function contractError(message) {
   return new Error(message);
 }
 function readGit(repoPath, args) {
   try {
-    return (0, import_child_process38.execFileSync)("git", args, {
+    return (0, import_child_process41.execFileSync)("git", args, {
       cwd: repoPath,
       encoding: "utf-8",
       stdio: ["ignore", "pipe", "pipe"]
@@ -96988,7 +99749,7 @@ function slugifyMissionName(value) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").slice(0, 48) || "mission";
 }
 function ensurePathInside(parentPath, childPath) {
-  const rel = (0, import_path144.relative)(parentPath, childPath);
+  const rel = (0, import_path150.relative)(parentPath, childPath);
   if (rel === "" || !rel.startsWith("..") && rel !== "..") return;
   throw contractError("mission-dir must be inside a git repository.");
 }
@@ -97098,28 +99859,28 @@ function parseEvaluatorResult(raw) {
   return result.score === void 0 ? { pass: result.pass } : { pass: result.pass, score: result.score };
 }
 async function loadAutoresearchMissionContract(missionDirArg) {
-  let missionDir = (0, import_path144.resolve)(missionDirArg);
-  if (!(0, import_fs122.existsSync)(missionDir)) {
+  let missionDir = (0, import_path150.resolve)(missionDirArg);
+  if (!(0, import_fs126.existsSync)(missionDir)) {
     throw contractError(`mission-dir does not exist: ${missionDir}`);
   }
   try {
-    missionDir = (0, import_fs122.realpathSync)(missionDir);
+    missionDir = (0, import_fs126.realpathSync)(missionDir);
   } catch {
   }
   const repoRoot = readGit(missionDir, ["rev-parse", "--show-toplevel"]);
   ensurePathInside(repoRoot, missionDir);
-  const missionFile = (0, import_path144.join)(missionDir, "mission.md");
-  const sandboxFile = (0, import_path144.join)(missionDir, "sandbox.md");
-  if (!(0, import_fs122.existsSync)(missionFile)) {
+  const missionFile = (0, import_path150.join)(missionDir, "mission.md");
+  const sandboxFile = (0, import_path150.join)(missionDir, "sandbox.md");
+  if (!(0, import_fs126.existsSync)(missionFile)) {
     throw contractError(`mission.md is required inside mission-dir: ${missionFile}`);
   }
-  if (!(0, import_fs122.existsSync)(sandboxFile)) {
+  if (!(0, import_fs126.existsSync)(sandboxFile)) {
     throw contractError(`sandbox.md is required inside mission-dir: ${sandboxFile}`);
   }
   const missionContent = await (0, import_promises18.readFile)(missionFile, "utf-8");
   const sandboxContent = await (0, import_promises18.readFile)(sandboxFile, "utf-8");
   const sandbox = parseSandboxContract(sandboxContent);
-  const missionRelativeDir = (0, import_path144.relative)(repoRoot, missionDir) || (0, import_path144.basename)(missionDir);
+  const missionRelativeDir = (0, import_path150.relative)(repoRoot, missionDir) || (0, import_path150.basename)(missionDir);
   const missionSlug = slugifyMissionName(missionRelativeDir);
   return {
     missionDir,
@@ -97135,10 +99896,10 @@ async function loadAutoresearchMissionContract(missionDirArg) {
 }
 
 // src/autoresearch/runtime.ts
-var import_child_process39 = require("child_process");
-var import_fs123 = require("fs");
+var import_child_process42 = require("child_process");
+var import_fs127 = require("fs");
 var import_promises19 = require("fs/promises");
-var import_path145 = require("path");
+var import_path151 = require("path");
 init_mode_state_io();
 var AUTORESEARCH_RESULTS_HEADER = "iteration	commit	pass	score	status	description\n";
 var AUTORESEARCH_WORKTREE_EXCLUDES = ["results.tsv", "run.log", "node_modules", ".omc/"];
@@ -97154,7 +99915,7 @@ function buildRunId(missionSlug, runTag) {
   return `${missionSlug}-${runTag.toLowerCase()}`;
 }
 function activeRunStateFile(projectRoot) {
-  return (0, import_path145.join)(projectRoot, ".omc", "state", "autoresearch-state.json");
+  return (0, import_path151.join)(projectRoot, ".omc", "state", "autoresearch-state.json");
 }
 function trimContent(value, max = 4e3) {
   const trimmed = value.trim();
@@ -97163,7 +99924,7 @@ function trimContent(value, max = 4e3) {
 }
 function readGit2(repoPath, args) {
   try {
-    return (0, import_child_process39.execFileSync)("git", args, {
+    return (0, import_child_process42.execFileSync)("git", args, {
       cwd: repoPath,
       encoding: "utf-8",
       stdio: ["ignore", "pipe", "pipe"]
@@ -97175,7 +99936,7 @@ function readGit2(repoPath, args) {
   }
 }
 function tryResolveGitCommit(worktreePath, ref) {
-  const result = (0, import_child_process39.spawnSync)("git", ["rev-parse", "--verify", `${ref}^{commit}`], {
+  const result = (0, import_child_process42.spawnSync)("git", ["rev-parse", "--verify", `${ref}^{commit}`], {
     cwd: worktreePath,
     encoding: "utf-8"
   });
@@ -97185,7 +99946,7 @@ function tryResolveGitCommit(worktreePath, ref) {
 }
 async function writeGitInfoExclude(worktreePath, pattern) {
   const excludePath = readGit2(worktreePath, ["rev-parse", "--git-path", "info/exclude"]);
-  const existing = (0, import_fs123.existsSync)(excludePath) ? await (0, import_promises19.readFile)(excludePath, "utf-8") : "";
+  const existing = (0, import_fs127.existsSync)(excludePath) ? await (0, import_promises19.readFile)(excludePath, "utf-8") : "";
   const lines = new Set(existing.split(/\r?\n/).filter(Boolean));
   if (lines.has(pattern)) return;
   const next = `${existing}${existing.endsWith("\n") || existing.length === 0 ? "" : "\n"}${pattern}
@@ -97199,9 +99960,9 @@ async function ensureRuntimeExcludes(worktreePath) {
   }
 }
 async function ensureAutoresearchWorktreeDependencies(repoRoot, worktreePath) {
-  const sourceNodeModules = (0, import_path145.join)(repoRoot, "node_modules");
-  const targetNodeModules = (0, import_path145.join)(worktreePath, "node_modules");
-  if (!(0, import_fs123.existsSync)(sourceNodeModules) || (0, import_fs123.existsSync)(targetNodeModules)) {
+  const sourceNodeModules = (0, import_path151.join)(repoRoot, "node_modules");
+  const targetNodeModules = (0, import_path151.join)(worktreePath, "node_modules");
+  if (!(0, import_fs127.existsSync)(sourceNodeModules) || (0, import_fs127.existsSync)(targetNodeModules)) {
     return;
   }
   await (0, import_promises19.symlink)(sourceNodeModules, targetNodeModules, process.platform === "win32" ? "junction" : "dir");
@@ -97213,7 +99974,7 @@ function readGitFullHead(worktreePath) {
   return readGit2(worktreePath, ["rev-parse", "HEAD"]);
 }
 function requireGitSuccess(worktreePath, args) {
-  const result = (0, import_child_process39.spawnSync)("git", args, {
+  const result = (0, import_child_process42.spawnSync)("git", args, {
     cwd: worktreePath,
     encoding: "utf-8"
   });
@@ -97221,7 +99982,7 @@ function requireGitSuccess(worktreePath, args) {
   throw new Error((result.stderr || "").trim() || `git ${args.join(" ")} failed`);
 }
 function gitStatusLines(worktreePath) {
-  const result = (0, import_child_process39.spawnSync)("git", ["status", "--porcelain", "--untracked-files=all"], {
+  const result = (0, import_child_process42.spawnSync)("git", ["status", "--porcelain", "--untracked-files=all"], {
     cwd: worktreePath,
     encoding: "utf-8"
   });
@@ -97237,10 +99998,10 @@ function isAllowedRuntimeDirtyPath(path23) {
   return AUTORESEARCH_WORKTREE_EXCLUDES.some((exclude) => exclude.endsWith("/") ? path23.startsWith(exclude) || path23 === exclude.slice(0, -1) : path23 === exclude);
 }
 function allowedBootstrapDirtyPaths(worktreePath, allowedDirtyPaths = []) {
-  const normalizedWorktreePath = (0, import_path145.resolve)(worktreePath);
+  const normalizedWorktreePath = (0, import_path151.resolve)(worktreePath);
   return new Set(
     allowedDirtyPaths.map((path23) => {
-      const normalizedPath = (0, import_path145.resolve)(path23);
+      const normalizedPath = (0, import_path151.resolve)(path23);
       return normalizedPath.startsWith(`${normalizedWorktreePath}/`) ? normalizedPath.slice(normalizedWorktreePath.length + 1) : null;
     }).filter((path23) => Boolean(path23))
   );
@@ -97260,7 +100021,7 @@ function assertResetSafeWorktree(worktreePath, allowedDirtyPaths = []) {
   throw new Error(`autoresearch_reset_requires_clean_worktree:${worktreePath}:${blocking.join(" | ")}`);
 }
 async function ensureParentDir2(filePath) {
-  await (0, import_promises19.mkdir)((0, import_path145.dirname)(filePath), { recursive: true });
+  await (0, import_promises19.mkdir)((0, import_path151.dirname)(filePath), { recursive: true });
 }
 async function writeJsonFile(filePath, value) {
   await ensureParentDir2(filePath);
@@ -97272,7 +100033,7 @@ async function readJsonFile2(filePath) {
 }
 async function readActiveRunState(projectRoot) {
   const file = activeRunStateFile(projectRoot);
-  if (!(0, import_fs123.existsSync)(file)) return null;
+  if (!(0, import_fs127.existsSync)(file)) return null;
   return readJsonFile2(file);
 }
 async function writeActiveRunState(projectRoot, value) {
@@ -97342,12 +100103,12 @@ function resultScoreValue(value) {
   return typeof value === "number" ? String(value) : "";
 }
 async function initializeAutoresearchResultsFile(resultsFile) {
-  if ((0, import_fs123.existsSync)(resultsFile)) return;
+  if ((0, import_fs127.existsSync)(resultsFile)) return;
   await ensureParentDir2(resultsFile);
   await (0, import_promises19.writeFile)(resultsFile, AUTORESEARCH_RESULTS_HEADER, "utf-8");
 }
 async function appendAutoresearchResultsRow(resultsFile, row) {
-  const existing = (0, import_fs123.existsSync)(resultsFile) ? await (0, import_promises19.readFile)(resultsFile, "utf-8") : AUTORESEARCH_RESULTS_HEADER;
+  const existing = (0, import_fs127.existsSync)(resultsFile) ? await (0, import_promises19.readFile)(resultsFile, "utf-8") : AUTORESEARCH_RESULTS_HEADER;
   await (0, import_promises19.writeFile)(
     resultsFile,
     `${existing}${row.iteration}	${row.commit}	${resultPassValue(row.pass)}	${resultScoreValue(row.score)}	${row.status}	${row.description}
@@ -97356,7 +100117,7 @@ async function appendAutoresearchResultsRow(resultsFile, row) {
   );
 }
 async function appendAutoresearchLedgerEntry(ledgerFile, entry) {
-  const parsed = (0, import_fs123.existsSync)(ledgerFile) ? await readJsonFile2(ledgerFile) : { schema_version: 1, entries: [] };
+  const parsed = (0, import_fs127.existsSync)(ledgerFile) ? await readJsonFile2(ledgerFile) : { schema_version: 1, entries: [] };
   const entries = Array.isArray(parsed.entries) ? parsed.entries : [];
   entries.push(entry);
   await writeJsonFile(ledgerFile, {
@@ -97368,7 +100129,7 @@ async function appendAutoresearchLedgerEntry(ledgerFile, entry) {
   });
 }
 async function readAutoresearchLedgerEntries(ledgerFile) {
-  if (!(0, import_fs123.existsSync)(ledgerFile)) return [];
+  if (!(0, import_fs127.existsSync)(ledgerFile)) return [];
   const parsed = await readJsonFile2(ledgerFile);
   return Array.isArray(parsed.entries) ? parsed.entries : [];
 }
@@ -97404,7 +100165,7 @@ async function buildAutoresearchInstructionContext(manifest) {
 }
 async function runAutoresearchEvaluator(contract, worktreePath, ledgerFile, latestEvaluatorFile) {
   const ran_at = nowIso2();
-  const result = (0, import_child_process39.spawnSync)(contract.sandbox.evaluator.command, {
+  const result = (0, import_child_process42.spawnSync)(contract.sandbox.evaluator.command, {
     cwd: worktreePath,
     encoding: "utf-8",
     shell: true,
@@ -97621,9 +100382,9 @@ function buildAutoresearchInstructions(contract, context) {
   ].join("\n");
 }
 async function materializeAutoresearchMissionToWorktree(contract, worktreePath) {
-  const missionDir = (0, import_path145.join)(worktreePath, contract.missionRelativeDir);
-  const missionFile = (0, import_path145.join)(missionDir, "mission.md");
-  const sandboxFile = (0, import_path145.join)(missionDir, "sandbox.md");
+  const missionDir = (0, import_path151.join)(worktreePath, contract.missionRelativeDir);
+  const missionFile = (0, import_path151.join)(missionDir, "mission.md");
+  const sandboxFile = (0, import_path151.join)(missionDir, "sandbox.md");
   await (0, import_promises19.mkdir)(missionDir, { recursive: true });
   await (0, import_promises19.writeFile)(missionFile, contract.missionContent, "utf-8");
   await (0, import_promises19.writeFile)(sandboxFile, contract.sandboxContent, "utf-8");
@@ -97635,8 +100396,8 @@ async function materializeAutoresearchMissionToWorktree(contract, worktreePath) 
   };
 }
 async function loadAutoresearchRunManifest(projectRoot, runId) {
-  const manifestFile = (0, import_path145.join)(projectRoot, ".omc", "logs", "autoresearch", runId, "manifest.json");
-  if (!(0, import_fs123.existsSync)(manifestFile)) {
+  const manifestFile = (0, import_path151.join)(projectRoot, ".omc", "logs", "autoresearch", runId, "manifest.json");
+  if (!(0, import_fs127.existsSync)(manifestFile)) {
     throw new Error(`autoresearch_resume_manifest_missing:${runId}`);
   }
   return readJsonFile2(manifestFile);
@@ -97705,14 +100466,14 @@ async function prepareAutoresearchRuntime(contract, projectRoot, worktreePath, o
   const runId = buildRunId(contract.missionSlug, runTag);
   const baselineCommit = readGitShortHead(worktreePath);
   const branchName = readGit2(worktreePath, ["symbolic-ref", "--quiet", "--short", "HEAD"]);
-  const runDir = (0, import_path145.join)(projectRoot, ".omc", "logs", "autoresearch", runId);
+  const runDir = (0, import_path151.join)(projectRoot, ".omc", "logs", "autoresearch", runId);
   const stateFile = activeRunStateFile(projectRoot);
-  const instructionsFile = (0, import_path145.join)(runDir, "bootstrap-instructions.md");
-  const manifestFile = (0, import_path145.join)(runDir, "manifest.json");
-  const ledgerFile = (0, import_path145.join)(runDir, "iteration-ledger.json");
-  const latestEvaluatorFile = (0, import_path145.join)(runDir, "latest-evaluator-result.json");
-  const candidateFile = (0, import_path145.join)(runDir, "candidate.json");
-  const resultsFile = (0, import_path145.join)(worktreePath, "results.tsv");
+  const instructionsFile = (0, import_path151.join)(runDir, "bootstrap-instructions.md");
+  const manifestFile = (0, import_path151.join)(runDir, "manifest.json");
+  const ledgerFile = (0, import_path151.join)(runDir, "iteration-ledger.json");
+  const latestEvaluatorFile = (0, import_path151.join)(runDir, "latest-evaluator-result.json");
+  const candidateFile = (0, import_path151.join)(runDir, "candidate.json");
+  const resultsFile = (0, import_path151.join)(worktreePath, "results.tsv");
   const taskDescription = `autoresearch ${contract.missionRelativeDir} (${runId})`;
   const keepPolicy = contract.sandbox.evaluator.keep_policy ?? "score_improvement";
   await (0, import_promises19.mkdir)(runDir, { recursive: true });
@@ -97828,7 +100589,7 @@ async function resumeAutoresearchRuntime(projectRoot, runId) {
   if (manifest.status !== "running") {
     throw new Error(`autoresearch_resume_terminal_run:${runId}`);
   }
-  if (!(0, import_fs123.existsSync)(manifest.worktree_path)) {
+  if (!(0, import_fs127.existsSync)(manifest.worktree_path)) {
     throw new Error(`autoresearch_resume_missing_worktree:${manifest.worktree_path}`);
   }
   await ensureRuntimeExcludes(manifest.worktree_path);
@@ -97861,7 +100622,7 @@ async function resumeAutoresearchRuntime(projectRoot, runId) {
   return {
     runId: manifest.run_id,
     runTag: manifest.run_tag,
-    runDir: (0, import_path145.dirname)(manifest.manifest_file),
+    runDir: (0, import_path151.dirname)(manifest.manifest_file),
     instructionsFile: manifest.instructions_file,
     manifestFile: manifest.manifest_file,
     ledgerFile: manifest.ledger_file,
@@ -97914,7 +100675,7 @@ function parseAutoresearchCandidateArtifact(raw) {
   };
 }
 async function readCandidateArtifact(candidateFile) {
-  if (!(0, import_fs123.existsSync)(candidateFile)) {
+  if (!(0, import_fs127.existsSync)(candidateFile)) {
     throw new Error(`autoresearch_candidate_missing:${candidateFile}`);
   }
   return parseAutoresearchCandidateArtifact(await (0, import_promises19.readFile)(candidateFile, "utf-8"));
@@ -98169,11 +100930,11 @@ async function finalizeAutoresearchRunState(projectRoot, runId, updates) {
 }
 
 // src/cli/autoresearch-guided.ts
-var import_child_process41 = require("child_process");
-var import_fs125 = require("fs");
+var import_child_process44 = require("child_process");
+var import_fs129 = require("fs");
 var import_promises21 = require("fs/promises");
-var import_path147 = require("path");
-var import_os22 = require("os");
+var import_path153 = require("path");
+var import_os23 = require("os");
 var import_promises22 = require("readline/promises");
 
 // src/cli/autoresearch-intake.ts
@@ -98337,9 +101098,9 @@ async function writeAutoresearchDeepInterviewArtifacts(input) {
 }
 
 // src/cli/autoresearch-setup-session.ts
-var import_child_process40 = require("child_process");
-var import_fs124 = require("fs");
-var import_path146 = require("path");
+var import_child_process43 = require("child_process");
+var import_fs128 = require("fs");
+var import_path152 = require("path");
 
 // src/cli/autoresearch-guided.ts
 init_tmux_utils();
@@ -98387,21 +101148,21 @@ async function materializeAutoresearchDeepInterviewResult(result) {
   return initAutoresearchMission(result.compileTarget);
 }
 async function initAutoresearchMission(opts) {
-  const missionsRoot = (0, import_path147.join)(opts.repoRoot, "missions");
-  const missionDir = (0, import_path147.join)(missionsRoot, opts.slug);
-  const rel = (0, import_path147.relative)(missionsRoot, missionDir);
-  if (!rel || rel === ".." || rel.startsWith(`..${import_path147.sep}`)) {
+  const missionsRoot = (0, import_path153.join)(opts.repoRoot, "missions");
+  const missionDir = (0, import_path153.join)(missionsRoot, opts.slug);
+  const rel = (0, import_path153.relative)(missionsRoot, missionDir);
+  if (!rel || rel === ".." || rel.startsWith(`..${import_path153.sep}`)) {
     throw new Error("Invalid slug: resolves outside missions/ directory.");
   }
-  if ((0, import_fs125.existsSync)(missionDir)) {
+  if ((0, import_fs129.existsSync)(missionDir)) {
     throw new Error(`Mission directory already exists: ${missionDir}`);
   }
   await (0, import_promises21.mkdir)(missionDir, { recursive: true });
   const missionContent = buildMissionContent(opts.topic);
   const sandboxContent = buildSandboxContent(opts.evaluatorCommand, opts.keepPolicy);
   parseSandboxContract(sandboxContent);
-  await (0, import_promises21.writeFile)((0, import_path147.join)(missionDir, "mission.md"), missionContent, "utf-8");
-  await (0, import_promises21.writeFile)((0, import_path147.join)(missionDir, "sandbox.md"), sandboxContent, "utf-8");
+  await (0, import_promises21.writeFile)((0, import_path153.join)(missionDir, "mission.md"), missionContent, "utf-8");
+  await (0, import_promises21.writeFile)((0, import_path153.join)(missionDir, "sandbox.md"), sandboxContent, "utf-8");
   return { missionDir, slug: opts.slug };
 }
 function parseInitArgs(args) {
@@ -98495,7 +101256,7 @@ function checkTmuxAvailable() {
   return isTmuxAvailable();
 }
 function resolveMissionRepoRoot(missionDir) {
-  return (0, import_child_process41.execFileSync)("git", ["rev-parse", "--show-toplevel"], {
+  return (0, import_child_process44.execFileSync)("git", ["rev-parse", "--show-toplevel"], {
     cwd: missionDir,
     encoding: "utf-8",
     stdio: ["ignore", "pipe", "pipe"]
@@ -98529,7 +101290,7 @@ function spawnAutoresearchTmux(missionDir, slug) {
     }
   }
   const repoRoot = resolveMissionRepoRoot(missionDir);
-  const omcPath = (0, import_path147.resolve)((0, import_path147.join)(__dirname, "..", "..", "bin", "omc.js"));
+  const omcPath = (0, import_path153.resolve)((0, import_path153.join)(__dirname, "..", "..", "bin", "omc.js"));
   const command = buildTmuxShellCommand(process.execPath, [omcPath, "autoresearch", missionDir]);
   const wrappedCommand = wrapWithLoginShell(command);
   tmuxExec(["new-session", "-d", "-s", sessionName2, "-c", repoRoot, wrappedCommand], { stripTmux: true, stdio: "ignore" });
@@ -98541,27 +101302,27 @@ function spawnAutoresearchTmux(missionDir, slug) {
 }
 function ensureSymlink(target, linkPath) {
   try {
-    const existing = (0, import_fs125.lstatSync)(linkPath);
+    const existing = (0, import_fs129.lstatSync)(linkPath);
     if (existing.isSymbolicLink()) {
       return;
     }
-    (0, import_fs125.unlinkSync)(linkPath);
+    (0, import_fs129.unlinkSync)(linkPath);
   } catch {
   }
-  (0, import_fs125.symlinkSync)(target, linkPath, "dir");
+  (0, import_fs129.symlinkSync)(target, linkPath, "dir");
 }
 function prepareAutoresearchSetupCodexHome(repoRoot, sessionName2) {
-  const baseCodexHome = process.env.CODEX_HOME?.trim() || (0, import_path147.join)((0, import_os22.homedir)(), ".codex");
-  const tempCodexHome = (0, import_path147.join)(repoRoot, ".omx", "tmp", sessionName2, "codex-home");
-  (0, import_fs125.mkdirSync)(tempCodexHome, { recursive: true });
+  const baseCodexHome = process.env.CODEX_HOME?.trim() || (0, import_path153.join)((0, import_os23.homedir)(), ".codex");
+  const tempCodexHome = (0, import_path153.join)(repoRoot, ".omx", "tmp", sessionName2, "codex-home");
+  (0, import_fs129.mkdirSync)(tempCodexHome, { recursive: true });
   for (const dirName of ["skills", "commands"]) {
-    const sourceDir = (0, import_path147.join)(baseCodexHome, dirName);
-    if ((0, import_fs125.existsSync)(sourceDir)) {
-      ensureSymlink(sourceDir, (0, import_path147.join)(tempCodexHome, dirName));
+    const sourceDir = (0, import_path153.join)(baseCodexHome, dirName);
+    if ((0, import_fs129.existsSync)(sourceDir)) {
+      ensureSymlink(sourceDir, (0, import_path153.join)(tempCodexHome, dirName));
     }
   }
-  (0, import_fs125.writeFileSync)(
-    (0, import_path147.join)(tempCodexHome, ".omx-config.json"),
+  (0, import_fs129.writeFileSync)(
+    (0, import_path153.join)(tempCodexHome, ".omx-config.json"),
     `${JSON.stringify({ autoNudge: { enabled: false } }, null, 2)}
 `,
     "utf-8"
@@ -98650,9 +101411,9 @@ function normalizeAutoresearchClaudeArgs(claudeArgs) {
   return normalized;
 }
 function runAutoresearchTurn(worktreePath, instructionsFile, claudeArgs) {
-  const prompt = (0, import_fs126.readFileSync)(instructionsFile, "utf-8");
+  const prompt = (0, import_fs130.readFileSync)(instructionsFile, "utf-8");
   const launchArgs = ["--print", ...normalizeAutoresearchClaudeArgs(claudeArgs), "-p", prompt];
-  const result = (0, import_child_process42.spawnSync)("claude", launchArgs, {
+  const result = (0, import_child_process45.spawnSync)("claude", launchArgs, {
     cwd: worktreePath,
     stdio: ["pipe", "inherit", "inherit"],
     encoding: "utf-8",
@@ -98768,7 +101529,7 @@ ${AUTORESEARCH_HELP}`
   };
 }
 function resolveRepoRoot(cwd2) {
-  return (0, import_child_process42.execFileSync)("git", ["rev-parse", "--show-toplevel"], {
+  return (0, import_child_process45.execFileSync)("git", ["rev-parse", "--show-toplevel"], {
     cwd: cwd2,
     encoding: "utf-8",
     stdio: ["ignore", "pipe", "pipe"]
@@ -98825,7 +101586,7 @@ async function runAutoresearchLoop(claudeArgs, runtime, missionDir) {
     while (true) {
       runAutoresearchTurn(runtime.worktreePath, runtime.instructionsFile, claudeArgs);
       const contract = await loadAutoresearchMissionContract(missionDir);
-      const manifest = await loadAutoresearchRunManifest(runtime.repoRoot, JSON.parse((0, import_child_process42.execFileSync)("cat", [runtime.manifestFile], { encoding: "utf-8" })).run_id);
+      const manifest = await loadAutoresearchRunManifest(runtime.repoRoot, JSON.parse((0, import_child_process45.execFileSync)("cat", [runtime.manifestFile], { encoding: "utf-8" })).run_id);
       const decision2 = await processAutoresearchCandidate(contract, manifest, runtime.repoRoot);
       if (decision2 === "abort" || decision2 === "error") {
         return;
@@ -98913,7 +101674,7 @@ ${AUTORESEARCH_HELP}`
   await assertModeStartAllowed("autoresearch", contract.repoRoot);
   const runTag = buildAutoresearchRunTag();
   const plan = planWorktree(contract.repoRoot, contract.missionSlug, runTag);
-  (0, import_child_process42.execFileSync)("git", ["worktree", "add", "-b", plan.branchName, plan.worktreePath, "HEAD"], {
+  (0, import_child_process45.execFileSync)("git", ["worktree", "add", "-b", plan.branchName, plan.worktreePath, "HEAD"], {
     cwd: contract.repoRoot,
     stdio: "ignore"
   });
@@ -99004,15 +101765,15 @@ async function runHudWatchLoop(options) {
     if (shouldStop) {
       break;
     }
-    await new Promise((resolve44) => {
+    await new Promise((resolve50) => {
       const timer = setTimeout(() => {
         wakeSleep = null;
-        resolve44();
+        resolve50();
       }, options.intervalMs);
       wakeSleep = () => {
         clearTimeout(timer);
         wakeSleep = null;
-        resolve44();
+        resolve50();
       };
       timer.unref?.();
     });
@@ -99098,8 +101859,8 @@ Examples:
     console.log(`  User:    ${paths2.user}`);
     console.log(`  Project: ${paths2.project}`);
     console.log(source_default.blue("\nFile status:"));
-    console.log(`  User:    ${(0, import_fs133.existsSync)(paths2.user) ? source_default.green("exists") : source_default.gray("not found")}`);
-    console.log(`  Project: ${(0, import_fs133.existsSync)(paths2.project) ? source_default.green("exists") : source_default.gray("not found")}`);
+    console.log(`  User:    ${(0, import_fs137.existsSync)(paths2.user) ? source_default.green("exists") : source_default.gray("not found")}`);
+    console.log(`  Project: ${(0, import_fs137.existsSync)(paths2.project) ? source_default.green("exists") : source_default.gray("not found")}`);
     return;
   }
   const config2 = loadConfig();
@@ -99142,7 +101903,7 @@ Profile types (use with --profile):
   webhook      Generic webhook (POST with JSON body)
 
 Examples:
-  $ omc config-stop-callback file --enable --path ${(0, import_path154.join)(getClaudeConfigDir(), "logs/{date}.md")}
+  $ omc config-stop-callback file --enable --path ${(0, import_path160.join)(getClaudeConfigDir(), "logs/{date}.md")}
   $ omc config-stop-callback telegram --enable --token <token> --chat <id>
   $ omc config-stop-callback discord --enable --webhook <url>
   $ omc config-stop-callback file --disable
@@ -99268,7 +102029,7 @@ Examples:
     }
     config3.notificationProfiles[profileName] = profile;
     try {
-      (0, import_fs133.writeFileSync)(CONFIG_FILE, JSON.stringify(config3, null, 2), "utf-8");
+      (0, import_fs137.writeFileSync)(CONFIG_FILE, JSON.stringify(config3, null, 2), "utf-8");
       console.log(source_default.green(`\u2713 Profile "${profileName}" \u2014 ${type} configured`));
       console.log(JSON.stringify(profile[type], null, 2));
     } catch (error2) {
@@ -99327,7 +102088,7 @@ Examples:
       const current = config2.stopHookCallbacks.file;
       config2.stopHookCallbacks.file = {
         enabled: enabled ?? current?.enabled ?? false,
-        path: options.path ?? current?.path ?? (0, import_path154.join)(getClaudeConfigDir(), "session-logs/{session_id}.md"),
+        path: options.path ?? current?.path ?? (0, import_path160.join)(getClaudeConfigDir(), "session-logs/{session_id}.md"),
         format: options.format ?? current?.format ?? "markdown"
       };
       break;
@@ -99381,7 +102142,7 @@ Examples:
     }
   }
   try {
-    (0, import_fs133.writeFileSync)(CONFIG_FILE, JSON.stringify(config2, null, 2), "utf-8");
+    (0, import_fs137.writeFileSync)(CONFIG_FILE, JSON.stringify(config2, null, 2), "utf-8");
     console.log(source_default.green(`\u2713 Stop callback '${type}' configured`));
     console.log(JSON.stringify(config2.stopHookCallbacks[type], null, 2));
   } catch (error2) {
@@ -99443,7 +102204,7 @@ Active profile (OMC_NOTIFY_PROFILE): ${activeProfile}`));
       delete config2.notificationProfiles;
     }
     try {
-      (0, import_fs133.writeFileSync)(CONFIG_FILE, JSON.stringify(config2, null, 2), "utf-8");
+      (0, import_fs137.writeFileSync)(CONFIG_FILE, JSON.stringify(config2, null, 2), "utf-8");
       console.log(source_default.green(`\u2713 Profile "${name}" deleted`));
     } catch (error2) {
       console.error(source_default.red("Failed to write configuration:"), error2);
@@ -99802,21 +102563,31 @@ sessionCmd.command("search <query>").description("Search prior local session tra
     workingDirectory: process.cwd()
   });
 });
-var doctorCmd = program2.command("doctor").description("Diagnostic tools for troubleshooting OMC installation").option("--plugin-dir <path>", "Override OMC plugin root directory (sets OMC_PLUGIN_ROOT)").option("--team-routing", "Probe CLI presence for every provider referenced by team.roleRouting").option("--json", "Output as JSON (used with --team-routing)").addHelpText("after", `
+var doctorCmd = program2.command("doctor [root]").description("Diagnostic tools for troubleshooting OMC installation").option("--plugin-dir <path>", "Override OMC plugin root directory (sets OMC_PLUGIN_ROOT)").option("--team-routing", "Probe CLI presence for every provider referenced by team.roleRouting").option("--json", "Output as JSON (used with --team-routing)").addHelpText("after", `
 Examples:
   $ omc doctor conflicts                        Check for plugin conflicts
   $ omc doctor team-routing                     Probe /team role-routing provider CLIs
+  $ omc doctor /path/to/app                     Run project setup/runtime hygiene checks
   $ omc doctor product-artifacts                Validate .omc product artifact inventory
   $ omc doctor product-contracts                Validate product pipeline artifacts
+  $ omc doctor runtime-qa                       Validate runtime QA readiness and evidence
   $ omc doctor --team-routing                   Same as above (flag form)
   $ omc doctor --plugin-dir /path/to/plugin     Run diagnostics against a specific plugin dir`).hook("preAction", (thisCommand) => {
   applyPluginDirOption(thisCommand.opts().pluginDir);
-}).action(async (options) => {
+}).action(async (root2, options) => {
   if (options.teamRouting) {
-    const exitCode = await doctorTeamRoutingCommand({ json: options.json ?? false });
-    process.exit(exitCode);
+    const exitCode2 = await doctorTeamRoutingCommand({ json: options.json ?? false });
+    process.exit(exitCode2);
   }
-  doctorCmd.help();
+  const exitCode = await projectDoctorCommand(root2, { json: options.json ?? false });
+  process.exit(exitCode);
+});
+doctorCmd.command("project [root]").description("Run project setup/runtime hygiene checks").option("--json", "Output as JSON").addHelpText("after", `
+Examples:
+  $ omc doctor project
+  $ omc doctor project /path/to/app --json`).action(async (root2, options) => {
+  const exitCode = await projectDoctorCommand(root2, options);
+  process.exit(exitCode);
 });
 doctorCmd.command("team-routing").description("Probe CLI presence for every provider referenced by team.roleRouting").option("--json", "Output as JSON").addHelpText("after", `
 Examples:
@@ -99850,11 +102621,24 @@ Examples:
   const exitCode = await productContractsCommand(root2, options);
   process.exit(exitCode);
 });
+doctorCmd.command("runtime-qa [root]").description("Validate runtime QA readiness, simulator evidence freshness, and destructive-flow fixtures").option("--json", "Output as JSON").addHelpText("after", `
+Examples:
+  $ omc doctor runtime-qa
+  $ omc doctor runtime-qa /path/to/app --json`).action(async (root2, options) => {
+  const opts = typeof options.opts === "function" ? options.opts() : options;
+  const parentOpts = typeof options.parent?.opts === "function" ? options.parent.opts() : {};
+  const exitCode = await runtimeQaDoctorCommand(root2, {
+    ...opts,
+    json: opts.json ?? parentOpts.json ?? process.argv.includes("--json")
+  });
+  process.exit(exitCode);
+});
 var productCycleCmd = program2.command("product-cycle").description("Runtime FSM for product learning cycles").addHelpText("after", `
 Examples:
   $ omc product-cycle status
   $ omc product-cycle next
   $ omc product-cycle advance --to discover --goal "ship first usable loop"
+  $ omc product-cycle repair --safe
   $ omc product-cycle validate`);
 productCycleCmd.command("status [root]").description("Show the current product cycle state").option("--json", "Output as JSON").action(async (root2, options) => {
   const exitCode = await productCycleStatusCommand(root2, options);
@@ -99866,6 +102650,10 @@ productCycleCmd.command("next [root]").description("Show the next legal product 
 });
 productCycleCmd.command("validate [root]").description("Validate the current product cycle contract").option("--json", "Output as JSON").action(async (root2, options) => {
   const exitCode = await productCycleValidateCommand(root2, options);
+  process.exit(exitCode);
+});
+productCycleCmd.command("repair [root]").description("Repair safe product-cycle projections and report non-mechanical fixes").option("--safe", "Write only safe mechanical projection repairs").option("--json", "Output as JSON").action(async (root2, options) => {
+  const exitCode = await productCycleRepairCommand(root2, options);
   process.exit(exitCode);
 });
 productCycleCmd.command("advance [root]").description("Advance the product cycle to the next legal stage").requiredOption("--to <stage>", "Target stage: discover | rank | select | spec | build | verify | learn | complete | blocked").option("--goal <goal>", "Cycle goal when creating a new cycle").option("--force", "Bypass transition order after an explicit human decision").option("--json", "Output as JSON").action(async (root2, options) => {
@@ -99884,6 +102672,27 @@ Examples:
 var runtimeQaCmd = program2.command("runtime-qa").description("Run configured build/smoke/simulator checks and write runtime QA evidence");
 runtimeQaCmd.command("init [root]").description("Detect project runtime QA settings and write .omc/runtime-qa.json").option("--target <target>", "Target type: web | cli | service | mobile | project-script").option("--no-write", "Detect and print without writing .omc/runtime-qa.json").option("--force", "Overwrite an existing .omc/runtime-qa.json").option("--json", "Output as JSON").action(async (root2, options) => {
   const exitCode = await runtimeQaInitCommand(root2, options);
+  process.exit(exitCode);
+});
+runtimeQaCmd.command("migrate [root]").description("Migrate .omc/runtime-qa.json to the canonical schema without dropping flow metadata").option("--write", "Write the migrated .omc/runtime-qa.json instead of previewing it").option("--force", "Write even when the config is already canonical").option("--json", "Output as JSON").action(async (root2, options) => {
+  const exitCode = await runtimeQaMigrateCommand(root2, options);
+  process.exit(exitCode);
+});
+runtimeQaCmd.command("setup [root]").description("Plan or apply runtime QA prerequisite setup for this project").option("--apply", "Execute safe command setup steps; manual steps are never executed").option("--json", "Output as JSON").addHelpText("after", `
+Examples:
+  $ omc runtime-qa setup
+  $ omc runtime-qa setup /path/to/app --json
+  $ omc runtime-qa setup /path/to/app --apply`).action(async (root2, options) => {
+  const exitCode = await runtimeQaSetupCommand(root2, options);
+  process.exit(exitCode);
+});
+var runtimeQaFixtureCmd = runtimeQaCmd.command("fixture").description("Provision or tear down runtime QA fixtures from .omc/runtime-qa.json providers");
+runtimeQaFixtureCmd.command("provision <fixtureName> [root]").description("Provision a runtime QA fixture, such as a disposable Supabase auth user").option("--backend <backend>", "Provider backend: auto | env | mcp").option("--json", "Output as JSON").action(async (fixtureName, root2, options) => {
+  const exitCode = await runtimeQaFixtureCommand("provision", fixtureName, root2, options);
+  process.exit(exitCode);
+});
+runtimeQaFixtureCmd.command("teardown <fixtureName> [root]").description("Tear down a runtime QA fixture provisioned for a run").option("--backend <backend>", "Provider backend: auto | env | mcp").option("--json", "Output as JSON").action(async (fixtureName, root2, options) => {
+  const exitCode = await runtimeQaFixtureCommand("teardown", fixtureName, root2, options);
   process.exit(exitCode);
 });
 runtimeQaCmd.command("run [root]").description("Run runtime QA from .omc/runtime-qa.json or detected project signals").option("--auto", "Run in safe autonomous mode").option("--install-mobile-tools", "Install missing Maestro/Detox/Appium tooling before mobile runtime QA").option("--dry-run", "Show runtime QA steps without running commands").option("--json", "Output as JSON").action(async (root2, options) => {
@@ -99958,6 +102767,14 @@ Examples:
   $ omc run-scorecard --json`).action(async (root2, options) => {
   await runScorecardCommand(root2, options);
 });
+program2.command("state-hygiene [root]").description("Find or untrack OMC runtime state files that were accidentally added to git").option("--apply", "Run git rm --cached for tracked runtime state files").option("--json", "Output as JSON").addHelpText("after", `
+Examples:
+  $ omc state-hygiene
+  $ omc state-hygiene /path/to/app --json
+  $ omc state-hygiene /path/to/app --apply`).action(async (root2, options) => {
+  const exitCode = await stateHygieneCommand(root2, options);
+  process.exit(exitCode);
+});
 var featureGenerationCmd = program2.command("feature-generation").description("Audit source and MCP readiness for feature/opportunity generation").addHelpText("after", `
 Examples:
   $ omc feature-generation audit --goal "improve activation"
@@ -99985,6 +102802,7 @@ Examples:
   $ omc portfolio validate
   $ omc portfolio validate /path/to/app --json
   $ omc portfolio migrate --write
+  $ omc portfolio trim --to 40 --write
   $ omc portfolio project
   $ omc portfolio project --write`);
 portfolioCmd.command("validate [root]").description("Validate .omc/portfolio/current.json").option("--json", "Output as JSON").action(async (root2, options) => {
@@ -99995,16 +102813,22 @@ portfolioCmd.command("migrate [root]").description("Generate .omc/portfolio/curr
   const exitCode = await portfolioMigrateCommand(root2, options);
   process.exit(exitCode);
 });
+portfolioCmd.command("trim [root]").description("Trim .omc/portfolio/current.json to the guardrail size while preserving selected work").option("--to <count>", "Maximum portfolio item count to keep", "40").option("--write", "Write .omc/portfolio/current.json and refresh the projection").option("--json", "Output as JSON").action(async (root2, options) => {
+  const exitCode = await portfolioTrimCommand(root2, options);
+  process.exit(exitCode);
+});
 portfolioCmd.command("project [root]").description("Render .omc/portfolio/current.json as a human-readable markdown projection").option("--json", "Output as JSON").option("--write", "Write .omc/portfolio/current.md instead of printing it").option("--output <path>", "Projection output path, relative to root unless absolute").action(async (root2, options) => {
   const exitCode = await portfolioProjectCommand(root2, options);
   process.exit(exitCode);
 });
-program2.command("setup").description("Run OMC setup to sync all components (hooks, agents, skills)").option("-f, --force", "Force reinstall even if already up to date").option("-q, --quiet", "Suppress output except for errors").option("--no-plugin", "Install bundled skills from the current package instead of relying on plugin-provided skills").option("--plugin-dir-mode", "Treat OMC as launched via --plugin-dir at runtime (skip agent/skill copy; HUD + hooks + CLAUDE.md still installed)").option("--skip-hooks", "Skip hook installation").option("--force-hooks", "Force reinstall hooks even if unchanged").addHelpText("after", `
+program2.command("setup").description("Run OMC setup to sync all components (hooks, agents, skills)").option("-f, --force", "Force reinstall even if already up to date").option("-q, --quiet", "Suppress output except for errors").option("--project-root <path>", "Project root for post-setup OMC project checks", process.cwd()).option("--skip-project-checks", "Skip post-setup project hygiene/runtime QA checks").option("--apply-project-fixes", "Apply safe project fixes: untrack OMC runtime state and run command-based runtime QA setup steps").option("--no-plugin", "Install bundled skills from the current package instead of relying on plugin-provided skills").option("--plugin-dir-mode", "Treat OMC as launched via --plugin-dir at runtime (skip agent/skill copy; HUD + hooks + CLAUDE.md still installed)").option("--skip-hooks", "Skip hook installation").option("--force-hooks", "Force reinstall hooks even if unchanged").addHelpText("after", `
 Examples:
   $ omc setup                     Sync all OMC components
   $ omc setup --force             Force reinstall everything
   $ omc setup --no-plugin         Force local bundled skill installation
   $ omc setup --plugin-dir-mode   Skip agent/skill copy (used with claude --plugin-dir)
+  $ omc setup --project-root /path/to/app
+  $ omc setup --apply-project-fixes
   $ omc setup --quiet             Silent setup for scripts
   $ omc setup --skip-hooks        Install without hooks
   $ omc setup --force-hooks       Force reinstall hooks`).action(async (options) => {
@@ -100046,6 +102870,10 @@ Examples:
     }
     process.exit(1);
   }
+  const projectReport = options.skipProjectChecks ? void 0 : inspectProjectDoctor(options.projectRoot, {
+    applyStateHygiene: !!options.applyProjectFixes,
+    applyRuntimeQaSetup: !!options.applyProjectFixes
+  });
   if (!options.quiet) {
     console.log("");
     console.log(source_default.green("Setup complete!"));
@@ -100068,6 +102896,10 @@ Examples:
       result.hookConflicts.forEach((c) => {
         console.log(source_default.yellow(`    - ${c.eventType}: ${c.existingCommand}`));
       });
+    }
+    if (projectReport) {
+      console.log("");
+      console.log(renderProjectDoctorReport(projectReport));
     }
     const installed = getInstalledVersion();
     const reportedVersion = installed?.version ?? version2;

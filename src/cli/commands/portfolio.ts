@@ -7,10 +7,12 @@ import {
   migrateOpportunitiesToPortfolioLedger,
   readPortfolioLedger,
   renderPortfolioProjection,
+  trimPortfolioLedger,
   validatePortfolioLedger,
   writePortfolioProjection,
   type PortfolioMigrationReport,
   type PortfolioLedgerValidationReport,
+  type PortfolioTrimReport,
 } from '../../product/portfolio-ledger.js';
 
 export interface PortfolioCommandOptions {
@@ -19,6 +21,7 @@ export interface PortfolioCommandOptions {
   output?: string;
   source?: string;
   force?: boolean;
+  to?: string | number;
 }
 
 interface LoggerLike {
@@ -87,6 +90,31 @@ export async function portfolioMigrateCommand(
   return 0;
 }
 
+export async function portfolioTrimCommand(
+  root: string | undefined,
+  options: PortfolioCommandOptions,
+  logger: LoggerLike = console,
+): Promise<number> {
+  const target = normalizeTrimTarget(options.to);
+  const report = trimPortfolioLedger(root, {
+    to: target,
+    write: options.write === true,
+  });
+
+  if (options.json) {
+    logger.log(JSON.stringify(report, null, 2));
+    return report.ok ? 0 : 1;
+  }
+
+  if (!report.ok) {
+    logger.error(renderTrimReport(report));
+    return 1;
+  }
+
+  logger.log(renderTrimReport(report));
+  return 0;
+}
+
 function renderValidationReport(report: PortfolioLedgerValidationReport): string {
   const lines = [
     colors.bold('Portfolio ledger validation'),
@@ -142,4 +170,60 @@ function renderMigrationReport(report: PortfolioMigrationReport): string {
     ? colors.green(report.wrote ? 'Wrote migrated portfolio ledger' : 'Migration preview is valid')
     : colors.red('Migration failed'));
   return lines.join('\n');
+}
+
+function renderTrimReport(report: PortfolioTrimReport): string {
+  const lines = [
+    colors.bold('Portfolio trim'),
+    `path: ${report.path}`,
+    `target: ${report.target}`,
+    `items: ${report.originalCount} -> ${report.trimmedCount}`,
+    `removed: ${report.removedCount}`,
+    `written: ${report.wrote}`,
+  ];
+
+  if (report.projectionPath) {
+    lines.push(`projection: ${report.projectionPath}`);
+  }
+
+  if (report.removedItems.length > 0) {
+    lines.push('');
+    lines.push(renderTable(report.removedItems.map((item) => ({
+      id: item.id,
+      lane: item.lane,
+      status: item.status,
+      title: item.title,
+    })), [
+      { header: 'id', field: 'id', width: 28 },
+      { header: 'lane', field: 'lane', width: 16 },
+      { header: 'status', field: 'status', width: 12 },
+      { header: 'title', field: 'title', width: 70 },
+    ]));
+  }
+
+  if (report.issues.length > 0) {
+    lines.push('');
+    lines.push(renderTable(report.issues.map((issue) => ({
+      severity: issue.severity === 'error' ? colors.red(issue.severity) : colors.yellow(issue.severity),
+      code: issue.code,
+      message: issue.message,
+    })), [
+      { header: 'severity', field: 'severity', width: 10 },
+      { header: 'code', field: 'code', width: 24 },
+      { header: 'message', field: 'message', width: 80 },
+    ]));
+  }
+
+  lines.push('');
+  lines.push(report.ok
+    ? colors.green(report.wrote ? 'Wrote trimmed portfolio ledger' : 'Trim preview is valid; re-run with --write to update the ledger')
+    : colors.red('Trim failed'));
+  return lines.join('\n');
+}
+
+function normalizeTrimTarget(value: PortfolioCommandOptions['to']): number | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value === 'number') return value;
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) ? parsed : Number.NaN;
 }

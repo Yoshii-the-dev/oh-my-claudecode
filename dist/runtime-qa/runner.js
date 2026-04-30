@@ -3,6 +3,7 @@ import { spawnSync } from 'child_process';
 import { dirname, resolve } from 'path';
 import { atomicWriteFileSync, atomicWriteJsonSync, ensureDirSync } from '../lib/atomic-write.js';
 import { truncateInlineLog } from '../lib/summary-policy.js';
+import { providerLifecycleCommands, fixtureEnvFileRelative, resolveFixtureProvider, wrapCommandWithFixtureEnv, } from './fixture-providers.js';
 export const RUNTIME_QA_CONFIG_RELATIVE_PATH = '.omc/runtime-qa.json';
 export const RUNTIME_QA_HANDOFF_RELATIVE_PATH = '.omc/handoffs/runtime-qa/current.json';
 const RUNTIME_QA_HANDOFF_MD_RELATIVE_PATH = '.omc/handoffs/runtime-qa/current.md';
@@ -22,6 +23,12 @@ export function shouldRunRuntimeQa(root = process.cwd()) {
     }
 }
 export function readRuntimeQaConfig(root = process.cwd()) {
+    const path = resolve(root, RUNTIME_QA_CONFIG_RELATIVE_PATH);
+    if (!existsSync(path))
+        return undefined;
+    return normalizeRuntimeQaConfig(readRuntimeQaConfigRaw(root));
+}
+export function readRuntimeQaConfigRaw(root = process.cwd()) {
     const path = resolve(root, RUNTIME_QA_CONFIG_RELATIVE_PATH);
     if (!existsSync(path))
         return undefined;
@@ -81,8 +88,35 @@ export function initRuntimeQaConfig(options = {}) {
             : 'Runtime QA config detected from project files and scripts.',
     };
 }
+export function migrateRuntimeQaConfig(options = {}) {
+    const root = resolve(options.root ?? process.cwd());
+    const path = resolve(root, RUNTIME_QA_CONFIG_RELATIVE_PATH);
+    const raw = readRuntimeQaConfigRaw(root);
+    const existed = Boolean(raw);
+    const config = raw ? normalizeRuntimeQaConfig(raw) : detectRuntimeQaConfig(root);
+    const changed = !raw || JSON.stringify(raw, null, 2) !== JSON.stringify(config, null, 2);
+    const written = options.write === true && (changed || options.force === true);
+    if (written) {
+        ensureDirSync(dirname(path));
+        atomicWriteJsonSync(path, config);
+    }
+    return {
+        root,
+        path,
+        existed,
+        changed,
+        written,
+        config,
+        reason: raw
+            ? changed
+                ? 'Runtime QA config can be migrated to the canonical schema.'
+                : 'Runtime QA config already uses the canonical schema.'
+            : 'Runtime QA config detected from project files and scripts.',
+    };
+}
 export function runRuntimeQa(options = {}) {
     const root = resolve(options.root ?? process.cwd());
+    const activeCycleId = readActiveCycleId(root);
     const configPath = resolve(root, RUNTIME_QA_CONFIG_RELATIVE_PATH);
     const explicitConfig = options.config ?? readRuntimeQaConfig(root);
     const configExists = Boolean(options.config || existsSync(configPath));
@@ -93,12 +127,13 @@ export function runRuntimeQa(options = {}) {
     }
     const runId = new Date().toISOString().replace(/[:.]/g, '-');
     const artifactDir = resolve(root, config?.artifacts_dir ?? `.omc/artifacts/runtime-qa/${runId}`);
+    const dryRun = options.dryRun === true;
     const adapterResolution = resolveAdapter(root, config, {
+        dryRun,
         installMobileTools: options.installMobileTools === true,
         toolDetector: options.toolDetector ?? defaultToolDetector,
     });
     const commandRunner = options.commandRunner ?? defaultCommandRunner;
-    const dryRun = options.dryRun === true;
     const timeoutMs = config?.timeout_ms ?? DEFAULT_TIMEOUT_MS;
     const stepResults = [];
     if (adapterResolution.blocked) {
@@ -106,6 +141,7 @@ export function runRuntimeQa(options = {}) {
             schema_version: 1,
             produced_at: new Date().toISOString(),
             agent_role: 'runtime-qa-runner',
+            cycle_id: activeCycleId,
             status: 'blocked',
             root,
             config_path: RUNTIME_QA_CONFIG_RELATIVE_PATH,
@@ -123,7 +159,6 @@ export function runRuntimeQa(options = {}) {
                 }],
         };
     }
-    ensureDirSync(artifactDir);
     if (adapterResolution.provisionCommands.length > 0) {
         for (const command of adapterResolution.provisionCommands) {
             if (dryRun) {
@@ -136,12 +171,14 @@ export function runRuntimeQa(options = {}) {
                 continue;
             }
             const result = commandRunner(command.command, root, timeoutMs);
+            ensureDirSync(artifactDir);
             stepResults.push(commandResultToStep(command, result, artifactDir, options.summaryPolicy));
             if (result.error || result.status !== 0) {
                 return {
                     schema_version: 1,
                     produced_at: new Date().toISOString(),
                     agent_role: 'runtime-qa-runner',
+                    cycle_id: activeCycleId,
                     status: 'failed',
                     root,
                     config_path: RUNTIME_QA_CONFIG_RELATIVE_PATH,
@@ -157,12 +194,15 @@ export function runRuntimeQa(options = {}) {
             }
         }
     }
-    const commands = commandsForAdapter(adapterResolution.adapter, config, root);
+    const commands = withFixtureLifecycleCommands(root, config, commandsForAdapter(adapterResolution.adapter, config, root, adapterResolution.toolDetection));
+    const runnableCommands = commands.filter((command) => !isCleanupCommand(command.name));
+    const cleanupCommands = commands.filter((command) => isCleanupCommand(command.name));
     if (commands.length === 0) {
         return {
             schema_version: 1,
             produced_at: new Date().toISOString(),
             agent_role: 'runtime-qa-runner',
+            cycle_id: activeCycleId,
             status: 'noop',
             root,
             config_path: RUNTIME_QA_CONFIG_RELATIVE_PATH,
@@ -180,27 +220,69 @@ export function runRuntimeQa(options = {}) {
                 }],
         };
     }
-    for (const command of commands) {
+    let failed = false;
+    let partial = false;
+    const startedFlows = new Set();
+    for (const command of runnableCommands) {
+        if (failed && command.lifecycle !== 'teardown')
+            continue;
+        if (command.lifecycle === 'teardown' && command.flowKey && !startedFlows.has(command.flowKey)) {
+            continue;
+        }
+        if (command.skipReason) {
+            partial = true;
+            stepResults.push({
+                name: command.name,
+                command: command.command,
+                status: 'skipped',
+                reason: command.skipReason,
+            });
+            continue;
+        }
+        if (command.flowKey && command.lifecycle !== 'teardown')
+            startedFlows.add(command.flowKey);
         if (dryRun) {
             stepResults.push({
                 name: command.name,
                 command: command.command,
                 status: 'dry-run',
-                reason: 'Would run runtime QA command.',
+                reason: runtimeQaDryRunReason(command),
             });
             continue;
         }
         const result = commandRunner(command.command, root, timeoutMs);
+        ensureDirSync(artifactDir);
+        const step = commandResultToStep(command, result, artifactDir, options.summaryPolicy);
+        stepResults.push(step);
+        if (step.status === 'failed') {
+            failed = true;
+        }
+    }
+    for (const command of cleanupCommands) {
+        if (dryRun) {
+            stepResults.push({
+                name: command.name,
+                command: command.command,
+                status: 'dry-run',
+                reason: failed
+                    ? 'Would run cleanup after a runtime QA failure.'
+                    : 'Would run runtime QA cleanup command.',
+            });
+            continue;
+        }
+        const result = commandRunner(command.command, root, timeoutMs);
+        ensureDirSync(artifactDir);
         const step = commandResultToStep(command, result, artifactDir, options.summaryPolicy);
         stepResults.push(step);
         if (step.status === 'failed')
-            break;
+            failed = true;
     }
     return {
         schema_version: 1,
         produced_at: new Date().toISOString(),
         agent_role: 'runtime-qa-runner',
-        status: stepResults.some((step) => step.status === 'failed') ? 'failed' : 'passed',
+        cycle_id: activeCycleId,
+        status: dryRun ? 'dry-run' : failed ? 'failed' : partial ? 'partial-pass' : 'passed',
         root,
         config_path: RUNTIME_QA_CONFIG_RELATIVE_PATH,
         config_exists: configExists,
@@ -226,6 +308,7 @@ export function renderRuntimeQaRunReport(report) {
         '# Runtime QA Report',
         '',
         `produced_at: ${report.produced_at}`,
+        ...(report.cycle_id ? [`cycle_id: ${report.cycle_id}`] : []),
         `status: ${report.status}`,
         `adapter: ${report.adapter}`,
         `auto: ${report.auto}`,
@@ -238,6 +321,12 @@ export function renderRuntimeQaRunReport(report) {
     }
     if (report.tool_detection) {
         lines.push(`tool_detection: ${report.tool_detection.tool} ${report.tool_detection.detected ? 'detected' : 'missing'} (${report.tool_detection.method})`);
+        if (report.tool_detection.missing_prerequisite) {
+            lines.push(`missing_prerequisite: ${report.tool_detection.missing_prerequisite}`);
+        }
+        if (report.tool_detection.reason) {
+            lines.push(`tool_detection_reason: ${report.tool_detection.reason}`);
+        }
     }
     lines.push('', '## Steps');
     for (const step of report.step_results) {
@@ -284,8 +373,18 @@ function resolveAdapter(root, config, options) {
             };
         }
         if (!toolDetection.detected) {
-            const provisionCommands = mobileProvisionCommands(root, tool, config);
-            const installProposal = mobileInstallProposal(tool, provisionCommands);
+            const provisionCommands = mobileProvisionCommands(root, tool, config, toolDetection);
+            const installProposal = mobileInstallProposal(tool, provisionCommands, toolDetection);
+            if (options.dryRun) {
+                return {
+                    adapter,
+                    blocked: false,
+                    reason: `${adapter} selected but ${tool} was not detected; dry-run will render the planned simulator commands only.`,
+                    installProposal,
+                    toolDetection,
+                    provisionCommands: options.installMobileTools ? provisionCommands : [],
+                };
+            }
             const installAllowed = options.installMobileTools || config?.mobile?.install?.enabled === true;
             if (installAllowed && provisionCommands.length > 0) {
                 return {
@@ -353,10 +452,12 @@ function inferMobileAdapter(root) {
         return 'mobile-appium';
     return 'mobile-maestro';
 }
-function commandsForAdapter(adapter, config, root) {
+function commandsForAdapter(adapter, config, root, toolDetection) {
     const configured = flattenConfiguredCommands(config?.commands);
     if (configured.length > 0)
-        return configured;
+        return adapter === 'mobile-maestro'
+            ? configured.map((command) => withMaestroJavaEnvironment(root, command, toolDetection))
+            : configured;
     if (adapter === 'web-playwright') {
         return [{ name: 'smoke', command: detectWebSmokeCommand(root) ?? 'npx playwright test --trace retain-on-failure' }];
     }
@@ -365,9 +466,105 @@ function commandsForAdapter(adapter, config, root) {
     }
     const detectedMobileCommand = detectMobileSmokeCommand(adapter, root);
     if (detectedMobileCommand) {
-        return [{ name: 'smoke', command: detectedMobileCommand }];
+        const command = { name: 'smoke', command: detectedMobileCommand };
+        return adapter === 'mobile-maestro'
+            ? [withMaestroJavaEnvironment(root, command, toolDetection)]
+            : [command];
     }
     return [];
+}
+function withFixtureLifecycleCommands(root, config, commands) {
+    if (!config?.flows?.length || !config.fixtures)
+        return commands;
+    const expanded = [];
+    for (const command of commands) {
+        const flow = flowForCommand(config.flows, command);
+        const fixture = flow?.fixture ? config.fixtures[flow.fixture] : undefined;
+        const flowKey = flow ? flowKeyForLifecycle(flow) : undefined;
+        const provider = flow?.fixture
+            ? resolveFixtureProvider(root, flow.fixture, fixture)
+            : undefined;
+        const providerCommands = flow?.fixture && provider?.supported && provider.requiresAgentMcp !== true
+            ? providerLifecycleCommands(flow.fixture)
+            : undefined;
+        const provisionCommand = fixture?.provision_command ?? providerCommands?.provisionCommand;
+        const teardownCommand = fixture?.teardown_command ?? providerCommands?.teardownCommand;
+        const skipReason = flow
+            ? destructiveFlowSkipReason(root, flow, fixture, provider, provisionCommand)
+            : undefined;
+        if (flow && provisionCommand && !skipReason) {
+            expanded.push({
+                name: `fixture-${flowKey}-provision`,
+                command: provisionCommand,
+                lifecycle: 'provision',
+                flowKey,
+            });
+        }
+        const commandWithFixture = flowKey
+            ? {
+                ...command,
+                command: flow?.fixture && provider?.supported
+                    ? wrapCommandWithFixtureEnv(flow.fixture, command.command)
+                    : command.command,
+                flowKey,
+                skipReason,
+            }
+            : command;
+        expanded.push(commandWithFixture);
+        if (flow && teardownCommand && !skipReason) {
+            expanded.push({
+                name: `fixture-${flowKey}-teardown`,
+                command: teardownCommand,
+                lifecycle: 'teardown',
+                flowKey,
+            });
+        }
+    }
+    return expanded;
+}
+function destructiveFlowSkipReason(root, flow, fixture, provider, provisionCommand) {
+    if (flow.destructive !== true)
+        return undefined;
+    const flowId = flow.id ?? flow.path;
+    if (!flow.fixture) {
+        return `Destructive runtime QA flow ${flowId} skipped: no disposable fixture is declared. partial-pass is not complete evidence.`;
+    }
+    if (provider?.requiresAgentMcp === true) {
+        const envFile = fixtureEnvFileRelative(flow.fixture);
+        if (!existsSync(resolve(root, envFile))) {
+            return `Destructive runtime QA flow ${flowId} skipped: Supabase MCP fixture ${flow.fixture} must be provisioned by the Claude/OMC agent before simulator execution (${envFile} missing). partial-pass is not complete evidence.`;
+        }
+        return undefined;
+    }
+    if (!provisionCommand) {
+        const reason = provider?.reason ?? (fixture
+            ? `fixture ${flow.fixture} has no executable provision_command or supported provider`
+            : `fixture ${flow.fixture} is not declared`);
+        return `Destructive runtime QA flow ${flowId} skipped: ${reason}. partial-pass is not complete evidence.`;
+    }
+    return undefined;
+}
+function flowForCommand(flows, command) {
+    if (!isSmokeCommand(command.name))
+        return undefined;
+    return flows.find((flow) => command.command.includes(flow.path));
+}
+function flowKeyForLifecycle(flow) {
+    return sanitizeStepName(flow.id ?? flow.path.replace(/\.[^.]+$/, ''));
+}
+function sanitizeStepName(value) {
+    const sanitized = value.trim().replace(/[^a-z0-9_-]+/gi, '-').replace(/^-+|-+$/g, '');
+    return sanitized || 'flow';
+}
+function isSmokeCommand(name) {
+    return name === 'smoke' || name.startsWith('smoke-');
+}
+function runtimeQaDryRunReason(command) {
+    if (command.lifecycle === 'provision')
+        return 'Would provision runtime QA fixture.';
+    if (command.lifecycle === 'teardown')
+        return 'Would tear down runtime QA fixture.';
+    return 'Would run runtime QA command.';
 }
 function detectWebSmokeCommand(root) {
     const pkg = readPackageJson(root);
@@ -416,6 +613,9 @@ function expandCommand(name, value) {
         command,
     }));
 }
+function isCleanupCommand(name) {
+    return name === 'cleanup' || name.startsWith('cleanup-');
+}
 function hasConfiguredSmoke(config) {
     return Boolean(config?.commands?.smoke || config?.mobile?.command);
 }
@@ -457,20 +657,28 @@ function detectMobileSmokeCommand(adapter, root) {
     const fallback = scriptEntries.find(([, script]) => script.includes(commandNeedle));
     return fallback ? `${packageRunCommand(root)} ${fallback[0]}` : undefined;
 }
-function mobileProvisionCommands(root, tool, config) {
+function mobileProvisionCommands(root, tool, config, toolDetection) {
+    if (tool === 'maestro' && toolDetection?.missing_prerequisite === 'java-17') {
+        return java17ProvisionCommands();
+    }
     if (config?.mobile?.install?.command) {
         return expandCommand(`install-${tool}`, config.mobile.install.command);
     }
     const configuredManager = config?.mobile?.install?.manager;
     const manager = resolveInstallManager(root, configuredManager);
     if (tool === 'maestro') {
+        const javaCommands = java17ProvisionCommands();
         if (configuredManager === 'brew') {
             return [
+                ...javaCommands,
                 { name: 'install-maestro-1', command: 'brew tap mobile-dev-inc/tap' },
                 { name: 'install-maestro-2', command: 'brew install mobile-dev-inc/tap/maestro' },
             ];
         }
-        return [{ name: 'install-maestro', command: 'curl -fsSL "https://get.maestro.mobile.dev" | bash' }];
+        return [
+            ...javaCommands,
+            { name: 'install-maestro', command: 'curl -fsSL "https://get.maestro.mobile.dev" | bash' },
+        ];
     }
     if (tool === 'detox') {
         return [{ name: 'install-detox', command: packageAddCommand(root, manager, 'detox') }];
@@ -478,7 +686,16 @@ function mobileProvisionCommands(root, tool, config) {
     const appiumManager = configuredManager && configuredManager !== 'auto' ? configuredManager : 'npm';
     return [{ name: 'install-appium', command: globalPackageAddCommand(appiumManager, 'appium') }];
 }
-function mobileInstallProposal(tool, commands) {
+function mobileInstallProposal(tool, commands, toolDetection) {
+    if (toolDetection?.missing_prerequisite === 'java-17') {
+        if (commands.length === 0) {
+            return 'Install Java 17+ and set JAVA_HOME before running Maestro runtime QA.';
+        }
+        return [
+            'Run omc runtime-qa run --auto --install-mobile-tools to provision Java 17 for Maestro, or run manually:',
+            ...commands.map((entry) => entry.command),
+        ].join(' ');
+    }
     if (commands.length === 0) {
         return `Configure mobile.install.command in .omc/runtime-qa.json to provision ${tool}.`;
     }
@@ -486,6 +703,12 @@ function mobileInstallProposal(tool, commands) {
         `Run omc runtime-qa run --auto --install-mobile-tools to provision ${tool}, or run manually:`,
         ...commands.map((entry) => entry.command),
     ].join(' ');
+}
+function java17ProvisionCommands() {
+    if (process.platform === 'darwin') {
+        return [{ name: 'install-java-17', command: 'brew install openjdk@17' }];
+    }
+    return [];
 }
 function resolveInstallManager(root, configured) {
     if (configured && configured !== 'auto')
@@ -502,6 +725,41 @@ function packageRunCommand(root) {
     if (existsSync(resolve(root, 'yarn.lock')))
         return 'yarn';
     return 'npm run';
+}
+function withMaestroJavaEnvironment(root, command, toolDetection) {
+    if (!/^\s*maestro(?:\s|$)/.test(command.command))
+        return command;
+    if (toolDetection?.missing_prerequisite !== 'java-17' && javaIsOnPath(root))
+        return command;
+    const javaHome = detectJava17Home();
+    if (!javaHome)
+        return command;
+    const javaBin = `${javaHome}/bin`;
+    return {
+        ...command,
+        command: `JAVA_HOME=${shellQuote(javaHome)} PATH=${shellQuote(javaBin)}:$PATH ${command.command}`,
+    };
+}
+function javaIsOnPath(root) {
+    const result = spawnSync('java -version', {
+        cwd: root,
+        shell: true,
+        encoding: 'utf-8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+        timeout: 5_000,
+    });
+    return result.status === 0;
+}
+function detectJava17Home() {
+    const candidates = [
+        process.env.JAVA_HOME,
+        '/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home',
+        '/usr/local/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home',
+    ].filter((value) => Boolean(value));
+    return candidates.find((candidate) => existsSync(resolve(candidate, 'bin/java')));
+}
+function shellQuote(value) {
+    return `'${value.replace(/'/g, `'\\''`)}'`;
 }
 function packageAddCommand(root, manager, packageName) {
     const resolved = manager === 'auto' ? resolveInstallManager(root, manager) : manager;
@@ -540,11 +798,41 @@ function defaultToolDetector(tool, root) {
     const packageDetection = detectToolFromPackage(tool, root);
     if (packageDetection.detected)
         return packageDetection;
+    if (tool === 'maestro' && javaIsOnPath(root) && maestroExistsOnPath(root)) {
+        return {
+            tool,
+            detected: true,
+            method: 'path',
+            command: 'command -v maestro',
+        };
+    }
     const command = tool === 'detox'
         ? 'detox --version'
         : tool === 'appium'
             ? 'appium --version'
             : 'maestro --version';
+    if (tool === 'maestro' && !javaIsOnPath(root)) {
+        const javaHome = detectJava17Home();
+        if (javaHome) {
+            const commandWithJava = `JAVA_HOME=${shellQuote(javaHome)} PATH=${shellQuote(`${javaHome}/bin`)}:$PATH ${command}`;
+            const resultWithJava = spawnSync(commandWithJava, {
+                cwd: root,
+                shell: true,
+                encoding: 'utf-8',
+                stdio: ['ignore', 'pipe', 'pipe'],
+                timeout: 5_000,
+            });
+            if (resultWithJava.status === 0) {
+                return {
+                    tool,
+                    detected: true,
+                    method: 'path-with-java-home',
+                    command: commandWithJava,
+                    version: String(resultWithJava.stdout || resultWithJava.stderr).trim().split('\n')[0],
+                };
+            }
+        }
+    }
     const result = spawnSync(command, {
         cwd: root,
         shell: true,
@@ -561,12 +849,35 @@ function defaultToolDetector(tool, root) {
             version: String(result.stdout || result.stderr).trim().split('\n')[0],
         };
     }
+    if (tool === 'maestro' && maestroExistsOnPath(root) && isJavaRuntimeMissing(result.stderr, result.stdout)) {
+        return {
+            tool,
+            detected: false,
+            method: 'path-prerequisite',
+            command,
+            missing_prerequisite: 'java-17',
+            reason: 'maestro is installed, but Java 17+ is missing or not visible to the shell.',
+        };
+    }
     return {
         tool,
         detected: false,
         method: packageDetection.method === 'package-json' ? 'package-json-and-path' : 'path',
         command,
     };
+}
+function maestroExistsOnPath(root) {
+    const result = spawnSync('command -v maestro', {
+        cwd: root,
+        shell: true,
+        encoding: 'utf-8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+        timeout: 5_000,
+    });
+    return result.status === 0;
+}
+function isJavaRuntimeMissing(stderr, stdout) {
+    return /unable to locate a java runtime|java runtime|could not find java|JAVA_HOME/i.test(`${stderr ?? ''}\n${stdout ?? ''}`);
 }
 function detectToolFromPackage(tool, root) {
     const binaryPath = resolve(root, 'node_modules/.bin', tool);
@@ -589,6 +900,100 @@ function readPackageJson(root) {
     catch {
         return undefined;
     }
+}
+export function normalizeRuntimeQaConfig(config) {
+    if ('target' in config || 'adapter' in config || 'commands' in config || 'mobile' in config) {
+        return config;
+    }
+    const legacy = config;
+    const platform = typeof legacy.platform === 'string' ? legacy.platform.toLowerCase() : undefined;
+    const framework = typeof legacy.tooling?.framework === 'string'
+        ? legacy.tooling.framework.toLowerCase()
+        : undefined;
+    if (platform !== 'mobile' || !isRuntimeQaMobileTool(framework)) {
+        return config;
+    }
+    const smokeCommands = (legacy.flows ?? [])
+        .map((flow) => (typeof flow.path === 'string' ? flow.path.trim() : ''))
+        .filter(Boolean)
+        .map((path) => `${framework} test ${path}`);
+    const buildCommands = Object.values(legacy.tooling?.platformRequirements ?? {})
+        .map((requirements) => requirements?.buildCommand)
+        .filter((command) => typeof command === 'string' && command.trim().length > 0);
+    const installCommand = legacy.tooling?.installCommand;
+    const flows = normalizeLegacyFlows(legacy.flows);
+    const fixtures = normalizeLegacyFixtures(legacy.fixtures);
+    return {
+        schema_version: 1,
+        target: 'mobile',
+        adapter: `mobile-${framework}`,
+        commands: {
+            ...(buildCommands.length > 0 ? { build: buildCommands } : {}),
+            ...(smokeCommands.length > 0 ? { smoke: smokeCommands } : {}),
+        },
+        mobile: {
+            tool: framework,
+            install: typeof installCommand === 'string'
+                ? { command: installCommand }
+                : undefined,
+        },
+        ...(Object.keys(fixtures).length > 0 ? { fixtures } : {}),
+        ...(flows.length > 0 ? { flows } : {}),
+        ...(legacy.gates ? { gates: legacy.gates } : {}),
+        ...(legacy.history ? { history: legacy.history } : {}),
+    };
+}
+function isRuntimeQaMobileTool(value) {
+    return value === 'maestro' || value === 'detox' || value === 'appium';
+}
+function normalizeLegacyFlows(flows) {
+    return (flows ?? [])
+        .map((flow) => {
+        const path = typeof flow.path === 'string' ? flow.path.trim() : '';
+        if (!path)
+            return undefined;
+        return {
+            ...(typeof flow.id === 'string' ? { id: flow.id } : {}),
+            path,
+            ...(typeof flow.fixture === 'string' ? { fixture: flow.fixture } : {}),
+            ...(typeof flow.destructive === 'boolean' ? { destructive: flow.destructive } : {}),
+            ...(Array.isArray(flow.verifies) ? { verifies: flow.verifies.filter((item) => typeof item === 'string') } : {}),
+            ...(typeof flow.spec === 'string' ? { spec: flow.spec } : {}),
+            ...(typeof flow.expectedDurationSec === 'number' ? { expectedDurationSec: flow.expectedDurationSec } : {}),
+        };
+    })
+        .filter((flow) => Boolean(flow));
+}
+function normalizeLegacyFixtures(fixtures) {
+    const normalized = {};
+    for (const [name, fixture] of Object.entries(fixtures ?? {})) {
+        if (!fixture)
+            continue;
+        normalized[name] = {
+            ...(typeof fixture.purpose === 'string' ? { purpose: fixture.purpose } : {}),
+            ...(typeof fixture.provisioning === 'string' ? { provisioning: fixture.provisioning } : {}),
+            ...(typeof fixture.provision_command === 'string' ? { provision_command: fixture.provision_command } : {}),
+            ...(typeof fixture.teardown_command === 'string' ? { teardown_command: fixture.teardown_command } : {}),
+            ...(fixture.provider === 'supabase' ? { provider: fixture.provider } : {}),
+            ...(fixture.strategy === 'auth-admin-user' ? { strategy: fixture.strategy } : {}),
+            ...(isRuntimeQaFixtureBackend(fixture.backend) ? { backend: fixture.backend } : {}),
+            ...(typeof fixture.email_prefix === 'string' ? { email_prefix: fixture.email_prefix } : {}),
+            ...(typeof fixture.email_env === 'string' ? { email_env: fixture.email_env } : {}),
+            ...(typeof fixture.password_env === 'string' ? { password_env: fixture.password_env } : {}),
+            ...(typeof fixture.user_id_env === 'string' ? { user_id_env: fixture.user_id_env } : {}),
+        };
+    }
+    return normalized;
+}
+function isRuntimeQaFixtureBackend(value) {
+    return value === 'auto' || value === 'env' || value === 'mcp';
+}
+function readActiveCycleId(root) {
+    const content = readRelative(root, '.omc/cycles/current.md');
+    if (!content)
+        return undefined;
+    const match = content.match(/^\s*cycle_id\s*:\s*(.*?)\s*$/im);
+    return match?.[1]?.replace(/^['"]|['"]$/g, '').trim();
 }
 function readRelative(root, relativePath) {
     const path = resolve(root, relativePath);

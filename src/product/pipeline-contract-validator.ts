@@ -6,12 +6,14 @@ import {
   type ProductPipelineContractStage,
 } from './pipeline-registry.js';
 import { validateAgentOutput, type AgentOutput } from './agent-output.js';
+import { isFeatureExpectation } from './portfolio-ledger.js';
 import {
   CYCLE_DOCUMENT_RELATIVE_PATH,
   readCycleDocument,
   renderCycleProjection,
   validateCycleDocument,
 } from './cycle-document.js';
+import { diagnoseRuntimeQa } from '../runtime-qa/diagnostics.js';
 
 export type {
   ProductPipelineArtifactName,
@@ -217,6 +219,7 @@ function applyCrossArtifactContracts(
   const cycleContent = readCycleContractContent(root);
   const userFacing = isUserFacingCycle(cycleContent);
   let experience = artifacts.find((artifact) => artifact.artifact === 'experience-gate');
+  applyRuntimeQaContracts(root, cycleContent, artifacts);
 
   if (userFacing && (!experience || !experience.exists)) {
     if (!experience) {
@@ -261,6 +264,29 @@ function applyCrossArtifactContracts(
       'Weak evidence in selected work must be carried as research debt in the rolling roadmap',
     );
   }
+}
+
+function applyRuntimeQaContracts(
+  root: string,
+  cycleContent: string,
+  artifacts: ProductPipelineArtifactResult[],
+): void {
+  if (!needsRuntimeQaContract(root, cycleContent)) return;
+  const cycle = artifacts.find((artifact) => artifact.artifact === 'cycle');
+  if (!cycle) return;
+
+  const report = diagnoseRuntimeQa(root);
+  for (const issue of report.issues) {
+    addIssue(cycle, issue.severity, issue.code, issue.message);
+  }
+  cycle.metrics.runtimeQaStatus = report.dryRunReport.status;
+  cycle.metrics.runtimeQaSteps = report.dryRunReport.step_results.length;
+}
+
+function needsRuntimeQaContract(root: string, cycleContent: string): boolean {
+  return /\b(runtime-qa|simulator|emulator|smoke|maestro|detox|appium|ios|android)\b/i.test(cycleContent)
+    || existsSync(resolve(root, '.omc/runtime-qa.json'))
+    || existsSync(resolve(root, '.omc/handoffs/runtime-qa/current.json'));
 }
 
 function createVirtualArtifactResult(
@@ -481,6 +507,7 @@ function validatePortfolioLedgerArtifact(content: string, result: ProductPipelin
   const selectedByCycle = new Map<string, Array<Record<string, unknown>>>();
   const ids = new Set<string>();
   let evidenceBacked = 0;
+  let selectedCoreExpectationCount = 0;
   const selectedResearchByCycle = new Map<string, number>();
   const weakSelectedByCycle = new Map<string, number>();
 
@@ -514,6 +541,9 @@ function validatePortfolioLedgerArtifact(content: string, result: ProductPipelin
       const selectedItems = selectedByCycle.get(selectedCycle) ?? [];
       selectedItems.push(item);
       selectedByCycle.set(selectedCycle, selectedItems);
+      if (type === 'core-product-slice' && item.user_visible !== false && isFeatureExpectation(item.feature_expectation)) {
+        selectedCoreExpectationCount += 1;
+      }
       if (lane === 'research' || type === 'learning' || type === 'research') {
         selectedResearchByCycle.set(selectedCycle, (selectedResearchByCycle.get(selectedCycle) ?? 0) + 1);
       }
@@ -529,6 +559,7 @@ function validatePortfolioLedgerArtifact(content: string, result: ProductPipelin
   result.metrics.laneCount = lanes.size;
   result.metrics.evidenceBackedItems = evidenceBacked;
   result.metrics.selectedItems = [...selectedCycles.values()].reduce((total, count) => total + count, 0);
+  result.metrics.selectedCoreFeatureExpectations = selectedCoreExpectationCount;
 
   if (items.length < 20) {
     addIssue(result, 'error', 'portfolio-too-small', `Expected at least 20 portfolio items, found ${items.length}`);
@@ -557,6 +588,18 @@ function validatePortfolioLedgerArtifact(content: string, result: ProductPipelin
         'invalid-selected-cycle-trio',
         `Cycle ${cycle} must select exactly one core-product-slice, one enabling, and one learning/research item`,
       );
+    }
+
+    const userVisibleCore = core.filter((item) => item.user_visible !== false);
+    for (const item of userVisibleCore) {
+      if (!isFeatureExpectation(item.feature_expectation)) {
+        addIssue(
+          result,
+          'error',
+          'missing-selected-core-feature-expectation',
+          `Selected core product slice ${String(item.id ?? '<unknown>')} must include feature_expectation with user_job, first_meaningful_use, useless_if, v0/v1/v2 maturity ladder, and not_done_until`,
+        );
+      }
     }
   }
   for (const [cycle, count] of weakSelectedByCycle.entries()) {
@@ -658,6 +701,14 @@ function validateCycle(content: string, result: ProductPipelineArtifactResult): 
     addIssue(result, 'error', 'complete-without-learning', 'Completed cycle must reference .omc/learning/current.md');
   }
 
+  if (stage === 'complete' && hasUncheckedChecklistItem(content)) {
+    addIssue(result, 'error', 'complete-with-open-checklist', 'Completed cycle must not contain open checklist items');
+  }
+
+  if (stage === 'complete' && hasPendingGateMarker(content)) {
+    addIssue(result, 'error', 'complete-with-pending-gate', 'Completed cycle still contains pending human/manual/learning gate markers');
+  }
+
   validateStructuredOutput(result);
 }
 
@@ -669,6 +720,11 @@ function validateLearning(content: string, result: ProductPipelineArtifactResult
     'invalidated assumptions',
     'recommended next cycle',
   ]);
+  const status = extractStatus(content);
+  result.metrics.status = status ?? 'unknown';
+  if (status === 'complete' && hasPendingGateMarker(content)) {
+    addIssue(result, 'error', 'learning-complete-with-pending-gate', 'Learning capture is marked complete while pending human/manual/learning gate markers remain');
+  }
   validateStructuredOutput(result);
 }
 
@@ -760,6 +816,14 @@ function containsAll(content: string, terms: string[]): boolean {
   return terms.every((term) => containsTerm(content, term));
 }
 
+function hasUncheckedChecklistItem(content: string): boolean {
+  return /^\s*[-*]\s+\[\s\]\s+/m.test(content);
+}
+
+function hasPendingGateMarker(content: string): boolean {
+  return /\b(?:pending|awaiting|human gate|manual smoke|dogfood protocol|friction log pending|learn stage gate)\b/i.test(content);
+}
+
 function hasRequestedNextAgent(content: string, artifactPath: string, agent: string): boolean {
   // Check JSON sidecar first (new standard)
   const sidecar = readAgentOutputSidecar(artifactPath);
@@ -812,10 +876,12 @@ function validateCycleSpecValues(content: string, result: ProductPipelineArtifac
   const acceptanceCriteria = readListOrInline(content, 'acceptance_criteria');
   const verificationPlan = readListOrInline(content, 'verification_plan');
   const learningPlan = readListOrInline(content, 'learning_plan');
+  const requiresFeatureExpectation = isUserFacingCycle(content);
 
   result.metrics.acceptanceCriteriaCount = acceptanceCriteria.length;
   result.metrics.verificationPlanCount = verificationPlan.length;
   result.metrics.learningPlanCount = learningPlan.length;
+  result.metrics.requiresFeatureExpectation = requiresFeatureExpectation;
 
   if (acceptanceCriteria.length === 0) {
     addIssue(result, 'error', 'missing-acceptance-criteria', 'acceptance_criteria must include at least one testable criterion');
@@ -833,11 +899,93 @@ function validateCycleSpecValues(content: string, result: ProductPipelineArtifac
       break;
     }
   }
+
+  if (requiresFeatureExpectation) {
+    validateFeatureExpectationContract(content, result);
+  }
 }
 
-function hasFooterField(content: string, field: string): boolean {
-  const key = field.replace(/:$/, '');
-  return new RegExp(`^\\s*${escapeRegExp(key)}\\s*:`, 'im').test(content);
+function validateFeatureExpectationContract(content: string, result: ProductPipelineArtifactResult): void {
+  const hasContract = /\bfeature_expectation_contract\b/i.test(content)
+    || /#{1,6}\s*Feature Expectation Contract\b/i.test(content);
+  result.metrics.hasFeatureExpectationContract = hasContract;
+  if (!hasContract) {
+    addIssue(
+      result,
+      'error',
+      'missing-feature-expectation-contract',
+      'User-facing cycle specs must define feature_expectation_contract before build',
+    );
+    return;
+  }
+
+  const contractContent = featureExpectationContractContent(content);
+  const missingOrPlaceholder = [
+    ...['user_job', 'first_meaningful_use'].filter((field) => {
+      const value = readLooseField(contractContent, field);
+      return !value || isPlaceholderValue(value);
+    }),
+    ...['useless_if', 'not_done_until'].filter((field) => {
+      const values = readLooseListOrInline(contractContent, field);
+      return values.length === 0 || values.every(isPlaceholderValue);
+    }),
+  ];
+  if (missingOrPlaceholder.length > 0) {
+    addIssue(
+      result,
+      'error',
+      'incomplete-feature-expectation-contract',
+      `feature_expectation_contract is missing meaningful values for: ${missingOrPlaceholder.join(', ')}`,
+    );
+  }
+
+  const missingLadder = ['v0', 'v1', 'v2'].filter((level) => {
+    const value = readLooseField(contractContent, level);
+    return !value || isPlaceholderValue(value);
+  });
+  if (missingLadder.length > 0) {
+    addIssue(
+      result,
+      'error',
+      'incomplete-feature-maturity-ladder',
+      `feature_expectation_contract.maturity_ladder must include ${missingLadder.join(', ')}`,
+    );
+  }
+}
+
+function featureExpectationContractContent(content: string): string {
+  const headingSection = content.match(/(?:^|\n)#{1,6}\s*Feature Expectation Contract\s*\n([\s\S]*?)(?=\n#{1,6}\s|$)/i)?.[1];
+  return headingSection ?? content;
+}
+
+function readLooseField(content: string, field: string): string | undefined {
+  const match = content.match(new RegExp(`^\\s*(?:[-*]\\s*)?${escapeRegExp(field)}\\s*:\\s*(.*?)\\s*$`, 'im'));
+  return match?.[1]?.replace(/^['"]|['"]$/g, '').trim();
+}
+
+function readLooseListOrInline(content: string, field: string): string[] {
+  const inline = readLooseField(content, field);
+  const values: string[] = [];
+  if (inline && !isListIntroducer(inline)) {
+    values.push(...inline
+      .replace(/^['"]|['"]$/g, '')
+      .split(/[;,]/)
+      .map((value) => value.trim())
+      .filter(Boolean));
+  }
+
+  const blockMatch = content.match(new RegExp(`^\\s*(?:[-*]\\s*)?${escapeRegExp(field)}\\s*:\\s*\\n((?:^\\s+[-*].*\\n?)+)`, 'im'));
+  if (blockMatch) {
+    for (const line of blockMatch[1].split('\n')) {
+      const item = line.match(/^\s*[-*]\s+(.*)$/);
+      if (!item) continue;
+      const value = item[1].trim();
+      if (!value || value === '[]' || value.toLowerCase() === 'none') continue;
+      values.push(value);
+    }
+  }
+
+  return Array.from(new Set(values));
 }
 
 function readField(content: string, field: string): string | undefined {
