@@ -13,6 +13,7 @@ import { PRODUCT_CAPABILITY_GRAPH_JSON_RELATIVE_PATH } from '../capability-graph
 import { PRODUCT_SCENARIO_COVERAGE_JSON_RELATIVE_PATH } from '../scenario-coverage.js';
 import { PRODUCT_SCENARIO_GENERATOR_JSON_RELATIVE_PATH } from '../scenario-generator.js';
 import { PRODUCT_REGRESSION_JSON_RELATIVE_PATH } from '../product-regression.js';
+import { PRODUCT_CAPABILITY_LIFECYCLE_JSON_RELATIVE_PATH } from '../capability-lifecycle.js';
 
 let rootsToClean: string[] = [];
 
@@ -130,6 +131,7 @@ describe('product cycle FSM', () => {
     expect(existsSync(join(root, PRODUCT_SCENARIO_GENERATOR_JSON_RELATIVE_PATH))).toBe(true);
     expect(existsSync(join(root, PRODUCT_SCENARIO_COVERAGE_JSON_RELATIVE_PATH))).toBe(true);
     expect(existsSync(join(root, PRODUCT_REGRESSION_JSON_RELATIVE_PATH))).toBe(true);
+    expect(existsSync(join(root, PRODUCT_CAPABILITY_LIFECYCLE_JSON_RELATIVE_PATH))).toBe(true);
     expect(validated.issues.filter((issue) => issue.severity === 'error')).toEqual([]);
   });
 

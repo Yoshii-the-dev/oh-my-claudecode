@@ -32,6 +32,7 @@ Read compact/current artifacts first:
 - `.omc/product/scenarios/current.json` when refreshing
 - `.omc/product/scenario-coverage/current.json` when refreshing
 - `.omc/product/regression/current.json` when refreshing
+- `.omc/product/capability-lifecycle/current.json` when refreshing
 - `.omc/cycles/current.json`
 - `.omc/cycles/YYYY-MM-DD-<slug>.json|md`
 - `.omc/learning/current.json`
@@ -56,6 +57,7 @@ omc product-totality audit --write
 omc scenario-generator generate --write
 omc scenario-coverage audit --write
 omc product-regression audit --write
+omc capability-lifecycle audit --write
 ```
 
 2. Read `.omc/product/totality/current.json`.
@@ -63,8 +65,9 @@ omc product-regression audit --write
 4. Read `.omc/product/scenarios/current.json`.
 5. Read `.omc/product/scenario-coverage/current.json`.
 6. Read `.omc/product/regression/current.json`.
-7. Treat every completed core product slice as a seeded capability unless the audit proves deeper maturity.
-8. For each capability, inspect:
+7. Read `.omc/product/capability-lifecycle/current.json`.
+8. Treat every completed core product slice as a seeded capability unless the lifecycle audit says `mature`.
+9. For each capability, inspect:
    - maturity: `missing-expectation | seeded-v0 | contextual-v1 | systemic-v2`
    - missing depth from the feature expectation maturity ladder
    - connections to learning, roadmap, ecosystem, meaning, visual expectation, and taste gate
@@ -72,9 +75,11 @@ omc product-regression audit --write
    - `orphan_capabilities` when a shipped capability is disconnected or still just a v0 seed
    - scenario coverage: whether the first meaningful user loop is `runtime-passed`
    - regression debts: whether learning, scenario proof, or quality regressions are still carried
+   - lifecycle stage: whether the capability should be deepened, proven, connected, retained, deprecated, or removed/redesigned
    - recommended portfolio moves
-9. If status is not `balanced`, route the highest-leverage recommended moves into `/priority-engine`.
-10. If there are `error` gaps, repair those before ranking the next cycle.
+10. If status is not `balanced`, route the highest-leverage recommended moves into `/priority-engine`.
+11. If lifecycle contains `remove-candidate`, triage it before ranking unrelated new work.
+12. If there are `error` gaps, repair those before ranking the next cycle.
 
 ## Output
 
@@ -88,6 +93,8 @@ omc product-regression audit --write
 - `.omc/product/scenario-coverage/current.md` — scenario coverage projection.
 - `.omc/product/regression/current.json` — cross-cycle regression and learning debt audit.
 - `.omc/product/regression/current.md` — regression projection.
+- `.omc/product/capability-lifecycle/current.json` — lifecycle stage map for completed capabilities.
+- `.omc/product/capability-lifecycle/current.md` — lifecycle projection with decisions and actions.
 
 The audit scores:
 
@@ -101,8 +108,9 @@ The audit scores:
 
 - `/product-cycle` writes the totality audit, capability graph, scenario coverage, and regression audit when a cycle advances from `learn` to `complete`.
 - `/product-cycle` writes generated scenario declarations before scenario coverage so coverage can distinguish declared-but-unrun scenarios from missing scenario design.
-- `/priority-engine` must read totality, `orphan_capabilities`, generated scenarios, scenario coverage, and regression debts as inputs before ranking the next cycle.
-- `omc feature-generation audit` counts totality, capability graph, scenario generator, scenario coverage, and regression as sources for future feature/opportunity generation.
+- `/product-cycle` writes capability lifecycle after regression so downstream work gets a concrete deepen/prove/connect/retain/deprecate/remove decision.
+- `/priority-engine` must read totality, `orphan_capabilities`, generated scenarios, scenario coverage, regression debts, and capability lifecycle as inputs before ranking the next cycle.
+- `omc feature-generation audit` counts totality, capability graph, scenario generator, scenario coverage, regression, and lifecycle as sources for future feature/opportunity generation.
 
 ## Failure Modes To Avoid
 

@@ -77,6 +77,11 @@ describe('feature generation readiness', () => {
       summary: 'Regression audit confirms completed capability evidence is current enough for feature generation source scoring and downstream cycle ranking.',
       next_action: 'continue priority engine with regression audit as a compact evidence source',
     }, null, 2));
+    writeArtifact(root, '.omc/product/capability-lifecycle/current.json', JSON.stringify({
+      status: 'healthy',
+      capabilities: [{ capability_id: 'activation-loop', stage: 'mature', decision: 'retain' }],
+      next_action: 'use mature activation loop as product foundation',
+    }, null, 2));
 
     const plan = planFeatureGeneration({
       root,
@@ -93,6 +98,7 @@ describe('feature generation readiness', () => {
     expect(plan.sources.find((source) => source.kind === 'scenario-generator')?.status).toBe('present');
     expect(plan.sources.find((source) => source.kind === 'scenario-coverage')?.status).toBe('present');
     expect(plan.sources.find((source) => source.kind === 'regression')?.status).toBe('present');
+    expect(plan.sources.find((source) => source.kind === 'capability-lifecycle')?.status).toBe('present');
     expect(renderFeatureGenerationPlan(plan)).toContain('Feature Generation Readiness');
   });
 });

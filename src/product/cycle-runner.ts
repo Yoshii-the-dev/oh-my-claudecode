@@ -41,6 +41,7 @@ import { generateProductTotalityAudit, writeProductTotalityAudit } from './produ
 import { generateProductScenarioCoverageAudit, writeProductScenarioCoverageAudit } from './scenario-coverage.js';
 import { generateProductRegressionAudit, writeProductRegressionAudit } from './product-regression.js';
 import { generateProductScenarioPlan, writeProductScenarioPlan } from './scenario-generator.js';
+import { generateProductCapabilityLifecycleAudit, writeProductCapabilityLifecycleAudit } from './capability-lifecycle.js';
 
 export type CycleRunnerStopReason =
   | 'complete'
@@ -205,7 +206,14 @@ export function runProductCycle(options: RunProductCycleOptions = {}): RunProduc
         writeProductTotalityAudit(root, totality);
         const scenarioCoverage = generateProductScenarioCoverageAudit({ root, totality });
         writeProductScenarioCoverageAudit(root, scenarioCoverage);
-        writeProductRegressionAudit(root, generateProductRegressionAudit({ root, totality, scenarioCoverage }));
+        const regression = generateProductRegressionAudit({ root, totality, scenarioCoverage });
+        writeProductRegressionAudit(root, regression);
+        writeProductCapabilityLifecycleAudit(root, generateProductCapabilityLifecycleAudit({
+          root,
+          totality,
+          scenarioCoverage,
+          regression,
+        }));
       }
 
       return finalize({

@@ -44,6 +44,8 @@ describe('product cycle CLI command', () => {
     expect(creativeLoopCmd?.commands.map((command) => command.name())).toEqual(expect.arrayContaining(['audit', 'init']));
     const productTotalityCmd = buildProgram().commands.find((command) => command.name() === 'product-totality');
     expect(productTotalityCmd?.commands.map((command) => command.name())).toContain('audit');
+    const capabilityLifecycleCmd = buildProgram().commands.find((command) => command.name() === 'capability-lifecycle');
+    expect(capabilityLifecycleCmd?.commands.map((command) => command.name())).toContain('audit');
     const scenarioCoverageCmd = buildProgram().commands.find((command) => command.name() === 'scenario-coverage');
     expect(scenarioCoverageCmd?.commands.map((command) => command.name())).toContain('audit');
     const scenarioGeneratorCmd = buildProgram().commands.find((command) => command.name() === 'scenario-generator');

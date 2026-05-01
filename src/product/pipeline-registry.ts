@@ -140,6 +140,15 @@ export const PRODUCT_ARTIFACT_REGISTRY = {
     machineContract: 'strict',
     purpose: 'Cross-cycle regression and learning debt audit comparing completed cycles against totality and scenario evidence.',
   },
+  'capability-lifecycle': {
+    name: 'capability-lifecycle',
+    lane: 'product',
+    currentPath: '.omc/product/capability-lifecycle/current.json',
+    format: 'json',
+    owner: 'omc capability-lifecycle audit',
+    machineContract: 'strict',
+    purpose: 'Lifecycle classification for completed capabilities: seeded, proving, connected, mature, deprecated, or remove-candidate.',
+  },
   ecosystem: {
     name: 'ecosystem',
     lane: 'product',

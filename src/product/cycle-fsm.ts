@@ -38,6 +38,12 @@ import {
   generateProductRegressionAudit,
   writeProductRegressionAudit,
 } from './product-regression.js';
+import {
+  PRODUCT_CAPABILITY_LIFECYCLE_JSON_RELATIVE_PATH,
+  PRODUCT_CAPABILITY_LIFECYCLE_MD_RELATIVE_PATH,
+  generateProductCapabilityLifecycleAudit,
+  writeProductCapabilityLifecycleAudit,
+} from './capability-lifecycle.js';
 
 export type ProductCycleStage =
   | 'discover'
@@ -268,7 +274,14 @@ export function advanceProductCycle(options: AdvanceProductCycleOptions): Produc
     writeProductTotalityAudit(root, totality);
     const scenarioCoverage = generateProductScenarioCoverageAudit({ root, totality });
     writeProductScenarioCoverageAudit(root, scenarioCoverage);
-    writeProductRegressionAudit(root, generateProductRegressionAudit({ root, totality, scenarioCoverage }));
+    const regression = generateProductRegressionAudit({ root, totality, scenarioCoverage });
+    writeProductRegressionAudit(root, regression);
+    writeProductCapabilityLifecycleAudit(root, generateProductCapabilityLifecycleAudit({
+      root,
+      totality,
+      scenarioCoverage,
+      regression,
+    }));
   }
   const after = readProductCycle(root);
   return { ok: true, from: before.stage, to, snapshot: after, issues };
@@ -489,6 +502,8 @@ function updateCycleDocumentStage(document: CycleDocument, stage: ProductCycleSt
           PRODUCT_SCENARIO_COVERAGE_MD_RELATIVE_PATH,
           PRODUCT_REGRESSION_JSON_RELATIVE_PATH,
           PRODUCT_REGRESSION_MD_RELATIVE_PATH,
+          PRODUCT_CAPABILITY_LIFECYCLE_JSON_RELATIVE_PATH,
+          PRODUCT_CAPABILITY_LIFECYCLE_MD_RELATIVE_PATH,
         ] : []),
       ])),
     },

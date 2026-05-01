@@ -130,6 +130,7 @@ describe('Builtin Skills', () => {
                 'brand-architect',
                 'brand-steward',
                 'brand-variations-generate',
+                'capability-lifecycle',
                 'competitor-scout',
                 'creative-loop',
                 'design-partner-manager',

@@ -121,6 +121,15 @@ export declare const PRODUCT_ARTIFACT_REGISTRY: {
         readonly machineContract: "strict";
         readonly purpose: "Cross-cycle regression and learning debt audit comparing completed cycles against totality and scenario evidence.";
     };
+    readonly 'capability-lifecycle': {
+        readonly name: "capability-lifecycle";
+        readonly lane: "product";
+        readonly currentPath: ".omc/product/capability-lifecycle/current.json";
+        readonly format: "json";
+        readonly owner: "omc capability-lifecycle audit";
+        readonly machineContract: "strict";
+        readonly purpose: "Lifecycle classification for completed capabilities: seeded, proving, connected, mature, deprecated, or remove-candidate.";
+    };
     readonly ecosystem: {
         readonly name: "ecosystem";
         readonly lane: "product";

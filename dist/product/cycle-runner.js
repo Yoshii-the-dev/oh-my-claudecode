@@ -14,6 +14,7 @@ import { generateProductTotalityAudit, writeProductTotalityAudit } from './produ
 import { generateProductScenarioCoverageAudit, writeProductScenarioCoverageAudit } from './scenario-coverage.js';
 import { generateProductRegressionAudit, writeProductRegressionAudit } from './product-regression.js';
 import { generateProductScenarioPlan, writeProductScenarioPlan } from './scenario-generator.js';
+import { generateProductCapabilityLifecycleAudit, writeProductCapabilityLifecycleAudit } from './capability-lifecycle.js';
 const DEFAULT_VERIFY_COMMAND = 'npm test';
 const DEFAULT_MAX_STAGES = 10;
 const STAGE_ORDER = ['discover', 'rank', 'select', 'spec', 'build', 'verify', 'learn', 'complete'];
@@ -113,7 +114,14 @@ export function runProductCycle(options = {}) {
                 writeProductTotalityAudit(root, totality);
                 const scenarioCoverage = generateProductScenarioCoverageAudit({ root, totality });
                 writeProductScenarioCoverageAudit(root, scenarioCoverage);
-                writeProductRegressionAudit(root, generateProductRegressionAudit({ root, totality, scenarioCoverage }));
+                const regression = generateProductRegressionAudit({ root, totality, scenarioCoverage });
+                writeProductRegressionAudit(root, regression);
+                writeProductCapabilityLifecycleAudit(root, generateProductCapabilityLifecycleAudit({
+                    root,
+                    totality,
+                    scenarioCoverage,
+                    regression,
+                }));
             }
             return finalize({
                 ok: true,

@@ -38,8 +38,10 @@ omc product-cycle run --auto --auto-policy safe --json
 omc feature-generation audit --write --goal "ship first usable loop"
 omc creative-loop audit --write --goal "ship first usable loop"
 omc product-totality audit --write
+omc scenario-generator generate --write
 omc scenario-coverage audit --write
 omc product-regression audit --write
+omc capability-lifecycle audit --write
 omc product-cycle advance --to discover --goal "ship first usable loop"
 omc product-cycle advance --to build
 ```
@@ -157,8 +159,8 @@ omc doctor product-contracts --stage cycle
     - When `.omc/runtime-qa.json` exists or the verification plan declares runtime smoke/simulator coverage, run `omc runtime-qa run --auto --json` and include `.omc/handoffs/runtime-qa/current.json` as evidence.
     - If `omc doctor runtime-qa --json` reports `runtime-qa-fixture-agent-mcp-required`, invoke the `runtime-qa` skill to prepare the Supabase MCP disposable fixture before running destructive simulator flows.
     - Mobile simulator tooling is explicit opt-in: if Maestro/Detox/Appium is missing, rerun with `omc runtime-qa run --auto --install-mobile-tools --json` only after the user has approved provisioning. Product-cycle may pass the same approval with `omc product-cycle run --auto --install-mobile-tools --json`.
-13. Learn before completion: write `.omc/learning/current.md`. Advancing `learn -> complete` must also write `.omc/product/totality/current.json`, `.omc/product/totality/current.md`, `.omc/product/capability-graph/current.json`, `.omc/product/capability-graph/current.md`, `.omc/product/scenarios/current.json`, `.omc/product/scenarios/current.md`, `.omc/product/scenario-coverage/current.json`, `.omc/product/scenario-coverage/current.md`, `.omc/product/regression/current.json`, and `.omc/product/regression/current.md`, then set `cycle_stage: complete`.
-14. Before the next ranking pass, read `.omc/product/totality/current.json`, `.omc/product/capability-graph/current.json`, `.omc/product/scenarios/current.json`, `.omc/product/scenario-coverage/current.json`, and `.omc/product/regression/current.json`. Treat completed core slices as seeded capabilities unless the totality audit proves contextual/systemic maturity and scenario coverage proves the meaningful user loop; feed missing depth/orphan/scenario/regression moves into `/priority-engine`.
+13. Learn before completion: write `.omc/learning/current.md`. Advancing `learn -> complete` must also write `.omc/product/totality/current.json`, `.omc/product/totality/current.md`, `.omc/product/capability-graph/current.json`, `.omc/product/capability-graph/current.md`, `.omc/product/scenarios/current.json`, `.omc/product/scenarios/current.md`, `.omc/product/scenario-coverage/current.json`, `.omc/product/scenario-coverage/current.md`, `.omc/product/regression/current.json`, `.omc/product/regression/current.md`, `.omc/product/capability-lifecycle/current.json`, and `.omc/product/capability-lifecycle/current.md`, then set `cycle_stage: complete`.
+14. Before the next ranking pass, read `.omc/product/totality/current.json`, `.omc/product/capability-graph/current.json`, `.omc/product/scenarios/current.json`, `.omc/product/scenario-coverage/current.json`, `.omc/product/regression/current.json`, and `.omc/product/capability-lifecycle/current.json`. Treat completed core slices as seeded capabilities unless the lifecycle audit says `mature`; feed seeded/proving/remove-candidate lifecycle decisions into `/priority-engine`.
 
 ## Cycle Artifact Contract
 

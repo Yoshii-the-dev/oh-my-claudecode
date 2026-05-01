@@ -6,6 +6,7 @@ import { generateProductTotalityAudit, renderProductTotalityAudit, writeProductT
 import { generateProductScenarioCoverageAudit, writeProductScenarioCoverageAudit, } from '../../product/scenario-coverage.js';
 import { generateProductScenarioPlan, writeProductScenarioPlan, } from '../../product/scenario-generator.js';
 import { generateProductRegressionAudit, writeProductRegressionAudit, } from '../../product/product-regression.js';
+import { generateProductCapabilityLifecycleAudit, writeProductCapabilityLifecycleAudit, } from '../../product/capability-lifecycle.js';
 export async function productTotalityAuditCommand(root, options, logger = console) {
     const report = generateProductTotalityAudit(root);
     const written = options.write ? writeProductTotalityAudit(root, report) : undefined;
@@ -25,6 +26,12 @@ export async function productTotalityAuditCommand(root, options, logger = consol
     const regressionWritten = options.write && regressionReport
         ? writeProductRegressionAudit(root, regressionReport)
         : undefined;
+    const lifecycleReport = options.write && scenarioReport && regressionReport
+        ? generateProductCapabilityLifecycleAudit({ root, totality: report, scenarioCoverage: scenarioReport, regression: regressionReport })
+        : undefined;
+    const lifecycleWritten = options.write && lifecycleReport
+        ? writeProductCapabilityLifecycleAudit(root, lifecycleReport)
+        : undefined;
     if (options.json) {
         logger.log(JSON.stringify({
             ...report,
@@ -35,10 +42,12 @@ export async function productTotalityAuditCommand(root, options, logger = consol
             scenario_written: scenarioWritten,
             regression: regressionReport,
             regression_written: regressionWritten,
+            capability_lifecycle: lifecycleReport,
+            capability_lifecycle_written: lifecycleWritten,
         }, null, 2));
     }
     else if (options.write) {
-        logger.log(renderProductTotalitySummary(report, written, scenarioPlanWritten, scenarioWritten, regressionWritten));
+        logger.log(renderProductTotalitySummary(report, written, scenarioPlanWritten, scenarioWritten, regressionWritten, lifecycleWritten));
     }
     else {
         logger.log(renderProductTotalityAudit(report));
@@ -46,7 +55,7 @@ export async function productTotalityAuditCommand(root, options, logger = consol
     }
     return report.gaps.some((gap) => gap.severity === 'error') ? 1 : 0;
 }
-function renderProductTotalitySummary(report, written, scenarioPlanWritten, scenarioWritten, regressionWritten) {
+function renderProductTotalitySummary(report, written, scenarioPlanWritten, scenarioWritten, regressionWritten, lifecycleWritten) {
     const rows = Object.entries(report.scores).map(([dimension, score]) => ({
         dimension,
         status: formatScoreStatus(score),
@@ -61,6 +70,7 @@ function renderProductTotalitySummary(report, written, scenarioPlanWritten, scen
         scenarioPlanWritten ? `scenario_plan: ${scenarioPlanWritten.jsonPath}, ${scenarioPlanWritten.mdPath}` : undefined,
         scenarioWritten ? `scenario_coverage: ${scenarioWritten.jsonPath}, ${scenarioWritten.mdPath}` : undefined,
         regressionWritten ? `regression: ${regressionWritten.jsonPath}, ${regressionWritten.mdPath}` : undefined,
+        lifecycleWritten ? `capability_lifecycle: ${lifecycleWritten.jsonPath}, ${lifecycleWritten.mdPath}` : undefined,
         '',
         renderTable(rows, [
             { header: 'dimension', field: 'dimension', width: 18 },

@@ -31,6 +31,8 @@ describe('product pipeline registry', () => {
     expect(PRODUCT_ARTIFACT_REGISTRY['scenario-generator'].machineContract).toBe('strict');
     expect(PRODUCT_ARTIFACT_REGISTRY['product-regression'].currentPath).toBe('.omc/product/regression/current.json');
     expect(PRODUCT_ARTIFACT_REGISTRY['product-regression'].machineContract).toBe('strict');
+    expect(PRODUCT_ARTIFACT_REGISTRY['capability-lifecycle'].currentPath).toBe('.omc/product/capability-lifecycle/current.json');
+    expect(PRODUCT_ARTIFACT_REGISTRY['capability-lifecycle'].machineContract).toBe('strict');
   });
 
   it('renders generated registry documentation', () => {
@@ -46,5 +48,6 @@ describe('product pipeline registry', () => {
     expect(markdown).toContain('| scenario-coverage | product | .omc/product/scenario-coverage/current.json |');
     expect(markdown).toContain('| scenario-generator | product | .omc/product/scenarios/current.json |');
     expect(markdown).toContain('| product-regression | product | .omc/product/regression/current.json |');
+    expect(markdown).toContain('| capability-lifecycle | product | .omc/product/capability-lifecycle/current.json |');
   });
 });

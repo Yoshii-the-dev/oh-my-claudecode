@@ -8,6 +8,7 @@ import { PRODUCT_CAPABILITY_GRAPH_JSON_RELATIVE_PATH, PRODUCT_CAPABILITY_GRAPH_M
 import { PRODUCT_SCENARIO_COVERAGE_JSON_RELATIVE_PATH, PRODUCT_SCENARIO_COVERAGE_MD_RELATIVE_PATH, generateProductScenarioCoverageAudit, writeProductScenarioCoverageAudit, } from './scenario-coverage.js';
 import { PRODUCT_SCENARIO_GENERATOR_JSON_RELATIVE_PATH, PRODUCT_SCENARIO_GENERATOR_MD_RELATIVE_PATH, generateProductScenarioPlan, writeProductScenarioPlan, } from './scenario-generator.js';
 import { PRODUCT_REGRESSION_JSON_RELATIVE_PATH, PRODUCT_REGRESSION_MD_RELATIVE_PATH, generateProductRegressionAudit, writeProductRegressionAudit, } from './product-regression.js';
+import { PRODUCT_CAPABILITY_LIFECYCLE_JSON_RELATIVE_PATH, PRODUCT_CAPABILITY_LIFECYCLE_MD_RELATIVE_PATH, generateProductCapabilityLifecycleAudit, writeProductCapabilityLifecycleAudit, } from './capability-lifecycle.js';
 const LEARNING_RELATIVE_PATH = '.omc/learning/current.md';
 const STAGES = ['discover', 'rank', 'select', 'spec', 'build', 'verify', 'learn', 'complete'];
 const STAGE_SET = new Set([...STAGES, 'blocked']);
@@ -176,7 +177,14 @@ export function advanceProductCycle(options) {
         writeProductTotalityAudit(root, totality);
         const scenarioCoverage = generateProductScenarioCoverageAudit({ root, totality });
         writeProductScenarioCoverageAudit(root, scenarioCoverage);
-        writeProductRegressionAudit(root, generateProductRegressionAudit({ root, totality, scenarioCoverage }));
+        const regression = generateProductRegressionAudit({ root, totality, scenarioCoverage });
+        writeProductRegressionAudit(root, regression);
+        writeProductCapabilityLifecycleAudit(root, generateProductCapabilityLifecycleAudit({
+            root,
+            totality,
+            scenarioCoverage,
+            regression,
+        }));
     }
     const after = readProductCycle(root);
     return { ok: true, from: before.stage, to, snapshot: after, issues };
@@ -380,6 +388,8 @@ function updateCycleDocumentStage(document, stage) {
                     PRODUCT_SCENARIO_COVERAGE_MD_RELATIVE_PATH,
                     PRODUCT_REGRESSION_JSON_RELATIVE_PATH,
                     PRODUCT_REGRESSION_MD_RELATIVE_PATH,
+                    PRODUCT_CAPABILITY_LIFECYCLE_JSON_RELATIVE_PATH,
+                    PRODUCT_CAPABILITY_LIFECYCLE_MD_RELATIVE_PATH,
                 ] : []),
             ])),
         },

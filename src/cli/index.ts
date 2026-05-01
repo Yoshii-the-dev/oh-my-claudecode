@@ -82,6 +82,7 @@ import {
 import { creativeLoopAuditCommand, creativeLoopInitCommand } from './commands/creative-loop.js';
 import { featureGenerationAuditCommand } from './commands/feature-generation.js';
 import { productTotalityAuditCommand } from './commands/product-totality.js';
+import { capabilityLifecycleAuditCommand } from './commands/capability-lifecycle.js';
 import { scenarioGeneratorCommand } from './commands/scenario-generator.js';
 import { scenarioCoverageAuditCommand } from './commands/scenario-coverage.js';
 import { productRegressionAuditCommand } from './commands/product-regression.js';
@@ -1699,7 +1700,7 @@ productTotalityCmd
   .command('audit [root]')
   .description('Evaluate existing completed product work and write recommended depth moves')
   .option('--json', 'Output as JSON')
-  .option('--write', 'Write totality, capability graph, generated scenarios, scenario coverage, and regression current.{json,md} artifacts')
+  .option('--write', 'Write totality, capability graph, generated scenarios, scenario coverage, regression, and lifecycle current.{json,md} artifacts')
   .action(async (root, options) => {
     const exitCode = await productTotalityAuditCommand(root, options);
     process.exit(exitCode);
@@ -1724,6 +1725,28 @@ productRegressionCmd
   .option('--write', 'Write .omc/product/regression/current.{json,md}')
   .action(async (root, options) => {
     const exitCode = await productRegressionAuditCommand(root, options);
+    process.exit(exitCode);
+  });
+
+/**
+ * Capability lifecycle command - classify completed capabilities by lifecycle stage
+ */
+const capabilityLifecycleCmd = program
+  .command('capability-lifecycle')
+  .description('Audit capability lifecycle stages: seeded, proving, connected, mature, deprecated, or remove-candidate')
+  .addHelpText('after', `
+Examples:
+  $ omc capability-lifecycle audit
+  $ omc capability-lifecycle audit /path/to/app --write
+  $ omc capability-lifecycle audit --json`);
+
+capabilityLifecycleCmd
+  .command('audit [root]')
+  .description('Classify completed product capabilities into lifecycle stages and recommended actions')
+  .option('--json', 'Output as JSON')
+  .option('--write', 'Write .omc/product/capability-lifecycle/current.{json,md}')
+  .action(async (root, options) => {
+    const exitCode = await capabilityLifecycleAuditCommand(root, options);
     process.exit(exitCode);
   });
 
