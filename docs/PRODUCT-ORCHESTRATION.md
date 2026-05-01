@@ -112,7 +112,7 @@ omc doctor product-contracts --stage foundation-lite
 
 Use `--stage priority-handoff` after a standalone `/priority-engine` pass, `--stage cycle` before build, `--stage technology-handoff` before a technology ADR, and `--stage all` for a full product artifact audit.
 
-`priority-handoff` also enforces carry-forward from existing product audits: unresolved product-regression debts, scenario-coverage gaps, and product-totality gaps/recommended moves must appear in `.omc/portfolio/current.json` or `.omc/roadmap/current.md`. Ignored audit debt fails with `priority-ignores-regression-debt`, `priority-ignores-scenario-gap`, `priority-ignores-totality-gap`, or `priority-ignores-totality-move`.
+`priority-handoff` also enforces carry-forward from existing product audits: unresolved product-regression debts, scenario-coverage gaps, product-totality gaps/recommended moves, and lifecycle remove/deprecation decisions must appear in `.omc/portfolio/current.json` or `.omc/roadmap/current.md`. Ignored audit debt fails with `priority-ignores-regression-debt`, `priority-ignores-scenario-gap`, `priority-ignores-totality-gap`, `priority-ignores-totality-move`, `priority-ignores-lifecycle-remove-candidate`, or `priority-ignores-lifecycle-deprecation`.
 
 ## Product Cycle Controller Rules
 
@@ -273,7 +273,7 @@ Lifecycle stages:
 - `deprecated`: roadmap or portfolio explicitly marks the capability as sunset.
 - `remove-candidate`: isolated, unproven, or debt-heavy work should be removed, merged, or redesigned before adding surface area around it.
 
-If `.omc/product/capability-lifecycle/current.json` contains `remove-candidate`, the next `/priority-engine` pass must select removal/merge/redesign work or carry it as explicit roadmap debt.
+If `.omc/product/capability-lifecycle/current.json` contains `remove-candidate`, the next `/priority-engine` pass must select removal/merge/redesign work or carry it as explicit roadmap debt. The priority handoff validator enforces this with `priority-ignores-lifecycle-remove-candidate`; deprecated capabilities are enforced as warning debt with `priority-ignores-lifecycle-deprecation`.
 
 ## Experience Gate Rules
 
@@ -349,7 +349,7 @@ It must:
 - keep pre-MVP work centered on a first usable loop.
 - keep missing source/MCP setup visible as a selected learning/research task when it affects the selected cycle.
 - keep product-totality, capability-graph, generated scenario, scenario-coverage, product-regression, and lifecycle gaps visible as `capability depth`, `connection gate`, `orphan capability`, `scenario declaration`, `scenario proof`, `regression debt`, `remove-candidate`, or `learning gate` in `.omc/roadmap/current.md`.
-- carry unresolved audit debt into `.omc/portfolio/current.json` or `.omc/roadmap/current.md`; the priority handoff gate rejects ignored regression, scenario, and totality debt.
+- carry unresolved audit debt into `.omc/portfolio/current.json` or `.omc/roadmap/current.md`; the priority handoff gate rejects ignored regression, scenario, totality, and lifecycle remove-candidate debt.
 - pass `omc portfolio validate` before downstream handoff.
 - pass `omc doctor product-contracts --stage priority-handoff` before downstream handoff.
 

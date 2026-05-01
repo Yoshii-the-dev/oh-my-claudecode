@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, rmSync } from 'fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -70,6 +70,54 @@ describe('generateProductCapabilityLifecycleAudit', () => {
             orphan: true,
         }));
     });
+    it('requires explicit lifecycle markers to be local to the capability', () => {
+        const root = createRoot();
+        const capability = capabilityFixture({
+            id: 'row-reader',
+            title: 'row reader',
+            connections: ['learning:row-reader', 'roadmap'],
+            missing_depth: ['v1: section-aware row tracking'],
+            maturity: 'seeded-v0',
+        });
+        writeArtifact(root, '.omc/roadmap/current.md', `# Roadmap
+
+## Cleanup
+- Delete unrelated screenshot fixtures after visual QA.
+
+## Product Depth
+- Row reader needs section-aware depth before it is mature.
+`);
+        const report = generateProductCapabilityLifecycleAudit({
+            root,
+            totality: totalityFixture([capability]),
+            scenarioCoverage: scenarioCoverageFixture([{ capability_id: 'row-reader', coverage: 'declared' }]),
+            regression: regressionFixture([]),
+        });
+        expect(report.capabilities[0]?.stage).toBe('proving');
+        expect(report.capabilities[0]?.reasons).not.toContain('roadmap or portfolio marks this capability for removal/rewrite');
+    });
+    it('honors explicit local remove markers for a capability', () => {
+        const root = createRoot();
+        const capability = capabilityFixture({
+            id: 'row-reader',
+            title: 'row reader',
+            connections: ['learning:row-reader', 'roadmap'],
+            missing_depth: ['v1: section-aware row tracking'],
+            maturity: 'seeded-v0',
+        });
+        writeArtifact(root, '.omc/roadmap/current.md', `# Roadmap
+
+## Carried Product Debt
+- Remove-candidate: row reader. Remove, merge, or redesign this capability around a real user loop.
+`);
+        const report = generateProductCapabilityLifecycleAudit({
+            root,
+            totality: totalityFixture([capability]),
+            scenarioCoverage: scenarioCoverageFixture([{ capability_id: 'row-reader', coverage: 'declared' }]),
+            regression: regressionFixture([]),
+        });
+        expect(report.capabilities[0]?.stage).toBe('remove-candidate');
+    });
     it('marks systemic capabilities with runtime proof as mature', () => {
         const root = createRoot();
         const capability = capabilityFixture({
@@ -110,6 +158,11 @@ function createRoot() {
     const root = mkdtempSync(join(tmpdir(), 'omc-capability-lifecycle-'));
     rootsToClean.push(root);
     return root;
+}
+function writeArtifact(root, relativePath, content) {
+    const path = join(root, relativePath);
+    mkdirSync(join(path, '..'), { recursive: true });
+    writeFileSync(path, content, 'utf-8');
 }
 function capabilityFixture(overrides = {}) {
     return {

@@ -85221,8 +85221,8 @@ function renderReport(report2) {
 init_formatting();
 
 // src/product/pipeline-contract-validator.ts
-var import_fs111 = require("fs");
-var import_path131 = require("path");
+var import_fs112 = require("fs");
+var import_path132 = require("path");
 
 // src/product/agent-output.ts
 var import_fs98 = require("fs");
@@ -90231,18 +90231,286 @@ function escapeCell6(value) {
   return value.replace(/\|/g, "\\|").replace(/\r?\n/g, " ");
 }
 
+// src/product/capability-lifecycle.ts
+var import_fs110 = require("fs");
+var import_path130 = require("path");
+init_atomic_write();
+var PRODUCT_CAPABILITY_LIFECYCLE_JSON_RELATIVE_PATH = ".omc/product/capability-lifecycle/current.json";
+var PRODUCT_CAPABILITY_LIFECYCLE_MD_RELATIVE_PATH = ".omc/product/capability-lifecycle/current.md";
+function generateProductCapabilityLifecycleAudit(options = {}) {
+  const root2 = (0, import_path130.resolve)(options.root ?? process.cwd());
+  const totality = options.totality ?? generateProductTotalityAudit(root2);
+  const scenarioCoverage = options.scenarioCoverage ?? generateProductScenarioCoverageAudit({ root: root2, totality });
+  const regression = options.regression ?? generateProductRegressionAudit({ root: root2, totality, scenarioCoverage });
+  const lifecycleContext = readLifecycleContext(root2);
+  const items = totality.capabilities.map((capability) => lifecycleItem(
+    capability,
+    totality,
+    scenarioCoverage,
+    regression,
+    lifecycleContext
+  ));
+  const status = determineStatus5(items);
+  const sourceArtifacts = Array.from(/* @__PURE__ */ new Set([
+    PRODUCT_TOTALITY_JSON_RELATIVE_PATH,
+    PRODUCT_SCENARIO_COVERAGE_JSON_RELATIVE_PATH,
+    PRODUCT_REGRESSION_JSON_RELATIVE_PATH,
+    ...totality.source_artifacts,
+    ...scenarioCoverage.source_artifacts,
+    ...regression.source_artifacts,
+    ...lifecycleContext.sources
+  ])).sort();
+  return {
+    schema_version: 1,
+    generated_at: (options.now ?? /* @__PURE__ */ new Date()).toISOString(),
+    root: root2,
+    status,
+    source_artifacts: sourceArtifacts,
+    aggregates: {
+      capability_count: items.length,
+      seeded: items.filter((item) => item.stage === "seeded").length,
+      proving: items.filter((item) => item.stage === "proving").length,
+      connected: items.filter((item) => item.stage === "connected").length,
+      mature: items.filter((item) => item.stage === "mature").length,
+      deprecated: items.filter((item) => item.stage === "deprecated").length,
+      remove_candidates: items.filter((item) => item.stage === "remove-candidate").length,
+      error_debt_capabilities: items.filter((item) => item.error_debt_count > 0).length
+    },
+    capabilities: items,
+    next_action: nextAction5(status)
+  };
+}
+function writeProductCapabilityLifecycleAudit(root2 = process.cwd(), report2 = generateProductCapabilityLifecycleAudit({ root: root2 })) {
+  const resolvedRoot = (0, import_path130.resolve)(root2);
+  const jsonPath = (0, import_path130.resolve)(resolvedRoot, PRODUCT_CAPABILITY_LIFECYCLE_JSON_RELATIVE_PATH);
+  const mdPath = (0, import_path130.resolve)(resolvedRoot, PRODUCT_CAPABILITY_LIFECYCLE_MD_RELATIVE_PATH);
+  (0, import_fs110.mkdirSync)((0, import_path130.dirname)(jsonPath), { recursive: true });
+  atomicWriteJsonSync(jsonPath, report2);
+  (0, import_fs110.mkdirSync)((0, import_path130.dirname)(mdPath), { recursive: true });
+  (0, import_fs110.writeFileSync)(mdPath, renderProductCapabilityLifecycleAudit(report2), "utf-8");
+  return { jsonPath, mdPath };
+}
+function renderProductCapabilityLifecycleAudit(report2) {
+  const rows = report2.capabilities.map((capability) => `| ${escapeCell7(capability.capability_id)} | ${capability.stage} | ${capability.decision} | ${escapeCell7(capability.title)} | ${capability.scenario_coverage} | ${capability.missing_depth_count} | ${capability.regression_debt_count} |`);
+  const actionRows = report2.capabilities.filter((capability) => capability.stage !== "mature").map((capability) => `| ${capability.stage} | ${escapeCell7(capability.title)} | ${escapeCell7(capability.recommended_action)} |`);
+  return [
+    "# Product Capability Lifecycle",
+    "",
+    `status: ${report2.status}`,
+    `generated_at: ${report2.generated_at}`,
+    `schema_source: ${PRODUCT_CAPABILITY_LIFECYCLE_JSON_RELATIVE_PATH}`,
+    "",
+    "## Aggregates",
+    `- capability_count: ${report2.aggregates.capability_count}`,
+    `- seeded: ${report2.aggregates.seeded}`,
+    `- proving: ${report2.aggregates.proving}`,
+    `- connected: ${report2.aggregates.connected}`,
+    `- mature: ${report2.aggregates.mature}`,
+    `- deprecated: ${report2.aggregates.deprecated}`,
+    `- remove_candidates: ${report2.aggregates.remove_candidates}`,
+    `- error_debt_capabilities: ${report2.aggregates.error_debt_capabilities}`,
+    "",
+    "## Lifecycle",
+    "| Capability | Stage | Decision | Title | Scenario | Missing Depth | Debts |",
+    "| --- | --- | --- | --- | --- | ---: | ---: |",
+    ...rows.length > 0 ? rows : ["| none | seeded | develop-depth | No completed capabilities yet | none | 0 | 0 |"],
+    "",
+    "## Actions",
+    "| Stage | Capability | Recommended Action |",
+    "| --- | --- | --- |",
+    ...actionRows.length > 0 ? actionRows : ["| mature | product | No lifecycle actions required |"],
+    "",
+    "## Source Artifacts",
+    ...report2.source_artifacts.map((source) => `- ${source}`),
+    "",
+    `next_action: ${report2.next_action}`,
+    ""
+  ].join("\n");
+}
+function lifecycleItem(capability, totality, scenarioCoverage, regression, lifecycleContext) {
+  const scenario = scenarioCoverage.scenarios.find((entry) => entry.capability_id === capability.id);
+  const debts = regression.debts.filter((debt) => debtAppliesToCapability(debt, capability));
+  const orphan = totality.capability_graph.orphan_capabilities.some((entry) => entry.capability_id === capability.id);
+  const deprecated = lifecycleContextMentions(lifecycleContext.text, capability, ["deprecated", "deprecate", "sunset"]);
+  const removeMarked = lifecycleContextMentions(lifecycleContext.text, capability, [
+    "remove-candidate",
+    "remove candidate",
+    "remove-or-redesign",
+    "remove/merge/redesign",
+    "rewrite"
+  ]);
+  const stage = determineCapabilityStage({
+    capability,
+    scenario,
+    debts,
+    orphan,
+    deprecated,
+    removeMarked
+  });
+  const reasons = lifecycleReasons({ capability, scenario, debts, orphan, deprecated, removeMarked });
+  const decision2 = decisionForStage(stage);
+  const action = recommendedActionForStage(stage, capability, scenario);
+  return {
+    capability_id: capability.id,
+    title: capability.title,
+    source_cycle: capability.source_cycle,
+    stage,
+    decision: decision2,
+    maturity: capability.maturity,
+    scenario_coverage: scenario?.coverage ?? "none",
+    connection_count: capability.connections.length,
+    missing_depth_count: capability.missing_depth.length,
+    regression_debt_count: debts.length,
+    error_debt_count: debts.filter((debt) => debt.severity === "error").length,
+    orphan,
+    reasons,
+    recommended_action: action,
+    evidence: Array.from(/* @__PURE__ */ new Set([
+      capability.source_path,
+      ...capability.evidence,
+      ...scenario?.evidence ?? [],
+      ...debts.flatMap((debt) => debt.evidence)
+    ])).filter(Boolean)
+  };
+}
+function determineCapabilityStage(input) {
+  const errorDebt = input.debts.some((debt) => debt.severity === "error");
+  const scenarioCoverage = input.scenario?.coverage;
+  const scenarioPassed = scenarioCoverage === "runtime-passed";
+  const weakOrIsolated = input.orphan || input.capability.connections.length === 0;
+  const depthMissing = input.capability.missing_depth.length > 0;
+  if (input.deprecated) return "deprecated";
+  if (input.removeMarked) return "remove-candidate";
+  if (weakOrIsolated && !scenarioPassed && (errorDebt || input.capability.maturity === "missing-expectation" || depthMissing)) {
+    return "remove-candidate";
+  }
+  if (input.capability.maturity === "systemic-v2" && scenarioPassed && !errorDebt && !input.orphan) return "mature";
+  if (!scenarioPassed && input.capability.maturity !== "missing-expectation") return "proving";
+  if (input.capability.connections.length >= 2 && !errorDebt) return "connected";
+  return "seeded";
+}
+function lifecycleReasons(input) {
+  const reasons = [];
+  if (input.deprecated) reasons.push("roadmap or portfolio marks this capability deprecated");
+  if (input.removeMarked) reasons.push("roadmap or portfolio marks this capability for removal/rewrite");
+  if (input.orphan) reasons.push("capability graph marks this as orphaned");
+  if (!input.scenario) reasons.push("no scenario coverage entry");
+  else if (input.scenario.coverage !== "runtime-passed") reasons.push(`scenario coverage is ${input.scenario.coverage}`);
+  if (input.capability.maturity === "missing-expectation") reasons.push("missing feature expectation contract");
+  if (input.capability.missing_depth.length > 0) reasons.push(`${input.capability.missing_depth.length} maturity/depth item(s) missing`);
+  if (input.capability.connections.length === 0) reasons.push("no product/context/learning connections");
+  if (input.debts.length > 0) reasons.push(`${input.debts.length} regression debt item(s) apply`);
+  if (reasons.length === 0) reasons.push("capability has current lifecycle evidence");
+  return reasons;
+}
+function decisionForStage(stage) {
+  if (stage === "mature") return "retain";
+  if (stage === "connected") return "connect";
+  if (stage === "proving") return "prove";
+  if (stage === "deprecated") return "deprecate";
+  if (stage === "remove-candidate") return "remove-or-redesign";
+  return "develop-depth";
+}
+function recommendedActionForStage(stage, capability, scenario) {
+  if (stage === "mature") return "Treat as stable product foundation; avoid re-selecting unless a new learning signal appears.";
+  if (stage === "deprecated") return "Keep out of selected cycle unless explicitly reviving with a new expectation contract.";
+  if (stage === "remove-candidate") return "Remove, merge, or redesign this capability around a real user loop before adding more surface area.";
+  if (stage === "proving") return scenario ? scenario.recommended_action : `Generate and run a scenario for ${capability.title} before treating it as complete.`;
+  if (stage === "connected") return "Keep connected in roadmap, then add the smallest missing v1/v2 maturity depth.";
+  return "Treat as a seeded capability: add v1/v2 depth and scenario proof before calling it done.";
+}
+function determineStatus5(items) {
+  if (items.length === 0) return "empty";
+  if (items.some((item) => item.stage === "remove-candidate" || item.stage === "deprecated")) return "needs-triage";
+  if (items.some((item) => item.stage === "proving")) return "needs-proof";
+  if (items.some((item) => item.stage === "seeded" || item.orphan)) return "needs-connection";
+  return "healthy";
+}
+function nextAction5(status) {
+  if (status === "empty") return "Complete a product-cycle, then run omc capability-lifecycle audit --write";
+  if (status === "needs-triage") return "Resolve remove/deprecate candidates before selecting unrelated new work";
+  if (status === "needs-proof") return "Run scenario proof or dogfood evidence for proving capabilities";
+  if (status === "needs-connection") return "Feed seeded and orphaned capabilities into priority-engine as depth/connection work";
+  return "Capability lifecycle is healthy; prioritize new work against mature foundations";
+}
+function debtAppliesToCapability(debt, capability) {
+  if (debt.source_cycle && debt.source_cycle === capability.source_cycle) return true;
+  const haystack = normalize14(`${debt.id} ${debt.subject} ${debt.message} ${debt.recommended_action}`);
+  return lifecycleKeywords(`${capability.id} ${capability.title} ${capability.user_job ?? ""} ${capability.first_meaningful_use ?? ""}`).some((token) => haystack.includes(token));
+}
+function readLifecycleContext(root2) {
+  const candidates = [
+    ".omc/portfolio/current.json",
+    ".omc/roadmap/current.md",
+    ".omc/opportunities/current.md"
+  ];
+  const present = [];
+  const text = candidates.flatMap((relativePath) => {
+    const path23 = (0, import_path130.resolve)(root2, relativePath);
+    if (!(0, import_fs110.existsSync)(path23)) return [];
+    present.push(relativePath);
+    try {
+      return [(0, import_fs110.readFileSync)(path23, "utf-8")];
+    } catch {
+      return [];
+    }
+  }).join("\n");
+  return { text, sources: present };
+}
+function lifecycleContextMentions(text, capability, markers) {
+  const normalizedMarkers = markers.map(normalize14);
+  if (!normalizedMarkers.some((marker) => normalize14(text).includes(marker))) return false;
+  const tokens = lifecycleKeywords(`${capability.id} ${capability.title}`);
+  const phrases = Array.from(new Set([capability.id, capability.title].map(normalize14).filter((phrase) => phrase.length > 3)));
+  return localLifecycleWindows(text).some((window) => normalizedMarkers.some((marker) => window.includes(marker)) && (phrases.some((phrase) => window.includes(phrase)) || tokens.some((token) => window.includes(token))));
+}
+function localLifecycleWindows(text) {
+  const lines = text.split(/\r?\n/);
+  const paragraphs = text.split(/\r?\n\s*\r?\n/).filter((paragraph) => paragraph.length <= 1e3);
+  return [...lines, ...paragraphs].map(normalize14).filter((window) => window.length > 0);
+}
+function lifecycleKeywords(value) {
+  return Array.from(new Set(normalize14(value).split(/\s+/).filter((token) => token.length > 3 && !LIFECYCLE_STOP_WORDS.has(token)))).slice(0, 12);
+}
+function normalize14(value) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+var LIFECYCLE_STOP_WORDS = /* @__PURE__ */ new Set([
+  "with",
+  "from",
+  "that",
+  "this",
+  "into",
+  "user",
+  "users",
+  "cycle",
+  "feature",
+  "capability",
+  "product",
+  "first",
+  "loop",
+  "able",
+  "without",
+  "current",
+  "state",
+  "next"
+]);
+function escapeCell7(value) {
+  return value.replace(/\|/g, "\\|").replace(/\r?\n/g, " ");
+}
+
 // src/runtime-qa/diagnostics.ts
 var import_child_process30 = require("child_process");
-var import_fs110 = require("fs");
+var import_fs111 = require("fs");
 var import_os19 = require("os");
-var import_path130 = require("path");
+var import_path131 = require("path");
 var RUNTIME_QA_DOCTOR_COMMAND_TIMEOUT_MS = 5e3;
 function diagnoseRuntimeQa(root2 = process.cwd(), options = {}) {
-  const resolvedRoot = (0, import_path130.resolve)(root2);
-  const configPath = (0, import_path130.resolve)(resolvedRoot, RUNTIME_QA_CONFIG_RELATIVE_PATH2);
-  const handoffPath = (0, import_path130.resolve)(resolvedRoot, RUNTIME_QA_HANDOFF_RELATIVE_PATH);
-  const configExists = (0, import_fs110.existsSync)(configPath);
-  const handoffExists = (0, import_fs110.existsSync)(handoffPath);
+  const resolvedRoot = (0, import_path131.resolve)(root2);
+  const configPath = (0, import_path131.resolve)(resolvedRoot, RUNTIME_QA_CONFIG_RELATIVE_PATH2);
+  const handoffPath = (0, import_path131.resolve)(resolvedRoot, RUNTIME_QA_HANDOFF_RELATIVE_PATH);
+  const configExists = (0, import_fs111.existsSync)(configPath);
+  const handoffExists = (0, import_fs111.existsSync)(handoffPath);
   const activeCycleId = readActiveCycleId3(resolvedRoot);
   const dryRunReport = runRuntimeQa({ root: resolvedRoot, dryRun: true, toolDetector: options.toolDetector });
   const handoff = readJson2(handoffPath);
@@ -90461,7 +90729,7 @@ function checkAndroidSdk(root2, commandRunner, env2) {
   const sdkRoot = resolveAndroidSdkRoot(env2);
   const command = "command -v adb";
   const adb = commandRunner(command, root2, RUNTIME_QA_DOCTOR_COMMAND_TIMEOUT_MS);
-  const detected = Boolean(sdkRoot && (0, import_fs110.existsSync)(sdkRoot)) || adb.status === 0;
+  const detected = Boolean(sdkRoot && (0, import_fs111.existsSync)(sdkRoot)) || adb.status === 0;
   return {
     id: "android-sdk",
     label: "Android SDK",
@@ -90473,10 +90741,10 @@ function checkAndroidSdk(root2, commandRunner, env2) {
 }
 function checkAndroidEmulator(root2, commandRunner, env2) {
   const sdkRoot = resolveAndroidSdkRoot(env2);
-  const emulatorPath = sdkRoot ? (0, import_path130.resolve)(sdkRoot, "emulator", "emulator") : void 0;
+  const emulatorPath = sdkRoot ? (0, import_path131.resolve)(sdkRoot, "emulator", "emulator") : void 0;
   const command = "command -v emulator";
   const result = commandRunner(command, root2, RUNTIME_QA_DOCTOR_COMMAND_TIMEOUT_MS);
-  const detected = (emulatorPath ? (0, import_fs110.existsSync)(emulatorPath) : false) || result.status === 0;
+  const detected = (emulatorPath ? (0, import_fs111.existsSync)(emulatorPath) : false) || result.status === 0;
   return {
     id: "android-emulator",
     label: "Android emulator",
@@ -90489,10 +90757,10 @@ function checkAndroidEmulator(root2, commandRunner, env2) {
 function resolveAndroidSdkRoot(env2) {
   const configured = env2.ANDROID_HOME || env2.ANDROID_SDK_ROOT;
   if (configured) return configured;
-  const defaultMac = (0, import_path130.resolve)((0, import_os19.homedir)(), "Library", "Android", "sdk");
-  if ((0, import_fs110.existsSync)(defaultMac)) return defaultMac;
-  const defaultLinux = (0, import_path130.resolve)((0, import_os19.homedir)(), "Android", "Sdk");
-  if ((0, import_fs110.existsSync)(defaultLinux)) return defaultLinux;
+  const defaultMac = (0, import_path131.resolve)((0, import_os19.homedir)(), "Library", "Android", "sdk");
+  if ((0, import_fs111.existsSync)(defaultMac)) return defaultMac;
+  const defaultLinux = (0, import_path131.resolve)((0, import_os19.homedir)(), "Android", "Sdk");
+  if ((0, import_fs111.existsSync)(defaultLinux)) return defaultLinux;
   return void 0;
 }
 function defaultDoctorCommandRunner(command, cwd2, timeoutMs) {
@@ -90602,23 +90870,23 @@ function isFixtureBackend(value) {
   return value === "auto" || value === "env" || value === "mcp";
 }
 function readActiveCycleId3(root2) {
-  const content = safeRead4((0, import_path130.resolve)(root2, ".omc/cycles/current.md"));
+  const content = safeRead4((0, import_path131.resolve)(root2, ".omc/cycles/current.md"));
   if (!content) return void 0;
   const match = content.match(/^\s*cycle_id\s*:\s*(.*?)\s*$/im);
   return match?.[1]?.replace(/^['"]|['"]$/g, "").trim();
 }
 function readJson2(path23) {
-  if (!(0, import_fs110.existsSync)(path23)) return void 0;
+  if (!(0, import_fs111.existsSync)(path23)) return void 0;
   try {
-    return JSON.parse((0, import_fs110.readFileSync)(path23, "utf-8"));
+    return JSON.parse((0, import_fs111.readFileSync)(path23, "utf-8"));
   } catch {
     return void 0;
   }
 }
 function safeRead4(path23) {
-  if (!(0, import_fs110.existsSync)(path23)) return void 0;
+  if (!(0, import_fs111.existsSync)(path23)) return void 0;
   try {
-    return (0, import_fs110.readFileSync)(path23, "utf-8");
+    return (0, import_fs111.readFileSync)(path23, "utf-8");
   } catch {
     return void 0;
   }
@@ -90626,7 +90894,7 @@ function safeRead4(path23) {
 
 // src/product/pipeline-contract-validator.ts
 function validateProductPipelineContracts(options = {}) {
-  const root2 = (0, import_path131.resolve)(options.root ?? process.cwd());
+  const root2 = (0, import_path132.resolve)(options.root ?? process.cwd());
   const stage = options.stage ?? "foundation-lite";
   const contracts = buildContracts(stage);
   const artifacts = contracts.map((contract) => validateArtifact(root2, contract));
@@ -90716,13 +90984,13 @@ function buildContracts(stage) {
   return [capability(true), meaning(true), ecosystem(true), portfolioLedger(), opportunities(), roadmap(), cycle(), experienceGate(true), learning(true)];
 }
 function validateArtifact(root2, contract) {
-  const cycleDocumentPath = (0, import_path131.resolve)(root2, CYCLE_DOCUMENT_RELATIVE_PATH);
-  const useCycleDocument = contract.artifact === "cycle" && (0, import_fs111.existsSync)(cycleDocumentPath);
-  const path23 = useCycleDocument ? cycleDocumentPath : (0, import_path131.resolve)(root2, contract.relativePath);
+  const cycleDocumentPath = (0, import_path132.resolve)(root2, CYCLE_DOCUMENT_RELATIVE_PATH);
+  const useCycleDocument = contract.artifact === "cycle" && (0, import_fs112.existsSync)(cycleDocumentPath);
+  const path23 = useCycleDocument ? cycleDocumentPath : (0, import_path132.resolve)(root2, contract.relativePath);
   const result = {
     artifact: contract.artifact,
     path: path23,
-    exists: (0, import_fs111.existsSync)(path23),
+    exists: (0, import_fs112.existsSync)(path23),
     metrics: {},
     issues: []
   };
@@ -90744,7 +91012,7 @@ function validateArtifact(root2, contract) {
       }
       content = renderCycleProjection(document);
     } else {
-      content = (0, import_fs111.readFileSync)(path23, "utf-8");
+      content = (0, import_fs112.readFileSync)(path23, "utf-8");
     }
   } catch (error2) {
     addIssue2(result, "error", "unreadable-artifact", `Cannot read ${contract.relativePath}: ${error2 instanceof Error ? error2.message : String(error2)}`);
@@ -90768,7 +91036,7 @@ function applyCrossArtifactContracts(root2, stage, artifacts) {
   applyRuntimeQaContracts(root2, cycleContent, artifacts);
   if (userFacing && (!experience || !experience.exists)) {
     if (!experience) {
-      experience = createVirtualArtifactResult("experience-gate", (0, import_path131.resolve)(root2, PRODUCT_ARTIFACT_PATHS["experience-gate"]));
+      experience = createVirtualArtifactResult("experience-gate", (0, import_path132.resolve)(root2, PRODUCT_ARTIFACT_PATHS["experience-gate"]));
       artifacts.push(experience);
     }
     addIssue2(
@@ -90778,9 +91046,9 @@ function applyCrossArtifactContracts(root2, stage, artifacts) {
       "User-facing cycles must pass .omc/experience/current.md before build"
     );
   }
-  const portfolioPath = (0, import_path131.resolve)(root2, PRODUCT_ARTIFACT_PATHS["portfolio-ledger"]);
-  const roadmapPath = (0, import_path131.resolve)(root2, PRODUCT_ARTIFACT_PATHS.roadmap);
-  if (!(0, import_fs111.existsSync)(portfolioPath) || !(0, import_fs111.existsSync)(roadmapPath)) return;
+  const portfolioPath = (0, import_path132.resolve)(root2, PRODUCT_ARTIFACT_PATHS["portfolio-ledger"]);
+  const roadmapPath = (0, import_path132.resolve)(root2, PRODUCT_ARTIFACT_PATHS.roadmap);
+  if (!(0, import_fs112.existsSync)(portfolioPath) || !(0, import_fs112.existsSync)(roadmapPath)) return;
   const portfolio = artifacts.find((artifact) => artifact.artifact === "portfolio-ledger");
   const activeCycleId = readField(cycleContent, "cycle_id");
   if (portfolio && activeCycleId) {
@@ -90818,7 +91086,8 @@ ${roadmapContent}`;
   const findings = [
     ...regressionFindings(root2),
     ...scenarioCoverageFindings(root2),
-    ...totalityFindings(root2)
+    ...totalityFindings(root2),
+    ...capabilityLifecycleFindings(root2)
   ];
   const missing = findings.filter((finding) => !priorityTextRepresentsFinding(priorityText, finding));
   if (findings.length === 0) return;
@@ -90889,11 +91158,25 @@ function totalityFindings(root2) {
     }))
   ];
 }
+function capabilityLifecycleFindings(root2) {
+  const report2 = readOptionalJson(root2, PRODUCT_CAPABILITY_LIFECYCLE_JSON_RELATIVE_PATH);
+  if (!report2 || report2.status === "empty" || report2.status === "healthy") return [];
+  return report2.capabilities.filter((capability) => capability.stage === "remove-candidate" || capability.stage === "deprecated").map((capability) => ({
+    source: "capability-lifecycle",
+    code: capability.stage === "remove-candidate" ? "priority-ignores-lifecycle-remove-candidate" : "priority-ignores-lifecycle-deprecation",
+    severity: capability.stage === "remove-candidate" ? "error" : "warning",
+    id: capability.capability_id,
+    category: capability.stage,
+    subject: capability.title,
+    message: capability.reasons.join("; "),
+    recommendedAction: capability.recommended_action
+  }));
+}
 function readOptionalJson(root2, relativePath) {
-  const path23 = (0, import_path131.resolve)(root2, relativePath);
-  if (!(0, import_fs111.existsSync)(path23)) return void 0;
+  const path23 = (0, import_path132.resolve)(root2, relativePath);
+  if (!(0, import_fs112.existsSync)(path23)) return void 0;
   try {
-    return JSON.parse((0, import_fs111.readFileSync)(path23, "utf-8"));
+    return JSON.parse((0, import_fs112.readFileSync)(path23, "utf-8"));
   } catch {
     return void 0;
   }
@@ -90919,7 +91202,7 @@ function applyRuntimeQaContracts(root2, cycleContent, artifacts) {
   cycle.metrics.runtimeQaSteps = report2.dryRunReport.step_results.length;
 }
 function needsRuntimeQaContract(root2, cycleContent) {
-  return /\b(runtime-qa|simulator|emulator|smoke|maestro|detox|appium|ios|android)\b/i.test(cycleContent) || (0, import_fs111.existsSync)((0, import_path131.resolve)(root2, ".omc/runtime-qa.json")) || (0, import_fs111.existsSync)((0, import_path131.resolve)(root2, ".omc/handoffs/runtime-qa/current.json"));
+  return /\b(runtime-qa|simulator|emulator|smoke|maestro|detox|appium|ios|android)\b/i.test(cycleContent) || (0, import_fs112.existsSync)((0, import_path132.resolve)(root2, ".omc/runtime-qa.json")) || (0, import_fs112.existsSync)((0, import_path132.resolve)(root2, ".omc/handoffs/runtime-qa/current.json"));
 }
 function createVirtualArtifactResult(artifact, path23) {
   return {
@@ -90932,14 +91215,14 @@ function createVirtualArtifactResult(artifact, path23) {
 }
 function safeRead5(path23) {
   try {
-    return (0, import_fs111.readFileSync)(path23, "utf-8");
+    return (0, import_fs112.readFileSync)(path23, "utf-8");
   } catch {
     return "";
   }
 }
 function readCycleContractContent(root2) {
-  const cycleDocumentPath = (0, import_path131.resolve)(root2, CYCLE_DOCUMENT_RELATIVE_PATH);
-  if ((0, import_fs111.existsSync)(cycleDocumentPath)) {
+  const cycleDocumentPath = (0, import_path132.resolve)(root2, CYCLE_DOCUMENT_RELATIVE_PATH);
+  if ((0, import_fs112.existsSync)(cycleDocumentPath)) {
     try {
       const document = readCycleDocument(root2);
       return document ? renderCycleProjection(document) : "";
@@ -90947,8 +91230,8 @@ function readCycleContractContent(root2) {
       return "";
     }
   }
-  const cyclePath = (0, import_path131.resolve)(root2, PRODUCT_ARTIFACT_PATHS.cycle);
-  return (0, import_fs111.existsSync)(cyclePath) ? safeRead5(cyclePath) : "";
+  const cyclePath = (0, import_path132.resolve)(root2, PRODUCT_ARTIFACT_PATHS.cycle);
+  return (0, import_fs112.existsSync)(cyclePath) ? safeRead5(cyclePath) : "";
 }
 function isUserFacingCycle(content) {
   const route = extractBuildRoute(content);
@@ -90966,7 +91249,7 @@ function isUserFacingCycle(content) {
 }
 function portfolioHasSelectedResearchDebt(path23) {
   try {
-    const ledger = JSON.parse((0, import_fs111.readFileSync)(path23, "utf-8"));
+    const ledger = JSON.parse((0, import_fs112.readFileSync)(path23, "utf-8"));
     const items = Array.isArray(ledger.items) ? ledger.items : [];
     return items.some((item) => {
       const selected = typeof item.selected_cycle === "string" && item.selected_cycle.length > 0;
@@ -90980,7 +91263,7 @@ function portfolioHasSelectedResearchDebt(path23) {
 }
 function selectedCycleIds(path23) {
   try {
-    const ledger = JSON.parse((0, import_fs111.readFileSync)(path23, "utf-8"));
+    const ledger = JSON.parse((0, import_fs112.readFileSync)(path23, "utf-8"));
     const items = Array.isArray(ledger.items) ? ledger.items : [];
     return Array.from(new Set(items.map((item) => item.selected_cycle).filter((value) => typeof value === "string" && value.length > 0)));
   } catch {
@@ -91304,9 +91587,9 @@ function resolveSidecarPath(artifactPath) {
 }
 function readAgentOutputSidecar(artifactPath) {
   const sidecarPath = resolveSidecarPath(artifactPath);
-  if (!(0, import_fs111.existsSync)(sidecarPath)) return void 0;
+  if (!(0, import_fs112.existsSync)(sidecarPath)) return void 0;
   try {
-    return JSON.parse((0, import_fs111.readFileSync)(sidecarPath, "utf-8"));
+    return JSON.parse((0, import_fs112.readFileSync)(sidecarPath, "utf-8"));
   } catch {
     return void 0;
   }
@@ -91674,15 +91957,15 @@ function summarizeMetrics(metrics) {
 }
 
 // src/cli/commands/project-doctor.ts
-var import_path134 = require("path");
+var import_path135 = require("path");
 
 // src/runtime-qa/setup.ts
 var import_child_process31 = require("child_process");
-var import_fs112 = require("fs");
-var import_path132 = require("path");
+var import_fs113 = require("fs");
+var import_path133 = require("path");
 var RUNTIME_QA_SETUP_TIMEOUT_MS = 10 * 6e4;
 function setupRuntimeQaPrerequisites(root2 = process.cwd(), options = {}) {
-  const resolvedRoot = (0, import_path132.resolve)(root2);
+  const resolvedRoot = (0, import_path133.resolve)(root2);
   const doctor = diagnoseRuntimeQa(resolvedRoot, options);
   const steps = buildRuntimeQaSetupPlan(resolvedRoot, doctor, options);
   const commandRunner = options.commandRunner ?? defaultSetupCommandRunner;
@@ -91801,7 +92084,7 @@ function maestroSetupSteps(platform) {
   }];
 }
 function playwrightBrowsersStep(root2) {
-  const manager = (0, import_fs112.existsSync)((0, import_path132.resolve)(root2, "pnpm-lock.yaml")) ? "pnpm" : (0, import_fs112.existsSync)((0, import_path132.resolve)(root2, "yarn.lock")) ? "yarn" : "npm";
+  const manager = (0, import_fs113.existsSync)((0, import_path133.resolve)(root2, "pnpm-lock.yaml")) ? "pnpm" : (0, import_fs113.existsSync)((0, import_path133.resolve)(root2, "yarn.lock")) ? "yarn" : "npm";
   const command = manager === "pnpm" ? "pnpm exec playwright install" : manager === "yarn" ? "yarn playwright install" : "npx playwright install";
   return {
     id: "playwright-browsers-install",
@@ -91866,7 +92149,7 @@ function preview(value) {
 
 // src/cli/commands/state-hygiene.ts
 var import_child_process32 = require("child_process");
-var import_path133 = require("path");
+var import_path134 = require("path");
 init_formatting();
 var ROOT_RUNTIME_DIRECTORIES = /* @__PURE__ */ new Set(["logs", "sessions", "state", "telemetry"]);
 var ROOT_RUNTIME_FILES = /* @__PURE__ */ new Set([
@@ -91901,7 +92184,7 @@ function runStateHygiene(root2, options = {}) {
   return report2;
 }
 function inspectStateHygiene(root2) {
-  const resolvedRoot = (0, import_path133.resolve)(root2 ?? process.cwd());
+  const resolvedRoot = (0, import_path134.resolve)(root2 ?? process.cwd());
   const gitRoot = findGitRoot(resolvedRoot);
   if (!gitRoot) {
     return {
@@ -92018,7 +92301,7 @@ async function projectDoctorCommand(root2, options, logger = console) {
   return report2.ok ? 0 : 1;
 }
 function inspectProjectDoctor(root2, options = {}) {
-  const resolvedRoot = (0, import_path134.resolve)(root2 ?? process.cwd());
+  const resolvedRoot = (0, import_path135.resolve)(root2 ?? process.cwd());
   const stateHygiene = runStateHygiene(resolvedRoot, { apply: options.applyStateHygiene === true });
   const runtimeQaApplies = shouldRunRuntimeQa(resolvedRoot);
   const runtimeQaSetup = runtimeQaApplies ? setupRuntimeQaPrerequisites(resolvedRoot, { apply: options.applyRuntimeQaSetup === true }) : void 0;
@@ -92155,264 +92438,6 @@ init_formatting();
 // src/product/cycle-fsm.ts
 var import_fs114 = require("fs");
 var import_path136 = require("path");
-
-// src/product/capability-lifecycle.ts
-var import_fs113 = require("fs");
-var import_path135 = require("path");
-init_atomic_write();
-var PRODUCT_CAPABILITY_LIFECYCLE_JSON_RELATIVE_PATH = ".omc/product/capability-lifecycle/current.json";
-var PRODUCT_CAPABILITY_LIFECYCLE_MD_RELATIVE_PATH = ".omc/product/capability-lifecycle/current.md";
-function generateProductCapabilityLifecycleAudit(options = {}) {
-  const root2 = (0, import_path135.resolve)(options.root ?? process.cwd());
-  const totality = options.totality ?? generateProductTotalityAudit(root2);
-  const scenarioCoverage = options.scenarioCoverage ?? generateProductScenarioCoverageAudit({ root: root2, totality });
-  const regression = options.regression ?? generateProductRegressionAudit({ root: root2, totality, scenarioCoverage });
-  const lifecycleContext = readLifecycleContext(root2);
-  const items = totality.capabilities.map((capability) => lifecycleItem(
-    capability,
-    totality,
-    scenarioCoverage,
-    regression,
-    lifecycleContext
-  ));
-  const status = determineStatus5(items);
-  const sourceArtifacts = Array.from(/* @__PURE__ */ new Set([
-    PRODUCT_TOTALITY_JSON_RELATIVE_PATH,
-    PRODUCT_SCENARIO_COVERAGE_JSON_RELATIVE_PATH,
-    PRODUCT_REGRESSION_JSON_RELATIVE_PATH,
-    ...totality.source_artifacts,
-    ...scenarioCoverage.source_artifacts,
-    ...regression.source_artifacts,
-    ...lifecycleContext.sources
-  ])).sort();
-  return {
-    schema_version: 1,
-    generated_at: (options.now ?? /* @__PURE__ */ new Date()).toISOString(),
-    root: root2,
-    status,
-    source_artifacts: sourceArtifacts,
-    aggregates: {
-      capability_count: items.length,
-      seeded: items.filter((item) => item.stage === "seeded").length,
-      proving: items.filter((item) => item.stage === "proving").length,
-      connected: items.filter((item) => item.stage === "connected").length,
-      mature: items.filter((item) => item.stage === "mature").length,
-      deprecated: items.filter((item) => item.stage === "deprecated").length,
-      remove_candidates: items.filter((item) => item.stage === "remove-candidate").length,
-      error_debt_capabilities: items.filter((item) => item.error_debt_count > 0).length
-    },
-    capabilities: items,
-    next_action: nextAction5(status)
-  };
-}
-function writeProductCapabilityLifecycleAudit(root2 = process.cwd(), report2 = generateProductCapabilityLifecycleAudit({ root: root2 })) {
-  const resolvedRoot = (0, import_path135.resolve)(root2);
-  const jsonPath = (0, import_path135.resolve)(resolvedRoot, PRODUCT_CAPABILITY_LIFECYCLE_JSON_RELATIVE_PATH);
-  const mdPath = (0, import_path135.resolve)(resolvedRoot, PRODUCT_CAPABILITY_LIFECYCLE_MD_RELATIVE_PATH);
-  (0, import_fs113.mkdirSync)((0, import_path135.dirname)(jsonPath), { recursive: true });
-  atomicWriteJsonSync(jsonPath, report2);
-  (0, import_fs113.mkdirSync)((0, import_path135.dirname)(mdPath), { recursive: true });
-  (0, import_fs113.writeFileSync)(mdPath, renderProductCapabilityLifecycleAudit(report2), "utf-8");
-  return { jsonPath, mdPath };
-}
-function renderProductCapabilityLifecycleAudit(report2) {
-  const rows = report2.capabilities.map((capability) => `| ${escapeCell7(capability.capability_id)} | ${capability.stage} | ${capability.decision} | ${escapeCell7(capability.title)} | ${capability.scenario_coverage} | ${capability.missing_depth_count} | ${capability.regression_debt_count} |`);
-  const actionRows = report2.capabilities.filter((capability) => capability.stage !== "mature").map((capability) => `| ${capability.stage} | ${escapeCell7(capability.title)} | ${escapeCell7(capability.recommended_action)} |`);
-  return [
-    "# Product Capability Lifecycle",
-    "",
-    `status: ${report2.status}`,
-    `generated_at: ${report2.generated_at}`,
-    `schema_source: ${PRODUCT_CAPABILITY_LIFECYCLE_JSON_RELATIVE_PATH}`,
-    "",
-    "## Aggregates",
-    `- capability_count: ${report2.aggregates.capability_count}`,
-    `- seeded: ${report2.aggregates.seeded}`,
-    `- proving: ${report2.aggregates.proving}`,
-    `- connected: ${report2.aggregates.connected}`,
-    `- mature: ${report2.aggregates.mature}`,
-    `- deprecated: ${report2.aggregates.deprecated}`,
-    `- remove_candidates: ${report2.aggregates.remove_candidates}`,
-    `- error_debt_capabilities: ${report2.aggregates.error_debt_capabilities}`,
-    "",
-    "## Lifecycle",
-    "| Capability | Stage | Decision | Title | Scenario | Missing Depth | Debts |",
-    "| --- | --- | --- | --- | --- | ---: | ---: |",
-    ...rows.length > 0 ? rows : ["| none | seeded | develop-depth | No completed capabilities yet | none | 0 | 0 |"],
-    "",
-    "## Actions",
-    "| Stage | Capability | Recommended Action |",
-    "| --- | --- | --- |",
-    ...actionRows.length > 0 ? actionRows : ["| mature | product | No lifecycle actions required |"],
-    "",
-    "## Source Artifacts",
-    ...report2.source_artifacts.map((source) => `- ${source}`),
-    "",
-    `next_action: ${report2.next_action}`,
-    ""
-  ].join("\n");
-}
-function lifecycleItem(capability, totality, scenarioCoverage, regression, lifecycleContext) {
-  const scenario = scenarioCoverage.scenarios.find((entry) => entry.capability_id === capability.id);
-  const debts = regression.debts.filter((debt) => debtAppliesToCapability(debt, capability));
-  const orphan = totality.capability_graph.orphan_capabilities.some((entry) => entry.capability_id === capability.id);
-  const deprecated = lifecycleContextMentions(lifecycleContext.text, capability, ["deprecated", "deprecate", "sunset"]);
-  const removeMarked = lifecycleContextMentions(lifecycleContext.text, capability, ["remove-candidate", "remove candidate", "delete", "rewrite"]);
-  const stage = determineCapabilityStage({
-    capability,
-    scenario,
-    debts,
-    orphan,
-    deprecated,
-    removeMarked
-  });
-  const reasons = lifecycleReasons({ capability, scenario, debts, orphan, deprecated, removeMarked });
-  const decision2 = decisionForStage(stage);
-  const action = recommendedActionForStage(stage, capability, scenario);
-  return {
-    capability_id: capability.id,
-    title: capability.title,
-    source_cycle: capability.source_cycle,
-    stage,
-    decision: decision2,
-    maturity: capability.maturity,
-    scenario_coverage: scenario?.coverage ?? "none",
-    connection_count: capability.connections.length,
-    missing_depth_count: capability.missing_depth.length,
-    regression_debt_count: debts.length,
-    error_debt_count: debts.filter((debt) => debt.severity === "error").length,
-    orphan,
-    reasons,
-    recommended_action: action,
-    evidence: Array.from(/* @__PURE__ */ new Set([
-      capability.source_path,
-      ...capability.evidence,
-      ...scenario?.evidence ?? [],
-      ...debts.flatMap((debt) => debt.evidence)
-    ])).filter(Boolean)
-  };
-}
-function determineCapabilityStage(input) {
-  const errorDebt = input.debts.some((debt) => debt.severity === "error");
-  const scenarioCoverage = input.scenario?.coverage;
-  const scenarioPassed = scenarioCoverage === "runtime-passed";
-  const weakOrIsolated = input.orphan || input.capability.connections.length === 0;
-  const depthMissing = input.capability.missing_depth.length > 0;
-  if (input.deprecated) return "deprecated";
-  if (input.removeMarked) return "remove-candidate";
-  if (weakOrIsolated && !scenarioPassed && (errorDebt || input.capability.maturity === "missing-expectation" || depthMissing)) {
-    return "remove-candidate";
-  }
-  if (input.capability.maturity === "systemic-v2" && scenarioPassed && !errorDebt && !input.orphan) return "mature";
-  if (!scenarioPassed && input.capability.maturity !== "missing-expectation") return "proving";
-  if (input.capability.connections.length >= 2 && !errorDebt) return "connected";
-  return "seeded";
-}
-function lifecycleReasons(input) {
-  const reasons = [];
-  if (input.deprecated) reasons.push("roadmap or portfolio marks this capability deprecated");
-  if (input.removeMarked) reasons.push("roadmap or portfolio marks this capability for removal/rewrite");
-  if (input.orphan) reasons.push("capability graph marks this as orphaned");
-  if (!input.scenario) reasons.push("no scenario coverage entry");
-  else if (input.scenario.coverage !== "runtime-passed") reasons.push(`scenario coverage is ${input.scenario.coverage}`);
-  if (input.capability.maturity === "missing-expectation") reasons.push("missing feature expectation contract");
-  if (input.capability.missing_depth.length > 0) reasons.push(`${input.capability.missing_depth.length} maturity/depth item(s) missing`);
-  if (input.capability.connections.length === 0) reasons.push("no product/context/learning connections");
-  if (input.debts.length > 0) reasons.push(`${input.debts.length} regression debt item(s) apply`);
-  if (reasons.length === 0) reasons.push("capability has current lifecycle evidence");
-  return reasons;
-}
-function decisionForStage(stage) {
-  if (stage === "mature") return "retain";
-  if (stage === "connected") return "connect";
-  if (stage === "proving") return "prove";
-  if (stage === "deprecated") return "deprecate";
-  if (stage === "remove-candidate") return "remove-or-redesign";
-  return "develop-depth";
-}
-function recommendedActionForStage(stage, capability, scenario) {
-  if (stage === "mature") return "Treat as stable product foundation; avoid re-selecting unless a new learning signal appears.";
-  if (stage === "deprecated") return "Keep out of selected cycle unless explicitly reviving with a new expectation contract.";
-  if (stage === "remove-candidate") return "Remove, merge, or redesign this capability around a real user loop before adding more surface area.";
-  if (stage === "proving") return scenario ? scenario.recommended_action : `Generate and run a scenario for ${capability.title} before treating it as complete.`;
-  if (stage === "connected") return "Keep connected in roadmap, then add the smallest missing v1/v2 maturity depth.";
-  return "Treat as a seeded capability: add v1/v2 depth and scenario proof before calling it done.";
-}
-function determineStatus5(items) {
-  if (items.length === 0) return "empty";
-  if (items.some((item) => item.stage === "remove-candidate" || item.stage === "deprecated")) return "needs-triage";
-  if (items.some((item) => item.stage === "proving")) return "needs-proof";
-  if (items.some((item) => item.stage === "seeded" || item.orphan)) return "needs-connection";
-  return "healthy";
-}
-function nextAction5(status) {
-  if (status === "empty") return "Complete a product-cycle, then run omc capability-lifecycle audit --write";
-  if (status === "needs-triage") return "Resolve remove/deprecate candidates before selecting unrelated new work";
-  if (status === "needs-proof") return "Run scenario proof or dogfood evidence for proving capabilities";
-  if (status === "needs-connection") return "Feed seeded and orphaned capabilities into priority-engine as depth/connection work";
-  return "Capability lifecycle is healthy; prioritize new work against mature foundations";
-}
-function debtAppliesToCapability(debt, capability) {
-  if (debt.source_cycle && debt.source_cycle === capability.source_cycle) return true;
-  const haystack = normalize14(`${debt.id} ${debt.subject} ${debt.message} ${debt.recommended_action}`);
-  return lifecycleKeywords(`${capability.id} ${capability.title} ${capability.user_job ?? ""} ${capability.first_meaningful_use ?? ""}`).some((token) => haystack.includes(token));
-}
-function readLifecycleContext(root2) {
-  const candidates = [
-    ".omc/portfolio/current.json",
-    ".omc/roadmap/current.md",
-    ".omc/opportunities/current.md"
-  ];
-  const present = [];
-  const text = candidates.flatMap((relativePath) => {
-    const path23 = (0, import_path135.resolve)(root2, relativePath);
-    if (!(0, import_fs113.existsSync)(path23)) return [];
-    present.push(relativePath);
-    try {
-      return [(0, import_fs113.readFileSync)(path23, "utf-8")];
-    } catch {
-      return [];
-    }
-  }).join("\n");
-  return { text, sources: present };
-}
-function lifecycleContextMentions(text, capability, markers) {
-  const normalized = normalize14(text);
-  if (!markers.some((marker) => normalized.includes(normalize14(marker)))) return false;
-  const tokens = lifecycleKeywords(`${capability.id} ${capability.title}`);
-  return tokens.length === 0 || tokens.some((token) => normalized.includes(token));
-}
-function lifecycleKeywords(value) {
-  return Array.from(new Set(normalize14(value).split(/\s+/).filter((token) => token.length > 3 && !LIFECYCLE_STOP_WORDS.has(token)))).slice(0, 12);
-}
-function normalize14(value) {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-}
-var LIFECYCLE_STOP_WORDS = /* @__PURE__ */ new Set([
-  "with",
-  "from",
-  "that",
-  "this",
-  "into",
-  "user",
-  "users",
-  "cycle",
-  "feature",
-  "capability",
-  "product",
-  "first",
-  "loop",
-  "able",
-  "without",
-  "current",
-  "state",
-  "next"
-]);
-function escapeCell7(value) {
-  return value.replace(/\|/g, "\\|").replace(/\r?\n/g, " ");
-}
-
-// src/product/cycle-fsm.ts
 var LEARNING_RELATIVE_PATH = ".omc/learning/current.md";
 var STAGES = ["discover", "rank", "select", "spec", "build", "verify", "learn", "complete"];
 var STAGE_SET = /* @__PURE__ */ new Set([...STAGES, "blocked"]);

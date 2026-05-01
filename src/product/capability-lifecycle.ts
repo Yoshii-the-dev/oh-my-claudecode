@@ -214,7 +214,13 @@ function lifecycleItem(
   const debts = regression.debts.filter((debt) => debtAppliesToCapability(debt, capability));
   const orphan = totality.capability_graph.orphan_capabilities.some((entry) => entry.capability_id === capability.id);
   const deprecated = lifecycleContextMentions(lifecycleContext.text, capability, ['deprecated', 'deprecate', 'sunset']);
-  const removeMarked = lifecycleContextMentions(lifecycleContext.text, capability, ['remove-candidate', 'remove candidate', 'delete', 'rewrite']);
+  const removeMarked = lifecycleContextMentions(lifecycleContext.text, capability, [
+    'remove-candidate',
+    'remove candidate',
+    'remove-or-redesign',
+    'remove/merge/redesign',
+    'rewrite',
+  ]);
   const stage = determineCapabilityStage({
     capability,
     scenario,
@@ -374,10 +380,23 @@ function lifecycleContextMentions(
   capability: ProductTotalityCapability,
   markers: string[],
 ): boolean {
-  const normalized = normalize(text);
-  if (!markers.some((marker) => normalized.includes(normalize(marker)))) return false;
+  const normalizedMarkers = markers.map(normalize);
+  if (!normalizedMarkers.some((marker) => normalize(text).includes(marker))) return false;
   const tokens = lifecycleKeywords(`${capability.id} ${capability.title}`);
-  return tokens.length === 0 || tokens.some((token) => normalized.includes(token));
+  const phrases = Array.from(new Set([capability.id, capability.title]
+    .map(normalize)
+    .filter((phrase) => phrase.length > 3)));
+
+  return localLifecycleWindows(text).some((window) => (
+    normalizedMarkers.some((marker) => window.includes(marker))
+    && (phrases.some((phrase) => window.includes(phrase)) || tokens.some((token) => window.includes(token)))
+  ));
+}
+
+function localLifecycleWindows(text: string): string[] {
+  const lines = text.split(/\r?\n/);
+  const paragraphs = text.split(/\r?\n\s*\r?\n/).filter((paragraph) => paragraph.length <= 1000);
+  return [...lines, ...paragraphs].map(normalize).filter((window) => window.length > 0);
 }
 
 function lifecycleKeywords(value: string): string[] {

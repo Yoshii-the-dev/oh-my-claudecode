@@ -20,6 +20,10 @@ import {
   type ProductTotalityReport,
 } from './product-totality.js';
 import {
+  PRODUCT_CAPABILITY_LIFECYCLE_JSON_RELATIVE_PATH,
+  type ProductCapabilityLifecycleReport,
+} from './capability-lifecycle.js';
+import {
   CYCLE_DOCUMENT_RELATIVE_PATH,
   readCycleDocument,
   renderCycleProjection,
@@ -297,6 +301,7 @@ function applyPriorityAuditCarryForwardContracts(
     ...regressionFindings(root),
     ...scenarioCoverageFindings(root),
     ...totalityFindings(root),
+    ...capabilityLifecycleFindings(root),
   ];
   const missing = findings.filter((finding) => !priorityTextRepresentsFinding(priorityText, finding));
   if (findings.length === 0) return;
@@ -319,7 +324,7 @@ function applyPriorityAuditCarryForwardContracts(
 }
 
 interface PriorityAuditFinding {
-  source: 'product-regression' | 'scenario-coverage' | 'product-totality';
+  source: 'product-regression' | 'scenario-coverage' | 'product-totality' | 'capability-lifecycle';
   code: string;
   severity: ProductPipelineIssueSeverity;
   id?: string;
@@ -382,6 +387,26 @@ function totalityFindings(root: string): PriorityAuditFinding[] {
       recommendedAction: move.why,
     })),
   ];
+}
+
+function capabilityLifecycleFindings(root: string): PriorityAuditFinding[] {
+  const report = readOptionalJson<ProductCapabilityLifecycleReport>(root, PRODUCT_CAPABILITY_LIFECYCLE_JSON_RELATIVE_PATH);
+  if (!report || report.status === 'empty' || report.status === 'healthy') return [];
+
+  return report.capabilities
+    .filter((capability) => capability.stage === 'remove-candidate' || capability.stage === 'deprecated')
+    .map((capability) => ({
+      source: 'capability-lifecycle' as const,
+      code: capability.stage === 'remove-candidate'
+        ? 'priority-ignores-lifecycle-remove-candidate'
+        : 'priority-ignores-lifecycle-deprecation',
+      severity: capability.stage === 'remove-candidate' ? 'error' as const : 'warning' as const,
+      id: capability.capability_id,
+      category: capability.stage,
+      subject: capability.title,
+      message: capability.reasons.join('; '),
+      recommendedAction: capability.recommended_action,
+    }));
 }
 
 function readOptionalJson<T>(root: string, relativePath: string): T | undefined {

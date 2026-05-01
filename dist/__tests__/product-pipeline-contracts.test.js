@@ -173,11 +173,13 @@ describe('product/agent pipeline contracts', () => {
         expect(agent).toContain('.omc/product/regression/current.json');
         expect(agent).toContain('.omc/product/capability-lifecycle/current.json');
         expect(agent).toContain('priority-ignores-regression-debt');
+        expect(agent).toContain('priority-ignores-lifecycle-remove-candidate');
         expect(skill).toContain('omc portfolio validate');
         expect(skill).toContain('omc product-totality audit');
         expect(skill).toContain('omc scenario-generator generate');
         expect(skill).toContain('omc capability-lifecycle audit');
         expect(skill).toContain('priority-ignores-regression-debt');
+        expect(skill).toContain('capability-lifecycle reports');
         expect(skill).toContain('product, UX, research, backend, quality, brand/content, and distribution');
     });
     it('does not default pre-MVP learning work to tester recruitment', () => {

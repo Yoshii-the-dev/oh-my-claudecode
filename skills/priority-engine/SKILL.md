@@ -175,7 +175,7 @@ omc portfolio validate
 omc doctor product-contracts --stage priority-handoff
 ```
 
-This gate blocks ignored product audit debt. If product-regression, scenario-coverage, or product-totality reports are non-stable/non-covered/non-balanced, the ledger or roadmap must name the debt subject and the intended repair/action.
+This gate blocks ignored product audit debt. If product-regression, scenario-coverage, product-totality, or capability-lifecycle reports are non-stable/non-covered/non-balanced/non-healthy, the ledger or roadmap must name the debt subject and the intended repair/action.
 
 For foundation work, the orchestrator should run `omc doctor product-contracts --stage foundation-lite` after ecosystem, opportunity, and roadmap artifacts exist.
 

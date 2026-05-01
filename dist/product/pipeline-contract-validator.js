@@ -6,6 +6,7 @@ import { isFeatureExpectation } from './portfolio-ledger.js';
 import { PRODUCT_REGRESSION_JSON_RELATIVE_PATH, } from './product-regression.js';
 import { PRODUCT_SCENARIO_COVERAGE_JSON_RELATIVE_PATH, } from './scenario-coverage.js';
 import { PRODUCT_TOTALITY_JSON_RELATIVE_PATH, } from './product-totality.js';
+import { PRODUCT_CAPABILITY_LIFECYCLE_JSON_RELATIVE_PATH, } from './capability-lifecycle.js';
 import { CYCLE_DOCUMENT_RELATIVE_PATH, readCycleDocument, renderCycleProjection, validateCycleDocument, } from './cycle-document.js';
 import { diagnoseRuntimeQa } from '../runtime-qa/diagnostics.js';
 export function validateProductPipelineContracts(options = {}) {
@@ -191,6 +192,7 @@ function applyPriorityAuditCarryForwardContracts(root, artifacts) {
         ...regressionFindings(root),
         ...scenarioCoverageFindings(root),
         ...totalityFindings(root),
+        ...capabilityLifecycleFindings(root),
     ];
     const missing = findings.filter((finding) => !priorityTextRepresentsFinding(priorityText, finding));
     if (findings.length === 0)
@@ -259,6 +261,25 @@ function totalityFindings(root) {
             recommendedAction: move.why,
         })),
     ];
+}
+function capabilityLifecycleFindings(root) {
+    const report = readOptionalJson(root, PRODUCT_CAPABILITY_LIFECYCLE_JSON_RELATIVE_PATH);
+    if (!report || report.status === 'empty' || report.status === 'healthy')
+        return [];
+    return report.capabilities
+        .filter((capability) => capability.stage === 'remove-candidate' || capability.stage === 'deprecated')
+        .map((capability) => ({
+        source: 'capability-lifecycle',
+        code: capability.stage === 'remove-candidate'
+            ? 'priority-ignores-lifecycle-remove-candidate'
+            : 'priority-ignores-lifecycle-deprecation',
+        severity: capability.stage === 'remove-candidate' ? 'error' : 'warning',
+        id: capability.capability_id,
+        category: capability.stage,
+        subject: capability.title,
+        message: capability.reasons.join('; '),
+        recommendedAction: capability.recommended_action,
+    }));
 }
 function readOptionalJson(root, relativePath) {
     const path = resolve(root, relativePath);

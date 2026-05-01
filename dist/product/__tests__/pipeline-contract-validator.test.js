@@ -218,6 +218,30 @@ describe('validateProductPipelineContracts', () => {
         expect(report.ok).toBe(true);
         expect(codes(report)).not.toContain('priority-ignores-totality-gap');
     });
+    it('blocks priority handoff when lifecycle remove-candidates are ignored', () => {
+        const root = createRoot();
+        writeFoundationLiteArtifacts(root);
+        writeArtifact(root, '.omc/product/capability-lifecycle/current.json', capabilityLifecycleAuditArtifact());
+        const report = validateProductPipelineContracts({ root, stage: 'priority-handoff' });
+        expect(report.ok).toBe(false);
+        expect(codes(report)).toContain('priority-ignores-lifecycle-remove-candidate');
+        expect(metric(report, 'roadmap', 'priorityAuditFindingsMissing')).toBe(1);
+    });
+    it('passes priority handoff when lifecycle remove-candidates are carried into roadmap', () => {
+        const root = createRoot();
+        writeFoundationLiteArtifacts(root, {
+            roadmap: `${roadmapArtifact()}
+
+## Carried Product Debt
+- Remove-candidate: naked row counter. Remove, merge, or redesign this capability around a real user loop before adding more surface area.
+`,
+        });
+        writeArtifact(root, '.omc/product/capability-lifecycle/current.json', capabilityLifecycleAuditArtifact());
+        const report = validateProductPipelineContracts({ root, stage: 'priority-handoff' });
+        expect(report.ok).toBe(true);
+        expect(codes(report)).not.toContain('priority-ignores-lifecycle-remove-candidate');
+        expect(metric(report, 'roadmap', 'priorityAuditFindingsCarried')).toBe(1);
+    });
     it('blocks a completed cycle that does not reference learning capture', () => {
         const root = createRoot();
         writeFoundationLiteArtifacts(root);
@@ -638,6 +662,47 @@ function productTotalityAuditArtifact() {
             }],
         recommended_moves: [],
         next_action: 'Feed recommended moves into priority-engine',
+    }, null, 2);
+}
+function capabilityLifecycleAuditArtifact() {
+    return JSON.stringify({
+        schema_version: 1,
+        generated_at: '2026-04-25T00:00:00.000Z',
+        root: '/tmp/test',
+        status: 'needs-triage',
+        source_artifacts: ['.omc/product/totality/current.json'],
+        aggregates: {
+            capability_count: 1,
+            seeded: 0,
+            proving: 0,
+            connected: 0,
+            mature: 0,
+            deprecated: 0,
+            remove_candidates: 1,
+            error_debt_capabilities: 1,
+        },
+        capabilities: [{
+                capability_id: 'naked-row-counter',
+                title: 'naked row counter',
+                source_cycle: '2026-04-25-first-loop',
+                stage: 'remove-candidate',
+                decision: 'remove-or-redesign',
+                maturity: 'seeded-v0',
+                scenario_coverage: 'missing',
+                connection_count: 0,
+                missing_depth_count: 1,
+                regression_debt_count: 1,
+                error_debt_count: 1,
+                orphan: true,
+                reasons: [
+                    'capability graph marks this as orphaned',
+                    'scenario coverage is missing',
+                    '1 regression debt item(s) apply',
+                ],
+                recommended_action: 'Remove, merge, or redesign this capability around a real user loop before adding more surface area.',
+                evidence: ['.omc/cycles/current.md'],
+            }],
+        next_action: 'Resolve remove/deprecate candidates before selecting unrelated new work',
     }, null, 2);
 }
 function codes(report) {
