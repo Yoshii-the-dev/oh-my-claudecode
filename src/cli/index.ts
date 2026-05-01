@@ -83,6 +83,7 @@ import { creativeLoopAuditCommand, creativeLoopInitCommand } from './commands/cr
 import { featureGenerationAuditCommand } from './commands/feature-generation.js';
 import { productTotalityAuditCommand } from './commands/product-totality.js';
 import { scenarioCoverageAuditCommand } from './commands/scenario-coverage.js';
+import { productRegressionAuditCommand } from './commands/product-regression.js';
 import { runScorecardCommand } from './commands/run-scorecard.js';
 import { sessionSearchCommand } from './commands/session-search.js';
 import { stateHygieneCommand } from './commands/state-hygiene.js';
@@ -1697,9 +1698,31 @@ productTotalityCmd
   .command('audit [root]')
   .description('Evaluate existing completed product work and write recommended depth moves')
   .option('--json', 'Output as JSON')
-  .option('--write', 'Write totality, capability graph, and scenario coverage current.{json,md} artifacts')
+  .option('--write', 'Write totality, capability graph, scenario coverage, and regression current.{json,md} artifacts')
   .action(async (root, options) => {
     const exitCode = await productTotalityAuditCommand(root, options);
+    process.exit(exitCode);
+  });
+
+/**
+ * Product regression command - cross-cycle regression and learning debt audit
+ */
+const productRegressionCmd = program
+  .command('product-regression')
+  .description('Audit cross-cycle regressions, uncarried learning, and completion debt')
+  .addHelpText('after', `
+Examples:
+  $ omc product-regression audit
+  $ omc product-regression audit /path/to/app --write
+  $ omc product-regression audit --json`);
+
+productRegressionCmd
+  .command('audit [root]')
+  .description('Compare completed cycles against totality, scenario coverage, and learning recommendations')
+  .option('--json', 'Output as JSON')
+  .option('--write', 'Write .omc/product/regression/current.{json,md}')
+  .action(async (root, options) => {
+    const exitCode = await productRegressionAuditCommand(root, options);
     process.exit(exitCode);
   });
 

@@ -56,6 +56,12 @@ describe('feature generation readiness', () => {
             gaps: [],
             next_action: 'feed scenario evidence into priority engine',
         }, null, 2));
+        writeArtifact(root, '.omc/product/regression/current.json', JSON.stringify({
+            status: 'stable',
+            debts: [],
+            summary: 'Regression audit confirms completed capability evidence is current enough for feature generation source scoring and downstream cycle ranking.',
+            next_action: 'continue priority engine with regression audit as a compact evidence source',
+        }, null, 2));
         const plan = planFeatureGeneration({
             root,
             goal: 'rank next cycle',
@@ -68,6 +74,7 @@ describe('feature generation readiness', () => {
         expect(written.mdPath).toContain('.omc/feature-generation/current.md');
         expect(plan.sources.find((source) => source.kind === 'capability-graph')?.status).toBe('present');
         expect(plan.sources.find((source) => source.kind === 'scenario-coverage')?.status).toBe('present');
+        expect(plan.sources.find((source) => source.kind === 'regression')?.status).toBe('present');
         expect(renderFeatureGenerationPlan(plan)).toContain('Feature Generation Readiness');
     });
 });

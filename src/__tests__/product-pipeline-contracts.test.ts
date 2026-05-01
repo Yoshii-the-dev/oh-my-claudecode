@@ -33,6 +33,7 @@ describe('product/agent pipeline contracts', () => {
       'skills/product-cycle/SKILL.md',
       'skills/product-totality/SKILL.md',
       'skills/scenario-coverage/SKILL.md',
+      'skills/product-regression/SKILL.md',
       'skills/product-strategist/SKILL.md',
       'skills/product-foundation/SKILL.md',
       'skills/pre-launch-sprint/SKILL.md',
@@ -104,6 +105,7 @@ describe('product/agent pipeline contracts', () => {
     expect(agent).toContain('.omc/product/totality/current.json');
     expect(agent).toContain('.omc/product/capability-graph/current.json');
     expect(agent).toContain('.omc/product/scenario-coverage/current.json');
+    expect(agent).toContain('.omc/product/regression/current.json');
     expect(agent).toContain('1 core product slice');
     expect(agent).toContain('1 enabling task');
     expect(agent).toContain('1 learning/research task');
@@ -116,6 +118,7 @@ describe('product/agent pipeline contracts', () => {
     expect(docs).toContain('.omc/product/totality/current.json');
     expect(docs).toContain('.omc/product/capability-graph/current.json');
     expect(docs).toContain('.omc/product/scenario-coverage/current.json');
+    expect(docs).toContain('.omc/product/regression/current.json');
   });
 
   it('defines product-totality as the aggregate post-cycle audit before the next priority pass', () => {
@@ -128,6 +131,7 @@ describe('product/agent pipeline contracts', () => {
       expect(content).toContain('.omc/product/totality/current.json');
       expect(content).toContain('.omc/product/capability-graph/current.json');
       expect(content).toContain('.omc/product/scenario-coverage/current.json');
+      expect(content).toContain('.omc/product/regression/current.json');
       expect(content).toContain('product-totality audit');
     }
 
@@ -138,9 +142,11 @@ describe('product/agent pipeline contracts', () => {
     expect(priorityEngine).toContain('recommended_moves');
     expect(priorityEngine).toContain('orphan_capabilities');
     expect(priorityEngine).toContain('scenario coverage');
+    expect(priorityEngine).toContain('regression debts');
     expect(docs).toContain('Product Totality Rules');
     expect(docs).toContain('Capability Graph Rules');
     expect(docs).toContain('Scenario Coverage Rules');
+    expect(docs).toContain('Product Regression Rules');
   });
 
   it('defines creative-loop as a divergent UI/UX gate before visual implementation', () => {
@@ -178,8 +184,11 @@ describe('product/agent pipeline contracts', () => {
     expect(agent).toContain('.omc/product/totality/current.json');
     expect(agent).toContain('.omc/product/capability-graph/current.json');
     expect(agent).toContain('.omc/product/scenario-coverage/current.json');
+    expect(agent).toContain('.omc/product/regression/current.json');
+    expect(agent).toContain('priority-ignores-regression-debt');
     expect(skill).toContain('omc portfolio validate');
     expect(skill).toContain('omc product-totality audit');
+    expect(skill).toContain('priority-ignores-regression-debt');
     expect(skill).toContain('product, UX, research, backend, quality, brand/content, and distribution');
   });
 

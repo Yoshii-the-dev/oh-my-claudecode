@@ -41,6 +41,8 @@ describe('product cycle CLI command', () => {
         expect(productTotalityCmd?.commands.map((command) => command.name())).toContain('audit');
         const scenarioCoverageCmd = buildProgram().commands.find((command) => command.name() === 'scenario-coverage');
         expect(scenarioCoverageCmd?.commands.map((command) => command.name())).toContain('audit');
+        const productRegressionCmd = buildProgram().commands.find((command) => command.name() === 'product-regression');
+        expect(productRegressionCmd?.commands.map((command) => command.name())).toContain('audit');
     });
     it('previews safe product-cycle repairs without writing projections', async () => {
         const root = mkdtempSync(join(tmpdir(), 'omc-product-cycle-repair-preview-'));

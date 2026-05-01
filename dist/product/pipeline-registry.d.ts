@@ -103,6 +103,15 @@ export declare const PRODUCT_ARTIFACT_REGISTRY: {
         readonly machineContract: "strict";
         readonly purpose: "Capability-to-user-scenario coverage audit linking completed work to runtime QA, simulator, or dogfood evidence.";
     };
+    readonly 'product-regression': {
+        readonly name: "product-regression";
+        readonly lane: "product";
+        readonly currentPath: ".omc/product/regression/current.json";
+        readonly format: "json";
+        readonly owner: "omc product-regression audit";
+        readonly machineContract: "strict";
+        readonly purpose: "Cross-cycle regression and learning debt audit comparing completed cycles against totality and scenario evidence.";
+    };
     readonly ecosystem: {
         readonly name: "ecosystem";
         readonly lane: "product";

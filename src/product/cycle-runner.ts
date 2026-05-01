@@ -39,6 +39,7 @@ import { truncateInlineLog } from '../lib/summary-policy.js';
 import { planFeatureGeneration, writeFeatureGenerationPlan } from './feature-generation.js';
 import { generateProductTotalityAudit, writeProductTotalityAudit } from './product-totality.js';
 import { generateProductScenarioCoverageAudit, writeProductScenarioCoverageAudit } from './scenario-coverage.js';
+import { generateProductRegressionAudit, writeProductRegressionAudit } from './product-regression.js';
 
 export type CycleRunnerStopReason =
   | 'complete'
@@ -200,7 +201,9 @@ export function runProductCycle(options: RunProductCycleOptions = {}): RunProduc
       if (!dryRun) {
         const totality = generateProductTotalityAudit(root);
         writeProductTotalityAudit(root, totality);
-        writeProductScenarioCoverageAudit(root, generateProductScenarioCoverageAudit({ root, totality }));
+        const scenarioCoverage = generateProductScenarioCoverageAudit({ root, totality });
+        writeProductScenarioCoverageAudit(root, scenarioCoverage);
+        writeProductRegressionAudit(root, generateProductRegressionAudit({ root, totality, scenarioCoverage }));
       }
 
       return finalize({

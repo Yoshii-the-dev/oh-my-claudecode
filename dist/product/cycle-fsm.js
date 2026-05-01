@@ -6,6 +6,7 @@ import { CYCLE_DOCUMENT_RELATIVE_PATH, CYCLE_PROJECTION_RELATIVE_PATH, readCycle
 import { PRODUCT_TOTALITY_JSON_RELATIVE_PATH, PRODUCT_TOTALITY_MD_RELATIVE_PATH, generateProductTotalityAudit, writeProductTotalityAudit, } from './product-totality.js';
 import { PRODUCT_CAPABILITY_GRAPH_JSON_RELATIVE_PATH, PRODUCT_CAPABILITY_GRAPH_MD_RELATIVE_PATH, } from './capability-graph.js';
 import { PRODUCT_SCENARIO_COVERAGE_JSON_RELATIVE_PATH, PRODUCT_SCENARIO_COVERAGE_MD_RELATIVE_PATH, generateProductScenarioCoverageAudit, writeProductScenarioCoverageAudit, } from './scenario-coverage.js';
+import { PRODUCT_REGRESSION_JSON_RELATIVE_PATH, PRODUCT_REGRESSION_MD_RELATIVE_PATH, generateProductRegressionAudit, writeProductRegressionAudit, } from './product-regression.js';
 const LEARNING_RELATIVE_PATH = '.omc/learning/current.md';
 const STAGES = ['discover', 'rank', 'select', 'spec', 'build', 'verify', 'learn', 'complete'];
 const STAGE_SET = new Set([...STAGES, 'blocked']);
@@ -167,7 +168,9 @@ export function advanceProductCycle(options) {
     if (before.stage === 'learn' && to === 'complete') {
         const totality = generateProductTotalityAudit(root);
         writeProductTotalityAudit(root, totality);
-        writeProductScenarioCoverageAudit(root, generateProductScenarioCoverageAudit({ root, totality }));
+        const scenarioCoverage = generateProductScenarioCoverageAudit({ root, totality });
+        writeProductScenarioCoverageAudit(root, scenarioCoverage);
+        writeProductRegressionAudit(root, generateProductRegressionAudit({ root, totality, scenarioCoverage }));
     }
     const after = readProductCycle(root);
     return { ok: true, from: before.stage, to, snapshot: after, issues };
@@ -365,6 +368,8 @@ function updateCycleDocumentStage(document, stage) {
                     PRODUCT_CAPABILITY_GRAPH_MD_RELATIVE_PATH,
                     PRODUCT_SCENARIO_COVERAGE_JSON_RELATIVE_PATH,
                     PRODUCT_SCENARIO_COVERAGE_MD_RELATIVE_PATH,
+                    PRODUCT_REGRESSION_JSON_RELATIVE_PATH,
+                    PRODUCT_REGRESSION_MD_RELATIVE_PATH,
                 ] : []),
             ])),
         },
@@ -420,9 +425,9 @@ function getNextAction(stage, content) {
         case 'verify':
             return 'Run tests/audits/verifier against cycle acceptance criteria';
         case 'learn':
-            return `Write ${LEARNING_RELATIVE_PATH}; completion writes ${PRODUCT_TOTALITY_JSON_RELATIVE_PATH}, ${PRODUCT_CAPABILITY_GRAPH_JSON_RELATIVE_PATH}, and ${PRODUCT_SCENARIO_COVERAGE_JSON_RELATIVE_PATH}; then run omc product-cycle advance --to complete`;
+            return `Write ${LEARNING_RELATIVE_PATH}; completion writes ${PRODUCT_TOTALITY_JSON_RELATIVE_PATH}, ${PRODUCT_CAPABILITY_GRAPH_JSON_RELATIVE_PATH}, ${PRODUCT_SCENARIO_COVERAGE_JSON_RELATIVE_PATH}, and ${PRODUCT_REGRESSION_JSON_RELATIVE_PATH}; then run omc product-cycle advance --to complete`;
         case 'complete':
-            return `Cycle complete. Review ${PRODUCT_TOTALITY_MD_RELATIVE_PATH}, ${PRODUCT_CAPABILITY_GRAPH_MD_RELATIVE_PATH}, and ${PRODUCT_SCENARIO_COVERAGE_MD_RELATIVE_PATH}, feed them into /priority-engine, then start the next cycle with omc product-cycle advance --to discover --goal "<next goal>" --force`;
+            return `Cycle complete. Review ${PRODUCT_TOTALITY_MD_RELATIVE_PATH}, ${PRODUCT_CAPABILITY_GRAPH_MD_RELATIVE_PATH}, ${PRODUCT_SCENARIO_COVERAGE_MD_RELATIVE_PATH}, and ${PRODUCT_REGRESSION_MD_RELATIVE_PATH}, feed them into /priority-engine, then start the next cycle with omc product-cycle advance --to discover --goal "<next goal>" --force`;
         case 'blocked':
             return 'Resolve blocking_issues, then advance with --force only when the blocker is explicitly cleared';
         default:

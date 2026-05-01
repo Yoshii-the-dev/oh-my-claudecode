@@ -14,6 +14,10 @@ import {
   generateProductScenarioCoverageAudit,
   writeProductScenarioCoverageAudit,
 } from '../../product/scenario-coverage.js';
+import {
+  generateProductRegressionAudit,
+  writeProductRegressionAudit,
+} from '../../product/product-regression.js';
 
 export interface ProductTotalityCommandOptions {
   json?: boolean;
@@ -37,14 +41,27 @@ export async function productTotalityAuditCommand(
   const scenarioWritten = options.write && scenarioReport
     ? writeProductScenarioCoverageAudit(root, scenarioReport)
     : undefined;
+  const regressionReport = options.write && scenarioReport
+    ? generateProductRegressionAudit({ root, totality: report, scenarioCoverage: scenarioReport })
+    : undefined;
+  const regressionWritten = options.write && regressionReport
+    ? writeProductRegressionAudit(root, regressionReport)
+    : undefined;
 
   if (options.json) {
-    logger.log(JSON.stringify({ ...report, written, scenario_coverage: scenarioReport, scenario_written: scenarioWritten }, null, 2));
+    logger.log(JSON.stringify({
+      ...report,
+      written,
+      scenario_coverage: scenarioReport,
+      scenario_written: scenarioWritten,
+      regression: regressionReport,
+      regression_written: regressionWritten,
+    }, null, 2));
   } else if (options.write) {
-    logger.log(renderProductTotalitySummary(report, written, scenarioWritten));
+    logger.log(renderProductTotalitySummary(report, written, scenarioWritten, regressionWritten));
   } else {
     logger.log(renderProductTotalityAudit(report));
-    logger.log(colors.gray('Use --write to persist totality, capability graph, and scenario coverage current.{json,md} artifacts.'));
+    logger.log(colors.gray('Use --write to persist totality, capability graph, scenario coverage, and regression current.{json,md} artifacts.'));
   }
 
   return report.gaps.some((gap) => gap.severity === 'error') ? 1 : 0;
@@ -54,6 +71,7 @@ function renderProductTotalitySummary(
   report: ProductTotalityReport,
   written: ReturnType<typeof writeProductTotalityAudit> | undefined,
   scenarioWritten: ReturnType<typeof writeProductScenarioCoverageAudit> | undefined,
+  regressionWritten: ReturnType<typeof writeProductRegressionAudit> | undefined,
 ): string {
   const rows = Object.entries(report.scores).map(([dimension, score]) => ({
     dimension,
@@ -68,6 +86,7 @@ function renderProductTotalitySummary(
     `capabilities: ${report.aggregates.seeded_capabilities}, completed cycles: ${report.aggregates.completed_cycles}, gaps: ${report.gaps.length}, orphans: ${report.capability_graph.aggregates.orphan_count}`,
     written ? `artifacts: ${written.jsonPath}, ${written.mdPath}, ${written.capabilityGraphJsonPath}, ${written.capabilityGraphMdPath}` : undefined,
     scenarioWritten ? `scenario_coverage: ${scenarioWritten.jsonPath}, ${scenarioWritten.mdPath}` : undefined,
+    regressionWritten ? `regression: ${regressionWritten.jsonPath}, ${regressionWritten.mdPath}` : undefined,
     '',
     renderTable(rows, [
       { header: 'dimension', field: 'dimension', width: 18 },

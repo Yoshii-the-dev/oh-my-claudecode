@@ -105,6 +105,15 @@ export const PRODUCT_ARTIFACT_REGISTRY = {
         machineContract: 'strict',
         purpose: 'Capability-to-user-scenario coverage audit linking completed work to runtime QA, simulator, or dogfood evidence.',
     },
+    'product-regression': {
+        name: 'product-regression',
+        lane: 'product',
+        currentPath: '.omc/product/regression/current.json',
+        format: 'json',
+        owner: 'omc product-regression audit',
+        machineContract: 'strict',
+        purpose: 'Cross-cycle regression and learning debt audit comparing completed cycles against totality and scenario evidence.',
+    },
     ecosystem: {
         name: 'ecosystem',
         lane: 'product',

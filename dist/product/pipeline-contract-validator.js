@@ -3,6 +3,9 @@ import { resolve } from 'path';
 import { PRODUCT_ARTIFACT_PATHS, } from './pipeline-registry.js';
 import { validateAgentOutput } from './agent-output.js';
 import { isFeatureExpectation } from './portfolio-ledger.js';
+import { PRODUCT_REGRESSION_JSON_RELATIVE_PATH, } from './product-regression.js';
+import { PRODUCT_SCENARIO_COVERAGE_JSON_RELATIVE_PATH, } from './scenario-coverage.js';
+import { PRODUCT_TOTALITY_JSON_RELATIVE_PATH, } from './product-totality.js';
 import { CYCLE_DOCUMENT_RELATIVE_PATH, readCycleDocument, renderCycleProjection, validateCycleDocument, } from './cycle-document.js';
 import { diagnoseRuntimeQa } from '../runtime-qa/diagnostics.js';
 export function validateProductPipelineContracts(options = {}) {
@@ -140,6 +143,9 @@ function validateArtifact(root, contract) {
     return result;
 }
 function applyCrossArtifactContracts(root, stage, artifacts) {
+    if (stage === 'priority-handoff' || stage === 'all') {
+        applyPriorityAuditCarryForwardContracts(root, artifacts);
+    }
     if (stage !== 'cycle' && stage !== 'all')
         return;
     const cycleContent = readCycleContractContent(root);
@@ -172,6 +178,111 @@ function applyCrossArtifactContracts(root, stage, artifacts) {
     if (researchDebt && roadmap && !/\b(research debt|learning gate|research gate|learning\/research task)\b/i.test(roadmapContent)) {
         addIssue(roadmap, 'error', 'research-debt-missing-from-roadmap', 'Weak evidence in selected work must be carried as research debt in the rolling roadmap');
     }
+}
+function applyPriorityAuditCarryForwardContracts(root, artifacts) {
+    const portfolio = artifacts.find((artifact) => artifact.artifact === 'portfolio-ledger');
+    const roadmap = artifacts.find((artifact) => artifact.artifact === 'roadmap');
+    if (!portfolio || !roadmap || !portfolio.exists || !roadmap.exists)
+        return;
+    const portfolioContent = safeRead(portfolio.path);
+    const roadmapContent = safeRead(roadmap.path);
+    const priorityText = `${portfolioContent}\n${roadmapContent}`;
+    const findings = [
+        ...regressionFindings(root),
+        ...scenarioCoverageFindings(root),
+        ...totalityFindings(root),
+    ];
+    const missing = findings.filter((finding) => !priorityTextRepresentsFinding(priorityText, finding));
+    if (findings.length === 0)
+        return;
+    portfolio.metrics.priorityAuditFindings = findings.length;
+    roadmap.metrics.priorityAuditFindings = findings.length;
+    portfolio.metrics.priorityAuditFindingsCarried = findings.length - missing.length;
+    roadmap.metrics.priorityAuditFindingsCarried = findings.length - missing.length;
+    portfolio.metrics.priorityAuditFindingsMissing = missing.length;
+    roadmap.metrics.priorityAuditFindingsMissing = missing.length;
+    for (const finding of missing) {
+        addIssue(roadmap, finding.severity, finding.code, `${finding.source} finding "${finding.subject}" must be carried into portfolio or roadmap: ${finding.recommendedAction}`);
+    }
+}
+function regressionFindings(root) {
+    const report = readOptionalJson(root, PRODUCT_REGRESSION_JSON_RELATIVE_PATH);
+    if (!report || report.status === 'empty' || report.status === 'stable')
+        return [];
+    return report.debts.map((debt) => ({
+        source: 'product-regression',
+        code: 'priority-ignores-regression-debt',
+        severity: debt.severity,
+        id: debt.id,
+        category: debt.category,
+        subject: debt.subject,
+        message: debt.message,
+        recommendedAction: debt.recommended_action,
+    }));
+}
+function scenarioCoverageFindings(root) {
+    const report = readOptionalJson(root, PRODUCT_SCENARIO_COVERAGE_JSON_RELATIVE_PATH);
+    if (!report || report.status === 'empty' || report.status === 'covered')
+        return [];
+    return report.gaps.map((gap) => ({
+        source: 'scenario-coverage',
+        code: 'priority-ignores-scenario-gap',
+        severity: gap.severity,
+        category: gap.code,
+        subject: gap.subject,
+        message: gap.message,
+        recommendedAction: gap.recommended_action,
+    }));
+}
+function totalityFindings(root) {
+    const report = readOptionalJson(root, PRODUCT_TOTALITY_JSON_RELATIVE_PATH);
+    if (!report || report.status === 'empty' || report.status === 'balanced')
+        return [];
+    return [
+        ...report.gaps.map((gap) => ({
+            source: 'product-totality',
+            code: 'priority-ignores-totality-gap',
+            severity: gap.severity,
+            category: gap.code,
+            subject: gap.subject,
+            message: gap.message,
+            recommendedAction: gap.recommended_action,
+        })),
+        ...report.recommended_moves.map((move) => ({
+            source: 'product-totality',
+            code: 'priority-ignores-totality-move',
+            severity: 'warning',
+            id: move.id,
+            category: move.lane,
+            subject: move.title,
+            message: move.why,
+            recommendedAction: move.why,
+        })),
+    ];
+}
+function readOptionalJson(root, relativePath) {
+    const path = resolve(root, relativePath);
+    if (!existsSync(path))
+        return undefined;
+    try {
+        return JSON.parse(readFileSync(path, 'utf-8'));
+    }
+    catch {
+        return undefined;
+    }
+}
+function priorityTextRepresentsFinding(content, finding) {
+    const normalized = normalizeForMatching(content);
+    if (finding.id && normalized.includes(normalizeForMatching(finding.id)))
+        return true;
+    const subjectMentioned = fuzzyMentionsPriorityText(normalized, finding.subject);
+    const actionMentioned = fuzzyMentionsPriorityText(normalized, finding.recommendedAction);
+    const messageMentioned = fuzzyMentionsPriorityText(normalized, finding.message);
+    const categoryMentioned = finding.category
+        ? normalized.includes(normalizeForMatching(finding.category))
+            || normalized.includes(normalizeForMatching(finding.category.replace(/-/g, ' ')))
+        : false;
+    return subjectMentioned && (actionMentioned || messageMentioned || categoryMentioned);
 }
 function applyRuntimeQaContracts(root, cycleContent, artifacts) {
     if (!needsRuntimeQaContract(root, cycleContent))
@@ -621,6 +732,46 @@ function containsAny(content, terms) {
 function containsAll(content, terms) {
     return terms.every((term) => containsTerm(content, term));
 }
+function fuzzyMentionsPriorityText(normalizedContent, value) {
+    const tokens = priorityKeywords(value);
+    if (tokens.length === 0)
+        return true;
+    const hits = tokens.filter((token) => normalizedContent.includes(token));
+    return hits.length >= Math.min(2, tokens.length);
+}
+function priorityKeywords(value) {
+    return Array.from(new Set(normalizeForMatching(value)
+        .split(/\s+/)
+        .filter((token) => token.length > 3 && !PRIORITY_MATCH_STOP_WORDS.has(token))))
+        .slice(0, 12);
+}
+function normalizeForMatching(value) {
+    return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+const PRIORITY_MATCH_STOP_WORDS = new Set([
+    'with',
+    'from',
+    'that',
+    'this',
+    'into',
+    'user',
+    'users',
+    'cycle',
+    'feature',
+    'capability',
+    'product',
+    'first',
+    'loop',
+    'able',
+    'without',
+    'current',
+    'state',
+    'next',
+    'must',
+    'should',
+    'before',
+    'after',
+]);
 function hasUncheckedChecklistItem(content) {
     return /^\s*[-*]\s+\[\s\]\s+/m.test(content);
 }

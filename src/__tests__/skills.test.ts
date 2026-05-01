@@ -147,6 +147,7 @@ describe('Builtin Skills', () => {
         'priority-engine',
         'product-foundation',
         'product-pipeline',
+        'product-regression',
         'product-strategist',
         'autopilot',
         'cancel',
