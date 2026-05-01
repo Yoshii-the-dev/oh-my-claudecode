@@ -145,7 +145,7 @@ describe('isBedrock()', () => {
         expect(isBedrock()).toBe(true);
     });
     it('detects eu.anthropic.claude model ID pattern', () => {
-        process.env.CLAUDE_MODEL = 'eu.anthropic.claude-opus-4-6-v1:0';
+        process.env.CLAUDE_MODEL = 'eu.anthropic.claude-opus-4-5-20251101-v1:0';
         expect(isBedrock()).toBe(true);
     });
     it('detects ap.anthropic.claude model ID pattern', () => {
@@ -161,7 +161,7 @@ describe('isBedrock()', () => {
         expect(isBedrock()).toBe(false);
     });
     it('detects Bedrock model ID with extended output tokens suffix', () => {
-        process.env.ANTHROPIC_MODEL = 'us.anthropic.claude-opus-4-6-v1[1m]';
+        process.env.ANTHROPIC_MODEL = 'us.anthropic.claude-opus-4-5-20251101-v1[1m]';
         expect(isBedrock()).toBe(true);
     });
 });

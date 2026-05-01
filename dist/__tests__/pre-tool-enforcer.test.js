@@ -427,7 +427,7 @@ describe('pre-tool-enforcer fallback gating (issue #970)', () => {
         }, {
             OMC_ROUTING_FORCE_INHERIT: 'true',
             OMC_SUBAGENT_MODEL: '',
-            ANTHROPIC_DEFAULT_OPUS_MODEL: 'global.anthropic.claude-opus-4-6-v1',
+            ANTHROPIC_DEFAULT_OPUS_MODEL: 'global.anthropic.claude-opus-4-5-20251101-v1',
         });
         expect(output.continue).toBe(true);
         expect(JSON.stringify(output)).not.toContain('MODEL ROUTING');
@@ -549,7 +549,7 @@ describe('pre-tool-enforcer fallback gating (issue #970)', () => {
         const pluginRoot = join(tempDir, 'bare-model-default-env');
         const agentsDir = join(pluginRoot, 'agents');
         mkdirSync(agentsDir, { recursive: true });
-        writeFileSync(join(agentsDir, 'critic.md'), '---\nname: critic\nmodel: claude-opus-4-6\n---\nPlugin critic body.');
+        writeFileSync(join(agentsDir, 'critic.md'), '---\nname: critic\nmodel: claude-opus-4-5-20251101\n---\nPlugin critic body.');
         const output = runPreToolEnforcerWithEnv({
             tool_name: 'Agent',
             toolInput: {
@@ -562,14 +562,14 @@ describe('pre-tool-enforcer fallback gating (issue #970)', () => {
         }, {
             OMC_ROUTING_FORCE_INHERIT: 'true',
             OMC_SUBAGENT_MODEL: '',
-            ANTHROPIC_DEFAULT_OPUS_MODEL: 'global.anthropic.claude-opus-4-6-v1',
+            ANTHROPIC_DEFAULT_OPUS_MODEL: 'global.anthropic.claude-opus-4-5-20251101-v1',
             CLAUDE_PLUGIN_ROOT: pluginRoot,
         });
         const hookOutput = output.hookSpecificOutput;
         expect(output.continue).toBe(true);
         expect(hookOutput.permissionDecision).toBe('deny');
         expect(hookOutput.permissionDecisionReason).toContain('[MODEL ROUTING]');
-        expect(hookOutput.permissionDecisionReason).toContain('claude-opus-4-6');
+        expect(hookOutput.permissionDecisionReason).toContain('claude-opus-4-5-20251101');
     });
     it('blocks tier alias when OMC_SUBAGENT_MODEL is itself a bare Anthropic model ID', () => {
         const output = runPreToolEnforcerWithEnv({
@@ -615,7 +615,7 @@ describe('pre-tool-enforcer fallback gating (issue #970)', () => {
         const pluginRoot = join(tempDir, 'bare-model-plugin-agent');
         const agentsDir = join(pluginRoot, 'agents');
         mkdirSync(agentsDir, { recursive: true });
-        writeFileSync(join(agentsDir, 'critic.md'), '---\nname: critic\nmodel: claude-opus-4-6\n---\nPlugin critic body.');
+        writeFileSync(join(agentsDir, 'critic.md'), '---\nname: critic\nmodel: claude-opus-4-5-20251101\n---\nPlugin critic body.');
         const output = runPreToolEnforcerWithEnv({
             tool_name: 'Agent',
             toolInput: {
@@ -634,7 +634,7 @@ describe('pre-tool-enforcer fallback gating (issue #970)', () => {
         expect(output.continue).toBe(true);
         expect(hookOutput.permissionDecision).toBe('deny');
         expect(hookOutput.permissionDecisionReason).toContain('[MODEL ROUTING]');
-        expect(hookOutput.permissionDecisionReason).toContain('claude-opus-4-6');
+        expect(hookOutput.permissionDecisionReason).toContain('claude-opus-4-5-20251101');
     });
     it('denies Task call when a discovered plugin agent definition has a bare Anthropic model ID', () => {
         const pluginRoot = join(tempDir, 'bare-model-plugin-task');
@@ -664,7 +664,7 @@ describe('pre-tool-enforcer fallback gating (issue #970)', () => {
         const pluginRoot = join(tempDir, 'bare-model-plugin-message');
         const agentsDir = join(pluginRoot, 'agents');
         mkdirSync(agentsDir, { recursive: true });
-        writeFileSync(join(agentsDir, 'critic.md'), '---\nname: critic\nmodel: claude-opus-4-6\n---\nPlugin critic body.');
+        writeFileSync(join(agentsDir, 'critic.md'), '---\nname: critic\nmodel: claude-opus-4-5-20251101\n---\nPlugin critic body.');
         const output = runPreToolEnforcerWithEnv({
             tool_name: 'Agent',
             toolInput: {
@@ -680,7 +680,7 @@ describe('pre-tool-enforcer fallback gating (issue #970)', () => {
             CLAUDE_PLUGIN_ROOT: pluginRoot,
         });
         const reason = output.hookSpecificOutput.permissionDecisionReason;
-        expect(reason).toContain('claude-opus-4-6');
+        expect(reason).toContain('claude-opus-4-5-20251101');
         expect(reason).toContain('opus'); // tier alias suggestion
         expect(reason).toContain('global.anthropic.claude-sonnet-4-6'); // resolved safe model in guidance
     });
@@ -836,7 +836,7 @@ describe('pre-tool-enforcer fallback gating (issue #970)', () => {
         const pluginRoot = join(tempDir, 'fake-plugin-body-hr');
         const agentsDir = join(pluginRoot, 'agents');
         mkdirSync(agentsDir, { recursive: true });
-        writeFileSync(join(agentsDir, 'body-hr-agent.md'), 'Some introductory text.\n\n---\nmodel: claude-opus-4-6\n---\n\nMore body text.');
+        writeFileSync(join(agentsDir, 'body-hr-agent.md'), 'Some introductory text.\n\n---\nmodel: claude-opus-4-5-20251101\n---\n\nMore body text.');
         const output = runPreToolEnforcerWithEnv({
             tool_name: 'Agent',
             toolInput: {
@@ -856,11 +856,11 @@ describe('pre-tool-enforcer fallback gating (issue #970)', () => {
         expect(JSON.stringify(output)).not.toContain('MODEL ROUTING');
     });
     it('does not deny when model: appears only in the agent body (not frontmatter)', () => {
-        // Frontmatter has no model key; body text contains "model: claude-opus-4-6"
+        // Frontmatter has no model key; body text contains "model: claude-opus-4-5-20251101"
         const pluginRoot = join(tempDir, 'fake-plugin-body');
         const agentsDir = join(pluginRoot, 'agents');
         mkdirSync(agentsDir, { recursive: true });
-        writeFileSync(join(agentsDir, 'body-model-agent.md'), '---\nname: body-model-agent\n---\nThis agent can spawn sub-agents.\nmodel: claude-opus-4-6 is sometimes used in the body text.');
+        writeFileSync(join(agentsDir, 'body-model-agent.md'), '---\nname: body-model-agent\n---\nThis agent can spawn sub-agents.\nmodel: claude-opus-4-5-20251101 is sometimes used in the body text.');
         const output = runPreToolEnforcerWithEnv({
             tool_name: 'Agent',
             toolInput: {
@@ -884,7 +884,7 @@ describe('pre-tool-enforcer fallback gating (issue #970)', () => {
         const pluginRoot = join(tempDir, 'fake-plugin');
         const agentsDir = join(pluginRoot, 'agents');
         mkdirSync(agentsDir, { recursive: true });
-        writeFileSync(join(agentsDir, 'quoted-model-agent.md'), '---\nname: quoted-model-agent\nmodel: "claude-opus-4-6"\n---\nAgent body.');
+        writeFileSync(join(agentsDir, 'quoted-model-agent.md'), '---\nname: quoted-model-agent\nmodel: "claude-opus-4-5-20251101"\n---\nAgent body.');
         const output = runPreToolEnforcerWithEnv({
             tool_name: 'Agent',
             toolInput: {
@@ -899,12 +899,12 @@ describe('pre-tool-enforcer fallback gating (issue #970)', () => {
             OMC_SUBAGENT_MODEL: 'global.anthropic.claude-sonnet-4-6',
             CLAUDE_PLUGIN_ROOT: pluginRoot,
         });
-        // Quoted model "claude-opus-4-6" must be stripped of quotes before the safety check
+        // Quoted model "claude-opus-4-5-20251101" must be stripped of quotes before the safety check
         const hookOutput = output.hookSpecificOutput;
         expect(output.continue).toBe(true);
         expect(hookOutput.permissionDecision).toBe('deny');
         expect(hookOutput.permissionDecisionReason).toContain('[MODEL ROUTING]');
-        expect(hookOutput.permissionDecisionReason).toContain('claude-opus-4-6');
+        expect(hookOutput.permissionDecisionReason).toContain('claude-opus-4-5-20251101');
     });
     it('allows a valid provider-specific model ID written with YAML quotes', () => {
         // Same setup but model is a valid Bedrock ID — should NOT be denied
@@ -934,7 +934,7 @@ describe('pre-tool-enforcer fallback gating (issue #970)', () => {
         const agentsDir = join(pluginRoot, 'agents');
         mkdirSync(agentsDir, { recursive: true });
         // Write agent file with BOM prefix (\uFEFF)
-        writeFileSync(join(agentsDir, 'bom-agent.md'), '\uFEFF---\nname: bom-agent\nmodel: claude-opus-4-6\n---\nAgent body with BOM.');
+        writeFileSync(join(agentsDir, 'bom-agent.md'), '\uFEFF---\nname: bom-agent\nmodel: claude-opus-4-5-20251101\n---\nAgent body with BOM.');
         const output = runPreToolEnforcerWithEnv({
             tool_name: 'Agent',
             toolInput: {

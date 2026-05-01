@@ -169,9 +169,9 @@ describe('model-contract', () => {
             expect(args).not.toContain('claude-sonnet-4-6');
         });
         it('passes Bedrock model ID through without normalization for claude agent (issue #1695)', () => {
-            const args = buildLaunchArgs('claude', { teamName: 't', workerName: 'w', cwd: '/tmp', model: 'us.anthropic.claude-opus-4-6-v1:0' });
+            const args = buildLaunchArgs('claude', { teamName: 't', workerName: 'w', cwd: '/tmp', model: 'us.anthropic.claude-opus-4-5-20251101-v1:0' });
             expect(args).toContain('--model');
-            expect(args).toContain('us.anthropic.claude-opus-4-6-v1:0');
+            expect(args).toContain('us.anthropic.claude-opus-4-5-20251101-v1:0');
             expect(args).not.toContain('opus');
         });
         it('passes Bedrock ARN model ID through without normalization (issue #1695)', () => {
@@ -204,13 +204,13 @@ describe('model-contract', () => {
                 CLAUDE_MODEL: 'claude-sonnet-4-5',
                 ANTHROPIC_BASE_URL: 'https://example-gateway.invalid',
                 CLAUDE_CODE_USE_BEDROCK: '1',
-                CLAUDE_CODE_BEDROCK_OPUS_MODEL: 'us.anthropic.claude-opus-4-6-v1:0',
+                CLAUDE_CODE_BEDROCK_OPUS_MODEL: 'us.anthropic.claude-opus-4-5-20251101-v1:0',
                 CLAUDE_CODE_BEDROCK_SONNET_MODEL: 'us.anthropic.claude-sonnet-4-6-v1:0',
                 CLAUDE_CODE_BEDROCK_HAIKU_MODEL: 'us.anthropic.claude-haiku-4-5-v1:0',
-                ANTHROPIC_DEFAULT_OPUS_MODEL: 'claude-opus-4-6-custom',
+                ANTHROPIC_DEFAULT_OPUS_MODEL: 'claude-opus-4-5-20251101-custom',
                 ANTHROPIC_DEFAULT_SONNET_MODEL: 'claude-sonnet-4-6-custom',
                 ANTHROPIC_DEFAULT_HAIKU_MODEL: 'claude-haiku-4-5-custom',
-                OMC_MODEL_HIGH: 'claude-opus-4-6-override',
+                OMC_MODEL_HIGH: 'claude-opus-4-5-20251101-override',
                 OMC_MODEL_MEDIUM: 'claude-sonnet-4-6-override',
                 OMC_MODEL_LOW: 'claude-haiku-4-5-override',
                 OMC_EXTERNAL_MODELS_DEFAULT_CODEX_MODEL: 'gpt-5',
@@ -221,13 +221,13 @@ describe('model-contract', () => {
             expect(env.CLAUDE_MODEL).toBe('claude-sonnet-4-5');
             expect(env.ANTHROPIC_BASE_URL).toBe('https://example-gateway.invalid');
             expect(env.CLAUDE_CODE_USE_BEDROCK).toBe('1');
-            expect(env.CLAUDE_CODE_BEDROCK_OPUS_MODEL).toBe('us.anthropic.claude-opus-4-6-v1:0');
+            expect(env.CLAUDE_CODE_BEDROCK_OPUS_MODEL).toBe('us.anthropic.claude-opus-4-5-20251101-v1:0');
             expect(env.CLAUDE_CODE_BEDROCK_SONNET_MODEL).toBe('us.anthropic.claude-sonnet-4-6-v1:0');
             expect(env.CLAUDE_CODE_BEDROCK_HAIKU_MODEL).toBe('us.anthropic.claude-haiku-4-5-v1:0');
-            expect(env.ANTHROPIC_DEFAULT_OPUS_MODEL).toBe('claude-opus-4-6-custom');
+            expect(env.ANTHROPIC_DEFAULT_OPUS_MODEL).toBe('claude-opus-4-5-20251101-custom');
             expect(env.ANTHROPIC_DEFAULT_SONNET_MODEL).toBe('claude-sonnet-4-6-custom');
             expect(env.ANTHROPIC_DEFAULT_HAIKU_MODEL).toBe('claude-haiku-4-5-custom');
-            expect(env.OMC_MODEL_HIGH).toBe('claude-opus-4-6-override');
+            expect(env.OMC_MODEL_HIGH).toBe('claude-opus-4-5-20251101-override');
             expect(env.OMC_MODEL_MEDIUM).toBe('claude-sonnet-4-6-override');
             expect(env.OMC_MODEL_LOW).toBe('claude-haiku-4-5-override');
             expect(env.OMC_EXTERNAL_MODELS_DEFAULT_CODEX_MODEL).toBe('gpt-5');
@@ -345,7 +345,7 @@ describe('model-contract', () => {
             vi.stubEnv('OMC_ROUTING_FORCE_INHERIT', 'true');
             vi.stubEnv('CLAUDE_CODE_USE_BEDROCK', '1');
             vi.stubEnv('ANTHROPIC_MODEL', 'us.anthropic.claude-sonnet-4-5-20250929-v1:0');
-            vi.stubEnv('CLAUDE_MODEL', 'us.anthropic.claude-opus-4-6-v1:0');
+            vi.stubEnv('CLAUDE_MODEL', 'us.anthropic.claude-opus-4-5-20251101-v1:0');
             vi.stubEnv('CLAUDE_CODE_BEDROCK_SONNET_MODEL', 'us.anthropic.claude-sonnet-4-6-v1:0');
             vi.stubEnv('OMC_MODEL_MEDIUM', 'us.anthropic.claude-sonnet-4-5-20250929-v1:0');
             expect(resolveClaudeWorkerModel()).toBeUndefined();
@@ -377,8 +377,8 @@ describe('model-contract', () => {
         it('returns CLAUDE_MODEL on Bedrock when ANTHROPIC_MODEL is not set', () => {
             vi.stubEnv('CLAUDE_CODE_USE_BEDROCK', '1');
             vi.stubEnv('ANTHROPIC_MODEL', '');
-            vi.stubEnv('CLAUDE_MODEL', 'us.anthropic.claude-opus-4-6-v1:0');
-            expect(resolveClaudeWorkerModel()).toBe('us.anthropic.claude-opus-4-6-v1:0');
+            vi.stubEnv('CLAUDE_MODEL', 'us.anthropic.claude-opus-4-5-20251101-v1:0');
+            expect(resolveClaudeWorkerModel()).toBe('us.anthropic.claude-opus-4-5-20251101-v1:0');
             vi.unstubAllEnvs();
         });
         it('falls back to CLAUDE_CODE_BEDROCK_SONNET_MODEL tier env var', () => {

@@ -56,14 +56,14 @@ describe("loadConfig() — auto-forceInherit for non-standard providers", () => 
   });
 
   it("auto-enables forceInherit for us. Bedrock region prefix", () => {
-    process.env.ANTHROPIC_MODEL = "us.anthropic.claude-opus-4-6-v1";
+    process.env.ANTHROPIC_MODEL = "us.anthropic.claude-opus-4-5-20251101-v1";
     const config = loadConfig();
     expect(config.routing?.forceInherit).toBe(true);
   });
 
   it("auto-enables forceInherit for Bedrock inference-profile ARN model IDs", () => {
     process.env.ANTHROPIC_MODEL =
-      "arn:aws:bedrock:us-east-2:123456789012:inference-profile/global.anthropic.claude-opus-4-6-v1:0";
+      "arn:aws:bedrock:us-east-2:123456789012:inference-profile/global.anthropic.claude-opus-4-5-20251101-v1:0";
     const config = loadConfig();
     expect(config.routing?.forceInherit).toBe(true);
   });
@@ -97,7 +97,7 @@ describe("loadConfig() — auto-forceInherit for non-standard providers", () => 
 
   it("maps Bedrock family env vars into agent defaults and routing tiers", () => {
     process.env.CLAUDE_CODE_BEDROCK_OPUS_MODEL =
-      "us.anthropic.claude-opus-4-6-v1:0";
+      "us.anthropic.claude-opus-4-5-20251101-v1:0";
     process.env.CLAUDE_CODE_BEDROCK_SONNET_MODEL =
       "us.anthropic.claude-sonnet-4-6-v1:0";
     process.env.CLAUDE_CODE_BEDROCK_HAIKU_MODEL =
@@ -106,7 +106,7 @@ describe("loadConfig() — auto-forceInherit for non-standard providers", () => 
     const config = loadConfig();
 
     expect(config.agents?.architect?.model).toBe(
-      "us.anthropic.claude-opus-4-6-v1:0",
+      "us.anthropic.claude-opus-4-5-20251101-v1:0",
     );
     expect(config.agents?.executor?.model).toBe(
       "us.anthropic.claude-sonnet-4-6-v1:0",
@@ -115,7 +115,7 @@ describe("loadConfig() — auto-forceInherit for non-standard providers", () => 
       "us.anthropic.claude-haiku-4-5-v1:0",
     );
     expect(config.routing?.tierModels?.HIGH).toBe(
-      "us.anthropic.claude-opus-4-6-v1:0",
+      "us.anthropic.claude-opus-4-5-20251101-v1:0",
     );
     expect(config.routing?.tierModels?.MEDIUM).toBe(
       "us.anthropic.claude-sonnet-4-6-v1:0",
@@ -126,13 +126,13 @@ describe("loadConfig() — auto-forceInherit for non-standard providers", () => 
   });
 
   it("supports Anthropic family-default env vars for tiered routing defaults", () => {
-    process.env.ANTHROPIC_DEFAULT_OPUS_MODEL = "claude-opus-4-6-custom";
+    process.env.ANTHROPIC_DEFAULT_OPUS_MODEL = "claude-opus-4-5-20251101-custom";
     process.env.ANTHROPIC_DEFAULT_SONNET_MODEL = "claude-sonnet-4-6-custom";
     process.env.ANTHROPIC_DEFAULT_HAIKU_MODEL = "claude-haiku-4-5-custom";
 
     const config = loadConfig();
 
-    expect(config.agents?.architect?.model).toBe("claude-opus-4-6-custom");
+    expect(config.agents?.architect?.model).toBe("claude-opus-4-5-20251101-custom");
     expect(config.agents?.executor?.model).toBe("claude-sonnet-4-6-custom");
     expect(config.agents?.explore?.model).toBe("claude-haiku-4-5-custom");
   });

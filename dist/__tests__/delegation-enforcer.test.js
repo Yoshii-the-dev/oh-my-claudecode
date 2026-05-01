@@ -311,7 +311,7 @@ describe('delegation-enforcer', () => {
             expect(result.modifiedInput.model).toBe('sonnet');
         });
         it('getModelForAgent returns normalized CC aliases even with Bedrock env vars', () => {
-            process.env.CLAUDE_CODE_BEDROCK_OPUS_MODEL = 'us.anthropic.claude-opus-4-6-v1:0';
+            process.env.CLAUDE_CODE_BEDROCK_OPUS_MODEL = 'us.anthropic.claude-opus-4-5-20251101-v1:0';
             expect(getModelForAgent('architect')).toBe('opus');
         });
     });
@@ -435,7 +435,7 @@ describe('delegation-enforcer', () => {
             }
         });
         it('strips model when Bedrock ARN auto-enables forceInherit', () => {
-            process.env.ANTHROPIC_MODEL = 'arn:aws:bedrock:us-east-2:123456789012:inference-profile/global.anthropic.claude-opus-4-6-v1:0';
+            process.env.ANTHROPIC_MODEL = 'arn:aws:bedrock:us-east-2:123456789012:inference-profile/global.anthropic.claude-opus-4-5-20251101-v1:0';
             const input = {
                 description: 'Test task',
                 prompt: 'Do something',

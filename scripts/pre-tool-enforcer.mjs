@@ -72,7 +72,7 @@ function normalizeToCcAlias(model) {
 }
 /**
  * Read the `model:` field from an OMC agent definition's YAML frontmatter.
- * Returns the raw model string (e.g. "claude-opus-4-6") or null if not found.
+ * Returns the raw model string (e.g. "claude-opus-4-5-20251101") or null if not found.
  */
 function readAgentDefinitionModel(subagentType) {
   // Guard: subagent_type must be a string — non-string payloads would throw on .replace()

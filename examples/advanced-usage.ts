@@ -115,7 +115,7 @@ Always:
 `,
     config: {
       agents: {
-        omc: { model: 'claude-opus-4-6-20260205' }
+        omc: { model: 'claude-opus-4-5-20251101' }
       },
       features: {
         parallelExecution: true,
