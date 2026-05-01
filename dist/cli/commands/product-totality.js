@@ -70,7 +70,7 @@ function renderProductTotalitySummary(report, written, scenarioPlanWritten, scen
         scenarioPlanWritten ? `scenario_plan: ${scenarioPlanWritten.jsonPath}, ${scenarioPlanWritten.mdPath}` : undefined,
         scenarioWritten ? `scenario_coverage: ${scenarioWritten.jsonPath}, ${scenarioWritten.mdPath}` : undefined,
         regressionWritten ? `regression: ${regressionWritten.jsonPath}, ${regressionWritten.mdPath}` : undefined,
-        lifecycleWritten ? `capability_lifecycle: ${lifecycleWritten.jsonPath}, ${lifecycleWritten.mdPath}` : undefined,
+        lifecycleWritten ? `capability_lifecycle: ${lifecycleWritten.jsonPath}, ${lifecycleWritten.mdPath}, ${lifecycleWritten.historyJsonPath}, ${lifecycleWritten.historyMdPath}` : undefined,
         '',
         renderTable(rows, [
             { header: 'dimension', field: 'dimension', width: 18 },

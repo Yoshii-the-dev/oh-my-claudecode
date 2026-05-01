@@ -165,8 +165,8 @@ It must:
 - run `/product-experience-gate` for user-facing work and require `.omc/experience/current.md` before build.
 - run `omc doctor product-contracts --stage cycle` before build.
 - write `.omc/learning/current.md` before marking the cycle complete.
-- write `.omc/product/totality/current.json`, `.omc/product/totality/current.md`, `.omc/product/capability-graph/current.json`, `.omc/product/capability-graph/current.md`, `.omc/product/scenarios/current.json`, `.omc/product/scenarios/current.md`, `.omc/product/scenario-coverage/current.json`, `.omc/product/scenario-coverage/current.md`, `.omc/product/regression/current.json`, `.omc/product/regression/current.md`, `.omc/product/capability-lifecycle/current.json`, and `.omc/product/capability-lifecycle/current.md` when advancing `learn -> complete`.
-- read the latest totality audit, capability graph, generated scenarios, scenario coverage, regression audit, and lifecycle audit before the next `/priority-engine` ranking pass.
+- write `.omc/product/totality/current.json`, `.omc/product/totality/current.md`, `.omc/product/capability-graph/current.json`, `.omc/product/capability-graph/current.md`, `.omc/product/scenarios/current.json`, `.omc/product/scenarios/current.md`, `.omc/product/scenario-coverage/current.json`, `.omc/product/scenario-coverage/current.md`, `.omc/product/regression/current.json`, `.omc/product/regression/current.md`, `.omc/product/capability-lifecycle/current.json`, `.omc/product/capability-lifecycle/current.md`, `.omc/product/capability-lifecycle/history.json`, and `.omc/product/capability-lifecycle/history.md` when advancing `learn -> complete`.
+- read the latest totality audit, capability graph, generated scenarios, scenario coverage, regression audit, lifecycle audit, and lifecycle transition history before the next `/priority-engine` ranking pass.
 
 It must not:
 
@@ -194,6 +194,8 @@ It reads completed cycles, learning, portfolio, roadmap, ecosystem, meaning, exp
 - `.omc/product/regression/current.md`
 - `.omc/product/capability-lifecycle/current.json`
 - `.omc/product/capability-lifecycle/current.md`
+- `.omc/product/capability-lifecycle/history.json`
+- `.omc/product/capability-lifecycle/history.md`
 
 It scores:
 
@@ -273,7 +275,9 @@ Lifecycle stages:
 - `deprecated`: roadmap or portfolio explicitly marks the capability as sunset.
 - `remove-candidate`: isolated, unproven, or debt-heavy work should be removed, merged, or redesigned before adding surface area around it.
 
-If `.omc/product/capability-lifecycle/current.json` contains `remove-candidate`, the next `/priority-engine` pass must select removal/merge/redesign work or carry it as explicit roadmap debt. The priority handoff validator enforces this with `priority-ignores-lifecycle-remove-candidate`; deprecated capabilities are enforced as warning debt with `priority-ignores-lifecycle-deprecation`.
+Every write also updates `.omc/product/capability-lifecycle/history.json` and `.omc/product/capability-lifecycle/history.md`. History records first observations and stage transitions such as `seeded -> proving -> connected -> mature` or `seeded -> remove-candidate`, with trend labels for `progressed`, `regressed`, and `triaged`. This makes product mass measurable over time: the roadmap can see whether completed work is becoming connected/mature or whether the system is accumulating seeded/proving v0 pressure.
+
+If `.omc/product/capability-lifecycle/current.json` contains `remove-candidate`, or lifecycle history shows regressed/triaged paths, the next `/priority-engine` pass must select removal/merge/redesign/recovery work or carry it as explicit roadmap debt. The priority handoff validator enforces this with `priority-ignores-lifecycle-remove-candidate`; deprecated capabilities are enforced as warning debt with `priority-ignores-lifecycle-deprecation`.
 
 ## Experience Gate Rules
 
@@ -330,7 +334,7 @@ It must not:
 
 ## Priority Engine Rules
 
-Priority Engine is the living portfolio layer between discovery and execution. It consumes the capability map, totality audit, capability graph, generated scenarios, scenario coverage, product regression, capability lifecycle, meaning graph, ecosystem map, research, competitors, classifications, and `.omc/feature-generation/current.json`.
+Priority Engine is the living portfolio layer between discovery and execution. It consumes the capability map, totality audit, capability graph, generated scenarios, scenario coverage, product regression, capability lifecycle, capability lifecycle history, meaning graph, ecosystem map, research, competitors, classifications, and `.omc/feature-generation/current.json`.
 
 It must:
 

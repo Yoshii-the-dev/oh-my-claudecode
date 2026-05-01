@@ -5,8 +5,10 @@
 import { colors, renderTable } from '../utils/formatting.js';
 import {
   generateProductCapabilityLifecycleAudit,
+  generateProductCapabilityLifecycleHistory,
   renderProductCapabilityLifecycleAudit,
   writeProductCapabilityLifecycleAudit,
+  type ProductCapabilityLifecycleHistoryReport,
   type ProductCapabilityLifecycleReport,
 } from '../../product/capability-lifecycle.js';
 
@@ -25,12 +27,13 @@ export async function capabilityLifecycleAuditCommand(
   logger: LoggerLike = console,
 ): Promise<number> {
   const report = generateProductCapabilityLifecycleAudit({ root });
-  const written = options.write ? writeProductCapabilityLifecycleAudit(root, report) : undefined;
+  const history = generateProductCapabilityLifecycleHistory({ root, current: report });
+  const written = options.write ? writeProductCapabilityLifecycleAudit(root, report, history) : undefined;
 
   if (options.json) {
-    logger.log(JSON.stringify({ ...report, written }, null, 2));
+    logger.log(JSON.stringify({ ...report, history, written }, null, 2));
   } else if (options.write) {
-    logger.log(renderCapabilityLifecycleSummary(report, written));
+    logger.log(renderCapabilityLifecycleSummary(report, history, written));
   } else {
     logger.log(renderProductCapabilityLifecycleAudit(report));
     logger.log(colors.gray('Use --write to persist .omc/product/capability-lifecycle/current.{json,md}.'));
@@ -41,6 +44,7 @@ export async function capabilityLifecycleAuditCommand(
 
 function renderCapabilityLifecycleSummary(
   report: ProductCapabilityLifecycleReport,
+  history: ProductCapabilityLifecycleHistoryReport,
   written: ReturnType<typeof writeProductCapabilityLifecycleAudit> | undefined,
 ): string {
   const rows = report.capabilities.slice(0, 10).map((capability) => ({
@@ -55,7 +59,8 @@ function renderCapabilityLifecycleSummary(
     colors.bold('Product capability lifecycle'),
     `status: ${formatStatus(report.status)}`,
     `capabilities: ${report.aggregates.capability_count}, seeded: ${report.aggregates.seeded}, proving: ${report.aggregates.proving}, mature: ${report.aggregates.mature}, remove_candidates: ${report.aggregates.remove_candidates}`,
-    written ? `artifacts: ${written.jsonPath}, ${written.mdPath}` : undefined,
+    `history: events ${history.aggregates.event_count}, transitions ${history.aggregates.transition_count}, progressed ${history.aggregates.progressed_capabilities}, regressed ${history.aggregates.regressed_capabilities}, triaged ${history.aggregates.triaged_capabilities}`,
+    written ? `artifacts: ${written.jsonPath}, ${written.mdPath}, ${written.historyJsonPath}, ${written.historyMdPath}` : undefined,
     '',
     rows.length > 0
       ? renderTable(rows, [

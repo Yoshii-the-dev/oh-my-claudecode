@@ -13,6 +13,7 @@ It turns aggregate audits into action:
 
 ```text
 completed capability -> lifecycle stage -> engineering/product decision
+completed capability over time -> seeded -> proving -> connected -> mature or remove-candidate
 ```
 
 ## Usage
@@ -48,20 +49,28 @@ omc capability-lifecycle audit --write
 ```
 
 2. Read `.omc/product/capability-lifecycle/current.json`.
-3. For each capability, inspect:
+3. Read `.omc/product/capability-lifecycle/history.json`.
+4. For each capability, inspect:
    - `stage`: `seeded | proving | connected | mature | deprecated | remove-candidate`
    - `decision`: `develop-depth | prove | connect | retain | deprecate | remove-or-redesign`
    - scenario coverage
    - regression debt count
    - orphan status
    - recommended action
-4. Feed non-mature capabilities into `/priority-engine` before unrelated new work.
-5. Treat `remove-candidate` as a hard product-quality signal: do not add more UI/backend around it until it is removed, merged, or redesigned around a real user loop.
+5. For each capability history path, inspect:
+   - `transition_path`
+   - `trend`: `new | progressed | regressed | triaged | decision-change | unchanged`
+   - `event_count`
+   - current seeded/proving pressure versus connected/mature mass
+6. Feed non-mature or regressed capabilities into `/priority-engine` before unrelated new work.
+7. Treat `remove-candidate` as a hard product-quality signal: do not add more UI/backend around it until it is removed, merged, or redesigned around a real user loop.
 
 ## Output
 
 - `.omc/product/capability-lifecycle/current.json` — machine-readable lifecycle stage map.
 - `.omc/product/capability-lifecycle/current.md` — human-readable lifecycle projection.
+- `.omc/product/capability-lifecycle/history.json` — machine-readable transition history across lifecycle audits.
+- `.omc/product/capability-lifecycle/history.md` — human-readable transition history projection.
 
 ## Lifecycle Meaning
 
@@ -78,6 +87,7 @@ omc capability-lifecycle audit --write
 - Gives cleanup/refactor work a product reason, not only a code-style reason.
 - Lets priority-engine rank removal/redesign against new feature ideas.
 - Helps product-cycle avoid building more systems around a meaningless seed.
+- Measures whether product mass is improving over time or accumulating seeded/proving v0 pressure.
 
 ## Failure Modes To Avoid
 
@@ -85,3 +95,4 @@ omc capability-lifecycle audit --write
 - Treating `remove-candidate` as optional polish.
 - Deleting a capability solely because it is young; removal requires isolation, missing proof, debt, or explicit roadmap intent.
 - Calling `mature` without runtime/dogfood proof.
+- Looking only at `current.json` and missing that the same capability keeps cycling through seeded/proving without becoming connected or mature.

@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { PRODUCT_CAPABILITY_LIFECYCLE_JSON_RELATIVE_PATH, PRODUCT_CAPABILITY_LIFECYCLE_MD_RELATIVE_PATH, generateProductCapabilityLifecycleAudit, writeProductCapabilityLifecycleAudit, } from '../capability-lifecycle.js';
+import { PRODUCT_CAPABILITY_LIFECYCLE_HISTORY_JSON_RELATIVE_PATH, PRODUCT_CAPABILITY_LIFECYCLE_HISTORY_MD_RELATIVE_PATH, PRODUCT_CAPABILITY_LIFECYCLE_JSON_RELATIVE_PATH, PRODUCT_CAPABILITY_LIFECYCLE_MD_RELATIVE_PATH, generateProductCapabilityLifecycleAudit, generateProductCapabilityLifecycleHistory, readProductCapabilityLifecycleHistory, writeProductCapabilityLifecycleAudit, } from '../capability-lifecycle.js';
 let rootsToClean = [];
 afterEach(() => {
     for (const root of rootsToClean) {
@@ -150,8 +150,112 @@ describe('generateProductCapabilityLifecycleAudit', () => {
         }));
         expect(written.jsonPath).toContain(PRODUCT_CAPABILITY_LIFECYCLE_JSON_RELATIVE_PATH);
         expect(written.mdPath).toContain(PRODUCT_CAPABILITY_LIFECYCLE_MD_RELATIVE_PATH);
+        expect(written.historyJsonPath).toContain(PRODUCT_CAPABILITY_LIFECYCLE_HISTORY_JSON_RELATIVE_PATH);
+        expect(written.historyMdPath).toContain(PRODUCT_CAPABILITY_LIFECYCLE_HISTORY_MD_RELATIVE_PATH);
         expect(existsSync(join(root, PRODUCT_CAPABILITY_LIFECYCLE_JSON_RELATIVE_PATH))).toBe(true);
         expect(existsSync(join(root, PRODUCT_CAPABILITY_LIFECYCLE_MD_RELATIVE_PATH))).toBe(true);
+        expect(existsSync(join(root, PRODUCT_CAPABILITY_LIFECYCLE_HISTORY_JSON_RELATIVE_PATH))).toBe(true);
+        expect(existsSync(join(root, PRODUCT_CAPABILITY_LIFECYCLE_HISTORY_MD_RELATIVE_PATH))).toBe(true);
+    });
+    it('records lifecycle transition history without duplicating unchanged snapshots', () => {
+        const root = createRoot();
+        const seeded = generateProductCapabilityLifecycleAudit({
+            root,
+            totality: totalityFixture([capabilityFixture({ connections: ['learning:row-reader'], maturity: 'seeded-v0' })]),
+            scenarioCoverage: scenarioCoverageFixture([{ capability_id: 'row-reader', coverage: 'runtime-passed' }]),
+            regression: regressionFixture([]),
+            now: new Date('2026-04-25T00:00:00.000Z'),
+        });
+        writeProductCapabilityLifecycleAudit(root, seeded, generateProductCapabilityLifecycleHistory({
+            root,
+            current: seeded,
+            now: new Date('2026-04-25T00:01:00.000Z'),
+        }));
+        const connected = generateProductCapabilityLifecycleAudit({
+            root,
+            totality: totalityFixture([capabilityFixture({
+                    connections: ['learning:row-reader', 'portfolio:row-reader-depth'],
+                    maturity: 'seeded-v0',
+                })]),
+            scenarioCoverage: scenarioCoverageFixture([{ capability_id: 'row-reader', coverage: 'runtime-passed' }]),
+            regression: regressionFixture([]),
+            now: new Date('2026-04-26T00:00:00.000Z'),
+        });
+        writeProductCapabilityLifecycleAudit(root, connected, generateProductCapabilityLifecycleHistory({
+            root,
+            current: connected,
+            now: new Date('2026-04-26T00:01:00.000Z'),
+        }));
+        writeProductCapabilityLifecycleAudit(root, connected, generateProductCapabilityLifecycleHistory({
+            root,
+            current: connected,
+            now: new Date('2026-04-26T00:02:00.000Z'),
+        }));
+        const history = readProductCapabilityLifecycleHistory(root);
+        expect(history?.events).toHaveLength(2);
+        expect(history?.events.map((event) => event.event_type)).toEqual(['observed', 'stage-transition']);
+        expect(history?.events[1]).toEqual(expect.objectContaining({
+            from_stage: 'seeded',
+            to_stage: 'connected',
+            trend: 'progressed',
+        }));
+        expect(history?.capabilities[0]).toEqual(expect.objectContaining({
+            current_stage: 'connected',
+            transition_path: ['seeded', 'connected'],
+            trend: 'unchanged',
+        }));
+    });
+    it('records remove-candidate transitions as triage history', () => {
+        const root = createRoot();
+        const connected = generateProductCapabilityLifecycleAudit({
+            root,
+            totality: totalityFixture([capabilityFixture({
+                    connections: ['learning:row-reader', 'portfolio:row-reader-depth'],
+                    maturity: 'seeded-v0',
+                })]),
+            scenarioCoverage: scenarioCoverageFixture([{ capability_id: 'row-reader', coverage: 'runtime-passed' }]),
+            regression: regressionFixture([]),
+            now: new Date('2026-04-25T00:00:00.000Z'),
+        });
+        writeProductCapabilityLifecycleAudit(root, connected, generateProductCapabilityLifecycleHistory({
+            root,
+            current: connected,
+            now: new Date('2026-04-25T00:01:00.000Z'),
+        }));
+        const removeCandidate = generateProductCapabilityLifecycleAudit({
+            root,
+            totality: totalityFixture([capabilityFixture({
+                    id: 'row-reader',
+                    title: 'resume row reader return session',
+                    connections: [],
+                    missing_depth: ['v1: section-aware row tracking'],
+                    maturity: 'seeded-v0',
+                })], { orphan: true }),
+            scenarioCoverage: scenarioCoverageFixture([{ capability_id: 'row-reader', coverage: 'missing' }]),
+            regression: regressionFixture([{
+                    id: 'row-reader-scenario-proof',
+                    severity: 'error',
+                    category: 'scenario-proof',
+                    subject: 'row reader',
+                    message: 'Capability has no executable scenario proof.',
+                    recommended_action: 'Remove or redesign around a real return-session loop.',
+                    evidence: ['fixture'],
+                }]),
+            now: new Date('2026-04-27T00:00:00.000Z'),
+        });
+        writeProductCapabilityLifecycleAudit(root, removeCandidate, generateProductCapabilityLifecycleHistory({
+            root,
+            current: removeCandidate,
+            now: new Date('2026-04-27T00:01:00.000Z'),
+        }));
+        const history = readProductCapabilityLifecycleHistory(root);
+        expect(history?.aggregates.triaged_capabilities).toBe(1);
+        expect(history?.events[1]).toEqual(expect.objectContaining({
+            from_stage: 'connected',
+            to_stage: 'remove-candidate',
+            trend: 'triaged',
+        }));
+        expect(history?.next_action).toContain('remove-candidate');
     });
 });
 function createRoot() {

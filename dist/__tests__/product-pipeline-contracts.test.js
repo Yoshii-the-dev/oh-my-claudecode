@@ -89,6 +89,7 @@ describe('product/agent pipeline contracts', () => {
         expect(agent).toContain('.omc/product/scenario-coverage/current.json');
         expect(agent).toContain('.omc/product/regression/current.json');
         expect(agent).toContain('.omc/product/capability-lifecycle/current.json');
+        expect(agent).toContain('.omc/product/capability-lifecycle/history.json');
         expect(agent).toContain('1 core product slice');
         expect(agent).toContain('1 enabling task');
         expect(agent).toContain('1 learning/research task');
@@ -119,6 +120,7 @@ describe('product/agent pipeline contracts', () => {
             expect(content).toContain('.omc/product/scenario-coverage/current.json');
             expect(content).toContain('.omc/product/regression/current.json');
             expect(content).toContain('.omc/product/capability-lifecycle/current.json');
+            expect(content).toContain('.omc/product/capability-lifecycle/history.json');
             expect(content).toContain('product-totality audit');
         }
         expect(skill).toContain('composition');
@@ -130,6 +132,7 @@ describe('product/agent pipeline contracts', () => {
         expect(priorityEngine).toContain('scenario coverage');
         expect(priorityEngine).toContain('regression debts');
         expect(priorityEngine).toContain('capability lifecycle');
+        expect(priorityEngine).toContain('lifecycle history');
         expect(docs).toContain('Product Totality Rules');
         expect(docs).toContain('Capability Graph Rules');
         expect(docs).toContain('Scenario Generator Rules');
@@ -174,6 +177,7 @@ describe('product/agent pipeline contracts', () => {
         expect(agent).toContain('.omc/product/scenario-coverage/current.json');
         expect(agent).toContain('.omc/product/regression/current.json');
         expect(agent).toContain('.omc/product/capability-lifecycle/current.json');
+        expect(agent).toContain('.omc/product/capability-lifecycle/history.json');
         expect(agent).toContain('priority-ignores-regression-debt');
         expect(agent).toContain('priority-ignores-lifecycle-remove-candidate');
         expect(skill).toContain('omc portfolio validate');

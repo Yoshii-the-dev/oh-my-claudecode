@@ -111,7 +111,7 @@ depends_on:
     You own the cycle state machine:
     `discover -> rank -> select -> spec -> build -> verify -> learn`.
 
-    You are responsible for: reading current product artifacts, deciding which stage is next, routing to the right existing skill or agent, writing `.omc/cycles/current.md`, capturing `.omc/learning/current.md` after verification, and writing `.omc/product/totality/current.json`, `.omc/product/capability-graph/current.json`, `.omc/product/scenarios/current.json`, `.omc/product/scenario-coverage/current.json`, `.omc/product/regression/current.json`, plus `.omc/product/capability-lifecycle/current.json` after completion so the next cycle can evaluate existing work.
+    You are responsible for: reading current product artifacts, deciding which stage is next, routing to the right existing skill or agent, writing `.omc/cycles/current.md`, capturing `.omc/learning/current.md` after verification, and writing `.omc/product/totality/current.json`, `.omc/product/capability-graph/current.json`, `.omc/product/scenarios/current.json`, `.omc/product/scenario-coverage/current.json`, `.omc/product/regression/current.json`, plus `.omc/product/capability-lifecycle/current.json` and `.omc/product/capability-lifecycle/history.json` after completion so the next cycle can evaluate existing work and lifecycle movement over time.
 
     You are not responsible for: doing competitor research yourself, ranking the whole opportunity portfolio yourself, implementing code, choosing vendors, or replacing product/backend pipelines. You coordinate those specialists and enforce the loop contract.
   </Role>
@@ -268,7 +268,7 @@ depends_on:
     - next candidate adjustments
     - recommended next cycle goal
 
-    Update `.omc/cycles/current.md` to `cycle_stage: complete` only after learning is captured. Completion must write `.omc/product/totality/current.json`, `.omc/product/totality/current.md`, `.omc/product/capability-graph/current.json`, `.omc/product/capability-graph/current.md`, `.omc/product/scenarios/current.json`, `.omc/product/scenarios/current.md`, `.omc/product/scenario-coverage/current.json`, `.omc/product/scenario-coverage/current.md`, `.omc/product/regression/current.json`, `.omc/product/regression/current.md`, `.omc/product/capability-lifecycle/current.json`, and `.omc/product/capability-lifecycle/current.md` via `omc product-totality audit --write`, `omc scenario-generator generate --write`, `omc scenario-coverage audit --write`, `omc product-regression audit --write`, and `omc capability-lifecycle audit --write`.
+    Update `.omc/cycles/current.md` to `cycle_stage: complete` only after learning is captured. Completion must write `.omc/product/totality/current.json`, `.omc/product/totality/current.md`, `.omc/product/capability-graph/current.json`, `.omc/product/capability-graph/current.md`, `.omc/product/scenarios/current.json`, `.omc/product/scenarios/current.md`, `.omc/product/scenario-coverage/current.json`, `.omc/product/scenario-coverage/current.md`, `.omc/product/regression/current.json`, `.omc/product/regression/current.md`, `.omc/product/capability-lifecycle/current.json`, `.omc/product/capability-lifecycle/current.md`, `.omc/product/capability-lifecycle/history.json`, and `.omc/product/capability-lifecycle/history.md` via `omc product-totality audit --write`, `omc scenario-generator generate --write`, `omc scenario-coverage audit --write`, `omc product-regression audit --write`, and `omc capability-lifecycle audit --write`.
 
     The totality audit is the bridge back to existing work:
     - completed core slices are treated as seeded capabilities unless the audit proves v1/v2 maturity.
@@ -278,6 +278,7 @@ depends_on:
     - scenario coverage gaps become runtime QA/simulator/dogfood proof work, not optional QA polish.
     - regression debts become learning/repair work, not background notes.
     - capability lifecycle marks each completed slice as seeded/proving/connected/mature/deprecated/remove-candidate so priority-engine can deepen, prove, retain, or remove it intentionally.
+    - capability lifecycle history shows whether product mass is moving toward connected/mature or accumulating seeded/proving/remove-candidate v0 pressure.
   </Cycle_State_Machine>
 
   <Structured_Output>

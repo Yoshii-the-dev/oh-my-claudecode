@@ -84978,6 +84978,15 @@ var PRODUCT_ARTIFACT_REGISTRY = {
     machineContract: "strict",
     purpose: "Visual appearance lifecycle: hypothesis, implementation mapping, screenshot proof, and iteration debt."
   },
+  "capability-lifecycle-history": {
+    name: "capability-lifecycle-history",
+    lane: "product",
+    currentPath: ".omc/product/capability-lifecycle/history.json",
+    format: "json",
+    owner: "omc capability-lifecycle audit",
+    machineContract: "strict",
+    purpose: "Append-only capability lifecycle transition history across product cycles."
+  },
   cycle: {
     name: "cycle",
     lane: "cycle",
@@ -90309,6 +90318,8 @@ var import_path130 = require("path");
 init_atomic_write();
 var PRODUCT_CAPABILITY_LIFECYCLE_JSON_RELATIVE_PATH = ".omc/product/capability-lifecycle/current.json";
 var PRODUCT_CAPABILITY_LIFECYCLE_MD_RELATIVE_PATH = ".omc/product/capability-lifecycle/current.md";
+var PRODUCT_CAPABILITY_LIFECYCLE_HISTORY_JSON_RELATIVE_PATH = ".omc/product/capability-lifecycle/history.json";
+var PRODUCT_CAPABILITY_LIFECYCLE_HISTORY_MD_RELATIVE_PATH = ".omc/product/capability-lifecycle/history.md";
 function generateProductCapabilityLifecycleAudit(options = {}) {
   const root2 = (0, import_path130.resolve)(options.root ?? process.cwd());
   const totality = options.totality ?? generateProductTotalityAudit(root2);
@@ -90352,7 +90363,7 @@ function generateProductCapabilityLifecycleAudit(options = {}) {
     next_action: nextAction5(status)
   };
 }
-function writeProductCapabilityLifecycleAudit(root2 = process.cwd(), report2 = generateProductCapabilityLifecycleAudit({ root: root2 })) {
+function writeProductCapabilityLifecycleAudit(root2 = process.cwd(), report2 = generateProductCapabilityLifecycleAudit({ root: root2 }), history = generateProductCapabilityLifecycleHistory({ root: root2, current: report2 })) {
   const resolvedRoot = (0, import_path130.resolve)(root2);
   const jsonPath = (0, import_path130.resolve)(resolvedRoot, PRODUCT_CAPABILITY_LIFECYCLE_JSON_RELATIVE_PATH);
   const mdPath = (0, import_path130.resolve)(resolvedRoot, PRODUCT_CAPABILITY_LIFECYCLE_MD_RELATIVE_PATH);
@@ -90360,6 +90371,105 @@ function writeProductCapabilityLifecycleAudit(root2 = process.cwd(), report2 = g
   atomicWriteJsonSync(jsonPath, report2);
   (0, import_fs110.mkdirSync)((0, import_path130.dirname)(mdPath), { recursive: true });
   (0, import_fs110.writeFileSync)(mdPath, renderProductCapabilityLifecycleAudit(report2), "utf-8");
+  const historyWritten = writeProductCapabilityLifecycleHistory(resolvedRoot, history);
+  return {
+    jsonPath,
+    mdPath,
+    historyJsonPath: historyWritten.jsonPath,
+    historyMdPath: historyWritten.mdPath
+  };
+}
+function readProductCapabilityLifecycleHistory(root2 = process.cwd()) {
+  const path23 = (0, import_path130.resolve)(root2, PRODUCT_CAPABILITY_LIFECYCLE_HISTORY_JSON_RELATIVE_PATH);
+  if (!(0, import_fs110.existsSync)(path23)) return void 0;
+  try {
+    const parsed = JSON.parse((0, import_fs110.readFileSync)(path23, "utf-8"));
+    return parsed?.schema_version === 1 && Array.isArray(parsed.events) && Array.isArray(parsed.capabilities) ? parsed : void 0;
+  } catch {
+    return void 0;
+  }
+}
+function generateProductCapabilityLifecycleHistory(options) {
+  const root2 = (0, import_path130.resolve)(options.root ?? options.current.root ?? process.cwd());
+  const recordedAt = (options.now ?? /* @__PURE__ */ new Date()).toISOString();
+  const previous = options.previous ?? readProductCapabilityLifecycleHistory(root2);
+  const previousEvents = previous?.events ?? [];
+  const previousStateByCapability = /* @__PURE__ */ new Map();
+  for (const capability of previous?.capabilities ?? []) {
+    previousStateByCapability.set(capability.capability_id, capability);
+  }
+  const newEvents = [];
+  for (const capability of options.current.capabilities) {
+    const previousState = previousStateByCapability.get(capability.capability_id) ?? previousCapabilityStateFromEvents(previousEvents, capability.capability_id);
+    const event = lifecycleHistoryEvent(capability, previousState, {
+      recordedAt,
+      reportGeneratedAt: options.current.generated_at,
+      sequence: previousEvents.length + newEvents.length + 1
+    });
+    if (event) newEvents.push(event);
+  }
+  const events = [...previousEvents, ...newEvents];
+  const changedCapabilityTrends = new Map(newEvents.map((event) => [event.capability_id, event.trend]));
+  const capabilities = options.current.capabilities.map((capability) => {
+    const previousState = previousStateByCapability.get(capability.capability_id) ?? previousCapabilityStateFromEvents(previousEvents, capability.capability_id);
+    const capabilityEvents = events.filter((event) => event.capability_id === capability.capability_id);
+    const firstSeenAt = previousState?.first_seen_at ?? capabilityEvents[0]?.recorded_at ?? recordedAt;
+    const lastEvent = capabilityEvents[capabilityEvents.length - 1];
+    const transitionPath = compactStagePath(capabilityEvents.map((event) => event.to_stage), capability.stage);
+    return {
+      capability_id: capability.capability_id,
+      title: capability.title,
+      source_cycle: capability.source_cycle,
+      first_seen_at: firstSeenAt,
+      last_seen_at: recordedAt,
+      previous_stage: previousState?.current_stage,
+      current_stage: capability.stage,
+      current_decision: capability.decision,
+      transition_path: transitionPath,
+      event_count: capabilityEvents.length,
+      last_transition: lastEvent ? formatHistoryTransition(lastEvent) : void 0,
+      trend: changedCapabilityTrends.get(capability.capability_id) ?? "unchanged"
+    };
+  });
+  const sourceArtifacts = Array.from(/* @__PURE__ */ new Set([
+    PRODUCT_CAPABILITY_LIFECYCLE_JSON_RELATIVE_PATH,
+    ...previous ? [PRODUCT_CAPABILITY_LIFECYCLE_HISTORY_JSON_RELATIVE_PATH] : [],
+    ...options.current.source_artifacts
+  ])).sort();
+  return {
+    schema_version: 1,
+    updated_at: recordedAt,
+    root: root2,
+    current_report_generated_at: options.current.generated_at,
+    source_artifacts: sourceArtifacts,
+    aggregates: {
+      capability_count: capabilities.length,
+      event_count: events.length,
+      transition_count: events.filter((event) => event.event_type === "stage-transition").length,
+      progressed_capabilities: capabilities.filter((capability) => capability.trend === "progressed").length,
+      regressed_capabilities: capabilities.filter((capability) => capability.trend === "regressed").length,
+      triaged_capabilities: capabilities.filter((capability) => capability.trend === "triaged").length,
+      new_capabilities: capabilities.filter((capability) => capability.trend === "new").length,
+      seeded_current: capabilities.filter((capability) => capability.current_stage === "seeded").length,
+      proving_current: capabilities.filter((capability) => capability.current_stage === "proving").length,
+      connected_current: capabilities.filter((capability) => capability.current_stage === "connected").length,
+      mature_current: capabilities.filter((capability) => capability.current_stage === "mature").length,
+      remove_candidates_current: capabilities.filter((capability) => capability.current_stage === "remove-candidate").length,
+      v0_pressure_current: capabilities.filter((capability) => capability.current_stage === "seeded" || capability.current_stage === "proving").length
+    },
+    capabilities,
+    events,
+    next_action: historyNextAction(capabilities)
+  };
+}
+function writeProductCapabilityLifecycleHistory(root2 = process.cwd(), history) {
+  const resolvedRoot = (0, import_path130.resolve)(root2);
+  const jsonPath = (0, import_path130.resolve)(resolvedRoot, PRODUCT_CAPABILITY_LIFECYCLE_HISTORY_JSON_RELATIVE_PATH);
+  const mdPath = (0, import_path130.resolve)(resolvedRoot, PRODUCT_CAPABILITY_LIFECYCLE_HISTORY_MD_RELATIVE_PATH);
+  (0, import_fs110.mkdirSync)((0, import_path130.dirname)(jsonPath), { recursive: true });
+  atomicWriteJsonSync(jsonPath, history);
+  (0, import_fs110.mkdirSync)((0, import_path130.dirname)(mdPath), { recursive: true });
+  (0, import_fs110.writeFileSync)(mdPath, renderProductCapabilityLifecycleHistory(history), "utf-8");
   return { jsonPath, mdPath };
 }
 function renderProductCapabilityLifecycleAudit(report2) {
@@ -90391,6 +90501,48 @@ function renderProductCapabilityLifecycleAudit(report2) {
     "| Stage | Capability | Recommended Action |",
     "| --- | --- | --- |",
     ...actionRows.length > 0 ? actionRows : ["| mature | product | No lifecycle actions required |"],
+    "",
+    "## Source Artifacts",
+    ...report2.source_artifacts.map((source) => `- ${source}`),
+    "",
+    `next_action: ${report2.next_action}`,
+    ""
+  ].join("\n");
+}
+function renderProductCapabilityLifecycleHistory(report2) {
+  const capabilityRows = report2.capabilities.map((capability) => `| ${escapeCell7(capability.capability_id)} | ${capability.previous_stage ?? "new"} | ${capability.current_stage} | ${capability.trend} | ${escapeCell7(capability.transition_path.join(" -> "))} |`);
+  const eventRows = report2.events.slice(-20).map((event) => `| ${event.recorded_at} | ${event.capability_id} | ${event.from_stage ?? "new"} -> ${event.to_stage} | ${event.trend} | ${escapeCell7(event.reason)} |`);
+  return [
+    "# Product Capability Lifecycle History",
+    "",
+    `updated_at: ${report2.updated_at}`,
+    `schema_source: ${PRODUCT_CAPABILITY_LIFECYCLE_HISTORY_JSON_RELATIVE_PATH}`,
+    `current_report_generated_at: ${report2.current_report_generated_at}`,
+    "",
+    "## Aggregates",
+    `- capability_count: ${report2.aggregates.capability_count}`,
+    `- event_count: ${report2.aggregates.event_count}`,
+    `- transition_count: ${report2.aggregates.transition_count}`,
+    `- progressed_capabilities: ${report2.aggregates.progressed_capabilities}`,
+    `- regressed_capabilities: ${report2.aggregates.regressed_capabilities}`,
+    `- triaged_capabilities: ${report2.aggregates.triaged_capabilities}`,
+    `- new_capabilities: ${report2.aggregates.new_capabilities}`,
+    `- seeded_current: ${report2.aggregates.seeded_current}`,
+    `- proving_current: ${report2.aggregates.proving_current}`,
+    `- connected_current: ${report2.aggregates.connected_current}`,
+    `- mature_current: ${report2.aggregates.mature_current}`,
+    `- remove_candidates_current: ${report2.aggregates.remove_candidates_current}`,
+    `- v0_pressure_current: ${report2.aggregates.v0_pressure_current}`,
+    "",
+    "## Current Paths",
+    "| Capability | Previous | Current | Trend | Path |",
+    "| --- | --- | --- | --- | --- |",
+    ...capabilityRows.length > 0 ? capabilityRows : ["| none | new | seeded | unchanged | No lifecycle observations yet |"],
+    "",
+    "## Recent Events",
+    "| Recorded At | Capability | Transition | Trend | Reason |",
+    "| --- | --- | --- | --- | --- |",
+    ...eventRows.length > 0 ? eventRows : ["| none | product | new -> seeded | unchanged | No lifecycle events recorded |"],
     "",
     "## Source Artifacts",
     ...report2.source_artifacts.map((source) => `- ${source}`),
@@ -90504,6 +90656,94 @@ function nextAction5(status) {
   if (status === "needs-proof") return "Run scenario proof or dogfood evidence for proving capabilities";
   if (status === "needs-connection") return "Feed seeded and orphaned capabilities into priority-engine as depth/connection work";
   return "Capability lifecycle is healthy; prioritize new work against mature foundations";
+}
+function previousCapabilityStateFromEvents(events, capabilityId) {
+  const capabilityEvents = events.filter((event) => event.capability_id === capabilityId);
+  const last = capabilityEvents[capabilityEvents.length - 1];
+  if (!last) return void 0;
+  return {
+    capability_id: last.capability_id,
+    title: last.title,
+    source_cycle: last.source_cycle,
+    first_seen_at: capabilityEvents[0]?.recorded_at ?? last.recorded_at,
+    last_seen_at: last.recorded_at,
+    previous_stage: last.from_stage,
+    current_stage: last.to_stage,
+    current_decision: last.to_decision,
+    transition_path: compactStagePath(capabilityEvents.map((event) => event.to_stage), last.to_stage),
+    event_count: capabilityEvents.length,
+    last_transition: formatHistoryTransition(last),
+    trend: last.trend
+  };
+}
+function lifecycleHistoryEvent(capability, previous, context) {
+  const fromStage = previous?.current_stage;
+  const fromDecision = previous?.current_decision;
+  const stageChanged = Boolean(fromStage && fromStage !== capability.stage);
+  const decisionChanged = Boolean(previous && !stageChanged && fromDecision !== capability.decision);
+  if (previous && !stageChanged && !decisionChanged) return void 0;
+  const eventType = !previous ? "observed" : stageChanged ? "stage-transition" : "decision-change";
+  const trend = !previous ? "new" : stageChanged ? classifyLifecycleTransition(fromStage, capability.stage) : "decision-change";
+  const reason = !previous ? `First lifecycle observation: ${capability.stage}.` : stageChanged ? `Lifecycle moved from ${fromStage} to ${capability.stage}.` : `Lifecycle decision changed from ${fromDecision} to ${capability.decision}.`;
+  return {
+    event_id: `${context.sequence}-${capability.capability_id}-${fromStage ?? "new"}-${capability.stage}`,
+    event_type: eventType,
+    recorded_at: context.recordedAt,
+    report_generated_at: context.reportGeneratedAt,
+    capability_id: capability.capability_id,
+    title: capability.title,
+    source_cycle: capability.source_cycle,
+    from_stage: fromStage,
+    to_stage: capability.stage,
+    from_decision: fromDecision,
+    to_decision: capability.decision,
+    trend,
+    reason,
+    evidence: capability.evidence
+  };
+}
+function classifyLifecycleTransition(from, to) {
+  if (!from) return "new";
+  if (to === "remove-candidate") return "triaged";
+  const fromRank = lifecycleStageRank(from);
+  const toRank = lifecycleStageRank(to);
+  if (toRank > fromRank) return "progressed";
+  if (toRank < fromRank) return "regressed";
+  return "unchanged";
+}
+function lifecycleStageRank(stage) {
+  if (stage === "remove-candidate") return -1;
+  if (stage === "deprecated") return 0;
+  if (stage === "seeded") return 0;
+  if (stage === "proving") return 1;
+  if (stage === "connected") return 2;
+  return 3;
+}
+function compactStagePath(stages, currentStage) {
+  const compact = [];
+  for (const stage of stages) {
+    if (compact[compact.length - 1] !== stage) compact.push(stage);
+  }
+  if (compact[compact.length - 1] !== currentStage) compact.push(currentStage);
+  return compact;
+}
+function formatHistoryTransition(event) {
+  return `${event.from_stage ?? "new"} -> ${event.to_stage}`;
+}
+function historyNextAction(capabilities) {
+  if (capabilities.length === 0) return "Complete a product-cycle, then write lifecycle history.";
+  if (capabilities.some((capability) => capability.current_stage === "remove-candidate")) {
+    return "Resolve remove-candidate lifecycle paths before adding unrelated new capabilities.";
+  }
+  if (capabilities.some((capability) => capability.trend === "regressed")) {
+    return "Inspect regressed lifecycle paths and recover proof, connection, or depth.";
+  }
+  const v0Pressure = capabilities.filter((capability) => capability.current_stage === "seeded" || capability.current_stage === "proving").length;
+  const durableMass = capabilities.filter((capability) => capability.current_stage === "connected" || capability.current_stage === "mature").length;
+  if (v0Pressure > durableMass) {
+    return "Prioritize proof, connection, and depth until seeded/proving mass stops outgrowing connected/mature mass.";
+  }
+  return "Lifecycle mass is improving; rank new work against connected and mature foundations.";
 }
 function debtAppliesToCapability(debt, capability) {
   if (debt.source_cycle && debt.source_cycle === capability.source_cycle) return true;
@@ -97957,7 +98197,7 @@ function renderProductTotalitySummary(report2, written, scenarioPlanWritten, sce
     scenarioPlanWritten ? `scenario_plan: ${scenarioPlanWritten.jsonPath}, ${scenarioPlanWritten.mdPath}` : void 0,
     scenarioWritten ? `scenario_coverage: ${scenarioWritten.jsonPath}, ${scenarioWritten.mdPath}` : void 0,
     regressionWritten ? `regression: ${regressionWritten.jsonPath}, ${regressionWritten.mdPath}` : void 0,
-    lifecycleWritten ? `capability_lifecycle: ${lifecycleWritten.jsonPath}, ${lifecycleWritten.mdPath}` : void 0,
+    lifecycleWritten ? `capability_lifecycle: ${lifecycleWritten.jsonPath}, ${lifecycleWritten.mdPath}, ${lifecycleWritten.historyJsonPath}, ${lifecycleWritten.historyMdPath}` : void 0,
     "",
     renderTable(rows, [
       { header: "dimension", field: "dimension", width: 18 },
@@ -97997,18 +98237,19 @@ function formatScoreStatus(score2) {
 init_formatting();
 async function capabilityLifecycleAuditCommand(root2, options, logger = console) {
   const report2 = generateProductCapabilityLifecycleAudit({ root: root2 });
-  const written = options.write ? writeProductCapabilityLifecycleAudit(root2, report2) : void 0;
+  const history = generateProductCapabilityLifecycleHistory({ root: root2, current: report2 });
+  const written = options.write ? writeProductCapabilityLifecycleAudit(root2, report2, history) : void 0;
   if (options.json) {
-    logger.log(JSON.stringify({ ...report2, written }, null, 2));
+    logger.log(JSON.stringify({ ...report2, history, written }, null, 2));
   } else if (options.write) {
-    logger.log(renderCapabilityLifecycleSummary(report2, written));
+    logger.log(renderCapabilityLifecycleSummary(report2, history, written));
   } else {
     logger.log(renderProductCapabilityLifecycleAudit(report2));
     logger.log(colors.gray("Use --write to persist .omc/product/capability-lifecycle/current.{json,md}."));
   }
   return report2.capabilities.some((capability) => capability.stage === "remove-candidate") ? 1 : 0;
 }
-function renderCapabilityLifecycleSummary(report2, written) {
+function renderCapabilityLifecycleSummary(report2, history, written) {
   const rows = report2.capabilities.slice(0, 10).map((capability) => ({
     stage: formatStage(capability.stage),
     decision: capability.decision,
@@ -98020,7 +98261,8 @@ function renderCapabilityLifecycleSummary(report2, written) {
     colors.bold("Product capability lifecycle"),
     `status: ${formatStatus2(report2.status)}`,
     `capabilities: ${report2.aggregates.capability_count}, seeded: ${report2.aggregates.seeded}, proving: ${report2.aggregates.proving}, mature: ${report2.aggregates.mature}, remove_candidates: ${report2.aggregates.remove_candidates}`,
-    written ? `artifacts: ${written.jsonPath}, ${written.mdPath}` : void 0,
+    `history: events ${history.aggregates.event_count}, transitions ${history.aggregates.transition_count}, progressed ${history.aggregates.progressed_capabilities}, regressed ${history.aggregates.regressed_capabilities}, triaged ${history.aggregates.triaged_capabilities}`,
+    written ? `artifacts: ${written.jsonPath}, ${written.mdPath}, ${written.historyJsonPath}, ${written.historyMdPath}` : void 0,
     "",
     rows.length > 0 ? renderTable(rows, [
       { header: "stage", field: "stage", width: 18 },

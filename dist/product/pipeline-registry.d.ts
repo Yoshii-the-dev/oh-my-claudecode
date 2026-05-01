@@ -224,6 +224,15 @@ export declare const PRODUCT_ARTIFACT_REGISTRY: {
         readonly machineContract: "strict";
         readonly purpose: "Visual appearance lifecycle: hypothesis, implementation mapping, screenshot proof, and iteration debt.";
     };
+    readonly 'capability-lifecycle-history': {
+        readonly name: "capability-lifecycle-history";
+        readonly lane: "product";
+        readonly currentPath: ".omc/product/capability-lifecycle/history.json";
+        readonly format: "json";
+        readonly owner: "omc capability-lifecycle audit";
+        readonly machineContract: "strict";
+        readonly purpose: "Append-only capability lifecycle transition history across product cycles.";
+    };
     readonly cycle: {
         readonly name: "cycle";
         readonly lane: "cycle";

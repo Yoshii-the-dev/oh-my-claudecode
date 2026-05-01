@@ -33,6 +33,7 @@ Read compact/current artifacts first:
 - `.omc/product/scenario-coverage/current.json` when refreshing
 - `.omc/product/regression/current.json` when refreshing
 - `.omc/product/capability-lifecycle/current.json` when refreshing
+- `.omc/product/capability-lifecycle/history.json` when refreshing lifecycle trend
 - `.omc/cycles/current.json`
 - `.omc/cycles/YYYY-MM-DD-<slug>.json|md`
 - `.omc/learning/current.json`
@@ -66,8 +67,9 @@ omc capability-lifecycle audit --write
 5. Read `.omc/product/scenario-coverage/current.json`.
 6. Read `.omc/product/regression/current.json`.
 7. Read `.omc/product/capability-lifecycle/current.json`.
-8. Treat every completed core product slice as a seeded capability unless the lifecycle audit says `mature`.
-9. For each capability, inspect:
+8. Read `.omc/product/capability-lifecycle/history.json` when it exists.
+9. Treat every completed core product slice as a seeded capability unless the lifecycle audit says `mature`.
+10. For each capability, inspect:
    - maturity: `missing-expectation | seeded-v0 | contextual-v1 | systemic-v2`
    - missing depth from the feature expectation maturity ladder
    - connections to learning, roadmap, ecosystem, meaning, visual expectation, and taste gate
@@ -77,9 +79,10 @@ omc capability-lifecycle audit --write
    - regression debts: whether learning, scenario proof, or quality regressions are still carried
    - lifecycle stage: whether the capability should be deepened, proven, connected, retained, deprecated, or removed/redesigned
    - recommended portfolio moves
-10. If status is not `balanced`, route the highest-leverage recommended moves into `/priority-engine`.
-11. If lifecycle contains `remove-candidate`, triage it before ranking unrelated new work.
-12. If there are `error` gaps, repair those before ranking the next cycle.
+11. If status is not `balanced`, route the highest-leverage recommended moves into `/priority-engine`.
+12. If lifecycle contains `remove-candidate`, triage it before ranking unrelated new work.
+13. If lifecycle history shows regressed/triaged paths or increasing seeded/proving pressure, preserve that as next-cycle product mass debt.
+14. If there are `error` gaps, repair those before ranking the next cycle.
 
 ## Output
 
@@ -95,6 +98,8 @@ omc capability-lifecycle audit --write
 - `.omc/product/regression/current.md` — regression projection.
 - `.omc/product/capability-lifecycle/current.json` — lifecycle stage map for completed capabilities.
 - `.omc/product/capability-lifecycle/current.md` — lifecycle projection with decisions and actions.
+- `.omc/product/capability-lifecycle/history.json` — lifecycle transition history for measuring product mass over time.
+- `.omc/product/capability-lifecycle/history.md` — human-readable transition history projection.
 
 The audit scores:
 
@@ -109,7 +114,7 @@ The audit scores:
 - `/product-cycle` writes the totality audit, capability graph, scenario coverage, and regression audit when a cycle advances from `learn` to `complete`.
 - `/product-cycle` writes generated scenario declarations before scenario coverage so coverage can distinguish declared-but-unrun scenarios from missing scenario design.
 - `/product-cycle` writes capability lifecycle after regression so downstream work gets a concrete deepen/prove/connect/retain/deprecate/remove decision.
-- `/priority-engine` must read totality, `orphan_capabilities`, generated scenarios, scenario coverage, regression debts, and capability lifecycle as inputs before ranking the next cycle.
+- `/priority-engine` must read totality, `orphan_capabilities`, generated scenarios, scenario coverage, regression debts, capability lifecycle, and lifecycle history as inputs before ranking the next cycle.
 - `omc feature-generation audit` counts totality, capability graph, scenario generator, scenario coverage, regression, and lifecycle as sources for future feature/opportunity generation.
 
 ## Failure Modes To Avoid

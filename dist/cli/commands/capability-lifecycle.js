@@ -2,15 +2,16 @@
  * `omc capability-lifecycle` — classify completed capabilities into lifecycle stages.
  */
 import { colors, renderTable } from '../utils/formatting.js';
-import { generateProductCapabilityLifecycleAudit, renderProductCapabilityLifecycleAudit, writeProductCapabilityLifecycleAudit, } from '../../product/capability-lifecycle.js';
+import { generateProductCapabilityLifecycleAudit, generateProductCapabilityLifecycleHistory, renderProductCapabilityLifecycleAudit, writeProductCapabilityLifecycleAudit, } from '../../product/capability-lifecycle.js';
 export async function capabilityLifecycleAuditCommand(root, options, logger = console) {
     const report = generateProductCapabilityLifecycleAudit({ root });
-    const written = options.write ? writeProductCapabilityLifecycleAudit(root, report) : undefined;
+    const history = generateProductCapabilityLifecycleHistory({ root, current: report });
+    const written = options.write ? writeProductCapabilityLifecycleAudit(root, report, history) : undefined;
     if (options.json) {
-        logger.log(JSON.stringify({ ...report, written }, null, 2));
+        logger.log(JSON.stringify({ ...report, history, written }, null, 2));
     }
     else if (options.write) {
-        logger.log(renderCapabilityLifecycleSummary(report, written));
+        logger.log(renderCapabilityLifecycleSummary(report, history, written));
     }
     else {
         logger.log(renderProductCapabilityLifecycleAudit(report));
@@ -18,7 +19,7 @@ export async function capabilityLifecycleAuditCommand(root, options, logger = co
     }
     return report.capabilities.some((capability) => capability.stage === 'remove-candidate') ? 1 : 0;
 }
-function renderCapabilityLifecycleSummary(report, written) {
+function renderCapabilityLifecycleSummary(report, history, written) {
     const rows = report.capabilities.slice(0, 10).map((capability) => ({
         stage: formatStage(capability.stage),
         decision: capability.decision,
@@ -30,7 +31,8 @@ function renderCapabilityLifecycleSummary(report, written) {
         colors.bold('Product capability lifecycle'),
         `status: ${formatStatus(report.status)}`,
         `capabilities: ${report.aggregates.capability_count}, seeded: ${report.aggregates.seeded}, proving: ${report.aggregates.proving}, mature: ${report.aggregates.mature}, remove_candidates: ${report.aggregates.remove_candidates}`,
-        written ? `artifacts: ${written.jsonPath}, ${written.mdPath}` : undefined,
+        `history: events ${history.aggregates.event_count}, transitions ${history.aggregates.transition_count}, progressed ${history.aggregates.progressed_capabilities}, regressed ${history.aggregates.regressed_capabilities}, triaged ${history.aggregates.triaged_capabilities}`,
+        written ? `artifacts: ${written.jsonPath}, ${written.mdPath}, ${written.historyJsonPath}, ${written.historyMdPath}` : undefined,
         '',
         rows.length > 0
             ? renderTable(rows, [

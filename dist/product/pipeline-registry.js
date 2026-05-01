@@ -226,6 +226,15 @@ export const PRODUCT_ARTIFACT_REGISTRY = {
         machineContract: 'strict',
         purpose: 'Visual appearance lifecycle: hypothesis, implementation mapping, screenshot proof, and iteration debt.',
     },
+    'capability-lifecycle-history': {
+        name: 'capability-lifecycle-history',
+        lane: 'product',
+        currentPath: '.omc/product/capability-lifecycle/history.json',
+        format: 'json',
+        owner: 'omc capability-lifecycle audit',
+        machineContract: 'strict',
+        purpose: 'Append-only capability lifecycle transition history across product cycles.',
+    },
     cycle: {
         name: 'cycle',
         lane: 'cycle',
