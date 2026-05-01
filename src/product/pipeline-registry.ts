@@ -234,6 +234,15 @@ export const PRODUCT_ARTIFACT_REGISTRY = {
     machineContract: 'footer',
     purpose: 'Human-readable taste verdict for distinctiveness, usability, accessibility, and brand fit before design-system promotion.',
   },
+  'visual-lifecycle': {
+    name: 'visual-lifecycle',
+    lane: 'design',
+    currentPath: '.omc/design/visual-lifecycle/current.json',
+    format: 'json',
+    owner: 'omc creative-loop lifecycle',
+    machineContract: 'strict',
+    purpose: 'Visual appearance lifecycle: hypothesis, implementation mapping, screenshot proof, and iteration debt.',
+  },
   cycle: {
     name: 'cycle',
     lane: 'cycle',

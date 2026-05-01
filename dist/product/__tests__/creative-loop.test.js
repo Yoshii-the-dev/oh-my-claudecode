@@ -2,7 +2,7 @@ import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { CREATIVE_LOOP_JSON_RELATIVE_PATH, CREATIVE_LOOP_MD_RELATIVE_PATH, initCreativeLoop, planCreativeLoop, renderCreativeLoopPlan, writeCreativeLoopPlan, } from '../creative-loop.js';
+import { CREATIVE_LOOP_JSON_RELATIVE_PATH, CREATIVE_LOOP_MD_RELATIVE_PATH, VISUAL_LIFECYCLE_JSON_RELATIVE_PATH, VISUAL_LIFECYCLE_MD_RELATIVE_PATH, generateVisualLifecycleReport, initCreativeLoop, planCreativeLoop, renderCreativeLoopPlan, writeCreativeLoopPlan, writeVisualLifecycleReport, } from '../creative-loop.js';
 let rootsToClean = [];
 afterEach(() => {
     for (const root of rootsToClean) {
@@ -49,6 +49,32 @@ describe('creative loop', () => {
         expect(plan.status).toBe('needs-brief');
         expect(plan.artifacts.find((artifact) => artifact.id === 'visual-expectation')?.reason).toContain('screenshot');
         expect(plan.artifacts.find((artifact) => artifact.id === 'component-experiments')?.reason).toContain('screenshot');
+    });
+    it('classifies visual lifecycle from hypothesis through screenshot proof', () => {
+        const root = createRoot();
+        writePassingCreativeLoop(root);
+        const report = generateVisualLifecycleReport({ root, goal: 'row tracking dashboard' });
+        const written = writeVisualLifecycleReport(root, report);
+        expect(report.status).toBe('healthy');
+        expect(report.phases.map((phase) => [phase.id, phase.state])).toEqual([
+            ['visual-hypothesis', 'ready'],
+            ['implementation-mapping', 'ready'],
+            ['screenshot-proof', 'ready'],
+            ['iteration-debt', 'watchlist'],
+        ]);
+        expect(report.aggregates.screenshot_proofs).toBe(1);
+        expect(report.debts.map((debt) => debt.phase)).toContain('iteration-debt');
+        expect(written.jsonPath).toContain(VISUAL_LIFECYCLE_JSON_RELATIVE_PATH);
+        expect(written.mdPath).toContain(VISUAL_LIFECYCLE_MD_RELATIVE_PATH);
+    });
+    it('marks visual lifecycle as screenshot-proof debt when screenshots are missing', () => {
+        const root = createRoot();
+        writePassingCreativeLoop(root);
+        rmSync(join(root, '.omc/artifacts/creative-loop/row-marker.png'));
+        const report = generateVisualLifecycleReport({ root, goal: 'row tracking dashboard' });
+        expect(report.status).toBe('needs-screenshot-proof');
+        expect(report.phases.find((phase) => phase.id === 'screenshot-proof')?.state).toBe('partial');
+        expect(report.debts.some((debt) => debt.subject === 'visual-expectation')).toBe(true);
     });
 });
 function createRoot() {

@@ -1,3 +1,4 @@
+import { type RuntimeQaConfig } from '../runtime-qa/runner.js';
 import { type CycleFeatureExpectationContract } from './cycle-document.js';
 export declare const PRODUCT_SCENARIO_GENERATOR_JSON_RELATIVE_PATH = ".omc/product/scenarios/current.json";
 export declare const PRODUCT_SCENARIO_GENERATOR_MD_RELATIVE_PATH = ".omc/product/scenarios/current.md";
@@ -63,11 +64,34 @@ export interface ProductScenarioGenerationReport {
     gaps: ProductScenarioGenerationGap[];
     next_action: string;
 }
+export type ProductScenarioRuntimeQaStatus = 'no-scenarios' | 'needs-harness' | 'current' | 'applied';
+export interface ProductScenarioRuntimeQaResult {
+    schema_version: 1;
+    generated_at: string;
+    root: string;
+    status: ProductScenarioRuntimeQaStatus;
+    config_path: string;
+    runtime_supported: boolean;
+    scenario_count: number;
+    flow_count: number;
+    added_flows: string[];
+    existing_flows: string[];
+    written: boolean;
+    next_action: string;
+    config?: RuntimeQaConfig;
+}
+export interface ProductScenarioRuntimeQaOptions {
+    root?: string;
+    report?: ProductScenarioGenerationReport;
+    write?: boolean;
+    now?: Date;
+}
 export declare function generateProductScenarioPlan(root?: string, now?: Date): ProductScenarioGenerationReport;
 export declare function writeProductScenarioPlan(root?: string, report?: ProductScenarioGenerationReport): {
     jsonPath: string;
     mdPath: string;
 };
 export declare function readProductScenarioPlan(root?: string): ProductScenarioGenerationReport | undefined;
+export declare function applyGeneratedScenariosToRuntimeQa(options?: ProductScenarioRuntimeQaOptions): ProductScenarioRuntimeQaResult;
 export declare function renderProductScenarioPlan(report: ProductScenarioGenerationReport): string;
 //# sourceMappingURL=scenario-generator.d.ts.map

@@ -155,6 +155,8 @@ describe('product/agent pipeline contracts', () => {
         expect(productPipeline).toContain('.omc/design/visual-expectation/current.json');
         expect(docs).toContain('.omc/design/creative-loop/current.json');
         expect(docs).toContain('.omc/design/visual-expectation/current.json');
+        expect(docs).toContain('.omc/design/visual-lifecycle/current.json');
+        expect(docs).toContain('visual hypothesis');
     });
     it('defines priority-engine as a broad portfolio layer, not a short feature shortlist', () => {
         const agent = readRepoFile('agents/priority-engine.md');

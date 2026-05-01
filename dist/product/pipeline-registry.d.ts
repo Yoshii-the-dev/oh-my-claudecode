@@ -215,6 +215,15 @@ export declare const PRODUCT_ARTIFACT_REGISTRY: {
         readonly machineContract: "footer";
         readonly purpose: "Human-readable taste verdict for distinctiveness, usability, accessibility, and brand fit before design-system promotion.";
     };
+    readonly 'visual-lifecycle': {
+        readonly name: "visual-lifecycle";
+        readonly lane: "design";
+        readonly currentPath: ".omc/design/visual-lifecycle/current.json";
+        readonly format: "json";
+        readonly owner: "omc creative-loop lifecycle";
+        readonly machineContract: "strict";
+        readonly purpose: "Visual appearance lifecycle: hypothesis, implementation mapping, screenshot proof, and iteration debt.";
+    };
     readonly cycle: {
         readonly name: "cycle";
         readonly lane: "cycle";

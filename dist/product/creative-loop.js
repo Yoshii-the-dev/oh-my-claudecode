@@ -4,6 +4,8 @@ import { atomicWriteFileSync, atomicWriteJsonSync } from '../lib/atomic-write.js
 export const CREATIVE_LOOP_JSON_RELATIVE_PATH = '.omc/design/creative-loop/current.json';
 export const CREATIVE_LOOP_MD_RELATIVE_PATH = '.omc/design/creative-loop/current.md';
 export const VISUAL_EXPECTATION_RELATIVE_PATH = '.omc/design/visual-expectation/current.json';
+export const VISUAL_LIFECYCLE_JSON_RELATIVE_PATH = '.omc/design/visual-lifecycle/current.json';
+export const VISUAL_LIFECYCLE_MD_RELATIVE_PATH = '.omc/design/visual-lifecycle/current.md';
 const ARTIFACTS = [
     {
         id: 'meaning-brief',
@@ -99,6 +101,86 @@ export function writeCreativeLoopPlan(root = process.cwd(), plan) {
     atomicWriteJsonSync(jsonPath, plan);
     atomicWriteFileSync(mdPath, renderCreativeLoopPlan(plan));
     return { jsonPath, mdPath };
+}
+export function generateVisualLifecycleReport(options = {}) {
+    const root = resolve(options.root ?? process.cwd());
+    const plan = planCreativeLoop(options);
+    const contract = readVisualExpectationContract(root);
+    const phases = [
+        visualHypothesisPhase(plan, contract),
+        implementationMappingPhase(plan, contract),
+        screenshotProofPhase(plan, contract),
+    ];
+    const debts = visualLifecycleDebts(plan, contract);
+    phases.push(iterationDebtPhase(debts, contract));
+    const sourceArtifacts = plan.artifacts
+        .filter((artifact) => artifact.exists)
+        .map((artifact) => artifact.path)
+        .filter((path, index, paths) => paths.indexOf(path) === index)
+        .sort();
+    const status = visualLifecycleStatus(plan, phases, debts);
+    return {
+        schema_version: 1,
+        generated_at: (options.now ?? new Date()).toISOString(),
+        root,
+        status,
+        goal: options.goal,
+        source_artifacts: sourceArtifacts,
+        aggregates: {
+            phase_count: phases.length,
+            ready_phases: phases.filter((phase) => phase.state === 'ready' || phase.state === 'watchlist').length,
+            screenshot_proofs: screenshotEvidence(contract).length,
+            iteration_debts: debts.length,
+            blocking_debts: debts.filter((debt) => debt.severity === 'error').length,
+        },
+        phases,
+        debts,
+        next_action: visualLifecycleNextAction(status),
+    };
+}
+export function writeVisualLifecycleReport(root = process.cwd(), report = generateVisualLifecycleReport({ root })) {
+    const jsonPath = resolve(root, VISUAL_LIFECYCLE_JSON_RELATIVE_PATH);
+    const mdPath = resolve(root, VISUAL_LIFECYCLE_MD_RELATIVE_PATH);
+    mkdirSync(dirname(jsonPath), { recursive: true });
+    atomicWriteJsonSync(jsonPath, report);
+    mkdirSync(dirname(mdPath), { recursive: true });
+    atomicWriteFileSync(mdPath, renderVisualLifecycleReport(report));
+    return { jsonPath, mdPath };
+}
+export function renderVisualLifecycleReport(report) {
+    return [
+        '# Visual Lifecycle',
+        '',
+        `status: ${report.status}`,
+        `generated_at: ${report.generated_at}`,
+        `goal: ${report.goal ?? 'unknown'}`,
+        `schema_source: ${VISUAL_LIFECYCLE_JSON_RELATIVE_PATH}`,
+        '',
+        '## Aggregates',
+        `- phase_count: ${report.aggregates.phase_count}`,
+        `- ready_phases: ${report.aggregates.ready_phases}`,
+        `- screenshot_proofs: ${report.aggregates.screenshot_proofs}`,
+        `- iteration_debts: ${report.aggregates.iteration_debts}`,
+        `- blocking_debts: ${report.aggregates.blocking_debts}`,
+        '',
+        '## Phases',
+        '| Phase | State | Gaps | Recommended Action |',
+        '| --- | --- | --- | --- |',
+        ...report.phases.map((phase) => `| ${phase.id} | ${phase.state} | ${escapeCell(phase.gaps.join('; ') || 'none')} | ${escapeCell(phase.recommended_action)} |`),
+        '',
+        '## Iteration Debt',
+        '| Severity | Phase | Subject | Recommended Action |',
+        '| --- | --- | --- | --- |',
+        ...(report.debts.length > 0
+            ? report.debts.map((debt) => `| ${debt.severity} | ${debt.phase} | ${escapeCell(debt.subject)} | ${escapeCell(debt.recommended_action)} |`)
+            : ['| warning | iteration-debt | none | No visual iteration debt detected |']),
+        '',
+        '## Source Artifacts',
+        ...report.source_artifacts.map((source) => `- ${source}`),
+        '',
+        `next_action: ${report.next_action}`,
+        '',
+    ].join('\n');
 }
 export function renderCreativeLoopPlan(plan) {
     return [
@@ -264,6 +346,174 @@ function validateVisualExpectationContract(root, rawContent) {
     return missing.length === 0
         ? { passed: true, reason: 'visual expectation contract passed' }
         : { passed: false, reason: `missing or invalid: ${missing.join(', ')}` };
+}
+function readVisualExpectationContract(root) {
+    const path = resolve(root, VISUAL_EXPECTATION_RELATIVE_PATH);
+    if (!existsSync(path))
+        return undefined;
+    try {
+        const parsed = parseJsonObject(readFileSync(path, 'utf-8'));
+        if (!parsed)
+            return undefined;
+        return objectValue(parsed.visual_expectation_contract) ?? parsed;
+    }
+    catch {
+        return undefined;
+    }
+}
+function visualHypothesisPhase(plan, contract) {
+    const gaps = [];
+    const direction = objectValue(contract?.selected_direction);
+    if (!contract)
+        gaps.push('visual expectation contract missing');
+    if (stringArrayValue(contract?.desired_perception).length === 0)
+        gaps.push('desired perception missing');
+    if (stringArrayValue(contract?.category_codes_to_avoid).length === 0)
+        gaps.push('category codes to avoid missing');
+    if (!direction || !hasMeaningfulString(direction.name) || !hasMeaningfulString(direction.rationale)) {
+        gaps.push('selected visual hypothesis missing');
+    }
+    if (!artifactPassed(plan, 'design-directions'))
+        gaps.push('divergent design directions are not ready');
+    return {
+        id: 'visual-hypothesis',
+        state: gaps.length === 0 ? 'ready' : contract ? 'partial' : 'missing',
+        evidence: existingArtifactPaths(plan, ['visual-expectation', 'design-directions', 'meaning-brief', 'inspiration-ledger']),
+        gaps,
+        recommended_action: gaps.length === 0
+            ? 'Use the selected direction as the visual hypothesis for implementation.'
+            : 'Write a selected visual hypothesis grounded in meaning, category tension, and divergent directions.',
+    };
+}
+function implementationMappingPhase(plan, contract) {
+    const gaps = [];
+    if (!arrayValue(contract?.token_rationale)?.length)
+        gaps.push('token rationale missing');
+    if (arrayValue(contract?.component_proofs)?.length) {
+        for (const [index, proof] of arrayValue(contract?.component_proofs).entries()) {
+            const record = objectValue(proof);
+            if (!record || !hasMeaningfulString(record.component) || !hasMeaningfulString(record.state)) {
+                gaps.push(`component proof ${index + 1} missing component/state mapping`);
+            }
+        }
+    }
+    else {
+        gaps.push('component proofs missing');
+    }
+    if (!artifactPassed(plan, 'token-system'))
+        gaps.push('token system is not ready');
+    return {
+        id: 'implementation-mapping',
+        state: gaps.length === 0 ? 'ready' : contract ? 'partial' : 'missing',
+        evidence: existingArtifactPaths(plan, ['visual-expectation', 'token-system', 'component-experiments', 'design-system']),
+        gaps,
+        recommended_action: gaps.length === 0
+            ? 'Implementation has a component/token mapping to preserve the selected visual hypothesis.'
+            : 'Map the selected direction into tokens, components, states, and component proofs before implementation is treated as visually complete.',
+    };
+}
+function screenshotProofPhase(plan, contract) {
+    const screenshots = screenshotEvidence(contract);
+    const gaps = [];
+    if (screenshots.length === 0)
+        gaps.push('screenshot evidence missing');
+    if (!artifactPassed(plan, 'component-experiments'))
+        gaps.push('component experiments are not screenshot-proven');
+    if (!artifactPassed(plan, 'taste-gate'))
+        gaps.push('taste gate is not passing');
+    return {
+        id: 'screenshot-proof',
+        state: gaps.length === 0 ? 'ready' : screenshots.length > 0 ? 'partial' : 'missing',
+        evidence: [...existingArtifactPaths(plan, ['component-experiments', 'taste-gate']), ...screenshots],
+        gaps,
+        recommended_action: gaps.length === 0
+            ? 'Screenshot proof and taste gate can be used as implementation evidence.'
+            : 'Capture screenshots, run visual verdict, and pass the taste gate before calling the appearance done.',
+    };
+}
+function iterationDebtPhase(debts, contract) {
+    const blocking = debts.filter((debt) => debt.severity === 'error');
+    const watchlist = stringArrayValue(contract?.not_ready_if);
+    return {
+        id: 'iteration-debt',
+        state: blocking.length > 0 ? 'blocking' : watchlist.length > 0 || debts.length > 0 ? 'watchlist' : 'ready',
+        evidence: [VISUAL_EXPECTATION_RELATIVE_PATH],
+        gaps: debts.map((debt) => debt.subject),
+        recommended_action: blocking.length > 0
+            ? 'Resolve blocking visual debt before promoting the surface as visually complete.'
+            : 'Carry not_ready_if conditions into the next design iteration as visual watchlist debt.',
+    };
+}
+function visualLifecycleDebts(plan, contract) {
+    const debts = [];
+    for (const artifact of plan.artifacts.filter((entry) => entry.required && !entry.passed)) {
+        debts.push({
+            severity: 'error',
+            phase: visualLifecyclePhaseForArtifact(artifact.id),
+            subject: artifact.id,
+            message: artifact.reason,
+            recommended_action: `Repair ${artifact.id} before treating creative-loop as visually complete.`,
+            evidence: artifact.exists ? [artifact.path] : [],
+        });
+    }
+    for (const condition of stringArrayValue(contract?.not_ready_if)) {
+        debts.push({
+            severity: 'warning',
+            phase: 'iteration-debt',
+            subject: condition,
+            message: 'Visual expectation contract names this as a future not-ready condition.',
+            recommended_action: 'Re-check this condition after implementation screenshots exist.',
+            evidence: [VISUAL_EXPECTATION_RELATIVE_PATH],
+        });
+    }
+    return debts;
+}
+function visualLifecyclePhaseForArtifact(artifactId) {
+    if (artifactId === 'token-system')
+        return 'implementation-mapping';
+    if (artifactId === 'component-experiments' || artifactId === 'taste-gate')
+        return 'screenshot-proof';
+    return 'visual-hypothesis';
+}
+function visualLifecycleStatus(plan, phases, debts) {
+    if (!plan.artifacts.some((artifact) => artifact.exists))
+        return 'empty';
+    if (phaseState(phases, 'visual-hypothesis') !== 'ready')
+        return 'needs-hypothesis';
+    if (phaseState(phases, 'implementation-mapping') !== 'ready')
+        return 'needs-implementation-map';
+    if (phaseState(phases, 'screenshot-proof') !== 'ready')
+        return 'needs-screenshot-proof';
+    if (debts.some((debt) => debt.severity === 'error'))
+        return 'needs-iteration';
+    return 'healthy';
+}
+function visualLifecycleNextAction(status) {
+    if (status === 'empty')
+        return 'Run omc creative-loop init --goal "<visual goal>"';
+    if (status === 'needs-hypothesis')
+        return 'Write the visual hypothesis: meaning brief, inspiration ledger, selected direction, and divergence.';
+    if (status === 'needs-implementation-map')
+        return 'Map the selected direction into tokens, component states, and implementation proofs.';
+    if (status === 'needs-screenshot-proof')
+        return 'Capture screenshots, run visual verdict, and pass taste gate.';
+    if (status === 'needs-iteration')
+        return 'Resolve blocking visual iteration debt before promotion.';
+    return 'Visual lifecycle is healthy; carry watchlist debt into future visual iterations.';
+}
+function phaseState(phases, phaseId) {
+    return phases.find((phase) => phase.id === phaseId)?.state;
+}
+function artifactPassed(plan, id) {
+    return plan.artifacts.some((artifact) => artifact.id === id && artifact.passed);
+}
+function existingArtifactPaths(plan, ids) {
+    return plan.artifacts
+        .filter((artifact) => ids.includes(artifact.id) && artifact.exists)
+        .map((artifact) => artifact.path);
+}
+function screenshotEvidence(contract) {
+    return stringArrayValue(contract?.screenshot_evidence);
 }
 function validateTokenSystem(rawContent) {
     const parsed = parseJsonObject(rawContent);

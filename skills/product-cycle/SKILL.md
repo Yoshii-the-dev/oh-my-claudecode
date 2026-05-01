@@ -37,8 +37,9 @@ omc product-cycle validate
 omc product-cycle run --auto --auto-policy safe --json
 omc feature-generation audit --write --goal "ship first usable loop"
 omc creative-loop audit --write --goal "ship first usable loop"
+omc creative-loop lifecycle --write --goal "ship first usable loop"
 omc product-totality audit --write
-omc scenario-generator generate --write
+omc scenario-generator generate --write --apply-runtime-qa
 omc scenario-coverage audit --write
 omc product-regression audit --write
 omc capability-lifecycle audit --write
@@ -134,19 +135,20 @@ If the build only delivers `v0`, call the result a seeded capability and keep `v
 8. Generate scenario declarations before build:
 
 ```bash
-omc scenario-generator generate --write
+omc scenario-generator generate --write --apply-runtime-qa
 ```
 
-This writes `.omc/product/scenarios/current.json` and `.omc/product/scenarios/current.md` from `feature_expectation_contract`. The generated loop must include setup/open context, core action, exit/restart, return-session, continue-with-context, and proof that `useless_if` is false.
+This writes `.omc/product/scenarios/current.json` and `.omc/product/scenarios/current.md` from `feature_expectation_contract`. When a Playwright, Maestro, dogfood, simulator, or project-script harness is detected, it also merges generated `runtime_qa_flow` declarations into `.omc/runtime-qa.json`. The generated loop must include setup/open context, core action, exit/restart, return-session, continue-with-context, and proof that `useless_if` is false.
 
 9. For user-facing visual work, run the creative loop before implementation:
 
 ```bash
 /creative-loop "<core product slice>"
 omc creative-loop audit --write --goal "<core product slice>"
+omc creative-loop lifecycle --write --goal "<core product slice>"
 ```
 
-It must prove meaning brief, inspiration ledger, visual expectation contract, 3-5 divergent design directions, motion grammar, tokens, component experiments/screenshots, visual verdict, and taste gate. Draft placeholders from `omc creative-loop init` do not pass.
+It must prove meaning brief, inspiration ledger, visual expectation contract, 3-5 divergent design directions, motion grammar, tokens, component experiments/screenshots, visual verdict, taste gate, and visual lifecycle phases: visual hypothesis, implementation mapping, screenshot proof, and iteration debt. Draft placeholders from `omc creative-loop init` do not pass.
 
 10. After spec, run:
 
@@ -196,6 +198,7 @@ omc doctor product-contracts --stage cycle
 - User-facing core slices cannot enter build until `feature_expectation_contract` names the first meaningful use, what would make the implementation useless, and the v0/v1/v2 maturity ladder.
 - Visual user-facing work cannot enter build until `.omc/design/visual-expectation/current.json` names desired perception, category codes to avoid, selected direction, token rationale, component proofs, screenshot evidence, and not-ready-if conditions.
 - Visual user-facing work cannot enter implementation until the creative-loop audit is ready and `.omc/design/taste-gate/current.md` has a real `verdict: pass`.
+- Visual user-facing work cannot be called visually complete until `.omc/design/visual-lifecycle/current.json` is `healthy` or carries only explicit watchlist debt.
 - Weak evidence must create a selected learning/research task and remain visible as research debt in the roadmap.
 - A cycle is not done until learning is captured.
 - A completed cycle is not the end of a capability. After completion, totality audit must evaluate what exists, how it is connected, and which v1/v2 depth remains.

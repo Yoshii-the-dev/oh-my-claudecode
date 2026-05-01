@@ -5,6 +5,8 @@ import { type ProductScenarioGenerationReport } from '../../product/scenario-gen
 export interface ScenarioGeneratorCommandOptions {
     json?: boolean;
     write?: boolean;
+    applyRuntimeQa?: boolean;
+    runRuntimeQa?: boolean;
 }
 interface LoggerLike {
     log: (message?: unknown) => void;

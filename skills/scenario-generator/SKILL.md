@@ -13,7 +13,8 @@ Use this skill after a cycle spec contains `feature_expectation_contract`. It co
 
 ```bash
 /scenario-generator "generate proof loop for knitting row reader"
-omc scenario-generator generate --write
+omc scenario-generator generate --write --apply-runtime-qa
+omc scenario-generator generate --write --run-runtime-qa
 omc scenario-generator generate --json
 ```
 
@@ -31,7 +32,7 @@ Read compact/current artifacts first:
 1. Run:
 
 ```bash
-omc scenario-generator generate --write
+omc scenario-generator generate --write --apply-runtime-qa
 ```
 
 2. Read `.omc/product/scenarios/current.json`.
@@ -51,17 +52,20 @@ omc scenario-generator generate --write
    - return-session step
    - continue-with-context step
    - proof that `useless_if` is false
-5. Add the generated `runtime_qa_flow` to `.omc/runtime-qa.json` or run an explicit dogfood/simulator flow before calling the capability proven.
+5. If the command reports `runtime_qa.status: needs-harness`, add a Playwright, Maestro, dogfood, simulator, or project-script smoke harness before calling the capability proven.
+6. If a harness is available, run `omc scenario-generator generate --write --run-runtime-qa` or `omc runtime-qa run --auto --json`, then audit scenario coverage.
 
 ## Output
 
 - `.omc/product/scenarios/current.json` — machine-readable generated scenario declarations.
 - `.omc/product/scenarios/current.md` — human-readable scenario projection.
+- `.omc/runtime-qa.json` — generated `runtime_qa_flow` declarations merged into the executable harness when supported.
+- `.omc/handoffs/runtime-qa/current.json` — runtime proof written when `--run-runtime-qa` executes.
 
 ## Integration
 
 - `/product-cycle` writes generated scenarios when advancing to build and again before completion audits.
-- `omc scenario-coverage audit` treats generated scenarios as declared proof targets; they still require runtime QA or dogfood evidence to become `runtime-passed`.
+- `omc scenario-coverage audit` treats generated scenarios as declared proof targets; they still require runtime QA, simulator, or dogfood evidence to become `runtime-passed`.
 - `/priority-engine` must treat generated-but-unrun scenarios as scenario proof debt.
 
 ## Failure Modes To Avoid

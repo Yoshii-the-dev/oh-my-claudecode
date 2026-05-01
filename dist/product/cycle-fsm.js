@@ -6,7 +6,7 @@ import { CYCLE_DOCUMENT_RELATIVE_PATH, CYCLE_PROJECTION_RELATIVE_PATH, readCycle
 import { PRODUCT_TOTALITY_JSON_RELATIVE_PATH, PRODUCT_TOTALITY_MD_RELATIVE_PATH, generateProductTotalityAudit, writeProductTotalityAudit, } from './product-totality.js';
 import { PRODUCT_CAPABILITY_GRAPH_JSON_RELATIVE_PATH, PRODUCT_CAPABILITY_GRAPH_MD_RELATIVE_PATH, } from './capability-graph.js';
 import { PRODUCT_SCENARIO_COVERAGE_JSON_RELATIVE_PATH, PRODUCT_SCENARIO_COVERAGE_MD_RELATIVE_PATH, generateProductScenarioCoverageAudit, writeProductScenarioCoverageAudit, } from './scenario-coverage.js';
-import { PRODUCT_SCENARIO_GENERATOR_JSON_RELATIVE_PATH, PRODUCT_SCENARIO_GENERATOR_MD_RELATIVE_PATH, generateProductScenarioPlan, writeProductScenarioPlan, } from './scenario-generator.js';
+import { PRODUCT_SCENARIO_GENERATOR_JSON_RELATIVE_PATH, PRODUCT_SCENARIO_GENERATOR_MD_RELATIVE_PATH, applyGeneratedScenariosToRuntimeQa, generateProductScenarioPlan, writeProductScenarioPlan, } from './scenario-generator.js';
 import { PRODUCT_REGRESSION_JSON_RELATIVE_PATH, PRODUCT_REGRESSION_MD_RELATIVE_PATH, generateProductRegressionAudit, writeProductRegressionAudit, } from './product-regression.js';
 import { PRODUCT_CAPABILITY_LIFECYCLE_JSON_RELATIVE_PATH, PRODUCT_CAPABILITY_LIFECYCLE_MD_RELATIVE_PATH, generateProductCapabilityLifecycleAudit, writeProductCapabilityLifecycleAudit, } from './capability-lifecycle.js';
 const LEARNING_RELATIVE_PATH = '.omc/learning/current.md';
@@ -168,11 +168,14 @@ export function advanceProductCycle(options) {
         writeCycle(root, updateCycleStage(content, to));
     }
     if (to === 'build') {
-        writeProductScenarioPlan(root, generateProductScenarioPlan(root));
+        const scenarioPlan = generateProductScenarioPlan(root);
+        writeProductScenarioPlan(root, scenarioPlan);
+        applyGeneratedScenariosToRuntimeQa({ root, report: scenarioPlan, write: true });
     }
     if (before.stage === 'learn' && to === 'complete') {
         const scenarioPlan = generateProductScenarioPlan(root);
         writeProductScenarioPlan(root, scenarioPlan);
+        applyGeneratedScenariosToRuntimeQa({ root, report: scenarioPlan, write: true });
         const totality = generateProductTotalityAudit(root);
         writeProductTotalityAudit(root, totality);
         const scenarioCoverage = generateProductScenarioCoverageAudit({ root, totality });

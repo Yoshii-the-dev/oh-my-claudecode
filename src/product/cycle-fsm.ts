@@ -29,6 +29,7 @@ import {
 import {
   PRODUCT_SCENARIO_GENERATOR_JSON_RELATIVE_PATH,
   PRODUCT_SCENARIO_GENERATOR_MD_RELATIVE_PATH,
+  applyGeneratedScenariosToRuntimeQa,
   generateProductScenarioPlan,
   writeProductScenarioPlan,
 } from './scenario-generator.js';
@@ -265,11 +266,14 @@ export function advanceProductCycle(options: AdvanceProductCycleOptions): Produc
     writeCycle(root, updateCycleStage(content, to));
   }
   if (to === 'build') {
-    writeProductScenarioPlan(root, generateProductScenarioPlan(root));
+    const scenarioPlan = generateProductScenarioPlan(root);
+    writeProductScenarioPlan(root, scenarioPlan);
+    applyGeneratedScenariosToRuntimeQa({ root, report: scenarioPlan, write: true });
   }
   if (before.stage === 'learn' && to === 'complete') {
     const scenarioPlan = generateProductScenarioPlan(root);
     writeProductScenarioPlan(root, scenarioPlan);
+    applyGeneratedScenariosToRuntimeQa({ root, report: scenarioPlan, write: true });
     const totality = generateProductTotalityAudit(root);
     writeProductTotalityAudit(root, totality);
     const scenarioCoverage = generateProductScenarioCoverageAudit({ root, totality });

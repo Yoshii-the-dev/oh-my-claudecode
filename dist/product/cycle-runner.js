@@ -13,7 +13,7 @@ import { planFeatureGeneration, writeFeatureGenerationPlan } from './feature-gen
 import { generateProductTotalityAudit, writeProductTotalityAudit } from './product-totality.js';
 import { generateProductScenarioCoverageAudit, writeProductScenarioCoverageAudit } from './scenario-coverage.js';
 import { generateProductRegressionAudit, writeProductRegressionAudit } from './product-regression.js';
-import { generateProductScenarioPlan, writeProductScenarioPlan } from './scenario-generator.js';
+import { applyGeneratedScenariosToRuntimeQa, generateProductScenarioPlan, writeProductScenarioPlan } from './scenario-generator.js';
 import { generateProductCapabilityLifecycleAudit, writeProductCapabilityLifecycleAudit } from './capability-lifecycle.js';
 const DEFAULT_VERIFY_COMMAND = 'npm test';
 const DEFAULT_MAX_STAGES = 10;
@@ -109,7 +109,9 @@ export function runProductCycle(options = {}) {
                 });
             }
             if (!dryRun) {
-                writeProductScenarioPlan(root, generateProductScenarioPlan(root));
+                const scenarioPlan = generateProductScenarioPlan(root);
+                writeProductScenarioPlan(root, scenarioPlan);
+                applyGeneratedScenariosToRuntimeQa({ root, report: scenarioPlan, write: true });
                 const totality = generateProductTotalityAudit(root);
                 writeProductTotalityAudit(root, totality);
                 const scenarioCoverage = generateProductScenarioCoverageAudit({ root, totality });

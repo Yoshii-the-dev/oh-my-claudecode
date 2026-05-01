@@ -16,6 +16,8 @@ describe('product pipeline registry', () => {
         expect(PRODUCT_ARTIFACT_REGISTRY['creative-loop'].machineContract).toBe('strict');
         expect(PRODUCT_ARTIFACT_REGISTRY['creative-visual-expectation'].currentPath).toBe('.omc/design/visual-expectation/current.json');
         expect(PRODUCT_ARTIFACT_REGISTRY['creative-visual-expectation'].machineContract).toBe('strict');
+        expect(PRODUCT_ARTIFACT_REGISTRY['visual-lifecycle'].currentPath).toBe('.omc/design/visual-lifecycle/current.json');
+        expect(PRODUCT_ARTIFACT_REGISTRY['visual-lifecycle'].machineContract).toBe('strict');
         expect(PRODUCT_ARTIFACT_REGISTRY['product-totality'].currentPath).toBe('.omc/product/totality/current.json');
         expect(PRODUCT_ARTIFACT_REGISTRY['product-totality'].machineContract).toBe('strict');
         expect(PRODUCT_ARTIFACT_REGISTRY['capability-graph'].currentPath).toBe('.omc/product/capability-graph/current.json');
@@ -36,6 +38,7 @@ describe('product pipeline registry', () => {
         expect(markdown).toContain('| experience-gate | experience | .omc/experience/current.md |');
         expect(markdown).toContain('| creative-loop | design | .omc/design/creative-loop/current.json |');
         expect(markdown).toContain('| creative-visual-expectation | design | .omc/design/visual-expectation/current.json |');
+        expect(markdown).toContain('| visual-lifecycle | design | .omc/design/visual-lifecycle/current.json |');
         expect(markdown).toContain('| product-totality | product | .omc/product/totality/current.json |');
         expect(markdown).toContain('| capability-graph | product | .omc/product/capability-graph/current.json |');
         expect(markdown).toContain('| scenario-coverage | product | .omc/product/scenario-coverage/current.json |');

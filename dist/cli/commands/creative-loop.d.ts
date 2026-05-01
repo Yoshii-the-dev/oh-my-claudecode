@@ -11,6 +11,7 @@ interface LoggerLike {
     log: (message?: unknown) => void;
 }
 export declare function creativeLoopAuditCommand(root: string | undefined, options: CreativeLoopCommandOptions, logger?: LoggerLike): Promise<number>;
+export declare function creativeLoopLifecycleCommand(root: string | undefined, options: CreativeLoopCommandOptions, logger?: LoggerLike): Promise<number>;
 export declare function creativeLoopInitCommand(root: string | undefined, options: CreativeLoopCommandOptions, logger?: LoggerLike): Promise<number>;
 export { renderCreativeLoopPlan };
 //# sourceMappingURL=creative-loop.d.ts.map

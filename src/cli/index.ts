@@ -79,7 +79,7 @@ import {
   portfolioTrimCommand,
   portfolioValidateCommand,
 } from './commands/portfolio.js';
-import { creativeLoopAuditCommand, creativeLoopInitCommand } from './commands/creative-loop.js';
+import { creativeLoopAuditCommand, creativeLoopInitCommand, creativeLoopLifecycleCommand } from './commands/creative-loop.js';
 import { featureGenerationAuditCommand } from './commands/feature-generation.js';
 import { productTotalityAuditCommand } from './commands/product-totality.js';
 import { capabilityLifecycleAuditCommand } from './commands/capability-lifecycle.js';
@@ -1760,6 +1760,7 @@ const scenarioGeneratorCmd = program
 Examples:
   $ omc scenario-generator generate
   $ omc scenario-generator generate /path/to/app --write
+  $ omc scenario-generator generate /path/to/app --write --apply-runtime-qa
   $ omc scenario-generator generate --json`);
 
 scenarioGeneratorCmd
@@ -1767,6 +1768,8 @@ scenarioGeneratorCmd
   .description('Generate scenario declarations from cycle feature_expectation_contract values')
   .option('--json', 'Output as JSON')
   .option('--write', 'Write .omc/product/scenarios/current.{json,md}')
+  .option('--apply-runtime-qa', 'Merge generated runtime_qa_flow declarations into .omc/runtime-qa.json when a harness is supported')
+  .option('--run-runtime-qa', 'Apply generated runtime QA flows, run omc runtime-qa, and write runtime QA handoff evidence')
   .action(async (root, options) => {
     const exitCode = await scenarioGeneratorCommand(root, options);
     process.exit(exitCode);
@@ -1842,6 +1845,7 @@ const creativeLoopCmd = program
 Examples:
   $ omc creative-loop audit --goal "build a distinct onboarding surface"
   $ omc creative-loop audit /path/to/app --write
+  $ omc creative-loop lifecycle /path/to/app --write
   $ omc creative-loop init --goal "row tracking dashboard"`);
 
 creativeLoopCmd
@@ -1852,6 +1856,17 @@ creativeLoopCmd
   .option('--write', 'Write .omc/design/creative-loop/current.{json,md}')
   .action(async (root, options) => {
     const exitCode = await creativeLoopAuditCommand(root, options);
+    process.exit(exitCode);
+  });
+
+creativeLoopCmd
+  .command('lifecycle [root]')
+  .description('Classify visual appearance as hypothesis, mapping, screenshot proof, and iteration debt')
+  .option('--goal <goal>', 'Visual/product goal used for lifecycle context')
+  .option('--json', 'Output as JSON')
+  .option('--write', 'Write .omc/design/visual-lifecycle/current.{json,md}')
+  .action(async (root, options) => {
+    const exitCode = await creativeLoopLifecycleCommand(root, options);
     process.exit(exitCode);
   });
 

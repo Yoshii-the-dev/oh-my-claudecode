@@ -16668,16 +16668,16 @@ function readCanonicalTeamStateCandidate(directory, sessionId) {
     if (!teamName) continue;
     const teamDir3 = (0, import_path53.join)(teamRoot, teamName);
     const manifest = readJson((0, import_path53.join)(teamDir3, "manifest.json"));
-    const phaseState = readJson((0, import_path53.join)(teamDir3, "phase-state.json"));
-    if (!manifest || !phaseState) continue;
+    const phaseState2 = readJson((0, import_path53.join)(teamDir3, "phase-state.json"));
+    if (!manifest || !phaseState2) continue;
     const ownerSessionId = safeString(manifest.leader?.session_id);
     if (ownerSessionId !== currentSessionId) continue;
-    const rawPhase = safeString(phaseState.current_phase);
+    const rawPhase = safeString(phaseState2.current_phase);
     const stage = mapCanonicalPhaseToStage(rawPhase);
     if (!stage) continue;
     const task = safeString(manifest.task) || teamName;
     const startedAt = safeString(manifest.created_at);
-    const updatedAt = safeString(phaseState.updated_at);
+    const updatedAt = safeString(phaseState2.updated_at);
     return buildCandidate(
       teamName,
       ownerSessionId,
@@ -84969,6 +84969,15 @@ var PRODUCT_ARTIFACT_REGISTRY = {
     machineContract: "footer",
     purpose: "Human-readable taste verdict for distinctiveness, usability, accessibility, and brand fit before design-system promotion."
   },
+  "visual-lifecycle": {
+    name: "visual-lifecycle",
+    lane: "design",
+    currentPath: ".omc/design/visual-lifecycle/current.json",
+    format: "json",
+    owner: "omc creative-loop lifecycle",
+    machineContract: "strict",
+    purpose: "Visual appearance lifecycle: hypothesis, implementation mapping, screenshot proof, and iteration debt."
+  },
   cycle: {
     name: "cycle",
     lane: "cycle",
@@ -88853,7 +88862,7 @@ function withFixtureLifecycleCommands(root2, config2, commands) {
   for (const command of commands) {
     const flow = flowForCommand(config2.flows, command);
     const fixture = flow?.fixture ? config2.fixtures[flow.fixture] : void 0;
-    const flowKey = flow ? flowKeyForLifecycle(flow) : void 0;
+    const flowKey2 = flow ? flowKeyForLifecycle(flow) : void 0;
     const provider = flow?.fixture ? resolveFixtureProvider(root2, flow.fixture, fixture) : void 0;
     const providerCommands = flow?.fixture && provider?.supported && provider.requiresAgentMcp !== true ? providerLifecycleCommands(flow.fixture) : void 0;
     const provisionCommand = fixture?.provision_command ?? providerCommands?.provisionCommand;
@@ -88861,25 +88870,25 @@ function withFixtureLifecycleCommands(root2, config2, commands) {
     const skipReason2 = flow ? destructiveFlowSkipReason(root2, flow, fixture, provider, provisionCommand) : void 0;
     if (flow && provisionCommand && !skipReason2) {
       expanded.push({
-        name: `fixture-${flowKey}-provision`,
+        name: `fixture-${flowKey2}-provision`,
         command: provisionCommand,
         lifecycle: "provision",
-        flowKey
+        flowKey: flowKey2
       });
     }
-    const commandWithFixture = flowKey ? {
+    const commandWithFixture = flowKey2 ? {
       ...command,
       command: flow?.fixture && provider?.supported ? wrapCommandWithFixtureEnv(flow.fixture, command.command) : command.command,
-      flowKey,
+      flowKey: flowKey2,
       skipReason: skipReason2
     } : command;
     expanded.push(commandWithFixture);
     if (flow && teardownCommand && !skipReason2) {
       expanded.push({
-        name: `fixture-${flowKey}-teardown`,
+        name: `fixture-${flowKey2}-teardown`,
         command: teardownCommand,
         lifecycle: "teardown",
-        flowKey
+        flowKey: flowKey2
       });
     }
   }
@@ -89403,6 +89412,45 @@ function readProductScenarioPlan(root2 = process.cwd()) {
     return void 0;
   }
 }
+function applyGeneratedScenariosToRuntimeQa(options = {}) {
+  const root2 = (0, import_path127.resolve)(options.root ?? process.cwd());
+  const report2 = options.report ?? generateProductScenarioPlan(root2, options.now);
+  const existing = readRuntimeQaConfig(root2);
+  const detected = detectRuntimeQaConfig(root2, existing?.target);
+  const config2 = mergeRuntimeQaConfig(existing, detected);
+  const runtimeSupported = hasExecutableRuntimeHarness(config2);
+  const generatedFlows = report2.scenarios.map((scenario) => scenario.runtime_qa_flow);
+  const currentFlows = config2.flows ?? [];
+  const existingFlowKeys = new Set(currentFlows.map(flowKey));
+  const flowsToAdd = generatedFlows.filter((flow) => !existingFlowKeys.has(flowKey(flow)));
+  const mergedConfig = {
+    ...config2,
+    schema_version: 1,
+    flows: [...currentFlows, ...flowsToAdd]
+  };
+  const status = generatedFlows.length === 0 ? "no-scenarios" : !runtimeSupported ? "needs-harness" : flowsToAdd.length === 0 ? "current" : "applied";
+  const written = options.write === true && runtimeSupported && generatedFlows.length > 0 && (flowsToAdd.length > 0 || !existing);
+  if (written) {
+    const path23 = (0, import_path127.resolve)(root2, RUNTIME_QA_CONFIG_RELATIVE_PATH2);
+    (0, import_fs107.mkdirSync)((0, import_path127.dirname)(path23), { recursive: true });
+    atomicWriteJsonSync(path23, mergedConfig);
+  }
+  return {
+    schema_version: 1,
+    generated_at: (options.now ?? /* @__PURE__ */ new Date()).toISOString(),
+    root: root2,
+    status,
+    config_path: RUNTIME_QA_CONFIG_RELATIVE_PATH2,
+    runtime_supported: runtimeSupported,
+    scenario_count: report2.scenarios.length,
+    flow_count: mergedConfig.flows?.length ?? 0,
+    added_flows: flowsToAdd.map((flow) => flow.id ?? flow.path),
+    existing_flows: currentFlows.map((flow) => flow.id ?? flow.path),
+    written,
+    next_action: scenarioRuntimeQaNextAction(status),
+    config: runtimeSupported && generatedFlows.length > 0 ? mergedConfig : void 0
+  };
+}
 function renderProductScenarioPlan(report2) {
   const rows = report2.scenarios.map((scenario) => `| ${escapeCell4(scenario.id)} | ${escapeCell4(scenario.capability_title)} | ${escapeCell4(scenario.first_meaningful_use)} | ${scenario.steps.length} |`);
   const gapRows = report2.gaps.map((gap) => `| ${gap.severity} | ${gap.code} | ${escapeCell4(gap.subject)} | ${escapeCell4(gap.recommended_action)} |`);
@@ -89637,6 +89685,30 @@ function nextAction2(status) {
   if (status === "needs-expectation") return "Backfill feature_expectation_contract before scenario generation can produce useful proof";
   if (status === "partial") return "Fix missing feature expectations, then rerun omc scenario-generator generate --write";
   return "Add generated runtime_qa_flow declarations to .omc/runtime-qa.json, run runtime QA, then audit scenario coverage";
+}
+function mergeRuntimeQaConfig(existing, detected) {
+  if (!existing) return detected;
+  return {
+    ...detected,
+    ...existing,
+    commands: existing.commands ?? detected.commands,
+    mobile: existing.mobile ?? detected.mobile,
+    flows: existing.flows ?? detected.flows
+  };
+}
+function hasExecutableRuntimeHarness(config2) {
+  return Boolean(
+    config2.commands?.build || config2.commands?.start || config2.commands?.readiness || config2.commands?.smoke || config2.mobile?.command
+  );
+}
+function flowKey(flow) {
+  return `${flow.id ?? ""}::${flow.path}`;
+}
+function scenarioRuntimeQaNextAction(status) {
+  if (status === "no-scenarios") return "Generate scenarios from feature_expectation_contract before applying runtime QA.";
+  if (status === "needs-harness") return "Add Playwright, Maestro, dogfood, or project-script smoke commands before generated scenarios can execute.";
+  if (status === "current") return "Runtime QA config already carries generated scenario flows; run omc runtime-qa run --auto --json.";
+  return "Run omc runtime-qa run --auto --json, then rerun omc scenario-coverage audit --write.";
 }
 function slugify3(value) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 64) || "scenario";
@@ -92592,11 +92664,14 @@ function advanceProductCycle(options) {
     writeCycle(root2, updateCycleStage(content, to));
   }
   if (to === "build") {
-    writeProductScenarioPlan(root2, generateProductScenarioPlan(root2));
+    const scenarioPlan = generateProductScenarioPlan(root2);
+    writeProductScenarioPlan(root2, scenarioPlan);
+    applyGeneratedScenariosToRuntimeQa({ root: root2, report: scenarioPlan, write: true });
   }
   if (before.stage === "learn" && to === "complete") {
     const scenarioPlan = generateProductScenarioPlan(root2);
     writeProductScenarioPlan(root2, scenarioPlan);
+    applyGeneratedScenariosToRuntimeQa({ root: root2, report: scenarioPlan, write: true });
     const totality = generateProductTotalityAudit(root2);
     writeProductTotalityAudit(root2, totality);
     const scenarioCoverage = generateProductScenarioCoverageAudit({ root: root2, totality });
@@ -93126,6 +93201,8 @@ init_atomic_write();
 var CREATIVE_LOOP_JSON_RELATIVE_PATH = ".omc/design/creative-loop/current.json";
 var CREATIVE_LOOP_MD_RELATIVE_PATH = ".omc/design/creative-loop/current.md";
 var VISUAL_EXPECTATION_RELATIVE_PATH = ".omc/design/visual-expectation/current.json";
+var VISUAL_LIFECYCLE_JSON_RELATIVE_PATH = ".omc/design/visual-lifecycle/current.json";
+var VISUAL_LIFECYCLE_MD_RELATIVE_PATH = ".omc/design/visual-lifecycle/current.md";
 var ARTIFACTS = [
   {
     id: "meaning-brief",
@@ -93218,6 +93295,80 @@ function writeCreativeLoopPlan(root2 = process.cwd(), plan) {
   atomicWriteJsonSync(jsonPath, plan);
   atomicWriteFileSync(mdPath, renderCreativeLoopPlan(plan));
   return { jsonPath, mdPath };
+}
+function generateVisualLifecycleReport(options = {}) {
+  const root2 = (0, import_path138.resolve)(options.root ?? process.cwd());
+  const plan = planCreativeLoop(options);
+  const contract = readVisualExpectationContract(root2);
+  const phases = [
+    visualHypothesisPhase(plan, contract),
+    implementationMappingPhase(plan, contract),
+    screenshotProofPhase(plan, contract)
+  ];
+  const debts = visualLifecycleDebts(plan, contract);
+  phases.push(iterationDebtPhase(debts, contract));
+  const sourceArtifacts = plan.artifacts.filter((artifact) => artifact.exists).map((artifact) => artifact.path).filter((path23, index, paths2) => paths2.indexOf(path23) === index).sort();
+  const status = visualLifecycleStatus(plan, phases, debts);
+  return {
+    schema_version: 1,
+    generated_at: (options.now ?? /* @__PURE__ */ new Date()).toISOString(),
+    root: root2,
+    status,
+    goal: options.goal,
+    source_artifacts: sourceArtifacts,
+    aggregates: {
+      phase_count: phases.length,
+      ready_phases: phases.filter((phase) => phase.state === "ready" || phase.state === "watchlist").length,
+      screenshot_proofs: screenshotEvidence(contract).length,
+      iteration_debts: debts.length,
+      blocking_debts: debts.filter((debt) => debt.severity === "error").length
+    },
+    phases,
+    debts,
+    next_action: visualLifecycleNextAction(status)
+  };
+}
+function writeVisualLifecycleReport(root2 = process.cwd(), report2 = generateVisualLifecycleReport({ root: root2 })) {
+  const jsonPath = (0, import_path138.resolve)(root2, VISUAL_LIFECYCLE_JSON_RELATIVE_PATH);
+  const mdPath = (0, import_path138.resolve)(root2, VISUAL_LIFECYCLE_MD_RELATIVE_PATH);
+  (0, import_fs116.mkdirSync)((0, import_path138.dirname)(jsonPath), { recursive: true });
+  atomicWriteJsonSync(jsonPath, report2);
+  (0, import_fs116.mkdirSync)((0, import_path138.dirname)(mdPath), { recursive: true });
+  atomicWriteFileSync(mdPath, renderVisualLifecycleReport(report2));
+  return { jsonPath, mdPath };
+}
+function renderVisualLifecycleReport(report2) {
+  return [
+    "# Visual Lifecycle",
+    "",
+    `status: ${report2.status}`,
+    `generated_at: ${report2.generated_at}`,
+    `goal: ${report2.goal ?? "unknown"}`,
+    `schema_source: ${VISUAL_LIFECYCLE_JSON_RELATIVE_PATH}`,
+    "",
+    "## Aggregates",
+    `- phase_count: ${report2.aggregates.phase_count}`,
+    `- ready_phases: ${report2.aggregates.ready_phases}`,
+    `- screenshot_proofs: ${report2.aggregates.screenshot_proofs}`,
+    `- iteration_debts: ${report2.aggregates.iteration_debts}`,
+    `- blocking_debts: ${report2.aggregates.blocking_debts}`,
+    "",
+    "## Phases",
+    "| Phase | State | Gaps | Recommended Action |",
+    "| --- | --- | --- | --- |",
+    ...report2.phases.map((phase) => `| ${phase.id} | ${phase.state} | ${escapeCell8(phase.gaps.join("; ") || "none")} | ${escapeCell8(phase.recommended_action)} |`),
+    "",
+    "## Iteration Debt",
+    "| Severity | Phase | Subject | Recommended Action |",
+    "| --- | --- | --- | --- |",
+    ...report2.debts.length > 0 ? report2.debts.map((debt) => `| ${debt.severity} | ${debt.phase} | ${escapeCell8(debt.subject)} | ${escapeCell8(debt.recommended_action)} |`) : ["| warning | iteration-debt | none | No visual iteration debt detected |"],
+    "",
+    "## Source Artifacts",
+    ...report2.source_artifacts.map((source) => `- ${source}`),
+    "",
+    `next_action: ${report2.next_action}`,
+    ""
+  ].join("\n");
 }
 function renderCreativeLoopPlan(plan) {
   return [
@@ -93370,6 +93521,139 @@ function validateVisualExpectationContract(root2, rawContent) {
     }
   }
   return missing.length === 0 ? { passed: true, reason: "visual expectation contract passed" } : { passed: false, reason: `missing or invalid: ${missing.join(", ")}` };
+}
+function readVisualExpectationContract(root2) {
+  const path23 = (0, import_path138.resolve)(root2, VISUAL_EXPECTATION_RELATIVE_PATH);
+  if (!(0, import_fs116.existsSync)(path23)) return void 0;
+  try {
+    const parsed = parseJsonObject((0, import_fs116.readFileSync)(path23, "utf-8"));
+    if (!parsed) return void 0;
+    return objectValue(parsed.visual_expectation_contract) ?? parsed;
+  } catch {
+    return void 0;
+  }
+}
+function visualHypothesisPhase(plan, contract) {
+  const gaps = [];
+  const direction = objectValue(contract?.selected_direction);
+  if (!contract) gaps.push("visual expectation contract missing");
+  if (stringArrayValue(contract?.desired_perception).length === 0) gaps.push("desired perception missing");
+  if (stringArrayValue(contract?.category_codes_to_avoid).length === 0) gaps.push("category codes to avoid missing");
+  if (!direction || !hasMeaningfulString3(direction.name) || !hasMeaningfulString3(direction.rationale)) {
+    gaps.push("selected visual hypothesis missing");
+  }
+  if (!artifactPassed(plan, "design-directions")) gaps.push("divergent design directions are not ready");
+  return {
+    id: "visual-hypothesis",
+    state: gaps.length === 0 ? "ready" : contract ? "partial" : "missing",
+    evidence: existingArtifactPaths(plan, ["visual-expectation", "design-directions", "meaning-brief", "inspiration-ledger"]),
+    gaps,
+    recommended_action: gaps.length === 0 ? "Use the selected direction as the visual hypothesis for implementation." : "Write a selected visual hypothesis grounded in meaning, category tension, and divergent directions."
+  };
+}
+function implementationMappingPhase(plan, contract) {
+  const gaps = [];
+  if (!arrayValue(contract?.token_rationale)?.length) gaps.push("token rationale missing");
+  if (arrayValue(contract?.component_proofs)?.length) {
+    for (const [index, proof] of arrayValue(contract?.component_proofs).entries()) {
+      const record2 = objectValue(proof);
+      if (!record2 || !hasMeaningfulString3(record2.component) || !hasMeaningfulString3(record2.state)) {
+        gaps.push(`component proof ${index + 1} missing component/state mapping`);
+      }
+    }
+  } else {
+    gaps.push("component proofs missing");
+  }
+  if (!artifactPassed(plan, "token-system")) gaps.push("token system is not ready");
+  return {
+    id: "implementation-mapping",
+    state: gaps.length === 0 ? "ready" : contract ? "partial" : "missing",
+    evidence: existingArtifactPaths(plan, ["visual-expectation", "token-system", "component-experiments", "design-system"]),
+    gaps,
+    recommended_action: gaps.length === 0 ? "Implementation has a component/token mapping to preserve the selected visual hypothesis." : "Map the selected direction into tokens, components, states, and component proofs before implementation is treated as visually complete."
+  };
+}
+function screenshotProofPhase(plan, contract) {
+  const screenshots = screenshotEvidence(contract);
+  const gaps = [];
+  if (screenshots.length === 0) gaps.push("screenshot evidence missing");
+  if (!artifactPassed(plan, "component-experiments")) gaps.push("component experiments are not screenshot-proven");
+  if (!artifactPassed(plan, "taste-gate")) gaps.push("taste gate is not passing");
+  return {
+    id: "screenshot-proof",
+    state: gaps.length === 0 ? "ready" : screenshots.length > 0 ? "partial" : "missing",
+    evidence: [...existingArtifactPaths(plan, ["component-experiments", "taste-gate"]), ...screenshots],
+    gaps,
+    recommended_action: gaps.length === 0 ? "Screenshot proof and taste gate can be used as implementation evidence." : "Capture screenshots, run visual verdict, and pass the taste gate before calling the appearance done."
+  };
+}
+function iterationDebtPhase(debts, contract) {
+  const blocking = debts.filter((debt) => debt.severity === "error");
+  const watchlist = stringArrayValue(contract?.not_ready_if);
+  return {
+    id: "iteration-debt",
+    state: blocking.length > 0 ? "blocking" : watchlist.length > 0 || debts.length > 0 ? "watchlist" : "ready",
+    evidence: [VISUAL_EXPECTATION_RELATIVE_PATH],
+    gaps: debts.map((debt) => debt.subject),
+    recommended_action: blocking.length > 0 ? "Resolve blocking visual debt before promoting the surface as visually complete." : "Carry not_ready_if conditions into the next design iteration as visual watchlist debt."
+  };
+}
+function visualLifecycleDebts(plan, contract) {
+  const debts = [];
+  for (const artifact of plan.artifacts.filter((entry) => entry.required && !entry.passed)) {
+    debts.push({
+      severity: "error",
+      phase: visualLifecyclePhaseForArtifact(artifact.id),
+      subject: artifact.id,
+      message: artifact.reason,
+      recommended_action: `Repair ${artifact.id} before treating creative-loop as visually complete.`,
+      evidence: artifact.exists ? [artifact.path] : []
+    });
+  }
+  for (const condition of stringArrayValue(contract?.not_ready_if)) {
+    debts.push({
+      severity: "warning",
+      phase: "iteration-debt",
+      subject: condition,
+      message: "Visual expectation contract names this as a future not-ready condition.",
+      recommended_action: "Re-check this condition after implementation screenshots exist.",
+      evidence: [VISUAL_EXPECTATION_RELATIVE_PATH]
+    });
+  }
+  return debts;
+}
+function visualLifecyclePhaseForArtifact(artifactId) {
+  if (artifactId === "token-system") return "implementation-mapping";
+  if (artifactId === "component-experiments" || artifactId === "taste-gate") return "screenshot-proof";
+  return "visual-hypothesis";
+}
+function visualLifecycleStatus(plan, phases, debts) {
+  if (!plan.artifacts.some((artifact) => artifact.exists)) return "empty";
+  if (phaseState(phases, "visual-hypothesis") !== "ready") return "needs-hypothesis";
+  if (phaseState(phases, "implementation-mapping") !== "ready") return "needs-implementation-map";
+  if (phaseState(phases, "screenshot-proof") !== "ready") return "needs-screenshot-proof";
+  if (debts.some((debt) => debt.severity === "error")) return "needs-iteration";
+  return "healthy";
+}
+function visualLifecycleNextAction(status) {
+  if (status === "empty") return 'Run omc creative-loop init --goal "<visual goal>"';
+  if (status === "needs-hypothesis") return "Write the visual hypothesis: meaning brief, inspiration ledger, selected direction, and divergence.";
+  if (status === "needs-implementation-map") return "Map the selected direction into tokens, component states, and implementation proofs.";
+  if (status === "needs-screenshot-proof") return "Capture screenshots, run visual verdict, and pass taste gate.";
+  if (status === "needs-iteration") return "Resolve blocking visual iteration debt before promotion.";
+  return "Visual lifecycle is healthy; carry watchlist debt into future visual iterations.";
+}
+function phaseState(phases, phaseId) {
+  return phases.find((phase) => phase.id === phaseId)?.state;
+}
+function artifactPassed(plan, id) {
+  return plan.artifacts.some((artifact) => artifact.id === id && artifact.passed);
+}
+function existingArtifactPaths(plan, ids) {
+  return plan.artifacts.filter((artifact) => ids.includes(artifact.id) && artifact.exists).map((artifact) => artifact.path);
+}
+function screenshotEvidence(contract) {
+  return stringArrayValue(contract?.screenshot_evidence);
 }
 function validateTokenSystem(rawContent) {
   const parsed = parseJsonObject(rawContent);
@@ -94988,7 +95272,9 @@ function runProductCycle(options = {}) {
         });
       }
       if (!dryRun) {
-        writeProductScenarioPlan(root2, generateProductScenarioPlan(root2));
+        const scenarioPlan = generateProductScenarioPlan(root2);
+        writeProductScenarioPlan(root2, scenarioPlan);
+        applyGeneratedScenariosToRuntimeQa({ root: root2, report: scenarioPlan, write: true });
         const totality = generateProductTotalityAudit(root2);
         writeProductTotalityAudit(root2, totality);
         const scenarioCoverage = generateProductScenarioCoverageAudit({ root: root2, totality });
@@ -97455,30 +97741,50 @@ init_formatting();
 async function creativeLoopAuditCommand(root2, options, logger = console) {
   const plan = planCreativeLoop({ root: root2, goal: options.goal });
   const written = options.write ? writeCreativeLoopPlan(root2, plan) : void 0;
+  const visualLifecycle = generateVisualLifecycleReport({ root: root2, goal: options.goal });
+  const visualLifecycleWritten = options.write ? writeVisualLifecycleReport(root2, visualLifecycle) : void 0;
   if (options.json) {
-    logger.log(JSON.stringify({ ...plan, written }, null, 2));
+    logger.log(JSON.stringify({ ...plan, written, visual_lifecycle: visualLifecycle, visual_lifecycle_written: visualLifecycleWritten }, null, 2));
   } else {
-    logger.log(renderAudit(plan, written));
+    logger.log(renderAudit(plan, written, visualLifecycle, visualLifecycleWritten));
   }
   return plan.status === "ready" ? 0 : 1;
 }
+async function creativeLoopLifecycleCommand(root2, options, logger = console) {
+  const report2 = generateVisualLifecycleReport({ root: root2, goal: options.goal });
+  const written = options.write ? writeVisualLifecycleReport(root2, report2) : void 0;
+  if (options.json) {
+    logger.log(JSON.stringify({ ...report2, written }, null, 2));
+  } else if (options.write) {
+    logger.log(renderLifecycleSummary(report2, written));
+  } else {
+    logger.log(renderVisualLifecycleReport(report2));
+    logger.log(colors.gray("Use --write to persist .omc/design/visual-lifecycle/current.{json,md}."));
+  }
+  return report2.status === "healthy" ? 0 : 1;
+}
 async function creativeLoopInitCommand(root2, options, logger = console) {
   const plan = initCreativeLoop({ root: root2, goal: options.goal });
+  const visualLifecycle = generateVisualLifecycleReport({ root: root2, goal: options.goal });
   if (options.json) {
-    logger.log(JSON.stringify(plan, null, 2));
+    logger.log(JSON.stringify({ ...plan, visual_lifecycle: visualLifecycle }, null, 2));
   } else {
-    logger.log(renderAudit(plan, void 0));
+    logger.log(renderAudit(plan, void 0, visualLifecycle, void 0));
   }
   return 0;
 }
-function renderAudit(plan, written) {
+function renderAudit(plan, written, visualLifecycle, visualLifecycleWritten) {
   const lines = [
     colors.bold("Creative loop readiness"),
     `status: ${statusColor2(plan.status)}`,
+    `visual_lifecycle: ${formatLifecycleStatus(visualLifecycle.status)}`,
     `goal: ${plan.goal ?? "unknown"}`
   ];
   if (written) {
     lines.push(`artifacts: ${written.jsonPath}, ${written.mdPath}`);
+  }
+  if (visualLifecycleWritten) {
+    lines.push(`visual_lifecycle_artifacts: ${visualLifecycleWritten.jsonPath}, ${visualLifecycleWritten.mdPath}`);
   }
   lines.push("");
   lines.push(renderTable(plan.artifacts.map((artifact) => ({
@@ -97503,8 +97809,35 @@ function renderAudit(plan, written) {
   }
   return lines.join("\n");
 }
+function renderLifecycleSummary(report2, written) {
+  return [
+    colors.bold("Visual lifecycle"),
+    `status: ${formatLifecycleStatus(report2.status)}`,
+    `phases: ${report2.aggregates.ready_phases}/${report2.aggregates.phase_count}, screenshot_proofs: ${report2.aggregates.screenshot_proofs}, debts: ${report2.aggregates.iteration_debts}, blocking: ${report2.aggregates.blocking_debts}`,
+    written ? `artifacts: ${written.jsonPath}, ${written.mdPath}` : void 0,
+    "",
+    renderTable(report2.phases.map((phase) => ({
+      phase: phase.id,
+      state: phase.state,
+      gaps: phase.gaps.join("; ") || "none",
+      action: phase.recommended_action
+    })), [
+      { header: "phase", field: "phase", width: 24 },
+      { header: "state", field: "state", width: 12 },
+      { header: "gaps", field: "gaps", width: 44 },
+      { header: "action", field: "action", width: 76 }
+    ]),
+    "",
+    `next_action: ${report2.next_action}`
+  ].filter((line) => typeof line === "string").join("\n");
+}
 function statusColor2(status) {
   if (status === "ready") return colors.green(status);
+  return colors.yellow(status);
+}
+function formatLifecycleStatus(status) {
+  if (status === "healthy") return colors.green(status);
+  if (status === "empty") return colors.red(status);
   return colors.yellow(status);
 }
 
@@ -97716,17 +98049,23 @@ init_formatting();
 async function scenarioGeneratorCommand(root2, options, logger = console) {
   const report2 = generateProductScenarioPlan(root2);
   const written = options.write ? writeProductScenarioPlan(root2, report2) : void 0;
+  const runtimeQa = options.applyRuntimeQa || options.runRuntimeQa ? applyGeneratedScenariosToRuntimeQa({ root: root2, report: report2, write: options.write || options.runRuntimeQa }) : void 0;
+  const runtimeQaRun = options.runRuntimeQa && runtimeQa?.runtime_supported ? runRuntimeQa({ root: root2, auto: true }) : void 0;
+  const runtimeQaRunWritten = runtimeQaRun ? writeRuntimeQaRunReport(root2 ?? process.cwd(), runtimeQaRun) : void 0;
   if (options.json) {
-    logger.log(JSON.stringify({ ...report2, written }, null, 2));
+    logger.log(JSON.stringify({ ...report2, written, runtime_qa: runtimeQa, runtime_qa_run: runtimeQaRun, runtime_qa_run_written: runtimeQaRunWritten }, null, 2));
   } else if (options.write) {
-    logger.log(renderScenarioGeneratorSummary(report2, written));
+    logger.log(renderScenarioGeneratorSummary(report2, written, runtimeQa, runtimeQaRun));
   } else {
     logger.log(renderProductScenarioPlan(report2));
+    if (runtimeQa) logger.log(renderRuntimeQaSummary(runtimeQa, runtimeQaRun));
     logger.log(colors.gray("Use --write to persist .omc/product/scenarios/current.{json,md}."));
   }
+  if (runtimeQaRun && runtimeQaRun.status !== "passed") return 1;
+  if (runtimeQa && runtimeQa.status === "needs-harness") return 1;
   return report2.gaps.some((gap) => gap.severity === "error") ? 1 : 0;
 }
-function renderScenarioGeneratorSummary(report2, written) {
+function renderScenarioGeneratorSummary(report2, written, runtimeQa, runtimeQaRun) {
   const rows = report2.scenarios.slice(0, 10).map((scenario) => ({
     scenario: scenario.id,
     capability: scenario.capability_title,
@@ -97758,12 +98097,29 @@ function renderScenarioGeneratorSummary(report2, written) {
       { header: "action", field: "action", width: 76 }
     ]) : colors.green("No scenario generation gaps detected."),
     "",
-    `next_action: ${report2.next_action}`
+    `next_action: ${report2.next_action}`,
+    runtimeQa ? renderRuntimeQaSummary(runtimeQa, runtimeQaRun) : void 0
+  ].filter((line) => typeof line === "string").join("\n");
+}
+function renderRuntimeQaSummary(result, run) {
+  return [
+    "",
+    colors.bold("Generated scenario runtime QA"),
+    `status: ${formatRuntimeQaStatus(result.status)}`,
+    `runtime_supported: ${result.runtime_supported}`,
+    `flows: ${result.flow_count}, added: ${result.added_flows.length}, written: ${result.written}`,
+    run ? `runtime_qa_run: ${run.status} (${run.adapter})` : void 0,
+    `next_action: ${result.next_action}`
   ].filter((line) => typeof line === "string").join("\n");
 }
 function formatStatus3(status) {
   if (status === "ready") return colors.green(status);
   if (status === "empty" || status === "needs-expectation") return colors.red(status);
+  return colors.yellow(status);
+}
+function formatRuntimeQaStatus(status) {
+  if (status === "applied" || status === "current") return colors.green(status);
+  if (status === "needs-harness") return colors.red(status);
   return colors.yellow(status);
 }
 
@@ -105381,8 +105737,9 @@ var scenarioGeneratorCmd = program2.command("scenario-generator").description("G
 Examples:
   $ omc scenario-generator generate
   $ omc scenario-generator generate /path/to/app --write
+  $ omc scenario-generator generate /path/to/app --write --apply-runtime-qa
   $ omc scenario-generator generate --json`);
-scenarioGeneratorCmd.command("generate [root]").description("Generate scenario declarations from cycle feature_expectation_contract values").option("--json", "Output as JSON").option("--write", "Write .omc/product/scenarios/current.{json,md}").action(async (root2, options) => {
+scenarioGeneratorCmd.command("generate [root]").description("Generate scenario declarations from cycle feature_expectation_contract values").option("--json", "Output as JSON").option("--write", "Write .omc/product/scenarios/current.{json,md}").option("--apply-runtime-qa", "Merge generated runtime_qa_flow declarations into .omc/runtime-qa.json when a harness is supported").option("--run-runtime-qa", "Apply generated runtime QA flows, run omc runtime-qa, and write runtime QA handoff evidence").action(async (root2, options) => {
   const exitCode = await scenarioGeneratorCommand(root2, options);
   process.exit(exitCode);
 });
@@ -105416,9 +105773,14 @@ var creativeLoopCmd = program2.command("creative-loop").description("Audit or in
 Examples:
   $ omc creative-loop audit --goal "build a distinct onboarding surface"
   $ omc creative-loop audit /path/to/app --write
+  $ omc creative-loop lifecycle /path/to/app --write
   $ omc creative-loop init --goal "row tracking dashboard"`);
 creativeLoopCmd.command("audit [root]").description("Check creative-loop readiness for user-facing visual work").option("--goal <goal>", "Visual/product goal used for recommended handoff commands").option("--json", "Output as JSON").option("--write", "Write .omc/design/creative-loop/current.{json,md}").action(async (root2, options) => {
   const exitCode = await creativeLoopAuditCommand(root2, options);
+  process.exit(exitCode);
+});
+creativeLoopCmd.command("lifecycle [root]").description("Classify visual appearance as hypothesis, mapping, screenshot proof, and iteration debt").option("--goal <goal>", "Visual/product goal used for lifecycle context").option("--json", "Output as JSON").option("--write", "Write .omc/design/visual-lifecycle/current.{json,md}").action(async (root2, options) => {
+  const exitCode = await creativeLoopLifecycleCommand(root2, options);
   process.exit(exitCode);
 });
 creativeLoopCmd.command("init [root]").description("Create missing creative-loop draft artifacts without passing the gate").option("--goal <goal>", "Visual/product goal used in draft artifact templates").option("--json", "Output as JSON").action(async (root2, options) => {

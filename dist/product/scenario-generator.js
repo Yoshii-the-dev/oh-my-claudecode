@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, join, relative, resolve } from 'path';
 import { atomicWriteJsonSync } from '../lib/atomic-write.js';
+import { RUNTIME_QA_CONFIG_RELATIVE_PATH, detectRuntimeQaConfig, readRuntimeQaConfig, } from '../runtime-qa/runner.js';
 import { CYCLE_DOCUMENT_RELATIVE_PATH, CYCLE_PROJECTION_RELATIVE_PATH, parseCycleMarkdown, readCycleDocument, } from './cycle-document.js';
 export const PRODUCT_SCENARIO_GENERATOR_JSON_RELATIVE_PATH = '.omc/product/scenarios/current.json';
 export const PRODUCT_SCENARIO_GENERATOR_MD_RELATIVE_PATH = '.omc/product/scenarios/current.md';
@@ -50,6 +51,51 @@ export function readProductScenarioPlan(root = process.cwd()) {
     catch {
         return undefined;
     }
+}
+export function applyGeneratedScenariosToRuntimeQa(options = {}) {
+    const root = resolve(options.root ?? process.cwd());
+    const report = options.report ?? generateProductScenarioPlan(root, options.now);
+    const existing = readRuntimeQaConfig(root);
+    const detected = detectRuntimeQaConfig(root, existing?.target);
+    const config = mergeRuntimeQaConfig(existing, detected);
+    const runtimeSupported = hasExecutableRuntimeHarness(config);
+    const generatedFlows = report.scenarios.map((scenario) => scenario.runtime_qa_flow);
+    const currentFlows = config.flows ?? [];
+    const existingFlowKeys = new Set(currentFlows.map(flowKey));
+    const flowsToAdd = generatedFlows.filter((flow) => !existingFlowKeys.has(flowKey(flow)));
+    const mergedConfig = {
+        ...config,
+        schema_version: 1,
+        flows: [...currentFlows, ...flowsToAdd],
+    };
+    const status = generatedFlows.length === 0
+        ? 'no-scenarios'
+        : !runtimeSupported
+            ? 'needs-harness'
+            : flowsToAdd.length === 0
+                ? 'current'
+                : 'applied';
+    const written = options.write === true && runtimeSupported && generatedFlows.length > 0 && (flowsToAdd.length > 0 || !existing);
+    if (written) {
+        const path = resolve(root, RUNTIME_QA_CONFIG_RELATIVE_PATH);
+        mkdirSync(dirname(path), { recursive: true });
+        atomicWriteJsonSync(path, mergedConfig);
+    }
+    return {
+        schema_version: 1,
+        generated_at: (options.now ?? new Date()).toISOString(),
+        root,
+        status,
+        config_path: RUNTIME_QA_CONFIG_RELATIVE_PATH,
+        runtime_supported: runtimeSupported,
+        scenario_count: report.scenarios.length,
+        flow_count: mergedConfig.flows?.length ?? 0,
+        added_flows: flowsToAdd.map((flow) => flow.id ?? flow.path),
+        existing_flows: currentFlows.map((flow) => flow.id ?? flow.path),
+        written,
+        next_action: scenarioRuntimeQaNextAction(status),
+        config: runtimeSupported && generatedFlows.length > 0 ? mergedConfig : undefined,
+    };
 }
 export function renderProductScenarioPlan(report) {
     const rows = report.scenarios.map((scenario) => (`| ${escapeCell(scenario.id)} | ${escapeCell(scenario.capability_title)} | ${escapeCell(scenario.first_meaningful_use)} | ${scenario.steps.length} |`));
@@ -301,6 +347,36 @@ function nextAction(status) {
     if (status === 'partial')
         return 'Fix missing feature expectations, then rerun omc scenario-generator generate --write';
     return 'Add generated runtime_qa_flow declarations to .omc/runtime-qa.json, run runtime QA, then audit scenario coverage';
+}
+function mergeRuntimeQaConfig(existing, detected) {
+    if (!existing)
+        return detected;
+    return {
+        ...detected,
+        ...existing,
+        commands: existing.commands ?? detected.commands,
+        mobile: existing.mobile ?? detected.mobile,
+        flows: existing.flows ?? detected.flows,
+    };
+}
+function hasExecutableRuntimeHarness(config) {
+    return Boolean(config.commands?.build
+        || config.commands?.start
+        || config.commands?.readiness
+        || config.commands?.smoke
+        || config.mobile?.command);
+}
+function flowKey(flow) {
+    return `${flow.id ?? ''}::${flow.path}`;
+}
+function scenarioRuntimeQaNextAction(status) {
+    if (status === 'no-scenarios')
+        return 'Generate scenarios from feature_expectation_contract before applying runtime QA.';
+    if (status === 'needs-harness')
+        return 'Add Playwright, Maestro, dogfood, or project-script smoke commands before generated scenarios can execute.';
+    if (status === 'current')
+        return 'Runtime QA config already carries generated scenario flows; run omc runtime-qa run --auto --json.';
+    return 'Run omc runtime-qa run --auto --json, then rerun omc scenario-coverage audit --write.';
 }
 function slugify(value) {
     return value

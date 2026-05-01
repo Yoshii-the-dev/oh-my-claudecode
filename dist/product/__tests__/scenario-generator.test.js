@@ -1,8 +1,8 @@
-import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'fs';
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { PRODUCT_SCENARIO_GENERATOR_JSON_RELATIVE_PATH, PRODUCT_SCENARIO_GENERATOR_MD_RELATIVE_PATH, generateProductScenarioPlan, writeProductScenarioPlan, } from '../scenario-generator.js';
+import { PRODUCT_SCENARIO_GENERATOR_JSON_RELATIVE_PATH, PRODUCT_SCENARIO_GENERATOR_MD_RELATIVE_PATH, applyGeneratedScenariosToRuntimeQa, generateProductScenarioPlan, writeProductScenarioPlan, } from '../scenario-generator.js';
 import { generateProductScenarioCoverageAudit } from '../scenario-coverage.js';
 let rootsToClean = [];
 afterEach(() => {
@@ -67,6 +67,45 @@ describe('generateProductScenarioPlan', () => {
         expect(report.scenarios[0]?.coverage).toBe('declared');
         expect(report.scenarios[0]?.evidence).toContain(PRODUCT_SCENARIO_GENERATOR_JSON_RELATIVE_PATH);
         expect(report.gaps.map((gap) => gap.code)).toContain('scenario-declared-not-run');
+    });
+    it('applies generated runtime QA flows when a project harness exists', () => {
+        const root = createRoot();
+        writeCycleArtifact(root);
+        writeArtifact(root, 'package.json', JSON.stringify({
+            scripts: {
+                smoke: 'playwright test --grep @scenario',
+            },
+            devDependencies: {
+                '@playwright/test': '1.0.0',
+            },
+        }, null, 2));
+        const report = generateProductScenarioPlan(root, new Date('2026-04-25T00:00:00.000Z'));
+        const applied = applyGeneratedScenariosToRuntimeQa({
+            root,
+            report,
+            write: true,
+            now: new Date('2026-04-25T00:00:00.000Z'),
+        });
+        expect(applied.status).toBe('applied');
+        expect(applied.runtime_supported).toBe(true);
+        expect(applied.added_flows).toHaveLength(1);
+        expect(existsSync(join(root, '.omc/runtime-qa.json'))).toBe(true);
+        expect(JSON.parse(readFileSync(join(root, '.omc/runtime-qa.json'), 'utf-8'))).toEqual(expect.objectContaining({
+            target: 'web',
+            adapter: 'web-playwright',
+        }));
+    });
+    it('does not write runtime QA config when generated scenarios have no executable harness', () => {
+        const root = createRoot();
+        writeCycleArtifact(root);
+        const applied = applyGeneratedScenariosToRuntimeQa({
+            root,
+            write: true,
+            now: new Date('2026-04-25T00:00:00.000Z'),
+        });
+        expect(applied.status).toBe('needs-harness');
+        expect(applied.runtime_supported).toBe(false);
+        expect(existsSync(join(root, '.omc/runtime-qa.json'))).toBe(false);
     });
 });
 function createRoot() {

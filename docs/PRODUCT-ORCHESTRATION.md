@@ -68,7 +68,7 @@ OMC separates product development into eight layers:
 7. **Creative Loop**
    - `creative-loop`
    - output: `.omc/design/creative-loop/current.json`, `.omc/design/**`
-   - owns: meaning brief, inspiration ledger, visual expectation contract, divergent visual hypotheses, motion grammar, design tokens, component experiments, screenshots, visual verdicts, and taste gate before visual implementation.
+   - owns: meaning brief, inspiration ledger, visual expectation contract, divergent visual hypotheses, motion grammar, design tokens, component experiments, screenshots, visual verdicts, taste gate, and visual lifecycle before visual implementation.
 
 8. **Technology/Capability Governance**
    - `technology-strategist`
@@ -227,7 +227,7 @@ It writes:
 - `.omc/product/scenarios/current.json`
 - `.omc/product/scenarios/current.md`
 
-Generated scenarios are declarations, not proof. They become proof only after runtime QA, simulator, or explicit dogfood evidence runs and writes `.omc/handoffs/runtime-qa/current.json` or equivalent learning evidence.
+Generated scenarios are declarations, not proof. They become proof only after runtime QA, simulator, or explicit dogfood evidence runs and writes `.omc/handoffs/runtime-qa/current.json` or equivalent learning evidence. `omc scenario-generator generate --write --apply-runtime-qa` merges generated `runtime_qa_flow` declarations into `.omc/runtime-qa.json` when the project has a detected Playwright, Maestro, dogfood, or project-script harness; `--run-runtime-qa` then executes that harness and writes handoff evidence.
 
 ## Scenario Coverage Rules
 
@@ -434,6 +434,7 @@ For user-facing surfaces, `product-pipeline` must treat the brand and visual lay
 - prefer original visual concepts grounded in brand philosophy, competitor whitespace, and product meaning.
 - run `/creative-loop "<core product slice>"` before implementation when the surface needs distinctive UI/UX, motion, visual language, generated assets, or brand expression.
 - verify `omc creative-loop audit --write --goal "<core product slice>"` reports `ready`.
+- verify `omc creative-loop lifecycle --write --goal "<core product slice>"` reports `healthy` or carries explicit iteration debt.
 - provision visual-creative skills when the feature needs motion, generated imagery, 3D, illustration, iconography, typography exploration, or visual QA.
 - avoid generic UI defaults that contradict the constitution.
 
@@ -447,9 +448,12 @@ Creative loop artifacts:
 - `.omc/design/tokens/current.json`
 - `.omc/design/component-experiments/current.json`
 - `.omc/design/taste-gate/current.md`
+- `.omc/design/visual-lifecycle/current.json`
 - `.omc/design/system/current.md` only after taste gate pass
 
 The visual expectation contract is the bridge between art direction and implementation. It must name desired perception, category codes to avoid, selected direction, token rationale, component proofs, screenshot evidence, and `not_ready_if` conditions. This prevents token extraction or a single attractive mock from being treated as a complete external look.
+
+The visual lifecycle is the bridge between creative readiness and cumulative visual quality. It classifies the surface through a visual hypothesis, implementation mapping, screenshot proof, and iteration debt (`visual-hypothesis`, `implementation-mapping`, `screenshot-proof`, and `iteration-debt`), so appearance can mature over cycles instead of being treated as a one-off attractive screen.
 
 ## Handoff And Permissions
 
