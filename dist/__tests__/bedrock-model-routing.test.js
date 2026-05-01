@@ -116,7 +116,7 @@ describe('Bedrock model routing repro', () => {
             const defs = getAgentDefinitions({ config });
             expect(defs['executor'].model).toBe('claude-sonnet-4-6');
             expect(defs['explore'].model).toBe('claude-haiku-4-5');
-            expect(defs['architect'].model).toBe('claude-opus-4-6');
+            expect(defs['architect'].model).toBe('claude-opus-4-5-20251101');
             // 4. enforceModel normalizes to bare CC-supported aliases (FIX)
             const { enforceModel } = await import('../features/delegation-enforcer.js');
             // 4a. executor → 'sonnet' (normalized from config's full model ID)
@@ -177,7 +177,7 @@ describe('Bedrock model routing repro', () => {
             // ── Setup: user has Bedrock-format models in ANTHROPIC_DEFAULT_*_MODEL
             //    (as shown in their settings) but CLAUDE_CODE_USE_BEDROCK is not set ──
             process.env.ANTHROPIC_DEFAULT_SONNET_MODEL = 'global.anthropic.claude-sonnet-4-6-v1:0';
-            process.env.ANTHROPIC_DEFAULT_OPUS_MODEL = 'global.anthropic.claude-opus-4-6-v1:0';
+            process.env.ANTHROPIC_DEFAULT_OPUS_MODEL = 'global.anthropic.claude-opus-4-5-20251101-v1:0';
             process.env.ANTHROPIC_DEFAULT_HAIKU_MODEL = 'global.anthropic.claude-haiku-4-5-v1:0';
             // 1. isBedrock does NOT check ANTHROPIC_DEFAULT_*_MODEL env vars
             const { isBedrock, isNonClaudeProvider } = await import('../config/models.js');
@@ -190,11 +190,11 @@ describe('Bedrock model routing repro', () => {
             // 3. BUT tier model resolution DOES read the Bedrock IDs
             const { getDefaultModelMedium, getDefaultModelHigh, getDefaultModelLow } = await import('../config/models.js');
             expect(getDefaultModelMedium()).toBe('global.anthropic.claude-sonnet-4-6-v1:0');
-            expect(getDefaultModelHigh()).toBe('global.anthropic.claude-opus-4-6-v1:0');
+            expect(getDefaultModelHigh()).toBe('global.anthropic.claude-opus-4-5-20251101-v1:0');
             expect(getDefaultModelLow()).toBe('global.anthropic.claude-haiku-4-5-v1:0');
             // 4. config.agents get the Bedrock-format model IDs
             expect(config.agents?.executor?.model).toBe('global.anthropic.claude-sonnet-4-6-v1:0');
-            expect(config.agents?.architect?.model).toBe('global.anthropic.claude-opus-4-6-v1:0');
+            expect(config.agents?.architect?.model).toBe('global.anthropic.claude-opus-4-5-20251101-v1:0');
             expect(config.agents?.explore?.model).toBe('global.anthropic.claude-haiku-4-5-v1:0');
             // 5. enforceModel normalizes to bare alias (FIX: no longer injects full IDs)
             const { enforceModel } = await import('../features/delegation-enforcer.js');

@@ -61,7 +61,7 @@ describe('hook allow path — isSubagentSafeModelId(model) === true', () => {
 
   it('allows Bedrock ARN inference-profile format', () => {
     expect(isSubagentSafeModelId(
-      'arn:aws:bedrock:us-east-2:123456789012:inference-profile/global.anthropic.claude-opus-4-6-v1:0'
+      'arn:aws:bedrock:us-east-2:123456789012:inference-profile/global.anthropic.claude-opus-4-5-20251101-v1:0'
     )).toBe(true);
   });
 
@@ -96,7 +96,7 @@ describe('hook deny path — explicit model param is invalid', () => {
 
   it('denies bare Anthropic model ID (invalid on Bedrock)', () => {
     expect(isSubagentSafeModelId('claude-sonnet-4-6')).toBe(false);
-    expect(isSubagentSafeModelId('claude-opus-4-6')).toBe(false);
+    expect(isSubagentSafeModelId('claude-opus-4-5-20251101')).toBe(false);
   });
 });
 
@@ -117,8 +117,8 @@ describe('session model [1m] detection — hasExtendedContextSuffix', () => {
   });
 
   it('does NOT flag the opus env var from the bug report env', () => {
-    // ANTHROPIC_DEFAULT_OPUS_MODEL=global.anthropic.claude-opus-4-6-v1 (no [1m])
-    expect(hasExtendedContextSuffix('global.anthropic.claude-opus-4-6-v1')).toBe(false);
+    // ANTHROPIC_DEFAULT_OPUS_MODEL=global.anthropic.claude-opus-4-5-20251101-v1 (no [1m])
+    expect(hasExtendedContextSuffix('global.anthropic.claude-opus-4-5-20251101-v1')).toBe(false);
   });
 
   it('does NOT flag the haiku env var from the bug report env', () => {
@@ -180,7 +180,7 @@ describe('environment-based session model detection', () => {
   });
 
   it('does not flag a valid Bedrock model in env vars', () => {
-    process.env.ANTHROPIC_MODEL = 'global.anthropic.claude-opus-4-6-v1';
+    process.env.ANTHROPIC_MODEL = 'global.anthropic.claude-opus-4-5-20251101-v1';
     expect(sessionHasLmSuffix()).toBe(false);
   });
 });

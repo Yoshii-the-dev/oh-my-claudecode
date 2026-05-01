@@ -11,7 +11,7 @@
  *   --agent <name>       Run a single agent variant only
  *   --fixture <id>       Run a single fixture only
  *   --output-dir <path>  Where to write results
- *   --model <model>      Claude model to use (default: claude-opus-4-6)
+ *   --model <model>      Claude model to use (default: claude-opus-4-5-20251101)
  *   --dry-run            Validate pipeline without API calls
  */
 
