@@ -173,6 +173,75 @@ describe('validateProductPipelineContracts', () => {
         expect(report.ok).toBe(false);
         expect(codes(report)).toContain('missing-selected-core-feature-expectation');
     });
+    it('blocks priority handoff when product regression debt is not carried forward', () => {
+        const root = createRoot();
+        writeFoundationLiteArtifacts(root);
+        writeArtifact(root, '.omc/product/regression/current.json', productRegressionAuditArtifact());
+        const report = validateProductPipelineContracts({ root, stage: 'priority-handoff' });
+        expect(report.ok).toBe(false);
+        expect(codes(report)).toContain('priority-ignores-regression-debt');
+        expect(metric(report, 'roadmap', 'priorityAuditFindingsMissing')).toBe(1);
+    });
+    it('passes priority handoff when regression debt is carried into roadmap', () => {
+        const root = createRoot();
+        writeFoundationLiteArtifacts(root, {
+            roadmap: `${roadmapArtifact()}
+
+## Carried Product Debt
+- Regression debt: row counter. Backfill the learning capture before using this cycle as completion evidence.
+`,
+        });
+        writeArtifact(root, '.omc/product/regression/current.json', productRegressionAuditArtifact());
+        const report = validateProductPipelineContracts({ root, stage: 'priority-handoff' });
+        expect(report.ok).toBe(true);
+        expect(codes(report)).not.toContain('priority-ignores-regression-debt');
+        expect(metric(report, 'roadmap', 'priorityAuditFindingsCarried')).toBe(1);
+    });
+    it('blocks priority handoff when scenario coverage debt is ignored', () => {
+        const root = createRoot();
+        writeFoundationLiteArtifacts(root);
+        writeArtifact(root, '.omc/product/scenario-coverage/current.json', scenarioCoverageAuditArtifact());
+        const report = validateProductPipelineContracts({ root, stage: 'priority-handoff' });
+        expect(report.ok).toBe(false);
+        expect(codes(report)).toContain('priority-ignores-scenario-gap');
+    });
+    it('passes priority handoff when totality depth debt is carried into portfolio', () => {
+        const root = createRoot();
+        const portfolio = JSON.parse(portfolioLedgerArtifact());
+        portfolio.items[3].title = 'Row counter capability depth';
+        portfolio.items[3].evidence = ['Keep missing maturity depth in priority-engine until represented in roadmap'];
+        writeFoundationLiteArtifacts(root, {
+            portfolio: JSON.stringify(portfolio, null, 2),
+        });
+        writeArtifact(root, '.omc/product/totality/current.json', productTotalityAuditArtifact());
+        const report = validateProductPipelineContracts({ root, stage: 'priority-handoff' });
+        expect(report.ok).toBe(true);
+        expect(codes(report)).not.toContain('priority-ignores-totality-gap');
+    });
+    it('blocks priority handoff when lifecycle remove-candidates are ignored', () => {
+        const root = createRoot();
+        writeFoundationLiteArtifacts(root);
+        writeArtifact(root, '.omc/product/capability-lifecycle/current.json', capabilityLifecycleAuditArtifact());
+        const report = validateProductPipelineContracts({ root, stage: 'priority-handoff' });
+        expect(report.ok).toBe(false);
+        expect(codes(report)).toContain('priority-ignores-lifecycle-remove-candidate');
+        expect(metric(report, 'roadmap', 'priorityAuditFindingsMissing')).toBe(1);
+    });
+    it('passes priority handoff when lifecycle remove-candidates are carried into roadmap', () => {
+        const root = createRoot();
+        writeFoundationLiteArtifacts(root, {
+            roadmap: `${roadmapArtifact()}
+
+## Carried Product Debt
+- Remove-candidate: naked row counter. Remove, merge, or redesign this capability around a real user loop before adding more surface area.
+`,
+        });
+        writeArtifact(root, '.omc/product/capability-lifecycle/current.json', capabilityLifecycleAuditArtifact());
+        const report = validateProductPipelineContracts({ root, stage: 'priority-handoff' });
+        expect(report.ok).toBe(true);
+        expect(codes(report)).not.toContain('priority-ignores-lifecycle-remove-candidate');
+        expect(metric(report, 'roadmap', 'priorityAuditFindingsCarried')).toBe(1);
+    });
     it('blocks a completed cycle that does not reference learning capture', () => {
         const root = createRoot();
         writeFoundationLiteArtifacts(root);
@@ -506,6 +575,135 @@ blocking_issues: none
 next_action: start next cycle
 artifacts_written: .omc/learning/current.md
 `;
+}
+function productRegressionAuditArtifact() {
+    return JSON.stringify({
+        schema_version: 1,
+        generated_at: '2026-04-25T00:00:00.000Z',
+        root: '/tmp/test',
+        status: 'needs-repair',
+        source_artifacts: ['.omc/product/totality/current.json'],
+        aggregates: {
+            cycles: 1,
+            completed_cycles: 1,
+            regression_debts: 1,
+            error_debts: 1,
+            warning_debts: 0,
+            scenario_proof_debts: 0,
+            learning_debts: 1,
+        },
+        debts: [{
+                id: 'row-counter-missing-learning',
+                severity: 'error',
+                category: 'learning',
+                subject: 'row counter',
+                source_cycle: '2026-04-25-first-loop',
+                message: 'Completed cycle has no learning capture, so its outcome cannot be compared against future work.',
+                recommended_action: 'Backfill the learning capture before using this cycle as completion evidence.',
+                evidence: ['.omc/cycles/current.md'],
+            }],
+        next_action: 'Repair regression audit errors before selecting unrelated new work',
+    }, null, 2);
+}
+function scenarioCoverageAuditArtifact() {
+    return JSON.stringify({
+        schema_version: 1,
+        generated_at: '2026-04-25T00:00:00.000Z',
+        root: '/tmp/test',
+        status: 'needs-runtime-evidence',
+        source_artifacts: ['.omc/product/totality/current.json'],
+        aggregates: {
+            capability_count: 1,
+            scenario_count: 1,
+            covered_scenarios: 0,
+            declared_scenarios: 1,
+            missing_scenarios: 0,
+            failing_scenarios: 0,
+            stale_scenarios: 0,
+            runtime_qa_configured: false,
+            runtime_qa_handoff_exists: false,
+        },
+        scenarios: [],
+        gaps: [{
+                severity: 'error',
+                code: 'declared-without-runtime-evidence',
+                subject: 'colorwork mistake recovery proof',
+                message: 'Capability has a scenario declaration, but no executed runtime QA handoff proves it.',
+                recommended_action: 'Run executable runtime QA for colorwork mistake recovery and refresh runtime evidence.',
+            }],
+        next_action: 'Run executable runtime QA',
+    }, null, 2);
+}
+function productTotalityAuditArtifact() {
+    return JSON.stringify({
+        schema_version: 1,
+        generated_at: '2026-04-25T00:00:00.000Z',
+        root: '/tmp/test',
+        status: 'needs-depth',
+        source_artifacts: ['.omc/cycles/current.md'],
+        aggregates: {
+            completed_cycles: 1,
+            learning_captures: 1,
+            seeded_capabilities: 1,
+            supporting_systems: 1,
+            portfolio_items: 20,
+            active_or_selected_items: 3,
+            lanes: ['product', 'quality', 'research', 'backend', 'ux'],
+        },
+        scores: {},
+        capability_graph: { nodes: [], edges: [], orphan_capabilities: [] },
+        capabilities: [],
+        gaps: [{
+                severity: 'warning',
+                code: 'missing-maturity-depth',
+                subject: 'row counter',
+                message: 'Capability still has unrepresented v1/v2 or not-done-until depth.',
+                recommended_action: 'Keep missing maturity depth in priority-engine until represented in roadmap.',
+            }],
+        recommended_moves: [],
+        next_action: 'Feed recommended moves into priority-engine',
+    }, null, 2);
+}
+function capabilityLifecycleAuditArtifact() {
+    return JSON.stringify({
+        schema_version: 1,
+        generated_at: '2026-04-25T00:00:00.000Z',
+        root: '/tmp/test',
+        status: 'needs-triage',
+        source_artifacts: ['.omc/product/totality/current.json'],
+        aggregates: {
+            capability_count: 1,
+            seeded: 0,
+            proving: 0,
+            connected: 0,
+            mature: 0,
+            deprecated: 0,
+            remove_candidates: 1,
+            error_debt_capabilities: 1,
+        },
+        capabilities: [{
+                capability_id: 'naked-row-counter',
+                title: 'naked row counter',
+                source_cycle: '2026-04-25-first-loop',
+                stage: 'remove-candidate',
+                decision: 'remove-or-redesign',
+                maturity: 'seeded-v0',
+                scenario_coverage: 'missing',
+                connection_count: 0,
+                missing_depth_count: 1,
+                regression_debt_count: 1,
+                error_debt_count: 1,
+                orphan: true,
+                reasons: [
+                    'capability graph marks this as orphaned',
+                    'scenario coverage is missing',
+                    '1 regression debt item(s) apply',
+                ],
+                recommended_action: 'Remove, merge, or redesign this capability around a real user loop before adding more surface area.',
+                evidence: ['.omc/cycles/current.md'],
+            }],
+        next_action: 'Resolve remove/deprecate candidates before selecting unrelated new work',
+    }, null, 2);
 }
 function codes(report) {
     return report.issues.map((issue) => issue.code);

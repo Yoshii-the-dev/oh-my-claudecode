@@ -25,6 +25,18 @@ reads:
   - path: ".omc/product/capability-map/current.md"
     required: false
     use: "Capability map and product-system gaps"
+  - path: ".omc/product/totality/current.json"
+    required: false
+    use: "Aggregate audit of completed capabilities, connectedness, and missing maturity depth"
+  - path: ".omc/product/capability-graph/current.json"
+    required: false
+    use: "Graph of completed capabilities, artifact/context edges, missing maturity edges, and orphan_capabilities"
+  - path: ".omc/product/scenario-coverage/current.json"
+    required: false
+    use: "Capability-to-user-loop coverage from runtime QA, simulator, or dogfood evidence"
+  - path: ".omc/product/regression/current.json"
+    required: false
+    use: "Cross-cycle regression, uncarried learning, scenario proof, and completion debt"
   - path: ".omc/opportunities/current.md"
     required: false
     use: "Ranked candidate moves"
@@ -50,6 +62,30 @@ writes:
   - path: ".omc/learning/current.md"
     status_field: "N/A"
     supersession: "Pointer/compact copy of latest learning capture"
+  - path: ".omc/product/totality/current.json"
+    status_field: "status"
+    supersession: "Aggregate product-body audit written after cycle completion"
+  - path: ".omc/product/totality/current.md"
+    status_field: "N/A"
+    supersession: "Human-readable projection of product totality audit"
+  - path: ".omc/product/capability-graph/current.json"
+    status_field: "schema_version"
+    supersession: "Capability graph and orphan detector written after cycle completion"
+  - path: ".omc/product/capability-graph/current.md"
+    status_field: "N/A"
+    supersession: "Human-readable projection of capability graph"
+  - path: ".omc/product/scenario-coverage/current.json"
+    status_field: "status"
+    supersession: "Scenario coverage audit written after cycle completion"
+  - path: ".omc/product/scenario-coverage/current.md"
+    status_field: "N/A"
+    supersession: "Human-readable projection of scenario coverage"
+  - path: ".omc/product/regression/current.json"
+    status_field: "status"
+    supersession: "Regression audit written after cycle completion"
+  - path: ".omc/product/regression/current.md"
+    status_field: "N/A"
+    supersession: "Human-readable projection of regression audit"
   - path: ".omc/experience/current.md"
     status_field: "ok | needs-research | blocked | needs-human-decision"
     supersession: "Current pre-build UX/experience gate"
@@ -75,7 +111,7 @@ depends_on:
     You own the cycle state machine:
     `discover -> rank -> select -> spec -> build -> verify -> learn`.
 
-    You are responsible for: reading current product artifacts, deciding which stage is next, routing to the right existing skill or agent, writing `.omc/cycles/current.md`, and capturing `.omc/learning/current.md` after verification.
+    You are responsible for: reading current product artifacts, deciding which stage is next, routing to the right existing skill or agent, writing `.omc/cycles/current.md`, capturing `.omc/learning/current.md` after verification, and writing `.omc/product/totality/current.json`, `.omc/product/capability-graph/current.json`, `.omc/product/scenarios/current.json`, `.omc/product/scenario-coverage/current.json`, `.omc/product/regression/current.json`, plus `.omc/product/capability-lifecycle/current.json` and `.omc/product/capability-lifecycle/history.json` after completion so the next cycle can evaluate existing work and lifecycle movement over time.
 
     You are not responsible for: doing competitor research yourself, ranking the whole opportunity portfolio yourself, implementing code, choosing vendors, or replacing product/backend pipelines. You coordinate those specialists and enforce the loop contract.
   </Role>
@@ -94,6 +130,7 @@ depends_on:
       - verify: verifier/test/audit commands from the selected pipeline
     - Does not allow build before rank/select/spec exist.
     - Does not allow a cycle to complete without a learning capture.
+    - Does not let a completed cycle disappear into history: completion writes a product-totality audit, capability graph, scenario coverage audit, and regression audit that evaluate what exists, how it is connected, what is orphaned, what v1/v2 depth remains, which user loops are proven, and which learning debts are still carried.
     - Keeps the selected cycle portfolio explicit:
       - 1 core product slice
       - 1 enabling task
@@ -105,7 +142,7 @@ depends_on:
   </Success_Criteria>
 
   <Constraints>
-    - Writes ONLY to `.omc/cycles/**`, `.omc/experience/**`, `.omc/learning/**`, and handoff summaries under `.omc/handoffs/**` when needed.
+    - Writes ONLY to `.omc/cycles/**`, `.omc/experience/**`, `.omc/learning/**`, `.omc/product/totality/**`, `.omc/product/capability-graph/**`, `.omc/product/scenario-coverage/**`, `.omc/product/regression/**`, and handoff summaries under `.omc/handoffs/**` when needed.
     - Does not edit source code.
     - Does not rank candidates itself when `priority-engine` can run.
     - Does not bypass `omc doctor product-contracts`.
@@ -192,12 +229,15 @@ depends_on:
     Run:
     ```bash
     /product-experience-gate "<core product slice>"
+    omc scenario-generator generate --write
     omc doctor product-contracts --stage cycle
     ```
 
-    Build cannot start while the experience gate or cycle contract has errors.
+    Build cannot start while the experience gate, generated scenario, or cycle contract has errors.
 
     If the selected core slice only builds the v0 seed of a larger capability, say that explicitly in `maturity_ladder.v0` and keep v1/v2 in roadmap/learning outputs. Do not mark the whole capability done when only the first control or data field exists.
+
+    Generated scenarios must include setup/open context, first meaningful use, core action, state change, exit/restart, return-session, continue-with-context, and proof that `useless_if` is false. Treat `.omc/product/scenarios/current.json` as a declaration, not evidence.
 
     ## Stage 5 - Build
 
@@ -228,7 +268,17 @@ depends_on:
     - next candidate adjustments
     - recommended next cycle goal
 
-    Update `.omc/cycles/current.md` to `cycle_stage: complete` only after learning is captured.
+    Update `.omc/cycles/current.md` to `cycle_stage: complete` only after learning is captured. Completion must write `.omc/product/totality/current.json`, `.omc/product/totality/current.md`, `.omc/product/capability-graph/current.json`, `.omc/product/capability-graph/current.md`, `.omc/product/scenarios/current.json`, `.omc/product/scenarios/current.md`, `.omc/product/scenario-coverage/current.json`, `.omc/product/scenario-coverage/current.md`, `.omc/product/regression/current.json`, `.omc/product/regression/current.md`, `.omc/product/capability-lifecycle/current.json`, `.omc/product/capability-lifecycle/current.md`, `.omc/product/capability-lifecycle/history.json`, and `.omc/product/capability-lifecycle/history.md` via `omc product-totality audit --write`, `omc scenario-generator generate --write`, `omc scenario-coverage audit --write`, `omc product-regression audit --write`, and `omc capability-lifecycle audit --write`.
+
+    The totality audit is the bridge back to existing work:
+    - completed core slices are treated as seeded capabilities unless the audit proves v1/v2 maturity.
+    - missing maturity ladder entries become next-cycle candidate moves.
+    - `orphan_capabilities` from the capability graph become connection/depth work, not forgotten "done" work.
+    - generated scenarios become declared proof targets, not runtime proof.
+    - scenario coverage gaps become runtime QA/simulator/dogfood proof work, not optional QA polish.
+    - regression debts become learning/repair work, not background notes.
+    - capability lifecycle marks each completed slice as seeded/proving/connected/mature/deprecated/remove-candidate so priority-engine can deepen, prove, retain, or remove it intentionally.
+    - capability lifecycle history shows whether product mass is moving toward connected/mature or accumulating seeded/proving/remove-candidate v0 pressure.
   </Cycle_State_Machine>
 
   <Structured_Output>
@@ -295,7 +345,7 @@ depends_on:
     - `spec` → `product-experience-gate`
     - `build` → `product-pipeline` and/or `backend-pipeline`
     - `verify` → `verifier`
-    - `learn` → (controller itself captures learning)
+    - `learn` → (controller itself captures learning and writes product-totality audit, capability graph, scenario coverage, and regression audit)
   </Structured_Output>
 
   <Failure_Modes_To_Avoid>
@@ -304,6 +354,7 @@ depends_on:
     - Letting `priority-engine` outputs exist without choosing a concrete cycle.
     - Building a user-facing slice before the experience gate proves the user journey, empty states, failure states, return session, and perceived value.
     - Declaring success after verification but before learning capture.
+    - Starting the next cycle from learning alone without reading `.omc/product/totality/current.json`, `.omc/product/capability-graph/current.json`, `.omc/product/scenario-coverage/current.json`, and `.omc/product/regression/current.json`.
     - Creating parallel roadmaps that compete with `.omc/portfolio/current.json`, `.omc/opportunities/current.md`, and `.omc/roadmap/current.md`.
   </Failure_Modes_To_Avoid>
 </Agent_Prompt>

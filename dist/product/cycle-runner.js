@@ -10,6 +10,11 @@ import { planProductResearch, writeProductResearchHandoff, } from './research-ro
 import { runRuntimeQa, shouldRunRuntimeQa, writeRuntimeQaRunReport, } from '../runtime-qa/runner.js';
 import { truncateInlineLog } from '../lib/summary-policy.js';
 import { planFeatureGeneration, writeFeatureGenerationPlan } from './feature-generation.js';
+import { generateProductTotalityAudit, writeProductTotalityAudit } from './product-totality.js';
+import { generateProductScenarioCoverageAudit, writeProductScenarioCoverageAudit } from './scenario-coverage.js';
+import { generateProductRegressionAudit, writeProductRegressionAudit } from './product-regression.js';
+import { applyGeneratedScenariosToRuntimeQa, generateProductScenarioPlan, writeProductScenarioPlan } from './scenario-generator.js';
+import { generateProductCapabilityLifecycleAudit, writeProductCapabilityLifecycleAudit } from './capability-lifecycle.js';
 const DEFAULT_VERIFY_COMMAND = 'npm test';
 const DEFAULT_MAX_STAGES = 10;
 const STAGE_ORDER = ['discover', 'rank', 'select', 'spec', 'build', 'verify', 'learn', 'complete'];
@@ -102,6 +107,23 @@ export function runProductCycle(options = {}) {
                     stageResults,
                     issues,
                 });
+            }
+            if (!dryRun) {
+                const scenarioPlan = generateProductScenarioPlan(root);
+                writeProductScenarioPlan(root, scenarioPlan);
+                applyGeneratedScenariosToRuntimeQa({ root, report: scenarioPlan, write: true });
+                const totality = generateProductTotalityAudit(root);
+                writeProductTotalityAudit(root, totality);
+                const scenarioCoverage = generateProductScenarioCoverageAudit({ root, totality });
+                writeProductScenarioCoverageAudit(root, scenarioCoverage);
+                const regression = generateProductRegressionAudit({ root, totality, scenarioCoverage });
+                writeProductRegressionAudit(root, regression);
+                writeProductCapabilityLifecycleAudit(root, generateProductCapabilityLifecycleAudit({
+                    root,
+                    totality,
+                    scenarioCoverage,
+                    regression,
+                }));
             }
             return finalize({
                 ok: true,

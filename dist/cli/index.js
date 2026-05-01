@@ -30,8 +30,13 @@ import { cycleDocumentMigrateCommand, cycleDocumentProjectCommand, cycleDocument
 import { learningMigrateCommand, learningProjectCommand, learningValidateCommand, } from './commands/learning-document.js';
 import { historicalScorecardCommand } from './commands/historical-scorecard.js';
 import { portfolioMigrateCommand, portfolioProjectCommand, portfolioTrimCommand, portfolioValidateCommand, } from './commands/portfolio.js';
-import { creativeLoopAuditCommand, creativeLoopInitCommand } from './commands/creative-loop.js';
+import { creativeLoopAuditCommand, creativeLoopInitCommand, creativeLoopLifecycleCommand } from './commands/creative-loop.js';
 import { featureGenerationAuditCommand } from './commands/feature-generation.js';
+import { productTotalityAuditCommand } from './commands/product-totality.js';
+import { capabilityLifecycleAuditCommand } from './commands/capability-lifecycle.js';
+import { scenarioGeneratorCommand } from './commands/scenario-generator.js';
+import { scenarioCoverageAuditCommand } from './commands/scenario-coverage.js';
+import { productRegressionAuditCommand } from './commands/product-regression.js';
 import { runScorecardCommand } from './commands/run-scorecard.js';
 import { sessionSearchCommand } from './commands/session-search.js';
 import { stateHygieneCommand } from './commands/state-hygiene.js';
@@ -1499,6 +1504,109 @@ Examples:
     .action(async (root, options) => {
     await runScorecardCommand(root, options);
 });
+/**
+ * Product totality command - aggregate completed work and capability depth gaps
+ */
+const productTotalityCmd = program
+    .command('product-totality')
+    .description('Audit the aggregate product body: completed cycles, capability depth, connectedness, and missing next moves')
+    .addHelpText('after', `
+Examples:
+  $ omc product-totality audit
+  $ omc product-totality audit /path/to/app --write
+  $ omc product-totality audit --json`);
+productTotalityCmd
+    .command('audit [root]')
+    .description('Evaluate existing completed product work and write recommended depth moves')
+    .option('--json', 'Output as JSON')
+    .option('--write', 'Write totality, capability graph, generated scenarios, scenario coverage, regression, and lifecycle current.{json,md} artifacts')
+    .action(async (root, options) => {
+    const exitCode = await productTotalityAuditCommand(root, options);
+    process.exit(exitCode);
+});
+/**
+ * Product regression command - cross-cycle regression and learning debt audit
+ */
+const productRegressionCmd = program
+    .command('product-regression')
+    .description('Audit cross-cycle regressions, uncarried learning, and completion debt')
+    .addHelpText('after', `
+Examples:
+  $ omc product-regression audit
+  $ omc product-regression audit /path/to/app --write
+  $ omc product-regression audit --json`);
+productRegressionCmd
+    .command('audit [root]')
+    .description('Compare completed cycles against totality, scenario coverage, and learning recommendations')
+    .option('--json', 'Output as JSON')
+    .option('--write', 'Write .omc/product/regression/current.{json,md}')
+    .action(async (root, options) => {
+    const exitCode = await productRegressionAuditCommand(root, options);
+    process.exit(exitCode);
+});
+/**
+ * Capability lifecycle command - classify completed capabilities by lifecycle stage
+ */
+const capabilityLifecycleCmd = program
+    .command('capability-lifecycle')
+    .description('Audit capability lifecycle stages: seeded, proving, connected, mature, deprecated, or remove-candidate')
+    .addHelpText('after', `
+Examples:
+  $ omc capability-lifecycle audit
+  $ omc capability-lifecycle audit /path/to/app --write
+  $ omc capability-lifecycle audit --json`);
+capabilityLifecycleCmd
+    .command('audit [root]')
+    .description('Classify completed product capabilities into lifecycle stages and recommended actions')
+    .option('--json', 'Output as JSON')
+    .option('--write', 'Write .omc/product/capability-lifecycle/current.{json,md}')
+    .action(async (root, options) => {
+    const exitCode = await capabilityLifecycleAuditCommand(root, options);
+    process.exit(exitCode);
+});
+/**
+ * Scenario generator command - derive user-loop scenarios from feature expectations
+ */
+const scenarioGeneratorCmd = program
+    .command('scenario-generator')
+    .description('Generate return-session user-loop scenarios from feature expectation contracts')
+    .addHelpText('after', `
+Examples:
+  $ omc scenario-generator generate
+  $ omc scenario-generator generate /path/to/app --write
+  $ omc scenario-generator generate /path/to/app --write --apply-runtime-qa
+  $ omc scenario-generator generate --json`);
+scenarioGeneratorCmd
+    .command('generate [root]')
+    .description('Generate scenario declarations from cycle feature_expectation_contract values')
+    .option('--json', 'Output as JSON')
+    .option('--write', 'Write .omc/product/scenarios/current.{json,md}')
+    .option('--apply-runtime-qa', 'Merge generated runtime_qa_flow declarations into .omc/runtime-qa.json when a harness is supported')
+    .option('--run-runtime-qa', 'Apply generated runtime QA flows, run omc runtime-qa, and write runtime QA handoff evidence')
+    .action(async (root, options) => {
+    const exitCode = await scenarioGeneratorCommand(root, options);
+    process.exit(exitCode);
+});
+/**
+ * Scenario coverage command - product capability user-loop evidence audit
+ */
+const scenarioCoverageCmd = program
+    .command('scenario-coverage')
+    .description('Audit whether completed capabilities are proven by executable user-loop scenarios')
+    .addHelpText('after', `
+Examples:
+  $ omc scenario-coverage audit
+  $ omc scenario-coverage audit /path/to/app --write
+  $ omc scenario-coverage audit --json`);
+scenarioCoverageCmd
+    .command('audit [root]')
+    .description('Map product capabilities to runtime QA or dogfood scenario evidence')
+    .option('--json', 'Output as JSON')
+    .option('--write', 'Write .omc/product/scenario-coverage/current.{json,md}')
+    .action(async (root, options) => {
+    const exitCode = await scenarioCoverageAuditCommand(root, options);
+    process.exit(exitCode);
+});
 program
     .command('state-hygiene [root]')
     .description('Find or untrack OMC runtime state files that were accidentally added to git')
@@ -1544,6 +1652,7 @@ const creativeLoopCmd = program
 Examples:
   $ omc creative-loop audit --goal "build a distinct onboarding surface"
   $ omc creative-loop audit /path/to/app --write
+  $ omc creative-loop lifecycle /path/to/app --write
   $ omc creative-loop init --goal "row tracking dashboard"`);
 creativeLoopCmd
     .command('audit [root]')
@@ -1553,6 +1662,16 @@ creativeLoopCmd
     .option('--write', 'Write .omc/design/creative-loop/current.{json,md}')
     .action(async (root, options) => {
     const exitCode = await creativeLoopAuditCommand(root, options);
+    process.exit(exitCode);
+});
+creativeLoopCmd
+    .command('lifecycle [root]')
+    .description('Classify visual appearance as hypothesis, mapping, screenshot proof, and iteration debt')
+    .option('--goal <goal>', 'Visual/product goal used for lifecycle context')
+    .option('--json', 'Output as JSON')
+    .option('--write', 'Write .omc/design/visual-lifecycle/current.{json,md}')
+    .action(async (root, options) => {
+    const exitCode = await creativeLoopLifecycleCommand(root, options);
     process.exit(exitCode);
 });
 creativeLoopCmd

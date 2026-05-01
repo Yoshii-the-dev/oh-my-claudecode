@@ -22,6 +22,11 @@ describe('product/agent pipeline contracts', () => {
             'skills/ideate/SKILL.md',
             'skills/creative-loop/SKILL.md',
             'skills/product-cycle/SKILL.md',
+            'skills/product-totality/SKILL.md',
+            'skills/capability-lifecycle/SKILL.md',
+            'skills/scenario-generator/SKILL.md',
+            'skills/scenario-coverage/SKILL.md',
+            'skills/product-regression/SKILL.md',
             'skills/product-strategist/SKILL.md',
             'skills/product-foundation/SKILL.md',
             'skills/pre-launch-sprint/SKILL.md',
@@ -78,14 +83,62 @@ describe('product/agent pipeline contracts', () => {
         expect(agent).toContain('.omc/cycles/current.md');
         expect(agent).toContain('.omc/experience/current.md');
         expect(agent).toContain('.omc/learning/current.md');
+        expect(agent).toContain('.omc/product/totality/current.json');
+        expect(agent).toContain('.omc/product/capability-graph/current.json');
+        expect(agent).toContain('.omc/product/scenarios/current.json');
+        expect(agent).toContain('.omc/product/scenario-coverage/current.json');
+        expect(agent).toContain('.omc/product/regression/current.json');
+        expect(agent).toContain('.omc/product/capability-lifecycle/current.json');
+        expect(agent).toContain('.omc/product/capability-lifecycle/history.json');
         expect(agent).toContain('1 core product slice');
         expect(agent).toContain('1 enabling task');
         expect(agent).toContain('1 learning/research task');
         expect(skill).toContain('omc doctor product-contracts --stage cycle');
         expect(skill).toContain('/product-experience-gate');
         expect(skill).toContain('omc creative-loop audit');
+        expect(skill).toContain('omc scenario-generator generate');
+        expect(skill).toContain('omc capability-lifecycle audit');
+        expect(skill).toContain('omc product-totality audit');
         expect(docs).toContain('/product-cycle "<cycle goal>"');
         expect(docs).toContain('/creative-loop "<core product slice>"');
+        expect(docs).toContain('.omc/product/totality/current.json');
+        expect(docs).toContain('.omc/product/capability-graph/current.json');
+        expect(docs).toContain('.omc/product/scenarios/current.json');
+        expect(docs).toContain('.omc/product/scenario-coverage/current.json');
+        expect(docs).toContain('.omc/product/regression/current.json');
+        expect(docs).toContain('.omc/product/capability-lifecycle/current.json');
+    });
+    it('defines product-totality as the aggregate post-cycle audit before the next priority pass', () => {
+        const skill = readRepoFile('skills/product-totality/SKILL.md');
+        const productCycle = readRepoFile('skills/product-cycle/SKILL.md');
+        const priorityEngine = readRepoFile('skills/priority-engine/SKILL.md');
+        const docs = readRepoFile('docs/PRODUCT-ORCHESTRATION.md');
+        for (const content of [skill, productCycle, priorityEngine, docs]) {
+            expect(content).toContain('.omc/product/totality/current.json');
+            expect(content).toContain('.omc/product/capability-graph/current.json');
+            expect(content).toContain('.omc/product/scenarios/current.json');
+            expect(content).toContain('.omc/product/scenario-coverage/current.json');
+            expect(content).toContain('.omc/product/regression/current.json');
+            expect(content).toContain('.omc/product/capability-lifecycle/current.json');
+            expect(content).toContain('.omc/product/capability-lifecycle/history.json');
+            expect(content).toContain('product-totality audit');
+        }
+        expect(skill).toContain('composition');
+        expect(skill).toContain('connectedness');
+        expect(skill).toContain('freedom');
+        expect(skill).toContain('depth');
+        expect(priorityEngine).toContain('recommended_moves');
+        expect(priorityEngine).toContain('orphan_capabilities');
+        expect(priorityEngine).toContain('scenario coverage');
+        expect(priorityEngine).toContain('regression debts');
+        expect(priorityEngine).toContain('capability lifecycle');
+        expect(priorityEngine).toContain('lifecycle history');
+        expect(docs).toContain('Product Totality Rules');
+        expect(docs).toContain('Capability Graph Rules');
+        expect(docs).toContain('Scenario Generator Rules');
+        expect(docs).toContain('Scenario Coverage Rules');
+        expect(docs).toContain('Product Regression Rules');
+        expect(docs).toContain('Capability Lifecycle Rules');
     });
     it('defines creative-loop as a divergent UI/UX gate before visual implementation', () => {
         const skill = readRepoFile('skills/creative-loop/SKILL.md');
@@ -105,6 +158,8 @@ describe('product/agent pipeline contracts', () => {
         expect(productPipeline).toContain('.omc/design/visual-expectation/current.json');
         expect(docs).toContain('.omc/design/creative-loop/current.json');
         expect(docs).toContain('.omc/design/visual-expectation/current.json');
+        expect(docs).toContain('.omc/design/visual-lifecycle/current.json');
+        expect(docs).toContain('visual hypothesis');
     });
     it('defines priority-engine as a broad portfolio layer, not a short feature shortlist', () => {
         const agent = readRepoFile('agents/priority-engine.md');
@@ -116,7 +171,21 @@ describe('product/agent pipeline contracts', () => {
         expect(agent).toContain('.omc/portfolio/current.json');
         expect(agent).toContain('.omc/opportunities/current.md');
         expect(agent).toContain('.omc/roadmap/current.md');
+        expect(agent).toContain('.omc/product/totality/current.json');
+        expect(agent).toContain('.omc/product/capability-graph/current.json');
+        expect(agent).toContain('.omc/product/scenarios/current.json');
+        expect(agent).toContain('.omc/product/scenario-coverage/current.json');
+        expect(agent).toContain('.omc/product/regression/current.json');
+        expect(agent).toContain('.omc/product/capability-lifecycle/current.json');
+        expect(agent).toContain('.omc/product/capability-lifecycle/history.json');
+        expect(agent).toContain('priority-ignores-regression-debt');
+        expect(agent).toContain('priority-ignores-lifecycle-remove-candidate');
         expect(skill).toContain('omc portfolio validate');
+        expect(skill).toContain('omc product-totality audit');
+        expect(skill).toContain('omc scenario-generator generate');
+        expect(skill).toContain('omc capability-lifecycle audit');
+        expect(skill).toContain('priority-ignores-regression-debt');
+        expect(skill).toContain('capability-lifecycle reports');
         expect(skill).toContain('product, UX, research, backend, quality, brand/content, and distribution');
     });
     it('does not default pre-MVP learning work to tester recruitment', () => {

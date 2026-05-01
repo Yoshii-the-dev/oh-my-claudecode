@@ -68,7 +68,7 @@ OMC separates product development into eight layers:
 7. **Creative Loop**
    - `creative-loop`
    - output: `.omc/design/creative-loop/current.json`, `.omc/design/**`
-   - owns: meaning brief, inspiration ledger, visual expectation contract, divergent visual hypotheses, motion grammar, design tokens, component experiments, screenshots, visual verdicts, and taste gate before visual implementation.
+   - owns: meaning brief, inspiration ledger, visual expectation contract, divergent visual hypotheses, motion grammar, design tokens, component experiments, screenshots, visual verdicts, taste gate, and visual lifecycle before visual implementation.
 
 8. **Technology/Capability Governance**
    - `technology-strategist`
@@ -95,7 +95,7 @@ Lower layers consume upper-layer artifacts. They do not re-invent them.
   spec: cycle spec + product-experience-gate before user-facing build
   build: creative-loop for visual UI work, then product-pipeline and/or backend-pipeline
   verify: tests, audits, acceptance evidence
-  learn: .omc/learning/current.md and next-cycle adjustment
+  learn: .omc/learning/current.md, product-totality audit, capability graph, scenario coverage, product regression, and next-cycle adjustment
 ```
 
 `/product-foundation`, `/priority-engine`, `/product-pipeline`, and `/backend-pipeline` remain valid specialist entrypoints. For product capability development, `/product-cycle` is the default route because it preserves the learning loop and resumable cycle state.
@@ -112,6 +112,8 @@ omc doctor product-contracts --stage foundation-lite
 
 Use `--stage priority-handoff` after a standalone `/priority-engine` pass, `--stage cycle` before build, `--stage technology-handoff` before a technology ADR, and `--stage all` for a full product artifact audit.
 
+`priority-handoff` also enforces carry-forward from existing product audits: unresolved product-regression debts, scenario-coverage gaps, product-totality gaps/recommended moves, and lifecycle remove/deprecation decisions must appear in `.omc/portfolio/current.json` or `.omc/roadmap/current.md`. Ignored audit debt fails with `priority-ignores-regression-debt`, `priority-ignores-scenario-gap`, `priority-ignores-totality-gap`, `priority-ignores-totality-move`, `priority-ignores-lifecycle-remove-candidate`, or `priority-ignores-lifecycle-deprecation`.
+
 ## Product Cycle Controller Rules
 
 Product Cycle Controller is the normal product-development entrypoint. It owns the state machine, not the specialist outputs.
@@ -123,6 +125,11 @@ omc product-cycle status
 omc product-cycle next
 omc product-cycle validate
 omc feature-generation audit --write --goal "<cycle goal>"
+omc product-totality audit --write
+omc scenario-generator generate --write
+omc scenario-coverage audit --write
+omc product-regression audit --write
+omc capability-lifecycle audit --write
 omc product-cycle advance --to discover --goal "<cycle goal>"
 omc product-cycle advance --to build
 ```
@@ -131,9 +138,13 @@ Run quality scorecard:
 
 ```bash
 omc run-scorecard
+omc historical-scorecard
+omc product-totality audit --write
 ```
 
 The scorecard reports downstream accepted handoffs, rework rate, artifact bloat, time-to-first-usable-loop, user-visible/infrastructure ratio, evidence/confidence coverage, and research-vs-invention routing.
+
+The totality audit reports the product body itself: completed capabilities, how they are connected, whether they remain v0 seeds, which capability graph edges exist, which `orphan_capabilities` are disconnected, which scenario coverage gaps remain, which regression debts are carried, and which v1/v2 depth moves should feed the next priority pass.
 
 Validate and project the portfolio ledger:
 
@@ -154,6 +165,8 @@ It must:
 - run `/product-experience-gate` for user-facing work and require `.omc/experience/current.md` before build.
 - run `omc doctor product-contracts --stage cycle` before build.
 - write `.omc/learning/current.md` before marking the cycle complete.
+- write `.omc/product/totality/current.json`, `.omc/product/totality/current.md`, `.omc/product/capability-graph/current.json`, `.omc/product/capability-graph/current.md`, `.omc/product/scenarios/current.json`, `.omc/product/scenarios/current.md`, `.omc/product/scenario-coverage/current.json`, `.omc/product/scenario-coverage/current.md`, `.omc/product/regression/current.json`, `.omc/product/regression/current.md`, `.omc/product/capability-lifecycle/current.json`, `.omc/product/capability-lifecycle/current.md`, `.omc/product/capability-lifecycle/history.json`, and `.omc/product/capability-lifecycle/history.md` when advancing `learn -> complete`.
+- read the latest totality audit, capability graph, generated scenarios, scenario coverage, regression audit, lifecycle audit, and lifecycle transition history before the next `/priority-engine` ranking pass.
 
 It must not:
 
@@ -161,6 +174,110 @@ It must not:
 - create a second roadmap that competes with `.omc/opportunities/current.md` and `.omc/roadmap/current.md`.
 - allow direct build from vague product intent.
 - declare success after verification while skipping learning capture.
+- start a new cycle from learning alone while ignoring the aggregate product body.
+
+## Product Totality Rules
+
+Product Totality is the post-cycle aggregate audit. It exists because a completed cycle may only seed a capability; it does not prove the capability is mature, connected, or beautiful as part of the product.
+
+It reads completed cycles, learning, portfolio, roadmap, ecosystem, meaning, experience, and creative-loop evidence, then writes:
+
+- `.omc/product/totality/current.json`
+- `.omc/product/totality/current.md`
+- `.omc/product/capability-graph/current.json`
+- `.omc/product/capability-graph/current.md`
+- `.omc/product/scenarios/current.json`
+- `.omc/product/scenarios/current.md`
+- `.omc/product/scenario-coverage/current.json`
+- `.omc/product/scenario-coverage/current.md`
+- `.omc/product/regression/current.json`
+- `.omc/product/regression/current.md`
+- `.omc/product/capability-lifecycle/current.json`
+- `.omc/product/capability-lifecycle/current.md`
+- `.omc/product/capability-lifecycle/history.json`
+- `.omc/product/capability-lifecycle/history.md`
+
+It scores:
+
+- `composition`: whether the product has a body beyond isolated controls.
+- `connectedness`: whether capabilities connect to learning, roadmap, ecosystem, meaning, and visual evidence.
+- `freedom`: whether the portfolio has enough lanes and future moves without collapsing into one rigid path.
+- `depth`: whether completed capabilities progress beyond v0.
+- `complexity_fit` / `beauty_fit`: whether the current degree of complexity is meaningful rather than too simple or support-heavy.
+
+If the status is `under-composed`, `under-connected`, or `needs-depth`, the next `/priority-engine` pass must include the audit's `recommended_moves` as candidate portfolio work.
+
+## Capability Graph Rules
+
+Capability Graph is written by `omc product-totality audit --write`. It converts completed capabilities into nodes and links them to learning captures, portfolio work, roadmap/ecosystem/meaning context, visual evidence, missing maturity-depth nodes, and adjacent completed capabilities.
+
+It exists to prevent useful-looking but disconnected work from being forgotten. If `.omc/product/capability-graph/current.json` contains `orphan_capabilities`, the next `/priority-engine` pass must either:
+
+- select a reconnection/depth move for the orphan capability; or
+- explain why another candidate has stronger evidence and preserve the orphan as roadmap debt.
+
+## Scenario Generator Rules
+
+Scenario Generator is written by `omc scenario-generator generate --write`. It converts `feature_expectation_contract` into a concrete return-session proof loop:
+
+```text
+setup/open context -> first meaningful use -> core action -> state change -> exit/restart -> return -> continue with context -> prove useless_if is false
+```
+
+It writes:
+
+- `.omc/product/scenarios/current.json`
+- `.omc/product/scenarios/current.md`
+
+Generated scenarios are declarations, not proof. They become proof only after runtime QA, simulator, or explicit dogfood evidence runs and writes `.omc/handoffs/runtime-qa/current.json` or equivalent learning evidence. `omc scenario-generator generate --write --apply-runtime-qa` merges generated `runtime_qa_flow` declarations into `.omc/runtime-qa.json` when the project has a detected Playwright, Maestro, dogfood, or project-script harness; `--run-runtime-qa` then executes that harness and writes handoff evidence.
+
+## Scenario Coverage Rules
+
+Scenario Coverage is written by `omc scenario-coverage audit --write`. It maps each completed capability to the first meaningful user loop from the feature expectation contract and generated scenario declarations, then checks whether runtime QA, simulator, or explicit dogfood evidence proves that loop.
+
+Coverage levels:
+
+- `missing`: no executable or declared scenario evidence exists.
+- `declared`: a scenario or runtime QA flow exists, but it has not run.
+- `runtime-passed`: executable evidence proves the scenario.
+- `runtime-failed`: runtime QA failed, blocked, or only partially passed.
+- `dry-run` / `stale`: evidence is not current enough to prove the capability.
+
+If `.omc/product/scenario-coverage/current.json` is not `covered`, the next `/priority-engine` pass must include scenario proof as quality/learning work before treating the capability as mature.
+
+## Product Regression Rules
+
+Product Regression is written by `omc product-regression audit --write`. It compares completed cycles against learning captures, product totality, scenario coverage, and historical scorecard regressions.
+
+Regression debt categories:
+
+- `learning`: completed cycles without learning or learning recommendations not carried forward.
+- `capability-depth`: missing v1/v2/not-done-until depth.
+- `orphan`: capability graph isolation.
+- `scenario-proof`: runtime QA/simulator/dogfood proof gaps.
+- `quality-regression`: historical scorecard regressions.
+- `evidence`: missing feature expectation or weak completion proof.
+
+If `.omc/product/regression/current.json` is not `stable`, the next `/priority-engine` pass must include the audit's debts as candidate work or explicit roadmap debt.
+
+The priority handoff validator enforces this: `omc doctor product-contracts --stage priority-handoff` fails when regression, scenario, or totality audit debt exists but is not carried into `.omc/portfolio/current.json` or `.omc/roadmap/current.md`.
+
+## Capability Lifecycle Rules
+
+Capability Lifecycle is written by `omc capability-lifecycle audit --write`. It turns aggregate product evidence into an explicit lifecycle stage and practical decision for each completed capability.
+
+Lifecycle stages:
+
+- `seeded`: v0 exists, but depth/proof/connection is incomplete.
+- `proving`: scenario exists or is implied, but runtime QA/dogfood proof is missing.
+- `connected`: capability is tied into product/learning/roadmap context but still has depth work.
+- `mature`: systemic v2 capability with runtime proof and no blocking debt.
+- `deprecated`: roadmap or portfolio explicitly marks the capability as sunset.
+- `remove-candidate`: isolated, unproven, or debt-heavy work should be removed, merged, or redesigned before adding surface area around it.
+
+Every write also updates `.omc/product/capability-lifecycle/history.json` and `.omc/product/capability-lifecycle/history.md`. History records first observations and stage transitions such as `seeded -> proving -> connected -> mature` or `seeded -> remove-candidate`, with trend labels for `progressed`, `regressed`, and `triaged`. This makes product mass measurable over time: the roadmap can see whether completed work is becoming connected/mature or whether the system is accumulating seeded/proving v0 pressure.
+
+If `.omc/product/capability-lifecycle/current.json` contains `remove-candidate`, or lifecycle history shows regressed/triaged paths, the next `/priority-engine` pass must select removal/merge/redesign/recovery work or carry it as explicit roadmap debt. The priority handoff validator enforces this with `priority-ignores-lifecycle-remove-candidate`; deprecated capabilities are enforced as warning debt with `priority-ignores-lifecycle-deprecation`.
 
 ## Experience Gate Rules
 
@@ -217,7 +334,7 @@ It must not:
 
 ## Priority Engine Rules
 
-Priority Engine is the living portfolio layer between discovery and execution. It consumes the capability map, meaning graph, ecosystem map, research, competitors, classifications, and `.omc/feature-generation/current.json`.
+Priority Engine is the living portfolio layer between discovery and execution. It consumes the capability map, totality audit, capability graph, generated scenarios, scenario coverage, product regression, capability lifecycle, capability lifecycle history, meaning graph, ecosystem map, research, competitors, classifications, and `.omc/feature-generation/current.json`.
 
 It must:
 
@@ -225,6 +342,7 @@ It must:
 - optionally write `.omc/portfolio/current.md` as a human-readable projection.
 - produce 20-40 candidate moves across product, UX, research, backend, quality, brand/content, and distribution.
 - consume or request `omc feature-generation audit --write --goal "<cycle goal>"` so feature generation is based on explicit source coverage and MCP readiness.
+- consume or request `omc product-totality audit --write`, `omc scenario-generator generate --write`, `omc scenario-coverage audit --write`, `omc product-regression audit --write`, and `omc capability-lifecycle audit --write` after completed cycles so existing capability depth, orphan reconnection, generated scenario proof, regression debt, and lifecycle decisions compete with brand-new ideas.
 - give every work item a stable `id`, `lane`, `status`, `confidence`, `dependencies`, `selected_cycle`, and `evidence`.
 - give the selected core product slice a `feature_expectation` contract with first meaningful use, useless-if conditions, maturity ladder, and not-done-until gates.
 - score candidates by user value, evidence, learning value, dependency unlock, ecosystem depth, effort fit, and risk reduction.
@@ -234,6 +352,8 @@ It must:
 - write `.omc/roadmap/current.md` as a rolling 2/6/12-week roadmap.
 - keep pre-MVP work centered on a first usable loop.
 - keep missing source/MCP setup visible as a selected learning/research task when it affects the selected cycle.
+- keep product-totality, capability-graph, generated scenario, scenario-coverage, product-regression, and lifecycle gaps visible as `capability depth`, `connection gate`, `orphan capability`, `scenario declaration`, `scenario proof`, `regression debt`, `remove-candidate`, or `learning gate` in `.omc/roadmap/current.md`.
+- carry unresolved audit debt into `.omc/portfolio/current.json` or `.omc/roadmap/current.md`; the priority handoff gate rejects ignored regression, scenario, totality, and lifecycle remove-candidate debt.
 - pass `omc portfolio validate` before downstream handoff.
 - pass `omc doctor product-contracts --stage priority-handoff` before downstream handoff.
 
@@ -318,6 +438,7 @@ For user-facing surfaces, `product-pipeline` must treat the brand and visual lay
 - prefer original visual concepts grounded in brand philosophy, competitor whitespace, and product meaning.
 - run `/creative-loop "<core product slice>"` before implementation when the surface needs distinctive UI/UX, motion, visual language, generated assets, or brand expression.
 - verify `omc creative-loop audit --write --goal "<core product slice>"` reports `ready`.
+- verify `omc creative-loop lifecycle --write --goal "<core product slice>"` reports `healthy` or carries explicit iteration debt.
 - provision visual-creative skills when the feature needs motion, generated imagery, 3D, illustration, iconography, typography exploration, or visual QA.
 - avoid generic UI defaults that contradict the constitution.
 
@@ -331,9 +452,12 @@ Creative loop artifacts:
 - `.omc/design/tokens/current.json`
 - `.omc/design/component-experiments/current.json`
 - `.omc/design/taste-gate/current.md`
+- `.omc/design/visual-lifecycle/current.json`
 - `.omc/design/system/current.md` only after taste gate pass
 
 The visual expectation contract is the bridge between art direction and implementation. It must name desired perception, category codes to avoid, selected direction, token rationale, component proofs, screenshot evidence, and `not_ready_if` conditions. This prevents token extraction or a single attractive mock from being treated as a complete external look.
+
+The visual lifecycle is the bridge between creative readiness and cumulative visual quality. It classifies the surface through a visual hypothesis, implementation mapping, screenshot proof, and iteration debt (`visual-hypothesis`, `implementation-mapping`, `screenshot-proof`, and `iteration-debt`), so appearance can mature over cycles instead of being treated as a one-off attractive screen.
 
 ## Handoff And Permissions
 
@@ -342,7 +466,7 @@ The orchestrator owns state. Agents write artifacts.
 | Role | Read | Write |
 |---|---|---|
 | Orchestrator | state and envelopes | `.omc/state/**`, `.omc/handoffs/**` |
-| Product Cycle Controller | current product artifacts and cycle state | `.omc/cycles/**`, `.omc/learning/**`, `.omc/handoffs/**` |
+| Product Cycle Controller | current product artifacts and cycle state | `.omc/cycles/**`, `.omc/learning/**`, `.omc/product/totality/**`, `.omc/product/capability-graph/**`, `.omc/product/scenarios/**`, `.omc/product/scenario-coverage/**`, `.omc/product/regression/**`, `.omc/product/capability-lifecycle/**`, `.omc/handoffs/**` |
 | Product Strategist | compact product/market/brand context read-only | `.omc/strategy/**`, `.omc/product/capability-map/**` |
 | Technology Strategist | compact product context and code/config read-only | `.omc/decisions/**`, `.omc/handoffs/**` |
 | Researcher | docs/external/context read-only | `.omc/artifacts/**`, `.omc/handoffs/**` |

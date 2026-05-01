@@ -42,6 +42,16 @@ describe('product cycle CLI command', () => {
     expect(featureGenerationCmd?.commands.map((command) => command.name())).toContain('audit');
     const creativeLoopCmd = buildProgram().commands.find((command) => command.name() === 'creative-loop');
     expect(creativeLoopCmd?.commands.map((command) => command.name())).toEqual(expect.arrayContaining(['audit', 'init']));
+    const productTotalityCmd = buildProgram().commands.find((command) => command.name() === 'product-totality');
+    expect(productTotalityCmd?.commands.map((command) => command.name())).toContain('audit');
+    const capabilityLifecycleCmd = buildProgram().commands.find((command) => command.name() === 'capability-lifecycle');
+    expect(capabilityLifecycleCmd?.commands.map((command) => command.name())).toContain('audit');
+    const scenarioCoverageCmd = buildProgram().commands.find((command) => command.name() === 'scenario-coverage');
+    expect(scenarioCoverageCmd?.commands.map((command) => command.name())).toContain('audit');
+    const scenarioGeneratorCmd = buildProgram().commands.find((command) => command.name() === 'scenario-generator');
+    expect(scenarioGeneratorCmd?.commands.map((command) => command.name())).toContain('generate');
+    const productRegressionCmd = buildProgram().commands.find((command) => command.name() === 'product-regression');
+    expect(productRegressionCmd?.commands.map((command) => command.name())).toContain('audit');
   });
 
   it('previews safe product-cycle repairs without writing projections', async () => {

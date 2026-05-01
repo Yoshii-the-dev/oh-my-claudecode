@@ -27,6 +27,13 @@ Read compact/current artifacts first:
 - `.omc/competitors/landscape/current.md`
 - `.omc/research/current.md`
 - `.omc/product/capability-map/current.md`
+- `.omc/product/totality/current.json` and `.omc/product/totality/current.md`
+- `.omc/product/capability-graph/current.json` and `.omc/product/capability-graph/current.md`
+- `.omc/product/scenarios/current.json` and `.omc/product/scenarios/current.md`
+- `.omc/product/scenario-coverage/current.json` and `.omc/product/scenario-coverage/current.md`
+- `.omc/product/regression/current.json` and `.omc/product/regression/current.md`
+- `.omc/product/capability-lifecycle/current.json` and `.omc/product/capability-lifecycle/current.md`
+- `.omc/product/capability-lifecycle/history.json`
 - `.omc/classification/features-core-context.md`
 - `.omc/meaning/current.md`
 - `.omc/ecosystem/current.md`
@@ -39,15 +46,16 @@ Do not bulk-read archives. Use indexes and explicit pointers.
 
 1. Determine product stage: `empty | pre-mvp | mvp | post-mvp`.
 2. Run or read `omc feature-generation audit --write --goal "<cycle goal>"`. If it reports `needs-input`, `needs-mcp`, or `blocked`, keep the missing source/MCP work visible as research debt instead of silently assuming external discovery happened.
-3. If `.omc/ecosystem/current.md` is absent, stale, or core features lack depth paths, invoke `product-ecosystem-architect` first. If the current cycle is urgent, continue but mark ecosystem confidence LOW.
-4. Invoke `priority-engine` with the cycle goal and compact artifact digest.
-5. Require the agent to rank 20-40 candidate moves across product, UX, research, backend, quality, brand/content, and distribution.
-6. Require the selected cycle portfolio:
+3. If completed cycles exist, run or read `omc product-totality audit --write`, `omc scenario-generator generate --write`, `omc scenario-coverage audit --write`, `omc product-regression audit --write`, and `omc capability-lifecycle audit --write`. Use totality gaps, `orphan_capabilities`, generated scenario gaps, scenario gaps, regression debts, lifecycle decisions, lifecycle transition paths, and recommended moves as first-class portfolio candidates; do not rank a brand-new idea above a missing v1/v2 depth, orphan-reconnection, unproven scenario, remove-candidate, regressed lifecycle path, or uncarried learning debt without explicit evidence.
+4. If `.omc/ecosystem/current.md` is absent, stale, or core features lack depth paths, invoke `product-ecosystem-architect` first. If the current cycle is urgent, continue but mark ecosystem confidence LOW.
+5. Invoke `priority-engine` with the cycle goal and compact artifact digest.
+6. Require the agent to rank 20-40 candidate moves across product, UX, research, backend, quality, brand/content, and distribution.
+7. Require the selected cycle portfolio:
    - `1 core product slice`
    - `1 enabling task`
    - `1 learning/research task`
    - if any selected product/enabling task has LOW confidence or weak/proxy evidence, the learning task must be explicit research debt for that uncertainty.
-7. Require `.omc/portfolio/current.json` with one item per candidate:
+8. Require `.omc/portfolio/current.json` with one item per candidate:
    - `id`
    - `title`
    - `lane`
@@ -57,16 +65,17 @@ Do not bulk-read archives. Use indexes and explicit pointers.
    - `selected_cycle`
    - `evidence`
    - for selected `core-product-slice`: `feature_expectation`
-8. Verify outputs:
+9. Verify outputs:
    - `.omc/portfolio/current.json`
    - `.omc/opportunities/current.md`
    - `.omc/roadmap/current.md`
    - roadmap keeps weak-evidence items as `research debt`, `learning gate`, or `research gate`
-9. Run the ledger and contract gates:
+10. Run the ledger and contract gates:
    - `omc portfolio validate`
    - if validation reports `portfolio-too-large`, run `omc portfolio trim --to 40 --write` instead of editing the JSON by hand
    - `omc portfolio project --write`
    - `omc doctor product-contracts --stage priority-handoff`
+   - the priority handoff gate fails with `priority-ignores-regression-debt`, `priority-ignores-scenario-gap`, `priority-ignores-totality-gap`, or `priority-ignores-totality-move` when current product audits are not carried into `.omc/portfolio/current.json` or `.omc/roadmap/current.md`
    - Fix any errors before handing off to `product-pipeline`, `backend-pipeline`, or `technology-strategist`.
 
 Legacy migration: if `.omc/opportunities/current.md` exists but `.omc/portfolio/current.json` is missing, run `omc portfolio migrate --write` before validation. Use `--force` only when intentionally replacing a stale ledger.
@@ -98,6 +107,24 @@ For empty/pre-MVP products, do not default to tester recruitment, team onboardin
 Then keep it visible in `.omc/roadmap/current.md` as research debt or a learning/research gate.
 
 If `.omc/feature-generation/current.json` reports missing required MCP services, the learning task should include an explicit setup/provisioning proposal. Do not install or mutate MCP configuration without user approval.
+
+## Totality Rule
+
+Before ranking the next cycle after any completed cycle, read `.omc/product/totality/current.json`, `.omc/product/capability-graph/current.json`, `.omc/product/scenarios/current.json`, `.omc/product/scenario-coverage/current.json`, `.omc/product/regression/current.json`, `.omc/product/capability-lifecycle/current.json`, and `.omc/product/capability-lifecycle/history.json`.
+
+- If status is `empty`, proceed with first usable loop ranking.
+- If status is `under-composed`, `under-connected`, or `needs-depth`, include the audit's `recommended_moves` as candidate moves.
+- If `orphan_capabilities` is non-empty, include reconnection/depth moves before unrelated new ideas unless stronger evidence says otherwise.
+- If generated scenarios are missing or partial, include expectation/scenario repair before treating the capability as specified.
+- If scenario coverage is not `covered`, include runtime QA/simulator/dogfood scenario proof as quality or learning work before treating the capability as complete.
+- If regression status is not `stable`, include its `debts` as candidate work or explicit learning gates.
+- If capability lifecycle includes `remove-candidate`, select removal/merge/redesign or preserve it as explicit roadmap debt before unrelated new work.
+- If capability lifecycle includes `seeded` or `proving`, treat it as unfinished depth/proof work rather than a completed feature.
+- If lifecycle history shows `regressed` or `triaged` transition paths, rank recovery/removal/depth work before increasing unrelated v0 surface area.
+- Treat `seeded-v0` and `contextual-v1` capabilities as unfinished unless their `feature_expectation` maturity ladder has a represented next depth path.
+- Do not let an enabling/backend task displace the selected core slice when totality says user-visible capability depth is missing.
+- Preserve totality, capability graph, generated scenario, scenario coverage, regression, and lifecycle gaps in `.omc/roadmap/current.md` as `capability depth`, `connection gate`, `orphan capability`, `scenario declaration`, `scenario proof`, `regression debt`, `remove-candidate`, or `learning gate`.
+- `omc doctor product-contracts --stage priority-handoff` must prove those audit debts are represented before downstream handoff; a generic source mention is not enough when subject/action debt is absent.
 
 ## Feature Expectation Contract Rule
 
@@ -149,6 +176,8 @@ omc portfolio migrate --write  # only when migrating legacy markdown output
 omc portfolio validate
 omc doctor product-contracts --stage priority-handoff
 ```
+
+This gate blocks ignored product audit debt. If product-regression, scenario-coverage, product-totality, or capability-lifecycle reports are non-stable/non-covered/non-balanced/non-healthy, the ledger or roadmap must name the debt subject and the intended repair/action.
 
 For foundation work, the orchestrator should run `omc doctor product-contracts --stage foundation-lite` after ecosystem, opportunity, and roadmap artifacts exist.
 

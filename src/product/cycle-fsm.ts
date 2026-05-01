@@ -10,6 +10,41 @@ import {
   writeCycleDocument,
   type CycleDocument,
 } from './cycle-document.js';
+import {
+  PRODUCT_TOTALITY_JSON_RELATIVE_PATH,
+  PRODUCT_TOTALITY_MD_RELATIVE_PATH,
+  generateProductTotalityAudit,
+  writeProductTotalityAudit,
+} from './product-totality.js';
+import {
+  PRODUCT_CAPABILITY_GRAPH_JSON_RELATIVE_PATH,
+  PRODUCT_CAPABILITY_GRAPH_MD_RELATIVE_PATH,
+} from './capability-graph.js';
+import {
+  PRODUCT_SCENARIO_COVERAGE_JSON_RELATIVE_PATH,
+  PRODUCT_SCENARIO_COVERAGE_MD_RELATIVE_PATH,
+  generateProductScenarioCoverageAudit,
+  writeProductScenarioCoverageAudit,
+} from './scenario-coverage.js';
+import {
+  PRODUCT_SCENARIO_GENERATOR_JSON_RELATIVE_PATH,
+  PRODUCT_SCENARIO_GENERATOR_MD_RELATIVE_PATH,
+  applyGeneratedScenariosToRuntimeQa,
+  generateProductScenarioPlan,
+  writeProductScenarioPlan,
+} from './scenario-generator.js';
+import {
+  PRODUCT_REGRESSION_JSON_RELATIVE_PATH,
+  PRODUCT_REGRESSION_MD_RELATIVE_PATH,
+  generateProductRegressionAudit,
+  writeProductRegressionAudit,
+} from './product-regression.js';
+import {
+  PRODUCT_CAPABILITY_LIFECYCLE_JSON_RELATIVE_PATH,
+  PRODUCT_CAPABILITY_LIFECYCLE_MD_RELATIVE_PATH,
+  generateProductCapabilityLifecycleAudit,
+  writeProductCapabilityLifecycleAudit,
+} from './capability-lifecycle.js';
 
 export type ProductCycleStage =
   | 'discover'
@@ -230,6 +265,28 @@ export function advanceProductCycle(options: AdvanceProductCycleOptions): Produc
     const content = readFileSync(before.path, 'utf-8');
     writeCycle(root, updateCycleStage(content, to));
   }
+  if (to === 'build') {
+    const scenarioPlan = generateProductScenarioPlan(root);
+    writeProductScenarioPlan(root, scenarioPlan);
+    applyGeneratedScenariosToRuntimeQa({ root, report: scenarioPlan, write: true });
+  }
+  if (before.stage === 'learn' && to === 'complete') {
+    const scenarioPlan = generateProductScenarioPlan(root);
+    writeProductScenarioPlan(root, scenarioPlan);
+    applyGeneratedScenariosToRuntimeQa({ root, report: scenarioPlan, write: true });
+    const totality = generateProductTotalityAudit(root);
+    writeProductTotalityAudit(root, totality);
+    const scenarioCoverage = generateProductScenarioCoverageAudit({ root, totality });
+    writeProductScenarioCoverageAudit(root, scenarioCoverage);
+    const regression = generateProductRegressionAudit({ root, totality, scenarioCoverage });
+    writeProductRegressionAudit(root, regression);
+    writeProductCapabilityLifecycleAudit(root, generateProductCapabilityLifecycleAudit({
+      root,
+      totality,
+      scenarioCoverage,
+      regression,
+    }));
+  }
   const after = readProductCycle(root);
   return { ok: true, from: before.stage, to, snapshot: after, issues };
 }
@@ -436,6 +493,22 @@ function updateCycleDocumentStage(document: CycleDocument, stage: ProductCycleSt
         ...document.footer.artifacts_written,
         CYCLE_DOCUMENT_RELATIVE_PATH,
         CYCLE_PROJECTION_RELATIVE_PATH,
+        ...(scenarioGenerationApplies(stage) ? [
+          PRODUCT_SCENARIO_GENERATOR_JSON_RELATIVE_PATH,
+          PRODUCT_SCENARIO_GENERATOR_MD_RELATIVE_PATH,
+        ] : []),
+        ...(stage === 'complete' ? [
+          PRODUCT_TOTALITY_JSON_RELATIVE_PATH,
+          PRODUCT_TOTALITY_MD_RELATIVE_PATH,
+          PRODUCT_CAPABILITY_GRAPH_JSON_RELATIVE_PATH,
+          PRODUCT_CAPABILITY_GRAPH_MD_RELATIVE_PATH,
+          PRODUCT_SCENARIO_COVERAGE_JSON_RELATIVE_PATH,
+          PRODUCT_SCENARIO_COVERAGE_MD_RELATIVE_PATH,
+          PRODUCT_REGRESSION_JSON_RELATIVE_PATH,
+          PRODUCT_REGRESSION_MD_RELATIVE_PATH,
+          PRODUCT_CAPABILITY_LIFECYCLE_JSON_RELATIVE_PATH,
+          PRODUCT_CAPABILITY_LIFECYCLE_MD_RELATIVE_PATH,
+        ] : []),
       ])),
     },
     history: [
@@ -463,6 +536,10 @@ function updateCycleDocumentStage(document: CycleDocument, stage: ProductCycleSt
   }
 
   return updated;
+}
+
+function scenarioGenerationApplies(stage: ProductCycleStage): boolean {
+  return ['build', 'verify', 'learn', 'complete'].includes(stage);
 }
 
 function shouldCheckStage(loopStage: ProductCycleStage, currentStage: ProductCycleStage): boolean {
@@ -495,9 +572,9 @@ function getNextAction(stage: ProductCycleStage | undefined, content: string): s
     case 'verify':
       return 'Run tests/audits/verifier against cycle acceptance criteria';
     case 'learn':
-      return `Write ${LEARNING_RELATIVE_PATH}, then run omc product-cycle advance --to complete`;
+      return `Write ${LEARNING_RELATIVE_PATH}; completion writes ${PRODUCT_TOTALITY_JSON_RELATIVE_PATH}, ${PRODUCT_CAPABILITY_GRAPH_JSON_RELATIVE_PATH}, ${PRODUCT_SCENARIO_COVERAGE_JSON_RELATIVE_PATH}, and ${PRODUCT_REGRESSION_JSON_RELATIVE_PATH}; then run omc product-cycle advance --to complete`;
     case 'complete':
-      return 'Cycle complete. Start the next cycle with omc product-cycle advance --to discover --goal "<next goal>" --force';
+      return `Cycle complete. Review ${PRODUCT_TOTALITY_MD_RELATIVE_PATH}, ${PRODUCT_CAPABILITY_GRAPH_MD_RELATIVE_PATH}, ${PRODUCT_SCENARIO_COVERAGE_MD_RELATIVE_PATH}, and ${PRODUCT_REGRESSION_MD_RELATIVE_PATH}, feed them into /priority-engine, then start the next cycle with omc product-cycle advance --to discover --goal "<next goal>" --force`;
     case 'blocked':
       return 'Resolve blocking_issues, then advance with --force only when the blocker is explicitly cleared';
     default:

@@ -37,6 +37,11 @@ import {
 } from '../runtime-qa/runner.js';
 import { truncateInlineLog } from '../lib/summary-policy.js';
 import { planFeatureGeneration, writeFeatureGenerationPlan } from './feature-generation.js';
+import { generateProductTotalityAudit, writeProductTotalityAudit } from './product-totality.js';
+import { generateProductScenarioCoverageAudit, writeProductScenarioCoverageAudit } from './scenario-coverage.js';
+import { generateProductRegressionAudit, writeProductRegressionAudit } from './product-regression.js';
+import { applyGeneratedScenariosToRuntimeQa, generateProductScenarioPlan, writeProductScenarioPlan } from './scenario-generator.js';
+import { generateProductCapabilityLifecycleAudit, writeProductCapabilityLifecycleAudit } from './capability-lifecycle.js';
 
 export type CycleRunnerStopReason =
   | 'complete'
@@ -194,6 +199,23 @@ export function runProductCycle(options: RunProductCycleOptions = {}): RunProduc
           stageResults,
           issues,
         });
+      }
+      if (!dryRun) {
+        const scenarioPlan = generateProductScenarioPlan(root);
+        writeProductScenarioPlan(root, scenarioPlan);
+        applyGeneratedScenariosToRuntimeQa({ root, report: scenarioPlan, write: true });
+        const totality = generateProductTotalityAudit(root);
+        writeProductTotalityAudit(root, totality);
+        const scenarioCoverage = generateProductScenarioCoverageAudit({ root, totality });
+        writeProductScenarioCoverageAudit(root, scenarioCoverage);
+        const regression = generateProductRegressionAudit({ root, totality, scenarioCoverage });
+        writeProductRegressionAudit(root, regression);
+        writeProductCapabilityLifecycleAudit(root, generateProductCapabilityLifecycleAudit({
+          root,
+          totality,
+          scenarioCoverage,
+          regression,
+        }));
       }
 
       return finalize({

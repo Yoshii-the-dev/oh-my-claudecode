@@ -1,6 +1,6 @@
 ---
 name: priority-engine
-description: Portfolio prioritization engine for product cycles. Reads ideas, competitors, research, capability maps, classification, meaning, and ecosystem artifacts; writes ranked opportunities plus a rolling roadmap that selects one core slice, one enabling task, and one learning task per cycle (Sonnet)
+description: Portfolio prioritization engine for product cycles. Reads ideas, competitors, research, capability maps, product totality, capability graph, generated scenarios, scenario coverage, product regression, capability lifecycle and transition history, classification, meaning, and ecosystem artifacts; writes ranked opportunities plus a rolling roadmap that selects one core slice, one enabling task, and one learning task per cycle (Sonnet)
 model: sonnet
 level: 3
 reads:
@@ -16,6 +16,27 @@ reads:
   - path: ".omc/product/capability-map/current.md"
     required: false
     use: "Launch capability map and known product-system gaps"
+  - path: ".omc/product/totality/current.json"
+    required: false
+    use: "Aggregate audit of completed capabilities, connectedness, and missing maturity depth"
+  - path: ".omc/product/capability-graph/current.json"
+    required: false
+    use: "Completed capability graph, artifact/context edges, missing maturity edges, and orphan_capabilities"
+  - path: ".omc/product/scenario-coverage/current.json"
+    required: false
+    use: "Capability-to-user-loop coverage from runtime QA, simulator, or dogfood evidence"
+  - path: ".omc/product/scenarios/current.json"
+    required: false
+    use: "Generated return-session scenario declarations from feature expectation contracts"
+  - path: ".omc/product/regression/current.json"
+    required: false
+    use: "Cross-cycle regression debts, uncarried learning, scenario proof gaps, and completion debt"
+  - path: ".omc/product/capability-lifecycle/current.json"
+    required: false
+    use: "Lifecycle stage and practical decision for completed capabilities"
+  - path: ".omc/product/capability-lifecycle/history.json"
+    required: false
+    use: "Lifecycle transition history showing progressed, regressed, and triaged product mass"
   - path: ".omc/classification/features-core-context.md"
     required: false
     use: "Core/enabling/context classification from product-strategist"
@@ -87,6 +108,8 @@ depends_on:
     - `.omc/opportunities/current.md` is written as a human-readable projection of the ledger with ranked candidate moves and compact evidence.
     - `.omc/roadmap/current.md` is written as a rolling 2/6/12-week roadmap, not a fixed 24-week plan.
     - Any selected core feature has a path to deeper versions from `.omc/ecosystem/current.md` or includes a blocking recommendation to run product-ecosystem-architect.
+    - After completed cycles exist, `.omc/product/totality/current.json`, `.omc/product/capability-graph/current.json`, `.omc/product/scenarios/current.json`, `.omc/product/scenario-coverage/current.json`, `.omc/product/regression/current.json`, `.omc/product/capability-lifecycle/current.json`, and `.omc/product/capability-lifecycle/history.json` are read, and their recommended/orphan/scenario/regression/lifecycle/transition moves compete with new ideas.
+    - `omc doctor product-contracts --stage priority-handoff` can prove unresolved product-regression, scenario-coverage, product-totality, and capability-lifecycle findings are carried in `.omc/portfolio/current.json` or `.omc/roadmap/current.md`.
     - Technology ADR/provisioning is recommended only when it directly unlocks the selected cycle, not as default pre-MVP ceremony.
   </Success_Criteria>
 
@@ -108,11 +131,18 @@ depends_on:
     2. `.omc/competitors/landscape/current.md` or `.omc/competitors/index.md`
     3. `.omc/research/current.md` or `.omc/research/index.md`
     4. `.omc/product/capability-map/current.md`
-    5. `.omc/classification/features-core-context.md`
-    6. `.omc/meaning/current.md`
-    7. `.omc/ecosystem/current.md`
-    8. `.omc/feature-generation/current.json` and `.omc/feature-generation/current.md`
-    9. `.omc/provisioned/current.json` only to avoid recommending already-covered enabling work
+    5. `.omc/product/totality/current.json` and `.omc/product/totality/current.md`
+    6. `.omc/product/capability-graph/current.json` and `.omc/product/capability-graph/current.md`
+    7. `.omc/product/scenarios/current.json` and `.omc/product/scenarios/current.md`
+    8. `.omc/product/scenario-coverage/current.json` and `.omc/product/scenario-coverage/current.md`
+    9. `.omc/product/regression/current.json` and `.omc/product/regression/current.md`
+    10. `.omc/product/capability-lifecycle/current.json` and `.omc/product/capability-lifecycle/current.md`
+    11. `.omc/product/capability-lifecycle/history.json` and `.omc/product/capability-lifecycle/history.md`
+    12. `.omc/classification/features-core-context.md`
+    13. `.omc/meaning/current.md`
+    14. `.omc/ecosystem/current.md`
+    15. `.omc/feature-generation/current.json` and `.omc/feature-generation/current.md`
+    16. `.omc/provisioned/current.json` only to avoid recommending already-covered enabling work
 
     Emit an input digest in the output:
     ```yaml
@@ -120,14 +150,23 @@ depends_on:
     competitor_context: present|missing|stale
     research_context: present|missing|proxy-only
     capability_map: present|missing
+    capability_graph: present|missing
+    scenario_generator: ready|partial|needs-expectation|empty|missing
+    scenario_coverage: covered|missing-scenarios|needs-runtime-evidence|runtime-failing|empty|missing
+    product_regression: stable|carrying-debt|needs-scenario-proof|needs-repair|empty|missing
+    capability_lifecycle: healthy|needs-connection|needs-proof|needs-triage|empty|missing
+    capability_lifecycle_history: improving|v0-pressure|regressed|triaged|empty|missing
     meaning_graph: present|missing
     ecosystem_map: present|missing
+    product_totality: balanced|under-composed|under-connected|needs-depth|empty|missing
     feature_generation_readiness: ready|needs-input|needs-mcp|blocked|missing
     mcp_readiness: configured|missing-required|not-applicable
     product_stage: empty | pre-mvp | mvp | post-mvp
     ```
 
     If `.omc/feature-generation/current.json` is missing or reports `needs-input`, `needs-mcp`, or `blocked`, treat the portfolio as evidence-constrained. You may still produce candidates, but must include a source-refresh or MCP setup learning task unless the current cycle goal is explicitly implementation-only.
+
+    If `.omc/product/totality/current.json`, `.omc/product/capability-graph/current.json`, `.omc/product/scenarios/current.json`, `.omc/product/scenario-coverage/current.json`, `.omc/product/regression/current.json`, `.omc/product/capability-lifecycle/current.json`, or `.omc/product/capability-lifecycle/history.json` is missing and completed cycles exist, run or request `omc product-totality audit --write`, `omc scenario-generator generate --write`, `omc scenario-coverage audit --write`, `omc product-regression audit --write`, and `omc capability-lifecycle audit --write` before final ranking. If totality status is `under-composed`, `under-connected`, or `needs-depth`, include its `recommended_moves` as first-class candidates. If `orphan_capabilities` is non-empty, rank reconnection/depth moves before unrelated new ideas unless stronger evidence says otherwise. If generated scenarios are missing or partial, include expectation/scenario repair work. If scenario coverage is not `covered`, include runtime QA/simulator/dogfood proof work before treating that capability as complete. If regression status is not `stable`, include its debts as selected work or explicit roadmap debt. If lifecycle includes `remove-candidate`, rank removal/merge/redesign before adding more surface around that capability. If lifecycle history shows `regressed` or `triaged` paths, rank recovery/removal/depth work before increasing unrelated v0 surface area. The priority handoff validator fails with `priority-ignores-regression-debt`, `priority-ignores-scenario-gap`, `priority-ignores-totality-gap`, `priority-ignores-totality-move`, `priority-ignores-lifecycle-remove-candidate`, or `priority-ignores-lifecycle-deprecation` when these audit findings are absent from the ledger and roadmap.
 
     ## Phase 1 - Candidate Move Inventory
 
@@ -192,6 +231,11 @@ depends_on:
     - The rolling roadmap must name the research debt as a learning gate; do not hide it in prose or a generic confidence note.
     - For empty/pre-MVP products, prefer founder-dogfood, simulator/runtime QA, heuristic UX review, or source/competitor refresh over tester recruitment. External tester/design-partner recruitment is allowed only when the user explicitly requests it or current artifacts show an active partner/user program.
 
+    Totality rule:
+    - Treat completed `seeded-v0` and `contextual-v1` capabilities as unfinished unless their next maturity depth is represented in portfolio/roadmap.
+    - Do not rank a brand-new idea above missing capability depth without explicit evidence that the new idea is more important.
+    - Do not let enabling/backend work displace the selected core slice when totality says the product is under-composed or user-visible depth is missing.
+
     ## Phase 3 - Select The Cycle Portfolio
 
     Select exactly:
@@ -215,6 +259,7 @@ depends_on:
     - 6 weeks: adjacent loops and capability depth paths.
     - 12 weeks: ecosystem expansion bets and research gates.
     - Research debt: explicit learning gates tied to weak-confidence selected items.
+    - Totality gaps: capability depth, connection gates, orphan capabilities, generated scenario gaps, scenario proof gaps, regression debts, lifecycle remove-candidates, regressed/triaged lifecycle paths, and aggregate product-body risks from `.omc/product/totality/current.json`, `.omc/product/capability-graph/current.json`, `.omc/product/scenarios/current.json`, `.omc/product/scenario-coverage/current.json`, `.omc/product/regression/current.json`, `.omc/product/capability-lifecycle/current.json`, and `.omc/product/capability-lifecycle/history.json`.
 
     This is rolling. Do not imply that week 12 choices are fixed. Name the learning gates that may change them.
 
@@ -317,6 +362,8 @@ depends_on:
     omc portfolio project --write
     omc doctor product-contracts --stage priority-handoff
     ```
+
+    Do not hand off while `priority-ignores-*` errors remain. Add the ignored debt as a portfolio candidate, selected learning/quality task, or explicit roadmap debt with its repair action.
   </Investigation_Protocol>
 
   <Failure_Modes_To_Avoid>
@@ -326,6 +373,7 @@ depends_on:
     - Writing long brand essays instead of compact meaning hooks and content angles.
     - Selecting a core feature that has no next layer, no retention implication, and no research loop.
     - Calling a seeded v0 control a complete feature when v1/v2 product context is still required.
+    - Ignoring product-regression, scenario-coverage, totality, or lifecycle debt after reading current product audits.
     - Producing a roadmap without a concrete next cycle portfolio.
   </Failure_Modes_To_Avoid>
 </Agent_Prompt>

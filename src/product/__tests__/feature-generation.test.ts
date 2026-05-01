@@ -56,6 +56,32 @@ describe('feature generation readiness', () => {
     writeArtifact(root, '.omc/research/current.md', rich('research'));
     writeArtifact(root, '.omc/competitors/landscape/current.md', rich('competitor landscape'));
     writeArtifact(root, '.omc/meaning/current.md', rich('meaning'));
+    writeArtifact(root, '.omc/product/capability-graph/current.json', JSON.stringify({
+      nodes: [{ id: 'activation-loop', kind: 'capability', label: 'activation loop with enough graph context for source scoring' }],
+      edges: [{ from: 'activation-loop', to: 'context:roadmap', type: 'context', label: 'roadmap', strength: 0.8 }],
+      orphan_capabilities: [],
+    }, null, 2));
+    writeArtifact(root, '.omc/product/scenario-coverage/current.json', JSON.stringify({
+      scenarios: [{ id: 'activation-loop-scenario', coverage: 'runtime-passed', expected_user_loop: 'finish activation loop' }],
+      gaps: [],
+      next_action: 'feed scenario evidence into priority engine',
+    }, null, 2));
+    writeArtifact(root, '.omc/product/scenarios/current.json', JSON.stringify({
+      status: 'ready',
+      scenarios: [{ id: 'activation-loop-scenario', first_meaningful_use: 'finish activation loop', steps: [] }],
+      next_action: 'run runtime QA for generated scenario declarations',
+    }, null, 2));
+    writeArtifact(root, '.omc/product/regression/current.json', JSON.stringify({
+      status: 'stable',
+      debts: [],
+      summary: 'Regression audit confirms completed capability evidence is current enough for feature generation source scoring and downstream cycle ranking.',
+      next_action: 'continue priority engine with regression audit as a compact evidence source',
+    }, null, 2));
+    writeArtifact(root, '.omc/product/capability-lifecycle/current.json', JSON.stringify({
+      status: 'healthy',
+      capabilities: [{ capability_id: 'activation-loop', stage: 'mature', decision: 'retain' }],
+      next_action: 'use mature activation loop as product foundation',
+    }, null, 2));
 
     const plan = planFeatureGeneration({
       root,
@@ -68,6 +94,11 @@ describe('feature generation readiness', () => {
 
     expect(written.jsonPath).toContain('.omc/feature-generation/current.json');
     expect(written.mdPath).toContain('.omc/feature-generation/current.md');
+    expect(plan.sources.find((source) => source.kind === 'capability-graph')?.status).toBe('present');
+    expect(plan.sources.find((source) => source.kind === 'scenario-generator')?.status).toBe('present');
+    expect(plan.sources.find((source) => source.kind === 'scenario-coverage')?.status).toBe('present');
+    expect(plan.sources.find((source) => source.kind === 'regression')?.status).toBe('present');
+    expect(plan.sources.find((source) => source.kind === 'capability-lifecycle')?.status).toBe('present');
     expect(renderFeatureGenerationPlan(plan)).toContain('Feature Generation Readiness');
   });
 });

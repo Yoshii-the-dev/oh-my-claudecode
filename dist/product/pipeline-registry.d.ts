@@ -76,6 +76,60 @@ export declare const PRODUCT_ARTIFACT_REGISTRY: {
         readonly datedPattern: ".omc/product/capability-map/YYYY-MM-DD-<slug>.md";
         readonly purpose: "Launch capability map, first usable loop, product-system gaps.";
     };
+    readonly 'product-totality': {
+        readonly name: "product-totality";
+        readonly lane: "product";
+        readonly currentPath: ".omc/product/totality/current.json";
+        readonly format: "json";
+        readonly owner: "omc product-totality audit";
+        readonly machineContract: "strict";
+        readonly purpose: "Aggregate completed cycles, capability maturity, connectedness, complexity fit, and missing depth moves.";
+    };
+    readonly 'capability-graph': {
+        readonly name: "capability-graph";
+        readonly lane: "product";
+        readonly currentPath: ".omc/product/capability-graph/current.json";
+        readonly format: "json";
+        readonly owner: "omc product-totality audit";
+        readonly machineContract: "strict";
+        readonly purpose: "Machine-readable graph of completed capabilities, context/artifact edges, missing maturity edges, and orphan capability detection.";
+    };
+    readonly 'scenario-coverage': {
+        readonly name: "scenario-coverage";
+        readonly lane: "product";
+        readonly currentPath: ".omc/product/scenario-coverage/current.json";
+        readonly format: "json";
+        readonly owner: "omc scenario-coverage audit";
+        readonly machineContract: "strict";
+        readonly purpose: "Capability-to-user-scenario coverage audit linking completed work to runtime QA, simulator, or dogfood evidence.";
+    };
+    readonly 'scenario-generator': {
+        readonly name: "scenario-generator";
+        readonly lane: "product";
+        readonly currentPath: ".omc/product/scenarios/current.json";
+        readonly format: "json";
+        readonly owner: "omc scenario-generator generate";
+        readonly machineContract: "strict";
+        readonly purpose: "Generated return-session user-loop scenario declarations derived from feature expectation contracts.";
+    };
+    readonly 'product-regression': {
+        readonly name: "product-regression";
+        readonly lane: "product";
+        readonly currentPath: ".omc/product/regression/current.json";
+        readonly format: "json";
+        readonly owner: "omc product-regression audit";
+        readonly machineContract: "strict";
+        readonly purpose: "Cross-cycle regression and learning debt audit comparing completed cycles against totality and scenario evidence.";
+    };
+    readonly 'capability-lifecycle': {
+        readonly name: "capability-lifecycle";
+        readonly lane: "product";
+        readonly currentPath: ".omc/product/capability-lifecycle/current.json";
+        readonly format: "json";
+        readonly owner: "omc capability-lifecycle audit";
+        readonly machineContract: "strict";
+        readonly purpose: "Lifecycle classification for completed capabilities: seeded, proving, connected, mature, deprecated, or remove-candidate.";
+    };
     readonly ecosystem: {
         readonly name: "ecosystem";
         readonly lane: "product";
@@ -160,6 +214,24 @@ export declare const PRODUCT_ARTIFACT_REGISTRY: {
         readonly owner: "creative-loop";
         readonly machineContract: "footer";
         readonly purpose: "Human-readable taste verdict for distinctiveness, usability, accessibility, and brand fit before design-system promotion.";
+    };
+    readonly 'visual-lifecycle': {
+        readonly name: "visual-lifecycle";
+        readonly lane: "design";
+        readonly currentPath: ".omc/design/visual-lifecycle/current.json";
+        readonly format: "json";
+        readonly owner: "omc creative-loop lifecycle";
+        readonly machineContract: "strict";
+        readonly purpose: "Visual appearance lifecycle: hypothesis, implementation mapping, screenshot proof, and iteration debt.";
+    };
+    readonly 'capability-lifecycle-history': {
+        readonly name: "capability-lifecycle-history";
+        readonly lane: "product";
+        readonly currentPath: ".omc/product/capability-lifecycle/history.json";
+        readonly format: "json";
+        readonly owner: "omc capability-lifecycle audit";
+        readonly machineContract: "strict";
+        readonly purpose: "Append-only capability lifecycle transition history across product cycles.";
     };
     readonly cycle: {
         readonly name: "cycle";

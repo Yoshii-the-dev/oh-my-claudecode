@@ -14,6 +14,12 @@ export type FeatureGenerationSourceKind =
   | 'meaning'
   | 'ecosystem'
   | 'capability-map'
+  | 'capability-graph'
+  | 'scenario-generator'
+  | 'scenario-coverage'
+  | 'regression'
+  | 'capability-lifecycle'
+  | 'totality'
   | 'learning'
   | 'portfolio';
 
@@ -71,6 +77,12 @@ const SOURCE_CANDIDATES: Record<FeatureGenerationSourceKind, string[]> = {
   meaning: ['.omc/meaning/current.md'],
   ecosystem: ['.omc/ecosystem/current.md'],
   'capability-map': ['.omc/product/capability-map/current.md'],
+  'capability-graph': ['.omc/product/capability-graph/current.json', '.omc/product/capability-graph/current.md'],
+  'scenario-generator': ['.omc/product/scenarios/current.json', '.omc/product/scenarios/current.md'],
+  'scenario-coverage': ['.omc/product/scenario-coverage/current.json', '.omc/product/scenario-coverage/current.md'],
+  regression: ['.omc/product/regression/current.json', '.omc/product/regression/current.md'],
+  'capability-lifecycle': ['.omc/product/capability-lifecycle/current.json', '.omc/product/capability-lifecycle/current.md'],
+  totality: ['.omc/product/totality/current.json', '.omc/product/totality/current.md'],
   learning: ['.omc/learning/current.md'],
   portfolio: ['.omc/portfolio/current.json', '.omc/opportunities/current.md', '.omc/roadmap/current.md'],
 };

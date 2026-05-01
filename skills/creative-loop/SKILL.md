@@ -15,6 +15,7 @@ Use this before implementation for UI/UX work where "make it look good" is not e
 /creative-loop "create a distinct onboarding surface for row tracking"
 omc creative-loop init --goal "row tracking onboarding"
 omc creative-loop audit --write --goal "row tracking onboarding"
+omc creative-loop lifecycle --write --goal "row tracking onboarding"
 ```
 
 ## Pipeline
@@ -31,6 +32,7 @@ Run the phases in order and write the artifacts listed here:
 | Token system | `.omc/design/tokens/current.json` |
 | Component experiments | `.omc/design/component-experiments/current.json` |
 | Taste gate | `.omc/design/taste-gate/current.md` |
+| Visual lifecycle | `.omc/design/visual-lifecycle/current.json` |
 | Design system promotion | `.omc/design/system/current.md` only after taste gate passes |
 
 ## Protocol
@@ -60,7 +62,11 @@ Run the phases in order and write the artifacts listed here:
 8. Run the taste gate.
    - Score distinctiveness, usability, accessibility, and brand fit.
    - `verdict: pass` is allowed only when evidence exists from experiments/screenshots/verdicts.
-9. Promote into `.omc/design/system/current.md` only after the taste gate passes.
+9. Write the visual lifecycle:
+   - Run `omc creative-loop lifecycle --write --goal "<visual/product goal>"`.
+   - Treat phases as cumulative evidence: `visual-hypothesis`, `implementation-mapping`, `screenshot-proof`, and `iteration-debt`.
+   - Carry every `not_ready_if` condition forward as iteration debt instead of letting a single passing screenshot end the design work.
+10. Promote into `.omc/design/system/current.md` only after the taste gate passes and visual lifecycle is `healthy` or has explicit watchlist-only debt.
 
 ## Visual Expectation Contract
 
@@ -107,6 +113,7 @@ Use the CLI to keep the gate machine-checkable:
 
 ```bash
 omc creative-loop audit --write --goal "<visual/product goal>"
+omc creative-loop lifecycle --write --goal "<visual/product goal>"
 ```
 
 If artifacts are missing, initialize drafts:
@@ -124,6 +131,7 @@ Drafts do not pass the gate. Replace placeholders with real design reasoning, ex
 - Do not collapse divergent work into one direction too early.
 - Do not accept noun-only or style-only visual directions. The selected direction must say what perception it creates, what category code it avoids, and which component proof shows it.
 - Do not let implementation start for a visual user-facing surface while the creative-loop audit reports `needs-brief`, `needs-divergence`, `needs-experiments`, or `needs-taste-gate`.
+- Do not treat visual work as complete until `.omc/design/visual-lifecycle/current.json` maps hypothesis to implementation, screenshot proof, and iteration debt.
 - Do not promote tokens or components into the design system until the taste gate passes.
 
 ## Handoff
@@ -135,5 +143,6 @@ Before handing off to `/product-pipeline`, include only:
 - token changes;
 - component experiments and screenshot paths;
 - visual verdict/taste-gate evidence;
+- visual lifecycle status and iteration debt;
 - blockers or accessibility risks;
 - next action.
