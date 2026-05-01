@@ -37,6 +37,8 @@ omc product-cycle validate
 omc product-cycle run --auto --auto-policy safe --json
 omc feature-generation audit --write --goal "ship first usable loop"
 omc creative-loop audit --write --goal "ship first usable loop"
+omc product-totality audit --write
+omc scenario-coverage audit --write
 omc product-cycle advance --to discover --goal "ship first usable loop"
 omc product-cycle advance --to build
 ```
@@ -71,7 +73,7 @@ It routes existing skills:
 | spec | controller writes cycle spec and runs `/product-experience-gate` |
 | build | `/creative-loop` for visual UI work, then `/product-pipeline` and/or `/backend-pipeline` |
 | verify | relevant tests, audits, verifier |
-| learn | controller writes `.omc/learning/current.md` and marks cycle complete |
+| learn | controller writes `.omc/learning/current.md`, writes `.omc/product/totality/current.json`, `.omc/product/capability-graph/current.json`, and `.omc/product/scenario-coverage/current.json`, then marks cycle complete |
 
 ## Protocol
 
@@ -146,7 +148,8 @@ omc doctor product-contracts --stage cycle
     - When `.omc/runtime-qa.json` exists or the verification plan declares runtime smoke/simulator coverage, run `omc runtime-qa run --auto --json` and include `.omc/handoffs/runtime-qa/current.json` as evidence.
     - If `omc doctor runtime-qa --json` reports `runtime-qa-fixture-agent-mcp-required`, invoke the `runtime-qa` skill to prepare the Supabase MCP disposable fixture before running destructive simulator flows.
     - Mobile simulator tooling is explicit opt-in: if Maestro/Detox/Appium is missing, rerun with `omc runtime-qa run --auto --install-mobile-tools --json` only after the user has approved provisioning. Product-cycle may pass the same approval with `omc product-cycle run --auto --install-mobile-tools --json`.
-12. Learn before completion: write `.omc/learning/current.md`, then set `cycle_stage: complete`.
+12. Learn before completion: write `.omc/learning/current.md`. Advancing `learn -> complete` must also write `.omc/product/totality/current.json`, `.omc/product/totality/current.md`, `.omc/product/capability-graph/current.json`, `.omc/product/capability-graph/current.md`, `.omc/product/scenario-coverage/current.json`, and `.omc/product/scenario-coverage/current.md`, then set `cycle_stage: complete`.
+13. Before the next ranking pass, read `.omc/product/totality/current.json`, `.omc/product/capability-graph/current.json`, and `.omc/product/scenario-coverage/current.json`. Treat completed core slices as seeded capabilities unless the totality audit proves contextual/systemic maturity and scenario coverage proves the meaningful user loop; feed missing depth/orphan/scenario moves into `/priority-engine`.
 
 ## Cycle Artifact Contract
 
@@ -166,6 +169,9 @@ omc doctor product-contracts --stage cycle
 - learning plan
 - experience gate path: `.omc/experience/current.md`
 - feature expectation contract: `user_job`, `first_meaningful_use`, `useless_if`, `maturity_ladder.v0/v1/v2`, `not_done_until`
+- totality audit path after completion: `.omc/product/totality/current.json`
+- capability graph path after completion: `.omc/product/capability-graph/current.json`
+- scenario coverage path after completion: `.omc/product/scenario-coverage/current.json`
 - standard footer fields: `status`, `evidence`, `confidence`, `blocking_issues`, `next_action`, `artifacts_written`
 
 ## Rules
@@ -180,6 +186,10 @@ omc doctor product-contracts --stage cycle
 - Visual user-facing work cannot enter implementation until the creative-loop audit is ready and `.omc/design/taste-gate/current.md` has a real `verdict: pass`.
 - Weak evidence must create a selected learning/research task and remain visible as research debt in the roadmap.
 - A cycle is not done until learning is captured.
+- A completed cycle is not the end of a capability. After completion, totality audit must evaluate what exists, how it is connected, and which v1/v2 depth remains.
+- The capability graph must expose orphan capabilities that have no learning, portfolio, system, or adjacent-capability edges.
+- Scenario coverage must prove the first meaningful user loop through runtime QA, simulator, or dogfood evidence.
+- The next cycle must consider totality gaps, `orphan_capabilities`, and scenario coverage gaps before ranking new ideas.
 
 ## Failure Modes To Avoid
 
@@ -187,4 +197,5 @@ omc doctor product-contracts --stage cycle
 - Producing discovery and roadmap artifacts without selecting one cycle.
 - Building before the cycle spec exists.
 - Verifying code but skipping user/product learning.
+- Starting a new cycle from learning alone without checking aggregate product totality.
 - Creating a second roadmap inside the cycle artifact instead of linking to `.omc/opportunities/current.md` and `.omc/roadmap/current.md`.

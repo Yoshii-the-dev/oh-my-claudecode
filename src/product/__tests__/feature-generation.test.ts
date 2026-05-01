@@ -56,6 +56,16 @@ describe('feature generation readiness', () => {
     writeArtifact(root, '.omc/research/current.md', rich('research'));
     writeArtifact(root, '.omc/competitors/landscape/current.md', rich('competitor landscape'));
     writeArtifact(root, '.omc/meaning/current.md', rich('meaning'));
+    writeArtifact(root, '.omc/product/capability-graph/current.json', JSON.stringify({
+      nodes: [{ id: 'activation-loop', kind: 'capability', label: 'activation loop with enough graph context for source scoring' }],
+      edges: [{ from: 'activation-loop', to: 'context:roadmap', type: 'context', label: 'roadmap', strength: 0.8 }],
+      orphan_capabilities: [],
+    }, null, 2));
+    writeArtifact(root, '.omc/product/scenario-coverage/current.json', JSON.stringify({
+      scenarios: [{ id: 'activation-loop-scenario', coverage: 'runtime-passed', expected_user_loop: 'finish activation loop' }],
+      gaps: [],
+      next_action: 'feed scenario evidence into priority engine',
+    }, null, 2));
 
     const plan = planFeatureGeneration({
       root,
@@ -68,6 +78,8 @@ describe('feature generation readiness', () => {
 
     expect(written.jsonPath).toContain('.omc/feature-generation/current.json');
     expect(written.mdPath).toContain('.omc/feature-generation/current.md');
+    expect(plan.sources.find((source) => source.kind === 'capability-graph')?.status).toBe('present');
+    expect(plan.sources.find((source) => source.kind === 'scenario-coverage')?.status).toBe('present');
     expect(renderFeatureGenerationPlan(plan)).toContain('Feature Generation Readiness');
   });
 });

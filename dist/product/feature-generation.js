@@ -14,6 +14,9 @@ const SOURCE_CANDIDATES = {
     meaning: ['.omc/meaning/current.md'],
     ecosystem: ['.omc/ecosystem/current.md'],
     'capability-map': ['.omc/product/capability-map/current.md'],
+    'capability-graph': ['.omc/product/capability-graph/current.json', '.omc/product/capability-graph/current.md'],
+    'scenario-coverage': ['.omc/product/scenario-coverage/current.json', '.omc/product/scenario-coverage/current.md'],
+    totality: ['.omc/product/totality/current.json', '.omc/product/totality/current.md'],
     learning: ['.omc/learning/current.md'],
     portfolio: ['.omc/portfolio/current.json', '.omc/opportunities/current.md', '.omc/roadmap/current.md'],
 };

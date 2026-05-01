@@ -32,6 +32,8 @@ import { historicalScorecardCommand } from './commands/historical-scorecard.js';
 import { portfolioMigrateCommand, portfolioProjectCommand, portfolioTrimCommand, portfolioValidateCommand, } from './commands/portfolio.js';
 import { creativeLoopAuditCommand, creativeLoopInitCommand } from './commands/creative-loop.js';
 import { featureGenerationAuditCommand } from './commands/feature-generation.js';
+import { productTotalityAuditCommand } from './commands/product-totality.js';
+import { scenarioCoverageAuditCommand } from './commands/scenario-coverage.js';
 import { runScorecardCommand } from './commands/run-scorecard.js';
 import { sessionSearchCommand } from './commands/session-search.js';
 import { stateHygieneCommand } from './commands/state-hygiene.js';
@@ -1498,6 +1500,46 @@ Examples:
   $ omc run-scorecard --json`)
     .action(async (root, options) => {
     await runScorecardCommand(root, options);
+});
+/**
+ * Product totality command - aggregate completed work and capability depth gaps
+ */
+const productTotalityCmd = program
+    .command('product-totality')
+    .description('Audit the aggregate product body: completed cycles, capability depth, connectedness, and missing next moves')
+    .addHelpText('after', `
+Examples:
+  $ omc product-totality audit
+  $ omc product-totality audit /path/to/app --write
+  $ omc product-totality audit --json`);
+productTotalityCmd
+    .command('audit [root]')
+    .description('Evaluate existing completed product work and write recommended depth moves')
+    .option('--json', 'Output as JSON')
+    .option('--write', 'Write totality, capability graph, and scenario coverage current.{json,md} artifacts')
+    .action(async (root, options) => {
+    const exitCode = await productTotalityAuditCommand(root, options);
+    process.exit(exitCode);
+});
+/**
+ * Scenario coverage command - product capability user-loop evidence audit
+ */
+const scenarioCoverageCmd = program
+    .command('scenario-coverage')
+    .description('Audit whether completed capabilities are proven by executable user-loop scenarios')
+    .addHelpText('after', `
+Examples:
+  $ omc scenario-coverage audit
+  $ omc scenario-coverage audit /path/to/app --write
+  $ omc scenario-coverage audit --json`);
+scenarioCoverageCmd
+    .command('audit [root]')
+    .description('Map product capabilities to runtime QA or dogfood scenario evidence')
+    .option('--json', 'Output as JSON')
+    .option('--write', 'Write .omc/product/scenario-coverage/current.{json,md}')
+    .action(async (root, options) => {
+    const exitCode = await scenarioCoverageAuditCommand(root, options);
+    process.exit(exitCode);
 });
 program
     .command('state-hygiene [root]')

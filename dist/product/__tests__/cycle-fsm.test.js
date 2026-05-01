@@ -1,9 +1,12 @@
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { advanceProductCycle, readProductCycle, validateProductCycle, } from '../cycle-fsm.js';
 import { migrateCycleMarkdownToJson } from '../cycle-document.js';
+import { PRODUCT_TOTALITY_JSON_RELATIVE_PATH } from '../product-totality.js';
+import { PRODUCT_CAPABILITY_GRAPH_JSON_RELATIVE_PATH } from '../capability-graph.js';
+import { PRODUCT_SCENARIO_COVERAGE_JSON_RELATIVE_PATH } from '../scenario-coverage.js';
 let rootsToClean = [];
 afterEach(() => {
     for (const root of rootsToClean) {
@@ -87,6 +90,9 @@ describe('product cycle FSM', () => {
         const validated = validateProductCycle(root);
         expect(result.ok).toBe(true);
         expect(result.snapshot.stage).toBe('complete');
+        expect(existsSync(join(root, PRODUCT_TOTALITY_JSON_RELATIVE_PATH))).toBe(true);
+        expect(existsSync(join(root, PRODUCT_CAPABILITY_GRAPH_JSON_RELATIVE_PATH))).toBe(true);
+        expect(existsSync(join(root, PRODUCT_SCENARIO_COVERAGE_JSON_RELATIVE_PATH))).toBe(true);
         expect(validated.issues.filter((issue) => issue.severity === 'error')).toEqual([]);
     });
     it('prefers the typed cycle document and regenerates the markdown projection on advance', () => {

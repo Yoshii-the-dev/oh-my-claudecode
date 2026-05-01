@@ -1,7 +1,7 @@
 import { type UnifiedMcpRegistryStatus } from '../installer/mcp-registry.js';
 import type { PluginConfig } from '../shared/types.js';
 export type FeatureGenerationStatus = 'ready' | 'needs-input' | 'needs-mcp' | 'blocked';
-export type FeatureGenerationSourceKind = 'vision' | 'research' | 'competitors' | 'meaning' | 'ecosystem' | 'capability-map' | 'learning' | 'portfolio';
+export type FeatureGenerationSourceKind = 'vision' | 'research' | 'competitors' | 'meaning' | 'ecosystem' | 'capability-map' | 'capability-graph' | 'scenario-coverage' | 'totality' | 'learning' | 'portfolio';
 export interface FeatureGenerationSource {
     kind: FeatureGenerationSourceKind;
     path: string;

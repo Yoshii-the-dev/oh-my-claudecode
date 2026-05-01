@@ -76,6 +76,33 @@ export declare const PRODUCT_ARTIFACT_REGISTRY: {
         readonly datedPattern: ".omc/product/capability-map/YYYY-MM-DD-<slug>.md";
         readonly purpose: "Launch capability map, first usable loop, product-system gaps.";
     };
+    readonly 'product-totality': {
+        readonly name: "product-totality";
+        readonly lane: "product";
+        readonly currentPath: ".omc/product/totality/current.json";
+        readonly format: "json";
+        readonly owner: "omc product-totality audit";
+        readonly machineContract: "strict";
+        readonly purpose: "Aggregate completed cycles, capability maturity, connectedness, complexity fit, and missing depth moves.";
+    };
+    readonly 'capability-graph': {
+        readonly name: "capability-graph";
+        readonly lane: "product";
+        readonly currentPath: ".omc/product/capability-graph/current.json";
+        readonly format: "json";
+        readonly owner: "omc product-totality audit";
+        readonly machineContract: "strict";
+        readonly purpose: "Machine-readable graph of completed capabilities, context/artifact edges, missing maturity edges, and orphan capability detection.";
+    };
+    readonly 'scenario-coverage': {
+        readonly name: "scenario-coverage";
+        readonly lane: "product";
+        readonly currentPath: ".omc/product/scenario-coverage/current.json";
+        readonly format: "json";
+        readonly owner: "omc scenario-coverage audit";
+        readonly machineContract: "strict";
+        readonly purpose: "Capability-to-user-scenario coverage audit linking completed work to runtime QA, simulator, or dogfood evidence.";
+    };
     readonly ecosystem: {
         readonly name: "ecosystem";
         readonly lane: "product";
