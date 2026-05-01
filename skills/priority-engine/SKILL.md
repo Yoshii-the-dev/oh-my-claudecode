@@ -29,6 +29,7 @@ Read compact/current artifacts first:
 - `.omc/product/capability-map/current.md`
 - `.omc/product/totality/current.json` and `.omc/product/totality/current.md`
 - `.omc/product/capability-graph/current.json` and `.omc/product/capability-graph/current.md`
+- `.omc/product/scenarios/current.json` and `.omc/product/scenarios/current.md`
 - `.omc/product/scenario-coverage/current.json` and `.omc/product/scenario-coverage/current.md`
 - `.omc/product/regression/current.json` and `.omc/product/regression/current.md`
 - `.omc/classification/features-core-context.md`
@@ -43,7 +44,7 @@ Do not bulk-read archives. Use indexes and explicit pointers.
 
 1. Determine product stage: `empty | pre-mvp | mvp | post-mvp`.
 2. Run or read `omc feature-generation audit --write --goal "<cycle goal>"`. If it reports `needs-input`, `needs-mcp`, or `blocked`, keep the missing source/MCP work visible as research debt instead of silently assuming external discovery happened.
-3. If completed cycles exist, run or read `omc product-totality audit --write`, `omc scenario-coverage audit --write`, and `omc product-regression audit --write`. Use totality gaps, `orphan_capabilities`, scenario gaps, regression debts, and recommended moves as first-class portfolio candidates; do not rank a brand-new idea above a missing v1/v2 depth, orphan-reconnection, unproven scenario, or uncarried learning debt without explicit evidence.
+3. If completed cycles exist, run or read `omc product-totality audit --write`, `omc scenario-generator generate --write`, `omc scenario-coverage audit --write`, and `omc product-regression audit --write`. Use totality gaps, `orphan_capabilities`, generated scenario gaps, scenario gaps, regression debts, and recommended moves as first-class portfolio candidates; do not rank a brand-new idea above a missing v1/v2 depth, orphan-reconnection, unproven scenario, or uncarried learning debt without explicit evidence.
 4. If `.omc/ecosystem/current.md` is absent, stale, or core features lack depth paths, invoke `product-ecosystem-architect` first. If the current cycle is urgent, continue but mark ecosystem confidence LOW.
 5. Invoke `priority-engine` with the cycle goal and compact artifact digest.
 6. Require the agent to rank 20-40 candidate moves across product, UX, research, backend, quality, brand/content, and distribution.
@@ -107,16 +108,17 @@ If `.omc/feature-generation/current.json` reports missing required MCP services,
 
 ## Totality Rule
 
-Before ranking the next cycle after any completed cycle, read `.omc/product/totality/current.json`, `.omc/product/capability-graph/current.json`, `.omc/product/scenario-coverage/current.json`, and `.omc/product/regression/current.json`.
+Before ranking the next cycle after any completed cycle, read `.omc/product/totality/current.json`, `.omc/product/capability-graph/current.json`, `.omc/product/scenarios/current.json`, `.omc/product/scenario-coverage/current.json`, and `.omc/product/regression/current.json`.
 
 - If status is `empty`, proceed with first usable loop ranking.
 - If status is `under-composed`, `under-connected`, or `needs-depth`, include the audit's `recommended_moves` as candidate moves.
 - If `orphan_capabilities` is non-empty, include reconnection/depth moves before unrelated new ideas unless stronger evidence says otherwise.
+- If generated scenarios are missing or partial, include expectation/scenario repair before treating the capability as specified.
 - If scenario coverage is not `covered`, include runtime QA/simulator/dogfood scenario proof as quality or learning work before treating the capability as complete.
 - If regression status is not `stable`, include its `debts` as candidate work or explicit learning gates.
 - Treat `seeded-v0` and `contextual-v1` capabilities as unfinished unless their `feature_expectation` maturity ladder has a represented next depth path.
 - Do not let an enabling/backend task displace the selected core slice when totality says user-visible capability depth is missing.
-- Preserve totality, capability graph, scenario coverage, and regression gaps in `.omc/roadmap/current.md` as `capability depth`, `connection gate`, `orphan capability`, `scenario proof`, `regression debt`, or `learning gate`.
+- Preserve totality, capability graph, generated scenario, scenario coverage, and regression gaps in `.omc/roadmap/current.md` as `capability depth`, `connection gate`, `orphan capability`, `scenario declaration`, `scenario proof`, `regression debt`, or `learning gate`.
 - `omc doctor product-contracts --stage priority-handoff` must prove those audit debts are represented before downstream handoff; a generic source mention is not enough when subject/action debt is absent.
 
 ## Feature Expectation Contract Rule

@@ -103,6 +103,15 @@ export declare const PRODUCT_ARTIFACT_REGISTRY: {
         readonly machineContract: "strict";
         readonly purpose: "Capability-to-user-scenario coverage audit linking completed work to runtime QA, simulator, or dogfood evidence.";
     };
+    readonly 'scenario-generator': {
+        readonly name: "scenario-generator";
+        readonly lane: "product";
+        readonly currentPath: ".omc/product/scenarios/current.json";
+        readonly format: "json";
+        readonly owner: "omc scenario-generator generate";
+        readonly machineContract: "strict";
+        readonly purpose: "Generated return-session user-loop scenario declarations derived from feature expectation contracts.";
+    };
     readonly 'product-regression': {
         readonly name: "product-regression";
         readonly lane: "product";

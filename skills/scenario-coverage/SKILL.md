@@ -12,7 +12,7 @@ Use this skill when completed capabilities need proof that they work as living u
 It connects:
 
 ```text
-product totality + capability graph + runtime QA/dogfood evidence
+product totality + capability graph + generated scenarios + runtime QA/dogfood evidence
 ```
 
 ## Usage
@@ -29,6 +29,7 @@ Read compact/current artifacts first:
 
 - `.omc/product/totality/current.json`
 - `.omc/product/capability-graph/current.json`
+- `.omc/product/scenarios/current.json`
 - `.omc/product/scenario-coverage/current.json` when refreshing
 - `.omc/runtime-qa.json`
 - `.omc/handoffs/runtime-qa/current.json`
@@ -43,6 +44,7 @@ Read compact/current artifacts first:
 
 ```bash
 omc product-totality audit --write
+omc scenario-generator generate --write
 omc scenario-coverage audit --write
 ```
 
@@ -63,13 +65,15 @@ omc scenario-coverage audit --write
 
 ## Integration
 
+- `omc scenario-generator generate --write` writes `.omc/product/scenarios/current.json`; scenario coverage treats those generated scenarios as declared proof targets.
 - `/product-cycle` writes scenario coverage when a cycle advances from `learn` to `complete`.
 - `/priority-engine` must read scenario coverage before selecting unrelated new ideas.
-- `omc feature-generation audit` counts scenario coverage as a source for future feature/opportunity generation.
+- `omc feature-generation audit` counts generated scenarios and scenario coverage as sources for future feature/opportunity generation.
 
 ## Failure Modes To Avoid
 
 - Calling a capability done because unit tests pass while no user loop is proven.
+- Treating generated scenario declarations as proof before runtime QA, simulator, or dogfood evidence runs.
 - Treating dry-run simulator output as complete scenario evidence.
 - Letting `orphan_capabilities` proceed without a scenario that connects them to a real workflow.
 - Creating scenario docs without executable runtime QA, simulator, or explicit dogfood evidence.

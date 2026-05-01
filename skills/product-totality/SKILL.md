@@ -29,6 +29,7 @@ Read compact/current artifacts first:
 
 - `.omc/product/totality/current.json` when refreshing
 - `.omc/product/capability-graph/current.json` when refreshing
+- `.omc/product/scenarios/current.json` when refreshing
 - `.omc/product/scenario-coverage/current.json` when refreshing
 - `.omc/product/regression/current.json` when refreshing
 - `.omc/cycles/current.json`
@@ -52,16 +53,18 @@ Do not scan implementation files by default. This audit is a product artifact au
 
 ```bash
 omc product-totality audit --write
+omc scenario-generator generate --write
 omc scenario-coverage audit --write
 omc product-regression audit --write
 ```
 
 2. Read `.omc/product/totality/current.json`.
 3. Read `.omc/product/capability-graph/current.json`.
-4. Read `.omc/product/scenario-coverage/current.json`.
-5. Read `.omc/product/regression/current.json`.
-6. Treat every completed core product slice as a seeded capability unless the audit proves deeper maturity.
-7. For each capability, inspect:
+4. Read `.omc/product/scenarios/current.json`.
+5. Read `.omc/product/scenario-coverage/current.json`.
+6. Read `.omc/product/regression/current.json`.
+7. Treat every completed core product slice as a seeded capability unless the audit proves deeper maturity.
+8. For each capability, inspect:
    - maturity: `missing-expectation | seeded-v0 | contextual-v1 | systemic-v2`
    - missing depth from the feature expectation maturity ladder
    - connections to learning, roadmap, ecosystem, meaning, visual expectation, and taste gate
@@ -70,8 +73,8 @@ omc product-regression audit --write
    - scenario coverage: whether the first meaningful user loop is `runtime-passed`
    - regression debts: whether learning, scenario proof, or quality regressions are still carried
    - recommended portfolio moves
-8. If status is not `balanced`, route the highest-leverage recommended moves into `/priority-engine`.
-9. If there are `error` gaps, repair those before ranking the next cycle.
+9. If status is not `balanced`, route the highest-leverage recommended moves into `/priority-engine`.
+10. If there are `error` gaps, repair those before ranking the next cycle.
 
 ## Output
 
@@ -79,6 +82,8 @@ omc product-regression audit --write
 - `.omc/product/totality/current.md` — human-readable projection.
 - `.omc/product/capability-graph/current.json` — machine-readable capability graph and orphan detector.
 - `.omc/product/capability-graph/current.md` — graph projection with nodes, edges, and orphan reasons.
+- `.omc/product/scenarios/current.json` — generated return-session scenario declarations.
+- `.omc/product/scenarios/current.md` — generated scenario projection.
 - `.omc/product/scenario-coverage/current.json` — machine-readable capability-to-scenario coverage audit.
 - `.omc/product/scenario-coverage/current.md` — scenario coverage projection.
 - `.omc/product/regression/current.json` — cross-cycle regression and learning debt audit.
@@ -95,8 +100,9 @@ The audit scores:
 ## Integration
 
 - `/product-cycle` writes the totality audit, capability graph, scenario coverage, and regression audit when a cycle advances from `learn` to `complete`.
-- `/priority-engine` must read totality, `orphan_capabilities`, scenario coverage, and regression debts as inputs before ranking the next cycle.
-- `omc feature-generation audit` counts totality, capability graph, scenario coverage, and regression as sources for future feature/opportunity generation.
+- `/product-cycle` writes generated scenario declarations before scenario coverage so coverage can distinguish declared-but-unrun scenarios from missing scenario design.
+- `/priority-engine` must read totality, `orphan_capabilities`, generated scenarios, scenario coverage, and regression debts as inputs before ranking the next cycle.
+- `omc feature-generation audit` counts totality, capability graph, scenario generator, scenario coverage, and regression as sources for future feature/opportunity generation.
 
 ## Failure Modes To Avoid
 

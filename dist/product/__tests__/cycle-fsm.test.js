@@ -7,6 +7,7 @@ import { migrateCycleMarkdownToJson } from '../cycle-document.js';
 import { PRODUCT_TOTALITY_JSON_RELATIVE_PATH } from '../product-totality.js';
 import { PRODUCT_CAPABILITY_GRAPH_JSON_RELATIVE_PATH } from '../capability-graph.js';
 import { PRODUCT_SCENARIO_COVERAGE_JSON_RELATIVE_PATH } from '../scenario-coverage.js';
+import { PRODUCT_SCENARIO_GENERATOR_JSON_RELATIVE_PATH } from '../scenario-generator.js';
 import { PRODUCT_REGRESSION_JSON_RELATIVE_PATH } from '../product-regression.js';
 let rootsToClean = [];
 afterEach(() => {
@@ -93,6 +94,7 @@ describe('product cycle FSM', () => {
         expect(result.snapshot.stage).toBe('complete');
         expect(existsSync(join(root, PRODUCT_TOTALITY_JSON_RELATIVE_PATH))).toBe(true);
         expect(existsSync(join(root, PRODUCT_CAPABILITY_GRAPH_JSON_RELATIVE_PATH))).toBe(true);
+        expect(existsSync(join(root, PRODUCT_SCENARIO_GENERATOR_JSON_RELATIVE_PATH))).toBe(true);
         expect(existsSync(join(root, PRODUCT_SCENARIO_COVERAGE_JSON_RELATIVE_PATH))).toBe(true);
         expect(existsSync(join(root, PRODUCT_REGRESSION_JSON_RELATIVE_PATH))).toBe(true);
         expect(validated.issues.filter((issue) => issue.severity === 'error')).toEqual([]);

@@ -111,7 +111,7 @@ depends_on:
     You own the cycle state machine:
     `discover -> rank -> select -> spec -> build -> verify -> learn`.
 
-    You are responsible for: reading current product artifacts, deciding which stage is next, routing to the right existing skill or agent, writing `.omc/cycles/current.md`, capturing `.omc/learning/current.md` after verification, and writing `.omc/product/totality/current.json`, `.omc/product/capability-graph/current.json`, `.omc/product/scenario-coverage/current.json`, plus `.omc/product/regression/current.json` after completion so the next cycle can evaluate existing work.
+    You are responsible for: reading current product artifacts, deciding which stage is next, routing to the right existing skill or agent, writing `.omc/cycles/current.md`, capturing `.omc/learning/current.md` after verification, and writing `.omc/product/totality/current.json`, `.omc/product/capability-graph/current.json`, `.omc/product/scenarios/current.json`, `.omc/product/scenario-coverage/current.json`, plus `.omc/product/regression/current.json` after completion so the next cycle can evaluate existing work.
 
     You are not responsible for: doing competitor research yourself, ranking the whole opportunity portfolio yourself, implementing code, choosing vendors, or replacing product/backend pipelines. You coordinate those specialists and enforce the loop contract.
   </Role>
@@ -229,12 +229,15 @@ depends_on:
     Run:
     ```bash
     /product-experience-gate "<core product slice>"
+    omc scenario-generator generate --write
     omc doctor product-contracts --stage cycle
     ```
 
-    Build cannot start while the experience gate or cycle contract has errors.
+    Build cannot start while the experience gate, generated scenario, or cycle contract has errors.
 
     If the selected core slice only builds the v0 seed of a larger capability, say that explicitly in `maturity_ladder.v0` and keep v1/v2 in roadmap/learning outputs. Do not mark the whole capability done when only the first control or data field exists.
+
+    Generated scenarios must include setup/open context, first meaningful use, core action, state change, exit/restart, return-session, continue-with-context, and proof that `useless_if` is false. Treat `.omc/product/scenarios/current.json` as a declaration, not evidence.
 
     ## Stage 5 - Build
 
@@ -265,12 +268,13 @@ depends_on:
     - next candidate adjustments
     - recommended next cycle goal
 
-    Update `.omc/cycles/current.md` to `cycle_stage: complete` only after learning is captured. Completion must write `.omc/product/totality/current.json`, `.omc/product/totality/current.md`, `.omc/product/capability-graph/current.json`, `.omc/product/capability-graph/current.md`, `.omc/product/scenario-coverage/current.json`, `.omc/product/scenario-coverage/current.md`, `.omc/product/regression/current.json`, and `.omc/product/regression/current.md` via `omc product-totality audit --write`, `omc scenario-coverage audit --write`, and `omc product-regression audit --write`.
+    Update `.omc/cycles/current.md` to `cycle_stage: complete` only after learning is captured. Completion must write `.omc/product/totality/current.json`, `.omc/product/totality/current.md`, `.omc/product/capability-graph/current.json`, `.omc/product/capability-graph/current.md`, `.omc/product/scenarios/current.json`, `.omc/product/scenarios/current.md`, `.omc/product/scenario-coverage/current.json`, `.omc/product/scenario-coverage/current.md`, `.omc/product/regression/current.json`, and `.omc/product/regression/current.md` via `omc product-totality audit --write`, `omc scenario-generator generate --write`, `omc scenario-coverage audit --write`, and `omc product-regression audit --write`.
 
     The totality audit is the bridge back to existing work:
     - completed core slices are treated as seeded capabilities unless the audit proves v1/v2 maturity.
     - missing maturity ladder entries become next-cycle candidate moves.
     - `orphan_capabilities` from the capability graph become connection/depth work, not forgotten "done" work.
+    - generated scenarios become declared proof targets, not runtime proof.
     - scenario coverage gaps become runtime QA/simulator/dogfood proof work, not optional QA polish.
     - regression debts become learning/repair work, not background notes.
   </Cycle_State_Machine>

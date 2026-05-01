@@ -63,6 +63,7 @@ Skills are reusable workflow templates that can be invoked via `/oh-my-claudecod
 | `mcp-setup/SKILL.md` | mcp-setup | Configure MCP servers |
 | `runtime-qa/SKILL.md` | runtime-qa | Run simulator/runtime QA and disposable fixtures |
 | `product-totality/SKILL.md` | product-totality | Audit aggregate completed product work, capability graph edges, orphan capabilities, and missing depth |
+| `scenario-generator/SKILL.md` | scenario-generator | Generate return-session user-loop scenarios from feature expectation contracts |
 | `scenario-coverage/SKILL.md` | scenario-coverage | Audit completed capabilities against executable user-loop scenario evidence |
 | `product-regression/SKILL.md` | product-regression | Audit cross-cycle regressions, uncarried learning, and completion debt |
 | `skill/SKILL.md` | skill | Manage local skills |
@@ -184,7 +185,7 @@ None - pure markdown files.
 | Planning | omc-plan, ralplan, deep-interview, ralph-init | "plan this", "interview me", "ouroboros" |
 | Exploration | deepinit, sciomc, external-context | "deepinit", "research" |
 | Utility | learner, note, cancel, hud, setup, omc-doctor, omc-setup, omc-help, mcp-setup, runtime-qa | "stop", "cancel", "runtime QA" |
-| Product audit | product-totality, scenario-coverage, product-regression | "totality", "aggregate product body", "existing work", "capability depth", "orphan capability", "capability graph", "scenario coverage", "regression debt", "learning debt" |
+| Product audit | product-totality, scenario-generator, scenario-coverage, product-regression | "totality", "aggregate product body", "existing work", "capability depth", "orphan capability", "capability graph", "scenario generator", "generated scenario", "scenario coverage", "regression debt", "learning debt" |
 | Domain | psm, writer-memory, release | psm context |
 
 ## Auto-Activation

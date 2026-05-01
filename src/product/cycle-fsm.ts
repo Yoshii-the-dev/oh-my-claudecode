@@ -27,6 +27,12 @@ import {
   writeProductScenarioCoverageAudit,
 } from './scenario-coverage.js';
 import {
+  PRODUCT_SCENARIO_GENERATOR_JSON_RELATIVE_PATH,
+  PRODUCT_SCENARIO_GENERATOR_MD_RELATIVE_PATH,
+  generateProductScenarioPlan,
+  writeProductScenarioPlan,
+} from './scenario-generator.js';
+import {
   PRODUCT_REGRESSION_JSON_RELATIVE_PATH,
   PRODUCT_REGRESSION_MD_RELATIVE_PATH,
   generateProductRegressionAudit,
@@ -252,7 +258,12 @@ export function advanceProductCycle(options: AdvanceProductCycleOptions): Produc
     const content = readFileSync(before.path, 'utf-8');
     writeCycle(root, updateCycleStage(content, to));
   }
+  if (to === 'build') {
+    writeProductScenarioPlan(root, generateProductScenarioPlan(root));
+  }
   if (before.stage === 'learn' && to === 'complete') {
+    const scenarioPlan = generateProductScenarioPlan(root);
+    writeProductScenarioPlan(root, scenarioPlan);
     const totality = generateProductTotalityAudit(root);
     writeProductTotalityAudit(root, totality);
     const scenarioCoverage = generateProductScenarioCoverageAudit({ root, totality });
@@ -465,6 +476,10 @@ function updateCycleDocumentStage(document: CycleDocument, stage: ProductCycleSt
         ...document.footer.artifacts_written,
         CYCLE_DOCUMENT_RELATIVE_PATH,
         CYCLE_PROJECTION_RELATIVE_PATH,
+        ...(scenarioGenerationApplies(stage) ? [
+          PRODUCT_SCENARIO_GENERATOR_JSON_RELATIVE_PATH,
+          PRODUCT_SCENARIO_GENERATOR_MD_RELATIVE_PATH,
+        ] : []),
         ...(stage === 'complete' ? [
           PRODUCT_TOTALITY_JSON_RELATIVE_PATH,
           PRODUCT_TOTALITY_MD_RELATIVE_PATH,
@@ -502,6 +517,10 @@ function updateCycleDocumentStage(document: CycleDocument, stage: ProductCycleSt
   }
 
   return updated;
+}
+
+function scenarioGenerationApplies(stage: ProductCycleStage): boolean {
+  return ['build', 'verify', 'learn', 'complete'].includes(stage);
 }
 
 function shouldCheckStage(loopStage: ProductCycleStage, currentStage: ProductCycleStage): boolean {

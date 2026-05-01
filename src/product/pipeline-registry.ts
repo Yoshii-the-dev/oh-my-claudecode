@@ -122,6 +122,15 @@ export const PRODUCT_ARTIFACT_REGISTRY = {
     machineContract: 'strict',
     purpose: 'Capability-to-user-scenario coverage audit linking completed work to runtime QA, simulator, or dogfood evidence.',
   },
+  'scenario-generator': {
+    name: 'scenario-generator',
+    lane: 'product',
+    currentPath: '.omc/product/scenarios/current.json',
+    format: 'json',
+    owner: 'omc scenario-generator generate',
+    machineContract: 'strict',
+    purpose: 'Generated return-session user-loop scenario declarations derived from feature expectation contracts.',
+  },
   'product-regression': {
     name: 'product-regression',
     lane: 'product',

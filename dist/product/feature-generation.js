@@ -15,6 +15,7 @@ const SOURCE_CANDIDATES = {
     ecosystem: ['.omc/ecosystem/current.md'],
     'capability-map': ['.omc/product/capability-map/current.md'],
     'capability-graph': ['.omc/product/capability-graph/current.json', '.omc/product/capability-graph/current.md'],
+    'scenario-generator': ['.omc/product/scenarios/current.json', '.omc/product/scenarios/current.md'],
     'scenario-coverage': ['.omc/product/scenario-coverage/current.json', '.omc/product/scenario-coverage/current.md'],
     regression: ['.omc/product/regression/current.json', '.omc/product/regression/current.md'],
     totality: ['.omc/product/totality/current.json', '.omc/product/totality/current.md'],

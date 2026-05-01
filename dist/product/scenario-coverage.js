@@ -4,6 +4,7 @@ import { atomicWriteJsonSync } from '../lib/atomic-write.js';
 import { RUNTIME_QA_CONFIG_RELATIVE_PATH, RUNTIME_QA_HANDOFF_RELATIVE_PATH, readRuntimeQaConfig, } from '../runtime-qa/runner.js';
 import { PRODUCT_CAPABILITY_GRAPH_JSON_RELATIVE_PATH, } from './capability-graph.js';
 import { PRODUCT_TOTALITY_JSON_RELATIVE_PATH, generateProductTotalityAudit, } from './product-totality.js';
+import { PRODUCT_SCENARIO_GENERATOR_JSON_RELATIVE_PATH, readProductScenarioPlan, } from './scenario-generator.js';
 export const PRODUCT_SCENARIO_COVERAGE_JSON_RELATIVE_PATH = '.omc/product/scenario-coverage/current.json';
 export const PRODUCT_SCENARIO_COVERAGE_MD_RELATIVE_PATH = '.omc/product/scenario-coverage/current.md';
 const SCENARIO_STOP_WORDS = new Set([
@@ -30,14 +31,16 @@ const SCENARIO_STOP_WORDS = new Set([
 export function generateProductScenarioCoverageAudit(options = {}) {
     const root = resolve(options.root ?? process.cwd());
     const totality = options.totality ?? generateProductTotalityAudit(root);
+    const scenarioPlan = readProductScenarioPlan(root);
     const runtimeConfig = readRuntimeQaConfig(root);
     const runtimeHandoff = readRuntimeQaHandoff(root);
-    const scenarios = totality.capabilities.map((capability) => buildScenario(capability, runtimeConfig, runtimeHandoff));
+    const scenarios = totality.capabilities.map((capability) => buildScenario(capability, scenarioPlan, runtimeConfig, runtimeHandoff));
     const gaps = buildScenarioGaps(scenarios, totality);
     const status = determineStatus(totality.capabilities.length, scenarios, gaps);
     const sourceArtifacts = Array.from(new Set([
         PRODUCT_TOTALITY_JSON_RELATIVE_PATH,
         PRODUCT_CAPABILITY_GRAPH_JSON_RELATIVE_PATH,
+        ...(scenarioPlan ? [PRODUCT_SCENARIO_GENERATOR_JSON_RELATIVE_PATH] : []),
         ...totality.source_artifacts,
         ...(runtimeConfig ? [RUNTIME_QA_CONFIG_RELATIVE_PATH] : []),
         ...(runtimeHandoff ? [RUNTIME_QA_HANDOFF_RELATIVE_PATH] : []),
@@ -112,7 +115,7 @@ export function renderProductScenarioCoverageAudit(report) {
         '',
     ].join('\n');
 }
-function buildScenario(capability, runtimeConfig, runtimeHandoff) {
+function buildScenario(capability, scenarioPlan, runtimeConfig, runtimeHandoff) {
     const expectedUserLoop = capability.first_meaningful_use
         ?? capability.user_job
         ?? capability.implemented_as
@@ -125,7 +128,8 @@ function buildScenario(capability, runtimeConfig, runtimeHandoff) {
         capability.implemented_as,
         expectedUserLoop,
     ].join(' ');
-    const declared = runtimeConfigMatches(runtimeConfig, scenarioText);
+    const generatedMatch = generatedScenarioMatches(scenarioPlan, capability, scenarioText);
+    const declared = runtimeConfigMatches(runtimeConfig, scenarioText) || generatedMatch;
     const handoffMatch = runtimeHandoffMatches(runtimeHandoff, capability, scenarioText);
     const coverage = inferCoverage(capability, declared, handoffMatch, runtimeHandoff);
     const gaps = scenarioGaps(capability, coverage, declared, runtimeHandoff);
@@ -140,6 +144,7 @@ function buildScenario(capability, runtimeConfig, runtimeHandoff) {
         evidence: Array.from(new Set([
             capability.source_path,
             ...capability.evidence,
+            ...(generatedMatch ? [PRODUCT_SCENARIO_GENERATOR_JSON_RELATIVE_PATH] : []),
             ...(runtimeConfig ? [RUNTIME_QA_CONFIG_RELATIVE_PATH] : []),
             ...(handoffMatch ? [RUNTIME_QA_HANDOFF_RELATIVE_PATH] : []),
         ])).filter(Boolean),
@@ -293,6 +298,28 @@ function runtimeConfigMatches(config, scenarioText) {
     });
     return fuzzyMentions(haystack, scenarioText)
         || (config.flows ?? []).some((flow) => fuzzyMentions(`${flow.id ?? ''} ${flow.path} ${flow.spec ?? ''} ${(flow.verifies ?? []).join(' ')}`, scenarioText));
+}
+function generatedScenarioMatches(report, capability, scenarioText) {
+    if (!report)
+        return false;
+    return report.scenarios.some((scenario) => {
+        if (scenario.cycle_id === capability.source_cycle)
+            return true;
+        const generatedText = [
+            scenario.id,
+            scenario.capability_title,
+            scenario.user_job,
+            scenario.first_meaningful_use,
+            scenario.loop.setup,
+            scenario.loop.start,
+            scenario.loop.core_action,
+            scenario.loop.return,
+            scenario.loop.continue_with_context,
+            scenario.runtime_qa_flow.spec,
+            scenario.runtime_qa_flow.verifies.join(' '),
+        ].join(' ');
+        return fuzzyMentions(generatedText, scenarioText);
+    });
 }
 function runtimeHandoffMatches(report, capability, scenarioText) {
     if (!report)

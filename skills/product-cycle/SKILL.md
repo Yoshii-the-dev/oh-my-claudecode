@@ -129,7 +129,15 @@ Before build, the cycle spec must also include `feature_expectation_contract`:
 
 If the build only delivers `v0`, call the result a seeded capability and keep `v1/v2` visible in the roadmap instead of marking the whole feature done.
 
-8. For user-facing visual work, run the creative loop before implementation:
+8. Generate scenario declarations before build:
+
+```bash
+omc scenario-generator generate --write
+```
+
+This writes `.omc/product/scenarios/current.json` and `.omc/product/scenarios/current.md` from `feature_expectation_contract`. The generated loop must include setup/open context, core action, exit/restart, return-session, continue-with-context, and proof that `useless_if` is false.
+
+9. For user-facing visual work, run the creative loop before implementation:
 
 ```bash
 /creative-loop "<core product slice>"
@@ -138,19 +146,19 @@ omc creative-loop audit --write --goal "<core product slice>"
 
 It must prove meaning brief, inspiration ledger, visual expectation contract, 3-5 divergent design directions, motion grammar, tokens, component experiments/screenshots, visual verdict, and taste gate. Draft placeholders from `omc creative-loop init` do not pass.
 
-9. After spec, run:
+10. After spec, run:
 
 ```bash
 omc doctor product-contracts --stage cycle
 ```
 
-10. Build only after the cycle, experience, and required creative gates pass.
-11. Verify with evidence from tests/audits/acceptance criteria.
+11. Build only after the cycle, experience, generated scenario, and required creative gates pass.
+12. Verify with evidence from tests/audits/acceptance criteria.
     - When `.omc/runtime-qa.json` exists or the verification plan declares runtime smoke/simulator coverage, run `omc runtime-qa run --auto --json` and include `.omc/handoffs/runtime-qa/current.json` as evidence.
     - If `omc doctor runtime-qa --json` reports `runtime-qa-fixture-agent-mcp-required`, invoke the `runtime-qa` skill to prepare the Supabase MCP disposable fixture before running destructive simulator flows.
     - Mobile simulator tooling is explicit opt-in: if Maestro/Detox/Appium is missing, rerun with `omc runtime-qa run --auto --install-mobile-tools --json` only after the user has approved provisioning. Product-cycle may pass the same approval with `omc product-cycle run --auto --install-mobile-tools --json`.
-12. Learn before completion: write `.omc/learning/current.md`. Advancing `learn -> complete` must also write `.omc/product/totality/current.json`, `.omc/product/totality/current.md`, `.omc/product/capability-graph/current.json`, `.omc/product/capability-graph/current.md`, `.omc/product/scenario-coverage/current.json`, `.omc/product/scenario-coverage/current.md`, `.omc/product/regression/current.json`, and `.omc/product/regression/current.md`, then set `cycle_stage: complete`.
-13. Before the next ranking pass, read `.omc/product/totality/current.json`, `.omc/product/capability-graph/current.json`, `.omc/product/scenario-coverage/current.json`, and `.omc/product/regression/current.json`. Treat completed core slices as seeded capabilities unless the totality audit proves contextual/systemic maturity and scenario coverage proves the meaningful user loop; feed missing depth/orphan/scenario/regression moves into `/priority-engine`.
+13. Learn before completion: write `.omc/learning/current.md`. Advancing `learn -> complete` must also write `.omc/product/totality/current.json`, `.omc/product/totality/current.md`, `.omc/product/capability-graph/current.json`, `.omc/product/capability-graph/current.md`, `.omc/product/scenarios/current.json`, `.omc/product/scenarios/current.md`, `.omc/product/scenario-coverage/current.json`, `.omc/product/scenario-coverage/current.md`, `.omc/product/regression/current.json`, and `.omc/product/regression/current.md`, then set `cycle_stage: complete`.
+14. Before the next ranking pass, read `.omc/product/totality/current.json`, `.omc/product/capability-graph/current.json`, `.omc/product/scenarios/current.json`, `.omc/product/scenario-coverage/current.json`, and `.omc/product/regression/current.json`. Treat completed core slices as seeded capabilities unless the totality audit proves contextual/systemic maturity and scenario coverage proves the meaningful user loop; feed missing depth/orphan/scenario/regression moves into `/priority-engine`.
 
 ## Cycle Artifact Contract
 

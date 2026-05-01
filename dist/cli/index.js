@@ -33,6 +33,7 @@ import { portfolioMigrateCommand, portfolioProjectCommand, portfolioTrimCommand,
 import { creativeLoopAuditCommand, creativeLoopInitCommand } from './commands/creative-loop.js';
 import { featureGenerationAuditCommand } from './commands/feature-generation.js';
 import { productTotalityAuditCommand } from './commands/product-totality.js';
+import { scenarioGeneratorCommand } from './commands/scenario-generator.js';
 import { scenarioCoverageAuditCommand } from './commands/scenario-coverage.js';
 import { productRegressionAuditCommand } from './commands/product-regression.js';
 import { runScorecardCommand } from './commands/run-scorecard.js';
@@ -1517,7 +1518,7 @@ productTotalityCmd
     .command('audit [root]')
     .description('Evaluate existing completed product work and write recommended depth moves')
     .option('--json', 'Output as JSON')
-    .option('--write', 'Write totality, capability graph, scenario coverage, and regression current.{json,md} artifacts')
+    .option('--write', 'Write totality, capability graph, generated scenarios, scenario coverage, and regression current.{json,md} artifacts')
     .action(async (root, options) => {
     const exitCode = await productTotalityAuditCommand(root, options);
     process.exit(exitCode);
@@ -1540,6 +1541,26 @@ productRegressionCmd
     .option('--write', 'Write .omc/product/regression/current.{json,md}')
     .action(async (root, options) => {
     const exitCode = await productRegressionAuditCommand(root, options);
+    process.exit(exitCode);
+});
+/**
+ * Scenario generator command - derive user-loop scenarios from feature expectations
+ */
+const scenarioGeneratorCmd = program
+    .command('scenario-generator')
+    .description('Generate return-session user-loop scenarios from feature expectation contracts')
+    .addHelpText('after', `
+Examples:
+  $ omc scenario-generator generate
+  $ omc scenario-generator generate /path/to/app --write
+  $ omc scenario-generator generate --json`);
+scenarioGeneratorCmd
+    .command('generate [root]')
+    .description('Generate scenario declarations from cycle feature_expectation_contract values')
+    .option('--json', 'Output as JSON')
+    .option('--write', 'Write .omc/product/scenarios/current.{json,md}')
+    .action(async (root, options) => {
+    const exitCode = await scenarioGeneratorCommand(root, options);
     process.exit(exitCode);
 });
 /**

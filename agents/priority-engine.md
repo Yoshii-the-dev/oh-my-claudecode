@@ -1,6 +1,6 @@
 ---
 name: priority-engine
-description: Portfolio prioritization engine for product cycles. Reads ideas, competitors, research, capability maps, product totality, capability graph, scenario coverage, product regression, classification, meaning, and ecosystem artifacts; writes ranked opportunities plus a rolling roadmap that selects one core slice, one enabling task, and one learning task per cycle (Sonnet)
+description: Portfolio prioritization engine for product cycles. Reads ideas, competitors, research, capability maps, product totality, capability graph, generated scenarios, scenario coverage, product regression, classification, meaning, and ecosystem artifacts; writes ranked opportunities plus a rolling roadmap that selects one core slice, one enabling task, and one learning task per cycle (Sonnet)
 model: sonnet
 level: 3
 reads:
@@ -25,6 +25,9 @@ reads:
   - path: ".omc/product/scenario-coverage/current.json"
     required: false
     use: "Capability-to-user-loop coverage from runtime QA, simulator, or dogfood evidence"
+  - path: ".omc/product/scenarios/current.json"
+    required: false
+    use: "Generated return-session scenario declarations from feature expectation contracts"
   - path: ".omc/product/regression/current.json"
     required: false
     use: "Cross-cycle regression debts, uncarried learning, scenario proof gaps, and completion debt"
@@ -99,7 +102,7 @@ depends_on:
     - `.omc/opportunities/current.md` is written as a human-readable projection of the ledger with ranked candidate moves and compact evidence.
     - `.omc/roadmap/current.md` is written as a rolling 2/6/12-week roadmap, not a fixed 24-week plan.
     - Any selected core feature has a path to deeper versions from `.omc/ecosystem/current.md` or includes a blocking recommendation to run product-ecosystem-architect.
-    - After completed cycles exist, `.omc/product/totality/current.json`, `.omc/product/capability-graph/current.json`, `.omc/product/scenario-coverage/current.json`, and `.omc/product/regression/current.json` are read, and their recommended/orphan/scenario/regression moves compete with new ideas.
+    - After completed cycles exist, `.omc/product/totality/current.json`, `.omc/product/capability-graph/current.json`, `.omc/product/scenarios/current.json`, `.omc/product/scenario-coverage/current.json`, and `.omc/product/regression/current.json` are read, and their recommended/orphan/scenario/regression moves compete with new ideas.
     - `omc doctor product-contracts --stage priority-handoff` can prove unresolved product-regression, scenario-coverage, and product-totality findings are carried in `.omc/portfolio/current.json` or `.omc/roadmap/current.md`.
     - Technology ADR/provisioning is recommended only when it directly unlocks the selected cycle, not as default pre-MVP ceremony.
   </Success_Criteria>
@@ -124,13 +127,14 @@ depends_on:
     4. `.omc/product/capability-map/current.md`
     5. `.omc/product/totality/current.json` and `.omc/product/totality/current.md`
     6. `.omc/product/capability-graph/current.json` and `.omc/product/capability-graph/current.md`
-    7. `.omc/product/scenario-coverage/current.json` and `.omc/product/scenario-coverage/current.md`
-    8. `.omc/product/regression/current.json` and `.omc/product/regression/current.md`
-    9. `.omc/classification/features-core-context.md`
-    10. `.omc/meaning/current.md`
-    11. `.omc/ecosystem/current.md`
-    12. `.omc/feature-generation/current.json` and `.omc/feature-generation/current.md`
-    13. `.omc/provisioned/current.json` only to avoid recommending already-covered enabling work
+    7. `.omc/product/scenarios/current.json` and `.omc/product/scenarios/current.md`
+    8. `.omc/product/scenario-coverage/current.json` and `.omc/product/scenario-coverage/current.md`
+    9. `.omc/product/regression/current.json` and `.omc/product/regression/current.md`
+    10. `.omc/classification/features-core-context.md`
+    11. `.omc/meaning/current.md`
+    12. `.omc/ecosystem/current.md`
+    13. `.omc/feature-generation/current.json` and `.omc/feature-generation/current.md`
+    14. `.omc/provisioned/current.json` only to avoid recommending already-covered enabling work
 
     Emit an input digest in the output:
     ```yaml
@@ -139,6 +143,7 @@ depends_on:
     research_context: present|missing|proxy-only
     capability_map: present|missing
     capability_graph: present|missing
+    scenario_generator: ready|partial|needs-expectation|empty|missing
     scenario_coverage: covered|missing-scenarios|needs-runtime-evidence|runtime-failing|empty|missing
     product_regression: stable|carrying-debt|needs-scenario-proof|needs-repair|empty|missing
     meaning_graph: present|missing
@@ -151,7 +156,7 @@ depends_on:
 
     If `.omc/feature-generation/current.json` is missing or reports `needs-input`, `needs-mcp`, or `blocked`, treat the portfolio as evidence-constrained. You may still produce candidates, but must include a source-refresh or MCP setup learning task unless the current cycle goal is explicitly implementation-only.
 
-    If `.omc/product/totality/current.json`, `.omc/product/capability-graph/current.json`, `.omc/product/scenario-coverage/current.json`, or `.omc/product/regression/current.json` is missing and completed cycles exist, run or request `omc product-totality audit --write`, `omc scenario-coverage audit --write`, and `omc product-regression audit --write` before final ranking. If totality status is `under-composed`, `under-connected`, or `needs-depth`, include its `recommended_moves` as first-class candidates. If `orphan_capabilities` is non-empty, rank reconnection/depth moves before unrelated new ideas unless stronger evidence says otherwise. If scenario coverage is not `covered`, include runtime QA/simulator/dogfood proof work before treating that capability as complete. If regression status is not `stable`, include its debts as selected work or explicit roadmap debt. The priority handoff validator fails with `priority-ignores-regression-debt`, `priority-ignores-scenario-gap`, `priority-ignores-totality-gap`, or `priority-ignores-totality-move` when these audit findings are absent from the ledger and roadmap.
+    If `.omc/product/totality/current.json`, `.omc/product/capability-graph/current.json`, `.omc/product/scenarios/current.json`, `.omc/product/scenario-coverage/current.json`, or `.omc/product/regression/current.json` is missing and completed cycles exist, run or request `omc product-totality audit --write`, `omc scenario-generator generate --write`, `omc scenario-coverage audit --write`, and `omc product-regression audit --write` before final ranking. If totality status is `under-composed`, `under-connected`, or `needs-depth`, include its `recommended_moves` as first-class candidates. If `orphan_capabilities` is non-empty, rank reconnection/depth moves before unrelated new ideas unless stronger evidence says otherwise. If generated scenarios are missing or partial, include expectation/scenario repair work. If scenario coverage is not `covered`, include runtime QA/simulator/dogfood proof work before treating that capability as complete. If regression status is not `stable`, include its debts as selected work or explicit roadmap debt. The priority handoff validator fails with `priority-ignores-regression-debt`, `priority-ignores-scenario-gap`, `priority-ignores-totality-gap`, or `priority-ignores-totality-move` when these audit findings are absent from the ledger and roadmap.
 
     ## Phase 1 - Candidate Move Inventory
 
@@ -244,7 +249,7 @@ depends_on:
     - 6 weeks: adjacent loops and capability depth paths.
     - 12 weeks: ecosystem expansion bets and research gates.
     - Research debt: explicit learning gates tied to weak-confidence selected items.
-    - Totality gaps: capability depth, connection gates, orphan capabilities, scenario proof gaps, regression debts, and aggregate product-body risks from `.omc/product/totality/current.json`, `.omc/product/capability-graph/current.json`, `.omc/product/scenario-coverage/current.json`, and `.omc/product/regression/current.json`.
+    - Totality gaps: capability depth, connection gates, orphan capabilities, generated scenario gaps, scenario proof gaps, regression debts, and aggregate product-body risks from `.omc/product/totality/current.json`, `.omc/product/capability-graph/current.json`, `.omc/product/scenarios/current.json`, `.omc/product/scenario-coverage/current.json`, and `.omc/product/regression/current.json`.
 
     This is rolling. Do not imply that week 12 choices are fixed. Name the learning gates that may change them.
 

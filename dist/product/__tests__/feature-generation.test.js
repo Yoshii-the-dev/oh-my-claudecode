@@ -56,6 +56,11 @@ describe('feature generation readiness', () => {
             gaps: [],
             next_action: 'feed scenario evidence into priority engine',
         }, null, 2));
+        writeArtifact(root, '.omc/product/scenarios/current.json', JSON.stringify({
+            status: 'ready',
+            scenarios: [{ id: 'activation-loop-scenario', first_meaningful_use: 'finish activation loop', steps: [] }],
+            next_action: 'run runtime QA for generated scenario declarations',
+        }, null, 2));
         writeArtifact(root, '.omc/product/regression/current.json', JSON.stringify({
             status: 'stable',
             debts: [],
@@ -73,6 +78,7 @@ describe('feature generation readiness', () => {
         expect(written.jsonPath).toContain('.omc/feature-generation/current.json');
         expect(written.mdPath).toContain('.omc/feature-generation/current.md');
         expect(plan.sources.find((source) => source.kind === 'capability-graph')?.status).toBe('present');
+        expect(plan.sources.find((source) => source.kind === 'scenario-generator')?.status).toBe('present');
         expect(plan.sources.find((source) => source.kind === 'scenario-coverage')?.status).toBe('present');
         expect(plan.sources.find((source) => source.kind === 'regression')?.status).toBe('present');
         expect(renderFeatureGenerationPlan(plan)).toContain('Feature Generation Readiness');

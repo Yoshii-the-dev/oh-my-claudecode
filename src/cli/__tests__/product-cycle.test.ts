@@ -46,6 +46,8 @@ describe('product cycle CLI command', () => {
     expect(productTotalityCmd?.commands.map((command) => command.name())).toContain('audit');
     const scenarioCoverageCmd = buildProgram().commands.find((command) => command.name() === 'scenario-coverage');
     expect(scenarioCoverageCmd?.commands.map((command) => command.name())).toContain('audit');
+    const scenarioGeneratorCmd = buildProgram().commands.find((command) => command.name() === 'scenario-generator');
+    expect(scenarioGeneratorCmd?.commands.map((command) => command.name())).toContain('generate');
     const productRegressionCmd = buildProgram().commands.find((command) => command.name() === 'product-regression');
     expect(productRegressionCmd?.commands.map((command) => command.name())).toContain('audit');
   });

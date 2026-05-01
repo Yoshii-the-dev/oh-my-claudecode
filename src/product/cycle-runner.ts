@@ -40,6 +40,7 @@ import { planFeatureGeneration, writeFeatureGenerationPlan } from './feature-gen
 import { generateProductTotalityAudit, writeProductTotalityAudit } from './product-totality.js';
 import { generateProductScenarioCoverageAudit, writeProductScenarioCoverageAudit } from './scenario-coverage.js';
 import { generateProductRegressionAudit, writeProductRegressionAudit } from './product-regression.js';
+import { generateProductScenarioPlan, writeProductScenarioPlan } from './scenario-generator.js';
 
 export type CycleRunnerStopReason =
   | 'complete'
@@ -199,6 +200,7 @@ export function runProductCycle(options: RunProductCycleOptions = {}): RunProduc
         });
       }
       if (!dryRun) {
+        writeProductScenarioPlan(root, generateProductScenarioPlan(root));
         const totality = generateProductTotalityAudit(root);
         writeProductTotalityAudit(root, totality);
         const scenarioCoverage = generateProductScenarioCoverageAudit({ root, totality });

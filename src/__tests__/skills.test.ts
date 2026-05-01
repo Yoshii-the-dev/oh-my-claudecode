@@ -171,6 +171,7 @@ describe('Builtin Skills', () => {
         'ralplan',
         'release',
         'runtime-qa',
+        'scenario-generator',
         'scenario-coverage',
         'sciomc',
         'self-improve',

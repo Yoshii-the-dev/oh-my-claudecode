@@ -15,6 +15,10 @@ import {
   writeProductScenarioCoverageAudit,
 } from '../../product/scenario-coverage.js';
 import {
+  generateProductScenarioPlan,
+  writeProductScenarioPlan,
+} from '../../product/scenario-generator.js';
+import {
   generateProductRegressionAudit,
   writeProductRegressionAudit,
 } from '../../product/product-regression.js';
@@ -35,6 +39,10 @@ export async function productTotalityAuditCommand(
 ): Promise<number> {
   const report = generateProductTotalityAudit(root);
   const written = options.write ? writeProductTotalityAudit(root, report) : undefined;
+  const scenarioPlan = options.write ? generateProductScenarioPlan(root) : undefined;
+  const scenarioPlanWritten = options.write && scenarioPlan
+    ? writeProductScenarioPlan(root, scenarioPlan)
+    : undefined;
   const scenarioReport = options.write
     ? generateProductScenarioCoverageAudit({ root, totality: report })
     : undefined;
@@ -52,16 +60,18 @@ export async function productTotalityAuditCommand(
     logger.log(JSON.stringify({
       ...report,
       written,
+      scenario_plan: scenarioPlan,
+      scenario_plan_written: scenarioPlanWritten,
       scenario_coverage: scenarioReport,
       scenario_written: scenarioWritten,
       regression: regressionReport,
       regression_written: regressionWritten,
     }, null, 2));
   } else if (options.write) {
-    logger.log(renderProductTotalitySummary(report, written, scenarioWritten, regressionWritten));
+    logger.log(renderProductTotalitySummary(report, written, scenarioPlanWritten, scenarioWritten, regressionWritten));
   } else {
     logger.log(renderProductTotalityAudit(report));
-    logger.log(colors.gray('Use --write to persist totality, capability graph, scenario coverage, and regression current.{json,md} artifacts.'));
+    logger.log(colors.gray('Use --write to persist totality, capability graph, generated scenarios, scenario coverage, and regression current.{json,md} artifacts.'));
   }
 
   return report.gaps.some((gap) => gap.severity === 'error') ? 1 : 0;
@@ -70,6 +80,7 @@ export async function productTotalityAuditCommand(
 function renderProductTotalitySummary(
   report: ProductTotalityReport,
   written: ReturnType<typeof writeProductTotalityAudit> | undefined,
+  scenarioPlanWritten: ReturnType<typeof writeProductScenarioPlan> | undefined,
   scenarioWritten: ReturnType<typeof writeProductScenarioCoverageAudit> | undefined,
   regressionWritten: ReturnType<typeof writeProductRegressionAudit> | undefined,
 ): string {
@@ -85,6 +96,7 @@ function renderProductTotalitySummary(
     `status: ${formatStatus(report.status)}`,
     `capabilities: ${report.aggregates.seeded_capabilities}, completed cycles: ${report.aggregates.completed_cycles}, gaps: ${report.gaps.length}, orphans: ${report.capability_graph.aggregates.orphan_count}`,
     written ? `artifacts: ${written.jsonPath}, ${written.mdPath}, ${written.capabilityGraphJsonPath}, ${written.capabilityGraphMdPath}` : undefined,
+    scenarioPlanWritten ? `scenario_plan: ${scenarioPlanWritten.jsonPath}, ${scenarioPlanWritten.mdPath}` : undefined,
     scenarioWritten ? `scenario_coverage: ${scenarioWritten.jsonPath}, ${scenarioWritten.mdPath}` : undefined,
     regressionWritten ? `regression: ${regressionWritten.jsonPath}, ${regressionWritten.mdPath}` : undefined,
     '',
