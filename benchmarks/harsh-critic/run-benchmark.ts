@@ -8,7 +8,7 @@
  *   --agent harsh-critic|critic|both   Which agent(s) to run (default: both)
  *   --fixture <fixture-id>             Run a single fixture only
  *   --output-dir <path>                Where to write results (default: benchmarks/harsh-critic/results)
- *   --model <model>                    Claude model to use (default: claude-opus-4-5-20251101)
+ *   --model <model>                    Claude model to use (default: claude-opus-4-7)
  *   --dry-run                          Load fixtures and ground truth but skip API calls
  */
 
@@ -55,7 +55,7 @@ function parseArgs(): CliArgs {
     agent: 'both',
     fixture: null,
     outputDir: join(BENCHMARK_DIR, 'results'),
-    model: 'claude-opus-4-5-20251101',
+    model: 'claude-opus-4-7',
     dryRun: false,
   };
 

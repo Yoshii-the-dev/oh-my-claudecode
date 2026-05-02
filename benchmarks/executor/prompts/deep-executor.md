@@ -1,7 +1,7 @@
 ---
 name: deep-executor
 description: Autonomous deep worker for complex goal-oriented tasks (Opus)
-model: claude-opus-4-5-20251101
+model: claude-opus-4-7
 ---
 
 <Agent_Prompt>

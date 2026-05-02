@@ -22,7 +22,7 @@ Release with **5 new features**, **2 bug fixes**, **2 other changes** across **0
 
 ### Bug Fixes
 
-- **fix: update canonical opus model from claude-opus-4-7 to claude-opus-4-5-20251101**
+- **fix: update canonical opus model to claude-opus-4-7**
 - **fix: package product-cycle auto runtime QA**
 
 ### Other Changes
