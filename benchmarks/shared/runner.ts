@@ -55,7 +55,7 @@ export function parseCliArgs(
     agents: defaultAgents,
     fixture: null,
     outputDir: defaultOutputDir,
-    model: 'claude-opus-4-5-20251101',
+    model: 'claude-opus-4-7',
     dryRun: false,
   };
 
